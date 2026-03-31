@@ -57,3 +57,18 @@ The project is intended to be developed with a team workflow based on:
 - code review
 - CODEOWNERS
 - GitHub Issues and Kanban-based task tracking
+
+## Local run
+
+Run the empty runtime environment with Docker Compose:
+
+```bash
+docker compose -f infra/compose/docker-compose.yml up --build
+```
+
+### Useful URLs after startup:
+
+Config Server health: http://localhost:8888/actuator/health
+Eureka dashboard: http://localhost:8761
+Reservation service ping: http://localhost:8080/api/ping
+Reservation service health: http://localhost:8080/actuator/health
