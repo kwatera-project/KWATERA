@@ -58,6 +58,8 @@ The project is intended to be developed with a team workflow based on:
 - CODEOWNERS
 - GitHub Issues and Kanban-based task tracking
 
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for issue and pull request workflow conventions.
+
 ## Local run
 
 Run the empty runtime environment with Docker Compose:
