@@ -1,0 +1,51 @@
+name: Feature / functional task
+description: Create a task for a new feature, functional change, or business logic implementation
+title: "[Feature] "
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Briefly describe the task
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why is this needed? What problem does it solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What is included in this task?
+    validations:
+      required: true
+
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+      description: What is explicitly not included?
+
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: Definition of Done
+      description: What conditions must be met for this task to be considered complete?
+      placeholder: |
+        - implementation is complete
+        - basic test coverage is added or updated
+        - documentation is updated if needed
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional_notes
+    attributes:
+      label: Additional notes
+      description: Links, dependencies, API notes, mockups, or anything relevant
