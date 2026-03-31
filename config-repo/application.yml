@@ -1,0 +1,10 @@
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+info:
+  project:
+    name: KWATERA
+    stage: empty-runtime-environment
