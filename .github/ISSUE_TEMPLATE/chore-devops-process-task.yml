@@ -1,0 +1,63 @@
+name: Chore / DevOps / process task
+description: Create a task for repository setup, tooling, CI/CD, documentation, or process improvements
+title: "[Chore] "
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Briefly describe the task
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Select the area affected by this task
+      options:
+        - Repository
+        - CI/CD
+        - Docker / local environment
+        - Testing / quality
+        - Documentation
+        - Team process
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why is this task needed?
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What is included in this task?
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies / risks
+      description: Are there blockers, dependencies, or risks?
+
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: Definition of Done
+      description: What conditions must be met for this task to be considered complete?
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional_notes
+    attributes:
+      label: Additional notes
+      description: Anything else relevant
