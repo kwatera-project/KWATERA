@@ -70,7 +70,7 @@ docker compose -f infra/compose/docker-compose.yml up --build
 
 ### Useful URLs after startup:
 
-Config Server health: http://localhost:8888/actuator/health
-Eureka dashboard: http://localhost:8761
-Reservation service ping: http://localhost:8080/api/ping
-Reservation service health: http://localhost:8080/actuator/health
+- Config Server health: ```http://localhost:8888/actuator/health```
+- Eureka dashboard: ```http://localhost:8761```
+- Reservation service ping: ```http://localhost:8080/api/ping```
+- Reservation service health: ```http://localhost:8080/actuator/health```
