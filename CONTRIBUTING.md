@@ -56,8 +56,38 @@ Preferred convention:
 2. Define context, scope, and Definition of Done.
 3. Create a branch for the issue.
 4. Implement only the changes required by that issue.
-5. Open a pull request using the shared PR template.
-6. Link the issue in the PR description.
-7. Provide testing status and complete the checklist.
-8. Request review.
-9. Merge after review is complete.
+5. Run local quality checks with `.\scripts\quality\pre-PR-check.ps1`.
+6. Open a pull request using the shared PR template.
+7. Link the issue in the PR description.
+8. Provide testing status and complete the checklist.
+9. Request review.
+10. Merge after review is complete.
+
+
+## Local quality checks before PR
+
+Before opening a pull request, contributors should run the local quality check script:
+
+```powershell
+.\scripts\quality\pre-PR-check.ps1
+```
+
+The script currently runs the following checks for all Java services in the repository:
+
+- `spotless:check`
+- `clean verify`
+- `spotbugs:check`
+
+Purpose:
+
+- catch formatting or build problems before opening a PR
+- reduce avoidable CI failures
+- keep pull requests focused on implementation instead of basic quality fixes
+
+JaCoCo coverage reports are generated during `verify` and can be viewed locally in:
+
+- `services/config-server/target/site/jacoco/index.html`
+- `services/service-registry/target/site/jacoco/index.html`
+- `services/reservation-service/target/site/jacoco/index.html`
+
+These local checks are recommended before every PR, **but the final source of truth remains the GitHub Actions CI workflow**.

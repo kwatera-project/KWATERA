@@ -68,9 +68,29 @@ Run the empty runtime environment with Docker Compose:
 docker compose -f infra/compose/docker-compose.yml up --build
 ```
 
+### Local quality checks before pull request
+
+Before opening a pull request, run local quality checks:
+
+```powershell
+.\scripts\quality\pre-PR-check.ps1
+```
+
+This script runs the current local quality gate for all Java services:
+
+- `spotless:check`
+- `clean verify`
+- `spotbugs:check`
+
+JaCoCo coverage reports are generated locally during `verify` and can be opened in a browser from:
+
+- `services/config-server/target/site/jacoco/index.html`
+- `services/service-registry/target/site/jacoco/index.html`
+- `services/reservation-service/target/site/jacoco/index.html`
+
 ### Useful URLs after startup:
 
-Config Server health: http://localhost:8888/actuator/health
-Eureka dashboard: http://localhost:8761
-Reservation service ping: http://localhost:8080/api/ping
-Reservation service health: http://localhost:8080/actuator/health
+- Config Server health: ```http://localhost:8888/actuator/health```
+- Eureka dashboard: ```http://localhost:8761```
+- Reservation service ping: ```http://localhost:8080/api/ping```
+- Reservation service health: ```http://localhost:8080/actuator/health```

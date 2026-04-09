@@ -2,17 +2,27 @@ name: CI
 
 on:
   push:
+    branches:
+      - main
   pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
 
 jobs:
-  build:
+  quality:
+    name: Quality - ${{ matrix.service }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        service:
-          - config-server
-          - service-registry
-          - reservation-service
+        include:
+          - service: config-server
+            sonar_project_key: kwatera-project_KWATERA_config-server
+          - service: service-registry
+            sonar_project_key: kwatera-project_KWATERA_service-registry
+          - service: reservation-service
+            sonar_project_key: kwatera-project_KWATERA_reservation-service
 
     defaults:
       run:
@@ -21,6 +31,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Java 25
         uses: actions/setup-java@v4
@@ -29,8 +41,44 @@ jobs:
           java-version: '25'
           cache: maven
 
+      - name: Cache Sonar packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
       - name: Make mvnw executable
         run: chmod +x mvnw
 
-      - name: Run tests
-        run: ./mvnw test
+      - name: Check formatting
+        run: ./mvnw -B -ntp spotless:check
+
+      - name: Build, test and generate coverage
+        run: ./mvnw -B -ntp clean verify
+
+      - name: Run SpotBugs
+        run: ./mvnw -B -ntp spotbugs:check
+
+      - name: SonarQube Cloud analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: >
+          ./mvnw -B -ntp
+          org.sonarsource.scanner.maven:sonar-maven-plugin:5.5.0.6356:sonar
+          -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+          -Dsonar.projectKey=${{ matrix.sonar_project_key }}
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.qualitygate.wait=true
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-${{ matrix.service }}
+          if-no-files-found: ignore
+          path: |
+            services/${{ matrix.service }}/target/site/jacoco/**
+            services/${{ matrix.service }}/target/surefire-reports/**
+            services/${{ matrix.service }}/target/failsafe-reports/**
+            services/${{ matrix.service }}/target/spotbugsXml.xml
