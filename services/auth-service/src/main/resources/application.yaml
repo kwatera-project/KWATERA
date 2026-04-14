@@ -1,11 +1,19 @@
 server:
-  port: 8080
+  port: 8081
 
 spring:
   application:
-    name: reservation-service
+    name: auth-service
   config:
     import: optional:configserver:http://config-server:8888
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
 
 eureka:
   client:
