@@ -12,8 +12,10 @@
         <module>services/api-gateway</module>
         <module>services/auth-service</module>
         <module>services/config-server</module>
+       <module>services/property-service</module>
         <module>services/reservation-service</module>
         <module>services/service-registry</module>
+        <module>services/db-migrations</module>
     </modules>
 
     <dependencyManagement>

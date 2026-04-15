@@ -1,9 +1,9 @@
 server:
-  port: 8080
+  port: 8083
 
 spring:
   application:
-    name: reservation-service
+    name: listing-service
   config:
     import: optional:configserver:http://config-server:8888
   datasource:
