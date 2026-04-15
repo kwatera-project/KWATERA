@@ -20,7 +20,7 @@
         <developer/>
     </developers>
     <properties>
-        <java.version>21</java.version>
+        <java.version>25</java.version>
         <spring-cloud.version>2023.0.4</spring-cloud.version>
         <spotless.version>3.4.0</spotless.version>
         <jacoco.version>0.8.14</jacoco.version>
@@ -68,7 +68,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.32</version>
+            <version>1.18.44</version>
             <scope>provided</scope>
         </dependency>
 
@@ -125,7 +125,7 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>1.18.32</version>
+                            <version>1.18.44</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
