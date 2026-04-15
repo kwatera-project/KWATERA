@@ -10,3 +10,8 @@ spring:
 eureka:
   client:
     enabled: false
+
+app:
+  jpa:
+    auditing:
+      enabled: false

@@ -5,22 +5,16 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
-
 import lombok.Setter;
 
 @Getter
 @Setter
 public class RegisterRequest {
-    @NotBlank
-    private String username;
+  @NotBlank private String username;
 
-    @Email
-    @NotBlank
-    private String email;
+  @Email @NotBlank private String email;
 
-    @NotNull
-    private Role role;
+  @NotNull private Role role;
 
-    @NotBlank
-    private String password;
+  @NotBlank private String password;
 }

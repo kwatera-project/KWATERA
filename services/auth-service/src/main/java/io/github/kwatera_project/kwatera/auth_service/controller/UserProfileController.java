@@ -15,16 +15,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class UserProfileController {
 
-    private final UserService userService;
-    private final UserMapper userMapper;
+  private final UserService userService;
+  private final UserMapper userMapper;
 
-    @GetMapping("/me")
-    public ResponseEntity<UserProfileDto> getUserProfile(
-            final Authentication authentication) {
+  @GetMapping("/me")
+  public ResponseEntity<UserProfileDto> getUserProfile(final Authentication authentication) {
 
-        final var user =
-                userService.getUserByEmail(authentication.getName());
+    final var user = userService.getUserByEmail(authentication.getName());
 
-        return ResponseEntity.ok(userMapper.toUserProfileDto(user));
-    }
+    return ResponseEntity.ok(userMapper.toUserProfileDto(user));
+  }
 }

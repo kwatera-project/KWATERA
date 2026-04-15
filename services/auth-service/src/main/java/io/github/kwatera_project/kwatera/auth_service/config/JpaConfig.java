@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 @Configuration
 @EnableJpaAuditing
 public class JpaConfig {
-    // This configuration enables JPA auditing for automatic timestamping.
+  // This configuration enables JPA auditing for automatic timestamping.
 }

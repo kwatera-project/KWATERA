@@ -15,14 +15,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final UserService userService;
+  private final UserService userService;
 
-    @PostMapping("/register")
-    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest request) {
-        userService.register(request.getUsername(), request.getEmail(), request.getRole(), request.getPassword());
-        return ResponseEntity.ok("User registered");
-    }
-
+  @PostMapping("/register")
+  public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest request) {
+    userService.register(
+        request.getUsername(), request.getEmail(), request.getRole(), request.getPassword());
+    return ResponseEntity.ok("User registered");
+  }
 }
-
-
