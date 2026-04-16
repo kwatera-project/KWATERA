@@ -17,12 +17,27 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - service: api-gateway
+            sonar_enabled: false
+            sonar_project_key: ""
+          - service: auth-service
+            sonar_enabled: false
+            sonar_project_key: ""
           - service: config-server
+            sonar_enabled: true
             sonar_project_key: kwatera-project_KWATERA_config-server
-          - service: service-registry
-            sonar_project_key: kwatera-project_KWATERA_service-registry
+          - service: property-service
+            sonar_enabled: false
+            sonar_project_key: ""
           - service: reservation-service
+            sonar_enabled: true
             sonar_project_key: kwatera-project_KWATERA_reservation-service
+          - service: service-registry
+            sonar_enabled: true
+            sonar_project_key: kwatera-project_KWATERA_service-registry
+          - service: db-migrations
+            sonar_enabled: false
+            sonar_project_key: ""
 
     defaults:
       run:
@@ -34,11 +49,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Java 25
+      - name: Setup Java 23
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '25'
+          java-version: '23'
           cache: maven
 
       - name: Cache Sonar packages
@@ -61,6 +76,7 @@ jobs:
         run: ./mvnw -B -ntp spotbugs:check
 
       - name: SonarQube Cloud analysis
+        if: ${{ matrix.sonar_enabled }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: >
@@ -70,6 +86,10 @@ jobs:
           -Dsonar.projectKey=${{ matrix.sonar_project_key }}
           -Dsonar.host.url=https://sonarcloud.io
           -Dsonar.qualitygate.wait=true
+
+      - name: Skip SonarQube Cloud analysis
+        if: ${{ !matrix.sonar_enabled }}
+        run: echo "Skipping SonarCloud for ${{ matrix.service }} because its SonarCloud project is not configured yet."
 
       - name: Upload reports
         if: always()
