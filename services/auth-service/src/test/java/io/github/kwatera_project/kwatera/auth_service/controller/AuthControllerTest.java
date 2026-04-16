@@ -12,28 +12,28 @@ import io.github.kwatera_project.kwatera.auth_service.model.Role;
 import io.github.kwatera_project.kwatera.auth_service.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration;
+import org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
 
 @WebMvcTest(
     controllers = AuthController.class,
     excludeAutoConfiguration = {
-      org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration.class,
-      org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
-          .class
+      SecurityAutoConfiguration.class,
+      UserDetailsServiceAutoConfiguration.class
     })
 class AuthControllerTest {
 
   @Autowired private MockMvc mockMvc;
 
-  @MockBean private UserService userService;
+  @MockitoBean private UserService userService;
 
   @Autowired private ObjectMapper objectMapper;
 
-  // ✅ SUCCESS
   @Test
   void shouldRegisterUser() throws Exception {
     RegisterRequest request = new RegisterRequest();
@@ -53,7 +53,6 @@ class AuthControllerTest {
     verify(userService).register("jan", "jan@test.com", Role.GUEST, "123");
   }
 
-  // ❌ USER EXISTS → 409
   @Test
   void shouldReturnConflictWhenUserExists() throws Exception {
     RegisterRequest request = new RegisterRequest();
@@ -74,7 +73,6 @@ class AuthControllerTest {
         .andExpect(status().isConflict());
   }
 
-  // ❌ INVALID JSON → 400
   @Test
   void shouldReturnBadRequestWhenInvalidJson() throws Exception {
     String invalidJson = "{ invalid json }";
@@ -85,11 +83,10 @@ class AuthControllerTest {
         .andExpect(status().isBadRequest());
   }
 
-  // ❌ BLANK USERNAME FIELD → 400
   @Test
   void shouldReturn400_whenUsernameIsBlank() throws Exception {
     RegisterRequest request = new RegisterRequest();
-    request.setUsername(""); // ❌ invalid
+    request.setUsername("");
     request.setEmail("test@test.com");
     request.setPassword("123456");
     request.setRole(Role.GUEST);
@@ -104,12 +101,11 @@ class AuthControllerTest {
     verify(userService, never()).register(any(), any(), any(), any());
   }
 
-  // ❌ INVALID EMAIL FIELD → 400
   @Test
   void shouldReturn400_whenEmailInvalid() throws Exception {
     RegisterRequest request = new RegisterRequest();
     request.setUsername("test");
-    request.setEmail("not-email"); // ❌ invalid
+    request.setEmail("not-email");
     request.setPassword("123456");
     request.setRole(Role.GUEST);
 
@@ -121,14 +117,13 @@ class AuthControllerTest {
         .andExpect(status().isBadRequest());
   }
 
-  // ❌ NULL ROLE FIELD → 400
   @Test
   void shouldReturn400_whenRoleIsNull() throws Exception {
     RegisterRequest request = new RegisterRequest();
     request.setUsername("test");
     request.setEmail("test@test.com");
     request.setPassword("123456");
-    request.setRole(null); // ❌
+    request.setRole(null);
 
     mockMvc
         .perform(
