@@ -68,6 +68,12 @@ Run the empty runtime environment with Docker Compose:
 docker compose -f infra/compose/docker-compose.yml up --build
 ```
 
+### Local prerequisites
+
+- Java 25
+- Maven 3.9+
+- Docker with Compose support
+
 ### Local quality checks before pull request
 
 Before opening a pull request, run local quality checks:
