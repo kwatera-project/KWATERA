@@ -8,3 +8,9 @@ info:
   project:
     name: KWATERA
     stage: empty-runtime-environment
+
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/database
+    username: user
+    password: secret123!

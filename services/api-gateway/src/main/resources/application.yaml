@@ -1,0 +1,52 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: api-gateway
+  config:
+    import: optional:configserver:http://config-server:8888
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: http://auth-service:8081
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - TokenRelay
+  security:
+    oauth2:
+      client:
+        provider:
+          platform-auth-server:
+            authorization-uri: http://localhost:8081/oauth2/authorize
+            token-uri: http://localhost:8081/oauth2/token
+            jwk-set-uri: http://localhost:8081/oauth2/jwks
+        registration:
+          gateway-client:
+            provider: platform-auth-server
+            client-id: gateway-client
+            client-secret: "secret"
+            client-authentication-method: client_secret_basic
+            authorization-grant-type: authorization_code
+            redirect-uri: http://localhost:8090/login/oauth2/code/gateway-client
+            scope:
+              - openid
+              - profile
+              - email
+
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8081
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://service-registry:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

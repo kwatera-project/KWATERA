@@ -1,33 +1,135 @@
 services:
   config-server:
     build:
-      context: ../../services/config-server
+      context: ../..
+      dockerfile: services/config-server/Dockerfile
     container_name: kwatera-config-server
     ports:
       - "8888:8888"
     volumes:
       - ../../config-repo:/config-repo:ro
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8888/actuator/health" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   service-registry:
     build:
-      context: ../../services/service-registry
+      context: ../..
+      dockerfile: services/service-registry/Dockerfile
     container_name: kwatera-service-registry
     ports:
       - "8761:8761"
     environment:
       CONFIG_SERVER_URL: http://config-server:8888
     depends_on:
-      - config-server
+      config-server:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8761/actuator/health" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   reservation-service:
     build:
-      context: ../../services/reservation-service
+      context: ../..
+      dockerfile: services/reservation-service/Dockerfile
     container_name: kwatera-reservation-service
     ports:
       - "8080:8080"
     environment:
       CONFIG_SERVER_URL: http://config-server:8888
       EUREKA_DEFAULT_ZONE: http://service-registry:8761/eureka
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/database
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: secret123!
     depends_on:
-      - config-server
-      - service-registry
+      config-server:
+        condition: service_healthy
+      service-registry:
+        condition: service_healthy
+
+  db-migrations:
+    build:
+      context: ../..
+      dockerfile: services/db-migrations/Dockerfile
+    container_name: kwatera-db-migrations
+    ports:
+      - "8084:8084"
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_DEFAULT_ZONE: http://service-registry:8761/eureka
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/database
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: secret123!
+    depends_on:
+      config-server:
+        condition: service_healthy
+      service-registry:
+        condition: service_healthy
+
+  property-service:
+    build:
+      context: ../..
+      dockerfile: services/property-service/Dockerfile
+    container_name: kwatera-property-service
+    ports:
+      - "8083:8083"
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_DEFAULT_ZONE: http://service-registry:8761/eureka
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/database
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: secret123!
+    depends_on:
+      config-server:
+        condition: service_healthy
+      service-registry:
+        condition: service_healthy
+
+  auth-service:
+    build:
+      context: ../..
+      dockerfile: services/auth-service/Dockerfile
+    container_name: kwatera-auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_DEFAULT_ZONE: http://service-registry:8761/eureka
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/database
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: secret123!
+    depends_on:
+      config-server:
+        condition: service_healthy
+      service-registry:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+
+  api-gateway:
+    build:
+      context: ../..
+      dockerfile: services/api-gateway/Dockerfile
+    container_name: kwatera-api-gateway
+    ports:
+      - "8090:8090"
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_DEFAULT_ZONE: http://service-registry:8761/eureka
+    depends_on:
+      config-server:
+          condition: service_started
+    restart: on-failure
+
+  postgres:
+    image: "postgres:latest"
+    environment:
+      - "POSTGRES_DB=database"
+      - "POSTGRES_PASSWORD=secret123!"
+      - "POSTGRES_USER=user"
+    ports:
+      - "5433:5432"
