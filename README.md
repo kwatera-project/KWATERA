@@ -100,3 +100,7 @@ JaCoCo coverage reports are generated locally during `verify` and can be opened 
 - Eureka dashboard: [http://localhost:8761](http://localhost:8761)
 - Reservation service ping: [http://localhost:8080/api/ping](http://localhost:8080/api/ping)
 - Reservation service health: [http://localhost:8080/actuator/health](http://localhost:8080/actuator/health)
+
+## Additional documentation
+
+- [CI quality pipeline](docs/ci/CI_QUALITY_PIPELINE.md)

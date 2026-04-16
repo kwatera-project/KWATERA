@@ -18,17 +18,17 @@ jobs:
       matrix:
         include:
           - service: api-gateway
-            sonar_enabled: false
-            sonar_project_key: ""
+            sonar_enabled: true
+            sonar_project_key: kwatera-project_KWATERA_api-gateway
           - service: auth-service
-            sonar_enabled: false
-            sonar_project_key: ""
+            sonar_enabled: true
+            sonar_project_key: kwatera-project_KWATERA_auth-service
           - service: config-server
             sonar_enabled: true
             sonar_project_key: kwatera-project_KWATERA_config-server
           - service: property-service
-            sonar_enabled: false
-            sonar_project_key: ""
+            sonar_enabled: true
+            sonar_project_key: kwatera-project_KWATERA_property-service
           - service: reservation-service
             sonar_enabled: true
             sonar_project_key: kwatera-project_KWATERA_reservation-service
@@ -36,8 +36,8 @@ jobs:
             sonar_enabled: true
             sonar_project_key: kwatera-project_KWATERA_service-registry
           - service: db-migrations
-            sonar_enabled: false
-            sonar_project_key: ""
+            sonar_enabled: true
+            sonar_project_key: kwatera-project_KWATERA_db-migrations
 
     defaults:
       run:
