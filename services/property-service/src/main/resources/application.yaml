@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: listing-service
+    name: property-service
   config:
     import: optional:configserver:http://config-server:8888
   datasource:

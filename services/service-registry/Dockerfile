@@ -1,10 +1,10 @@
-FROM maven:3.9.11-eclipse-temurin-21 AS build
+FROM maven:3.9.11-eclipse-temurin-25 AS build
 WORKDIR /app
 COPY . .
 RUN mvn install -N
 RUN mvn clean package -pl services/service-registry -am -DskipTests
 
-FROM eclipse-temurin:21-jdk
+FROM eclipse-temurin:25-jdk
 WORKDIR /app
 COPY --from=build /app/services/service-registry/target/*.jar app.jar
 EXPOSE 8761

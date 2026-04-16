@@ -13,7 +13,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <java.version>25</java.version>
-        <maven.compiler.release>22</maven.compiler.release>
+        <maven.compiler.release>${java.version}</maven.compiler.release>
 
         <spring-boot.version>3.3.5</spring-boot.version>
         <spring-cloud.version>2023.0.4</spring-cloud.version>
