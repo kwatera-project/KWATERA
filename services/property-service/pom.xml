@@ -80,6 +80,19 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/PropertyServiceApplication.class</exclude>
+                        <exclude>**/config/JpaConfig.class</exclude>
+                        <exclude>**/model/</exclude>
+                        <exclude>**/dto/</exclude>
+                        <exclude>**/mapper/</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
