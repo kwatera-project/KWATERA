@@ -1,17 +1,17 @@
 [BACK TO README.MD](../../README.md)
 # CI Quality Pipeline
 
-This document describes the quality pipeline used in the KWATERA repository and explains what is executed for each module in CI.
+This document describes the quality pipeline used in the KWATERA repository and explains what is executed in CI for both the frontend application and the backend modules.
 
 ## Purpose
 
-The CI pipeline verifies code quality and build stability for each module defined in the GitHub Actions matrix.
+The CI pipeline verifies code quality and build stability across the repository.
 
 Its goals are:
 - keep formatting and static analysis consistent across modules,
 - detect build or test regressions early,
-- run SonarCloud analysis for onboarded modules,
-- make test and analysis reports available as downloadable workflow artifacts.
+- run SonarCloud analysis for onboarded backend modules,
+- make test and analysis reports available as downloadable workflow artifacts where applicable.
 
 ## Workflow scope
 
@@ -22,15 +22,29 @@ The main CI workflow is defined in:
 It runs on:
 - `push` to `main`
 - `pull_request` targeting `main` for:
-    - `opened`
-    - `synchronize`
-    - `reopened`
+   - `opened`
+   - `synchronize`
+   - `reopened`
 
-The workflow uses a matrix strategy, so each module is processed independently.
+The workflow currently contains two quality paths:
+- a dedicated frontend job for the application under `frontend/`,
+- a backend matrix job for Java modules under `services/`.
 
-## Modules covered by the matrix
+The backend part of the workflow uses a matrix strategy, so each backend module is processed independently.
 
-At the moment, the CI matrix covers:
+## Components covered by CI
+
+### Frontend application
+
+The frontend quality job covers the application located in:
+
+```text
+frontend/
+```
+
+### Backend modules covered by the matrix
+
+At the moment, the backend CI matrix covers:
 
 - `api-gateway`
 - `auth-service`
@@ -40,87 +54,118 @@ At the moment, the CI matrix covers:
 - `service-registry`
 - `db-migrations`
 
-Each module is executed from its own working directory:
+Each backend module is executed from its own working directory:
 
 ```text
 services/<module-name>
 ```
 
-## What CI runs for each module
+## What CI runs for the frontend
 
-For every module in the matrix, CI executes the following steps:
+For the frontend job, CI executes the following steps:
 
 1. **Checkout repository**
-    - uses full git history with `fetch-depth: 0`
-    - this is important for SonarCloud branch and pull request analysis
+
+2. **Set up Bun**
+   - installs the Bun runtime used by the frontend toolchain
+
+3. **Install dependencies**
+   - runs:
+     ```bash
+     bun install --frozen-lockfile
+     ```
+   - verifies that the lockfile is valid and dependencies install correctly
+
+4. **Run lint**
+   - runs:
+     ```bash
+     bun run lint
+     ```
+   - checks frontend code quality against the configured linting rules
+
+5. **Build frontend**
+   - runs:
+     ```bash
+     bun run build
+     ```
+   - verifies that the frontend builds successfully for production
+
+## What CI runs for each backend module
+
+For every backend module in the matrix, CI executes the following steps:
+
+1. **Checkout repository**
+   - uses full git history with `fetch-depth: 0`
+   - this is important for SonarCloud branch and pull request analysis
 
 2. **Set up Java 25**
-    - installs Temurin JDK 25
-    - enables Maven dependency caching
+   - installs Temurin JDK 25
+   - enables Maven dependency caching
 
 3. **Cache Sonar packages**
-    - caches Sonar scanner data in `~/.sonar/cache`
-    - reduces repeated download time between workflow runs
+   - caches Sonar scanner data in `~/.sonar/cache`
+   - reduces repeated download time between workflow runs
 
 4. **Make Maven Wrapper executable**
-    - runs:
-      ```bash
-      chmod +x mvnw
-      ```
+   - runs:
+     ```bash
+     chmod +x mvnw
+     ```
 
 5. **Check formatting**
-    - runs:
-      ```bash
-      ./mvnw -B -ntp spotless:check
-      ```
-    - verifies whether the code follows the configured formatting rules
-    - does not modify files in CI
-    - fails the job if formatting is incorrect
+   - runs:
+     ```bash
+     ./mvnw -B -ntp spotless:check
+     ```
+   - verifies whether the code follows the configured formatting rules
+   - does not modify files in CI
+   - fails the job if formatting is incorrect
 
 6. **Build, test and generate coverage**
-    - runs:
-      ```bash
-      ./mvnw -B -ntp clean verify
-      ```
-    - performs a clean build
-    - runs tests included in the Maven lifecycle
-    - generates coverage and test outputs if configured in the module
+   - runs:
+     ```bash
+     ./mvnw -B -ntp clean verify
+     ```
+   - performs a clean build
+   - runs tests included in the Maven lifecycle
+   - generates coverage and test outputs if configured in the module
 
 7. **Run SpotBugs**
-    - runs:
-      ```bash
-      ./mvnw -B -ntp spotbugs:check
-      ```
-    - performs static analysis for potential bug patterns in Java code
-    - fails the job if SpotBugs reports issues above the accepted threshold
+   - runs:
+     ```bash
+     ./mvnw -B -ntp spotbugs:check
+     ```
+   - performs static analysis for potential bug patterns in Java code
+   - fails the job if SpotBugs reports issues above the accepted threshold
 
 8. **Run SonarCloud analysis**
-    - executed only when `sonar_enabled: true` for the module
-    - runs:
-      ```bash
-      ./mvnw -B -ntp org.sonarsource.scanner.maven:sonar-maven-plugin:5.5.0.6356:sonar \
-        -Dsonar.organization=${SONAR_ORGANIZATION} \
-        -Dsonar.projectKey=<module-project-key> \
-        -Dsonar.host.url=https://sonarcloud.io \
-        -Dsonar.qualitygate.wait=true
-      ```
-    - publishes code analysis results to SonarCloud
-    - waits for the Quality Gate result before finishing the step
+   - executed only when `sonar_enabled: true` for the module
+   - runs:
+     ```bash
+     ./mvnw -B -ntp org.sonarsource.scanner.maven:sonar-maven-plugin:5.5.0.6356:sonar \
+       -Dsonar.organization=${SONAR_ORGANIZATION} \
+       -Dsonar.projectKey=<module-project-key> \
+       -Dsonar.host.url=https://sonarcloud.io \
+       -Dsonar.qualitygate.wait=true
+     ```
+   - publishes code analysis results to SonarCloud
+   - waits for the Quality Gate result before finishing the step
 
 9. **Upload reports**
-    - uploads workflow artifacts even if the job fails
-    - attempts to upload report files generated by the current module
-    - supported report paths include:
-        - JaCoCo reports
-        - Surefire reports
-        - Failsafe reports
-        - SpotBugs XML report
-    - some of these files may be missing if a module does not generate them
+   - uploads workflow artifacts even if the job fails
+   - attempts to upload report files generated by the current module
+   - supported report paths include:
+      - JaCoCo reports
+      - Surefire reports
+      - Failsafe reports
+      - SpotBugs XML report
+   - some of these files may be missing if a module does not generate them
+
 ## SonarCloud configuration
 
-KWATERA uses SonarCloud in monorepo mode.
+KWATERA uses SonarCloud in monorepo mode for backend modules.
 
-Each onboarded module must have:
+Each onboarded backend module must have:
 - its own SonarCloud project,
 - its own unique `sonar.projectKey`,
 - a matching entry in the CI matrix.
@@ -142,53 +187,53 @@ Examples:
 
 ## Meaning of matrix fields
 
-Each matrix entry contains:
+Each backend matrix entry contains:
 
 - `service`
-    - module directory name under `services/`
+   - module directory name under `services/`
 
 - `sonar_enabled`
-    - enables or disables SonarCloud analysis for the module
+   - enables or disables SonarCloud analysis for the module
 
 - `sonar_project_key`
-    - SonarCloud project key used by the Maven Sonar scanner
+   - SonarCloud project key used by the Maven Sonar scanner
 
-## Requirements for adding a new module to CI
+## Requirements for adding a new backend module to CI
 
-A module should be added to the CI matrix only if it is independently buildable in its own directory.
+A backend module should be added to the CI matrix only if it is independently buildable in its own directory.
 
 Minimum requirements:
 - directory exists under `services/<module-name>`
 - contains its own `pom.xml`
 - contains its own `mvnw`
 - can successfully run:
-    - `spotless:check`
-    - `clean verify`
-    - `spotbugs:check`
+   - `spotless:check`
+   - `clean verify`
+   - `spotbugs:check`
 
 If SonarCloud should also be enabled, the module must first be onboarded in SonarCloud and assigned a valid unique project key.
 
-## Recommended procedure for onboarding a new module
+## Recommended procedure for onboarding a new backend module
 
 1. Create or verify the module under `services/<module-name>`.
 2. Ensure the module builds locally with Maven Wrapper.
 3. Add the module to the CI matrix with:
-    - `sonar_enabled: false`
-    - empty `sonar_project_key`
+   - `sonar_enabled: false`
+   - empty `sonar_project_key`
 4. Verify that non-Sonar quality checks pass in CI.
 5. Create a dedicated SonarCloud monorepo project for the module.
 6. Update the CI matrix:
-    - set `sonar_enabled: true`
-    - set the correct `sonar_project_key`
+   - set `sonar_enabled: true`
+   - set the correct `sonar_project_key`
 7. Open a pull request and verify:
-    - workflow success,
-    - SonarCloud analysis,
-    - PR decoration,
-    - Quality Gate result.
+   - workflow success,
+   - SonarCloud analysis,
+   - PR decoration,
+   - Quality Gate result.
 
 ## Reports produced by CI
 
-The workflow attempts to upload the following report locations when they are present:
+For backend modules, the workflow attempts to upload the following report locations when they are present:
 
 ```text
 services/<module>/target/site/jacoco/**
@@ -197,14 +242,16 @@ services/<module>/target/failsafe-reports/**
 services/<module>/target/spotbugsXml.xml
 ```
 
-Not every module generates every report type. The uploaded artifacts may include:
+Not every backend module generates every report type. The uploaded artifacts may include:
 - test execution results,
 - integration test output,
 - coverage data,
 - SpotBugs findings.
 
+The frontend job currently verifies install, lint and build, but does not upload dedicated workflow report artifacts.
+
 ## Notes
 
 - `db-migrations` is included in the quality pipeline as a technical module, even though it is not treated as a business microservice.
-- SonarCloud onboarding should be completed before enabling Sonar for a newly added module.
-- The quality pipeline is intentionally module-based so failures in one module do not automatically block analysis of all others.
+- SonarCloud onboarding should be completed before enabling Sonar for a newly added backend module.
+- The quality pipeline is intentionally split into frontend and backend paths, while the backend path remains module-based so failures in one backend module do not automatically block analysis of all others.
