@@ -125,6 +125,18 @@ services:
           condition: service_started
     restart: on-failure
 
+  frontend:
+    build:
+      context: ../..
+      dockerfile: frontend/Dockerfile
+    container_name: kwatera-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      api-gateway:
+        condition: service_started
+    restart: on-failure
+
   postgres:
     image: "postgres:latest"
     environment:

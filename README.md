@@ -96,7 +96,11 @@ JaCoCo coverage reports are generated locally during `verify` and can be opened 
 
 ### Useful URLs after startup:
 
+#### Backend
 - Config Server health: [http://localhost:8888/actuator/health](http://localhost:8888/actuator/health)
 - Eureka dashboard: [http://localhost:8761](http://localhost:8761)
 - Reservation service ping: [http://localhost:8080/api/ping](http://localhost:8080/api/ping)
 - Reservation service health: [http://localhost:8080/actuator/health](http://localhost:8080/actuator/health)
+
+#### Frontend
+- Vite dev server for React [http://localhost:5173](http://localhost:5173)
