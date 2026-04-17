@@ -104,3 +104,8 @@ JaCoCo coverage reports are generated locally during `verify` and can be opened 
 
 #### Frontend
 - Vite dev server for React [http://localhost:5173](http://localhost:5173)
+
+## Additional documentation
+
+- [CI quality pipeline](docs/ci/CI_QUALITY_PIPELINE.md)
+
