@@ -3,7 +3,8 @@ $ErrorActionPreference = "Stop"
 $steps = @(
     "Invoke-SpotlessCheck.ps1",
     "Invoke-MavenVerify.ps1",
-    "Invoke-SpotBugsCheck.ps1"
+    "Invoke-SpotBugsCheck.ps1",
+    "Invoke-FrontendCheck.ps1"
 )
 
 Write-Host ""
