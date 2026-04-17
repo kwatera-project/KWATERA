@@ -72,6 +72,7 @@ docker compose -f infra/compose/docker-compose.yml up --build
 
 - Java 25
 - Maven 3.9+
+- Bun
 - Docker with Compose support
 
 ### Local quality checks before pull request
@@ -82,11 +83,19 @@ Before opening a pull request, run local quality checks:
 .\scripts\quality\pre-PR-check.ps1
 ```
 
-This script runs the current local quality gate for all Java services:
+This script runs the current local quality gate for the backend services and the frontend application.
+
+For Java services it runs:
 
 - `spotless:check`
 - `clean verify`
 - `spotbugs:check`
+
+For the frontend it runs:
+
+- `bun install --frozen-lockfile`
+- `bun run lint`
+- `bun run build`
 
 JaCoCo coverage reports are generated locally during `verify` and can be opened in a browser from:
 
