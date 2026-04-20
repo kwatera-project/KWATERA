@@ -1,8 +1,13 @@
 import '../App.css'
-import { Link } from "react-router-dom"
+import {Link} from "react-router-dom"
 import {useLogout} from "./Logout.tsx"
 
+
 export default function Navbar() {
+
+    const isLoggedIn = localStorage.getItem("token") !== null
+    const logout = useLogout()
+
     return (
         <nav className="flex justify-between p-4 bg-card shadow-md">
 
@@ -17,21 +22,21 @@ export default function Navbar() {
                 >
                     Home
                 </Link>
-                <Link
-                    to="/register"
-                    className="hover:text-[rgb(var(--color-burgundy))] transition"
-                >
-                    Register
-                </Link>
-                <Link
-                    to="/login"
-                    className="hover:text-[rgb(var(--color-burgundy))] transition"
-                >
-                    Login
-                </Link>
-                <button onClick={useLogout}>
-                    Logout
-                </button>
+                {isLoggedIn ? (
+                    <button
+                        onClick={logout}
+                        className="hover:text-[rgb(var(--color-burgundy))] transition"
+                    >
+                        Logout
+                    </button>
+                ) : (
+                    <Link
+                        to="/login"
+                        className="hover:text-[rgb(var(--color-burgundy))] transition"
+                    >
+                        Login
+                    </Link>
+                )}
             </div>
 
         </nav>

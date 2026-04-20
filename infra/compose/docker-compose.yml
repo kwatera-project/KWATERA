@@ -65,6 +65,8 @@ services:
       SPRING_DATASOURCE_USERNAME: user
       SPRING_DATASOURCE_PASSWORD: secret123!
     depends_on:
+      postgres:
+        condition: service_started
       config-server:
         condition: service_healthy
       service-registry:

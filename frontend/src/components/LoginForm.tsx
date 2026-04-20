@@ -1,6 +1,6 @@
 import '../App.css'
 import {useState} from "react"
-import {useNavigate} from "react-router-dom"
+import {useNavigate, Link} from "react-router-dom"
 
 export default function LoginForm() {
     const [formData, setFormData] = useState({
@@ -54,6 +54,11 @@ export default function LoginForm() {
                 <h1 className="mb-6 text-3xl font-bold text-title text-center">
                     Login
                 </h1>
+                <p className="mt-1 mb-1 text-center text-sm">
+                    <Link to="/register" className="text-[rgb(var(--color-burgundy))] hover:underline">
+                        Don't have an account?
+                    </Link>
+                </p>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <input
                         type="email"
