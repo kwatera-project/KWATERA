@@ -16,6 +16,9 @@ public class JwtService {
   private final Key key;
 
   public JwtService(@Value("${jwt.secret}") String secret) {
+    if (secret == null || secret.isBlank()) {
+      throw new IllegalArgumentException("JWT secret cannot be null or empty");
+    }
     this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
   }
 
