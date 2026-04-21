@@ -31,12 +31,7 @@ public final class JwtService {
   }
 
   public String extractUsername(String token) {
-    return Jwts.parser()
-        .verifyWith((SecretKey) key)
-        .build()
-        .parseSignedClaims(token)
-        .getPayload()
-        .getSubject();
+    return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload().getSubject();
   }
 
   public boolean isValid(String token, UserDetails user) {

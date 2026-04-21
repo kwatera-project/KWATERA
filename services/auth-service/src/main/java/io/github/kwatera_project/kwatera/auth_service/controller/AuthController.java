@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,21 +34,16 @@ public class AuthController {
   }
 
   @PostMapping("/login")
-  public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+  public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
 
-    try {
-      Authentication authentication =
-          authenticationManager.authenticate(
-              new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+    Authentication authentication =
+        authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
-      UserDetails user = (UserDetails) authentication.getPrincipal();
+    UserDetails user = (UserDetails) authentication.getPrincipal();
 
-      String token = jwtService.generateToken(user);
+    String token = jwtService.generateToken(user);
 
-      return ResponseEntity.ok(new AuthResponse(token));
-
-    } catch (AuthenticationException e) {
-      return ResponseEntity.status(401).body("Invalid credentials");
-    }
+    return ResponseEntity.ok(new AuthResponse(token));
   }
 }
