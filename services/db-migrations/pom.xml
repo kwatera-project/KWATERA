@@ -13,6 +13,16 @@
     <artifactId>db-migrations</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
+    <properties>
+        <sonar.coverage.exclusions>
+            **/*.java,
+            **/*.class
+        </sonar.coverage.exclusions>
+
+        <sonar.tests></sonar.tests>
+        <sonar.test.inclusions></sonar.test.inclusions>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
