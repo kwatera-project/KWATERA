@@ -3,7 +3,6 @@ package io.github.kwatera_project.kwatera.auth_service.service;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.util.Date;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,9 +10,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 @Service
-public class JwtService {
+public final class JwtService {
 
-  private final Key key;
+  private final SecretKey key;
 
   public JwtService(@Value("${jwt.secret}") String secret) {
     if (secret == null || secret.isBlank()) {
