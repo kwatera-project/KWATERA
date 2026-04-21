@@ -43,7 +43,8 @@ export default function LoginForm() {
 
                 setMessage(`✘ ${errorMessage}`)
             }
-        } catch (error) {
+        } catch (_error) {
+            console.error("Auth Error:", _error)
             setMessage('✘ Error connecting to API server')
         }
     }
