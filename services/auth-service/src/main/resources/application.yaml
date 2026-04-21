@@ -19,6 +19,9 @@ eureka:
     serviceUrl:
       defaultZone: http://service-registry:8761/eureka/
 
+jwt:
+  secret: ${JWT_SECRET}
+
 management:
   endpoints:
     web:

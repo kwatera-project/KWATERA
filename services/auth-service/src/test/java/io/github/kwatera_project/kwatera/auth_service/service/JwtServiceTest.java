@@ -6,13 +6,22 @@ import static org.junit.jupiter.api.Assertions.*;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.util.Date;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
+@ExtendWith(MockitoExtension.class)
 public class JwtServiceTest {
 
-  private final JwtService jwtService = new JwtService();
+  private JwtService jwtService;
+
+  @BeforeEach
+  void setUp() {
+    jwtService = new JwtService("your_test_secret_key_here_that_is_long_enough");
+  }
 
   @Test
   void shouldGenerateTokenAndExtractUsername() {
@@ -65,7 +74,8 @@ public class JwtServiceTest {
 
     Date expiration =
         Jwts.parser()
-            .verifyWith(Keys.hmacShaKeyFor("supersecretkeysupersecretkey123456".getBytes()))
+            .verifyWith(
+                Keys.hmacShaKeyFor("your_test_secret_key_here_that_is_long_enough".getBytes()))
             .build()
             .parseSignedClaims(token)
             .getPayload()
