@@ -67,17 +67,23 @@ public class PropertyService {
     return mapToDto(unit);
   }
 
-  private PropertyDto mapToDto(Property property) {
-    return new PropertyDto(
-        property.getId(), property.getTitle(), property.getDescription(), property.getLocation());
-  }
+    private PropertyDto mapToDto(Property property) {
+        return new PropertyDto(
+                property.getId(),
+                property.getTitle(),
+                property.getDescription(),
+                property.getLocation(),
+                property.getImageUrl()
+        );
+    }
 
-  private UnitDto mapToDto(Unit unit) {
-    return new UnitDto(
-        unit.getId(),
-        unit.getName(),
-        unit.getDescription(),
-        unit.getPricePerNight(),
-        unit.getCapacity());
-  }
+    private UnitDto mapToDto(Unit unit) {
+        return new UnitDto(
+                unit.getId(),
+                unit.getName(),
+                unit.getDescription(),
+                unit.getPricePerNight(),
+                unit.getCapacity()
+        );
+    }
 }
