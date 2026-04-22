@@ -5,26 +5,36 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import io.github.kwatera_project.kwatera.auth_service.config.SecurityConfig;
 import io.github.kwatera_project.kwatera.auth_service.dto.UserProfileDto;
 import io.github.kwatera_project.kwatera.auth_service.mapper.UserMapper;
 import io.github.kwatera_project.kwatera.auth_service.model.Role;
 import io.github.kwatera_project.kwatera.auth_service.model.User;
+import io.github.kwatera_project.kwatera.auth_service.service.JwtService;
 import io.github.kwatera_project.kwatera.auth_service.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(UserProfileController.class)
+@Import(SecurityConfig.class)
 class UserProfileControllerTest {
 
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private UserService userService;
+
+  @MockitoBean private AuthenticationManager authenticationManager;
+
+  @MockitoBean private JwtService jwtService;
+
+  @MockitoBean private UserDetailsService userDetailsService;
 
   @MockitoBean private UserMapper userMapper;
 

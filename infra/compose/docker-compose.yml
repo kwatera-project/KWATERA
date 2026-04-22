@@ -65,6 +65,8 @@ services:
       SPRING_DATASOURCE_USERNAME: user
       SPRING_DATASOURCE_PASSWORD: secret123!
     depends_on:
+      postgres:
+        condition: service_started
       config-server:
         condition: service_healthy
       service-registry:
@@ -102,6 +104,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/database
       SPRING_DATASOURCE_USERNAME: user
       SPRING_DATASOURCE_PASSWORD: secret123!
+      JWT_SECRET: supersecretkeysupersecretkey123456
     depends_on:
       config-server:
         condition: service_healthy

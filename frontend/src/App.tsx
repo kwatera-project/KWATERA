@@ -1,15 +1,22 @@
-
 import './App.css'
+import {Routes, Route} from "react-router-dom"
+import Navbar from "./components/Navbar"
+import RegisterForm from "./components/RegisterForm"
+import LoginForm from "./components/LoginForm.tsx";
+
 
 function App() {
+    return (
+        <>
+            <Navbar/>
 
-  return (
-    <div className="flex h-screen items-center justify-center bg-gray-100">
-      <h1 className="rounded-xl bg-white p-8 text-5xl font-bold text-blue-600 shadow-lg">
-        Hi there!
-      </h1>
-    </div>
-  )
+            <Routes>
+                <Route path="/" element={<h1 className="mb-6 text-3xl font-bold text-title text-center">Home</h1>}/>
+                <Route path="/register" element={<RegisterForm/>}/>
+                <Route path="/login" element={<LoginForm/>}/>
+            </Routes>
+        </>
+    )
 }
 
 export default App
