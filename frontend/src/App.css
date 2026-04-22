@@ -1,0 +1,42 @@
+:root {
+    --color-brown: 64 28 26;
+    --color-gray: 37 37 37;
+    --color-white: 255 255 255;
+    --color-light-gray: 148 148 148;
+    --color-pink-burgundy: 206 197 197;
+    --color-burgundy: 54 16 15;
+    --color-burgundy-hover: 84 30 28;
+    --color-black: 0 0 0;
+}
+
+.bg-main {
+    background-color: rgb(var(--color-pink-burgundy));
+}
+
+.bg-card {
+    background-color: rgb(var(--color-white));
+}
+
+.bg-button {
+    background-color: rgb(var(--color-burgundy));
+}
+
+.bg-button-hover {
+    background-color: rgb(var(--color-burgundy-hover));
+}
+
+.text-title {
+    color: rgb(var(--color-black));
+}
+
+.text-white {
+    color: rgb(var(--color-white));
+}
+
+.text-primary {
+    color: rgb(var(--color-gray));
+}
+
+.text-details {
+    color: rgb(var(--color-light-gray));
+}

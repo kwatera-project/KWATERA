@@ -12,13 +12,15 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: none
 
 eureka:
   client:
     serviceUrl:
       defaultZone: http://service-registry:8761/eureka/
+
+jwt:
+  secret: ${JWT_SECRET}
 
 management:
   endpoints:

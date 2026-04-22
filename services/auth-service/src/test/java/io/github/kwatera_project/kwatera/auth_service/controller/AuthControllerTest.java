@@ -4,11 +4,15 @@ import static org.mockito.Mockito.*;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.kwatera_project.kwatera.auth_service.dto.LoginRequest;
 import io.github.kwatera_project.kwatera.auth_service.dto.RegisterRequest;
 import io.github.kwatera_project.kwatera.auth_service.model.Role;
+import io.github.kwatera_project.kwatera.auth_service.model.User;
+import io.github.kwatera_project.kwatera.auth_service.service.JwtService;
 import io.github.kwatera_project.kwatera.auth_service.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +20,10 @@ import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration
 import org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
@@ -31,6 +39,10 @@ class AuthControllerTest {
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private UserService userService;
+
+  @MockitoBean private AuthenticationManager authenticationManager;
+
+  @MockitoBean private JwtService jwtService;
 
   @Autowired private ObjectMapper objectMapper;
 
@@ -131,5 +143,57 @@ class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
         .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void shouldLoginSuccessfully() throws Exception {
+    LoginRequest request = new LoginRequest();
+    request.setEmail("test@test.com");
+    request.setPassword("password");
+
+    User user = new User();
+    user.setUsername("test");
+    user.setEmail("test@test.com");
+    user.setRole(Role.GUEST);
+
+    Authentication authentication =
+        new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+
+    when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+        .thenReturn(authentication);
+
+    when(jwtService.generateToken(user)).thenReturn("jwt-token");
+
+    mockMvc
+        .perform(
+            post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isOk())
+        .andExpect(content().json("{\"token\":\"jwt-token\"}"));
+
+    verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+
+    verify(jwtService).generateToken(user);
+  }
+
+  @Test
+  void shouldReturnUnauthorized_whenCredentialsInvalid() throws Exception {
+    LoginRequest request = new LoginRequest();
+    request.setEmail("test@test.com");
+    request.setPassword("wrong");
+
+    when(authenticationManager.authenticate(any()))
+        .thenThrow(new BadCredentialsException("Bad credentials"));
+
+    mockMvc
+        .perform(
+            post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isUnauthorized())
+        .andExpect(jsonPath("$.error").value("Invalid credentials"));
+
+    verify(jwtService, never()).generateToken(any());
   }
 }
