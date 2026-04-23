@@ -2,15 +2,13 @@ import '../App.css'
 import {Link} from "react-router-dom"
 import {useLogout} from "./Logout.tsx"
 
-
 export default function Navbar() {
-
-    const isLoggedIn = localStorage.getItem("token") !== null
-    const logout = useLogout()
+    const isLoggedIn = localStorage.getItem("token") !== null;
+    const userRole = localStorage.getItem("userRole");
+    const logout = useLogout();
 
     return (
         <nav className="flex justify-between p-4 bg-card shadow-md">
-
             <div className="font-bold text-title">
                 KWATERA
             </div>
@@ -22,6 +20,16 @@ export default function Navbar() {
                 >
                     Home
                 </Link>
+
+                {isLoggedIn && (userRole === 'ADMIN' || userRole === 'OWNER') && (
+                    <Link
+                        to="/admin/reservations"
+                        className="hover:text-[rgb(var(--color-burgundy))] transition"
+                    >
+                        Reservations
+                    </Link>
+                )}
+
                 {isLoggedIn ? (
                     <button
                         onClick={logout}
@@ -38,7 +46,6 @@ export default function Navbar() {
                     </Link>
                 )}
             </div>
-
         </nav>
     )
 }
