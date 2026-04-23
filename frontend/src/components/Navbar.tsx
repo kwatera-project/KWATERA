@@ -2,6 +2,7 @@ import '../App.css'
 import {Link} from "react-router-dom"
 import {useLogout} from "./Logout.tsx"
 
+
 export default function Navbar() {
     const isLoggedIn = localStorage.getItem("token") !== null;
     const userRole = localStorage.getItem("userRole");
@@ -9,6 +10,7 @@ export default function Navbar() {
 
     return (
         <nav className="flex justify-between p-4 bg-card shadow-md">
+
             <div className="font-bold text-title">
                 KWATERA
             </div>
@@ -30,6 +32,14 @@ export default function Navbar() {
                     </Link>
                 )}
 
+
+                <Link
+                    to="/catalog"
+                    className="hover:text-[rgb(var(--color-burgundy))] transition"
+                    >
+                        Catalog
+                </Link>
+
                 {isLoggedIn ? (
                     <button
                         onClick={logout}
@@ -46,6 +56,7 @@ export default function Navbar() {
                     </Link>
                 )}
             </div>
+
         </nav>
     )
 }

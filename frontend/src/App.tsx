@@ -2,7 +2,9 @@ import './App.css'
 import {Routes, Route} from "react-router-dom"
 import Navbar from "./components/Navbar"
 import RegisterForm from "./components/RegisterForm"
-import LoginForm from "./components/LoginForm"
+import LoginForm from "./components/LoginForm.tsx";
+import PropertyDetailsPage from "./pages/PropertyDetailsPage";
+import PropertiesPage from "./pages/PropertiesPage.tsx";
 import AdminReservationList from "./components/AdminReservationList"
 import ProtectedRoute from "./components/ProtectedRoute"
 
@@ -22,6 +24,8 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
+                <Route path="/catalog" element={<PropertiesPage />} />
+                <Route path="/property/:id" element={<PropertyDetailsPage />} />
             </Routes>
         </>
     )
