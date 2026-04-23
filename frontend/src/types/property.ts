@@ -12,4 +12,5 @@ export interface Unit {
     description: string;
     pricePerNight: number;
     capacity: number;
+    imageUrl: string;
 }

@@ -3,8 +3,11 @@ package io.github.kwatera_project.kwatera.property_service.service;
 import io.github.kwatera_project.kwatera.property_service.dto.PropertyDto;
 import io.github.kwatera_project.kwatera.property_service.dto.UnitDto;
 import io.github.kwatera_project.kwatera.property_service.model.Property;
+import io.github.kwatera_project.kwatera.property_service.model.PropertyImage;
 import io.github.kwatera_project.kwatera.property_service.model.Unit;
+import io.github.kwatera_project.kwatera.property_service.repository.PropertyImageRepository;
 import io.github.kwatera_project.kwatera.property_service.repository.PropertyRepository;
+import io.github.kwatera_project.kwatera.property_service.repository.UnitImageRepository;
 import io.github.kwatera_project.kwatera.property_service.repository.UnitRepository;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,10 +21,15 @@ public class PropertyService {
 
   private final PropertyRepository propertyRepository;
   private final UnitRepository unitRepository;
+  private final PropertyImageRepository propertyImageRepository;
+  private final UnitImageRepository unitImageRepository;
 
-  public PropertyService(PropertyRepository propertyRepository, UnitRepository unitRepository) {
+  public PropertyService(PropertyRepository propertyRepository, UnitRepository unitRepository,  PropertyImageRepository propertyImageRepository, UnitImageRepository unitImageRepository)  {
     this.propertyRepository = propertyRepository;
     this.unitRepository = unitRepository;
+    this.propertyImageRepository = propertyImageRepository;
+    this.unitImageRepository = unitImageRepository;
+
   }
 
   public List<UnitDto> getUnits(UUID propertyId) {
@@ -67,23 +75,43 @@ public class PropertyService {
     return mapToDto(unit);
   }
 
-    private PropertyDto mapToDto(Property property) {
-        return new PropertyDto(
-                property.getId(),
-                property.getTitle(),
-                property.getDescription(),
-                property.getLocation(),
-                property.getImageUrl()
-        );
+  public List<String> getPropertyImages(UUID propertyId) {
+    List<PropertyImage> images = propertyImageRepository.findByPropertyId(propertyId);
+    List<String> result = new ArrayList<>();
+    for (PropertyImage propertyImage : images) {
+      result.add(propertyImage.getUrl());
     }
+    return result;
+  }
 
-    private UnitDto mapToDto(Unit unit) {
-        return new UnitDto(
-                unit.getId(),
-                unit.getName(),
-                unit.getDescription(),
-                unit.getPricePerNight(),
-                unit.getCapacity()
-        );
-    }
+  private PropertyDto mapToDto(Property property) {
+    String imageUrl =
+        propertyImageRepository
+            .findByPropertyIdAndIsMainTrue(property.getId())
+            .map(PropertyImage::getUrl)
+            .orElse(null);
+
+    return new PropertyDto(
+        property.getId(),
+        property.getTitle(),
+        property.getDescription(),
+        property.getLocation(),
+        imageUrl);
+  }
+
+  private UnitDto mapToDto(Unit unit) {
+    String imageUrl =
+        unitImageRepository
+            .findByUnitIdAndIsMainTrue(unit.getId())
+            .map(img -> img.getUrl())
+            .orElse(null);
+
+    return new UnitDto(
+        unit.getId(),
+        unit.getName(),
+        unit.getDescription(),
+        unit.getPricePerNight(),
+        unit.getCapacity(),
+        imageUrl);
+  }
 }

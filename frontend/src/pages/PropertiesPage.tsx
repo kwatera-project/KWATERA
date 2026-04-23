@@ -15,7 +15,7 @@ export default function PropertiesPage() {
             {properties.map(p => (
                 <Link key={p.id} to={`/property/${p.id}`}>
                     <div className="bg-card rounded-xl shadow p-4">
-                        <img src={p.imageUrl} className="w-full h-40 object-cover rounded" />
+                        <img src={p.imageUrl} className="w-full h-100 object-cover rounded" />
                         <h2 className="text-xl font-bold mt-2">{p.title}</h2>
                         <p className="text-details">{p.location}</p>
                     </div>

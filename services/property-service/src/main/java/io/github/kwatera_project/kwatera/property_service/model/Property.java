@@ -30,9 +30,6 @@ public class Property {
 
   private String description;
 
-    @Column(name = "image_url", nullable = false)
-    private String imageUrl;
-
   @Column(nullable = false)
   private String location;
 

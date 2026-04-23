@@ -34,5 +34,7 @@ public class PropertyDto {
     return location;
   }
 
-  public String getImageUrl() {return  imageUrl;}
+  public String getImageUrl() {
+    return imageUrl;
+  }
 }

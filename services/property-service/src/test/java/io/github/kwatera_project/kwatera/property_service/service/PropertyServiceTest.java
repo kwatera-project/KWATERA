@@ -1,136 +1,138 @@
 package io.github.kwatera_project.kwatera.property_service.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import io.github.kwatera_project.kwatera.property_service.model.Property;
 import io.github.kwatera_project.kwatera.property_service.model.Unit;
+import io.github.kwatera_project.kwatera.property_service.repository.PropertyImageRepository;
 import io.github.kwatera_project.kwatera.property_service.repository.PropertyRepository;
+import io.github.kwatera_project.kwatera.property_service.repository.UnitImageRepository;
 import io.github.kwatera_project.kwatera.property_service.repository.UnitRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.web.server.ResponseStatusException;
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.web.server.ResponseStatusException;
 
 class PropertyServiceTest {
 
-    private PropertyRepository propertyRepository;
-    private UnitRepository unitRepository;
-    private PropertyService propertyService;
+  private PropertyRepository propertyRepository;
+  private UnitRepository unitRepository;
+  private PropertyService propertyService;
+  private PropertyImageRepository propertyImageRepository;
+  private UnitImageRepository unitImageRepository;
 
-    @BeforeEach
-    void setUp() {
-        propertyRepository = mock(PropertyRepository.class);
-        unitRepository = mock(UnitRepository.class);
-        propertyService = new PropertyService(propertyRepository, unitRepository);
-    }
+  @BeforeEach
+  void setUp() {
+    propertyRepository = mock(PropertyRepository.class);
+    unitRepository = mock(UnitRepository.class);
+    propertyImageRepository = mock(PropertyImageRepository.class);
+    unitImageRepository = mock(UnitImageRepository.class);
 
-    @Test
-    void getAll_shouldReturnProperties() {
-        Property property = new Property();
-        property.setId(UUID.randomUUID());
-        property.setTitle("Test");
-        property.setLocation("Warsaw");
-        property.setDescription("Desc");
-        property.setImageUrl("img.jpg");
+    propertyService =
+        new PropertyService(
+            propertyRepository, unitRepository, propertyImageRepository, unitImageRepository);
+  }
 
-        when(propertyRepository.findAll()).thenReturn(List.of(property));
+  @Test
+  void getAll_shouldReturnProperties() {
+    Property property = new Property();
+    property.setId(UUID.randomUUID());
+    property.setTitle("Test");
+    property.setLocation("Warsaw");
+    property.setDescription("Desc");
 
-        var result = propertyService.getAll();
+    when(propertyRepository.findAll()).thenReturn(List.of(property));
 
-        assertEquals(1, result.size());
-        assertEquals("Test", result.get(0).getTitle());
-    }
+    var result = propertyService.getAll();
 
-    @Test
-    void getById_shouldReturnProperty() {
-        UUID id = UUID.randomUUID();
+    assertEquals(1, result.size());
+    assertEquals("Test", result.get(0).getTitle());
+  }
 
-        Property property = new Property();
-        property.setId(id);
-        property.setTitle("Test");
-        property.setLocation("Warsaw");
-        property.setDescription("Desc");
-        property.setImageUrl("img.jpg");
+  @Test
+  void getById_shouldReturnProperty() {
+    UUID id = UUID.randomUUID();
 
-        when(propertyRepository.findById(id)).thenReturn(Optional.of(property));
+    Property property = new Property();
+    property.setId(id);
+    property.setTitle("Test");
+    property.setLocation("Warsaw");
+    property.setDescription("Desc");
 
-        var result = propertyService.getById(id);
+    when(propertyRepository.findById(id)).thenReturn(Optional.of(property));
 
-        assertEquals(id, result.getId());
-    }
+    var result = propertyService.getById(id);
 
-    @Test
-    void getById_shouldThrowWhenNotFound() {
-        UUID id = UUID.randomUUID();
+    assertEquals(id, result.getId());
+  }
 
-        when(propertyRepository.findById(id)).thenReturn(Optional.empty());
+  @Test
+  void getById_shouldThrowWhenNotFound() {
+    UUID id = UUID.randomUUID();
 
-        assertThrows(ResponseStatusException.class,
-                () -> propertyService.getById(id));
-    }
+    when(propertyRepository.findById(id)).thenReturn(Optional.empty());
 
-    @Test
-    void getUnits_shouldReturnUnits() {
-        UUID propertyId = UUID.randomUUID();
+    assertThrows(ResponseStatusException.class, () -> propertyService.getById(id));
+  }
 
-        when(propertyRepository.existsById(propertyId)).thenReturn(true);
+  @Test
+  void getUnits_shouldReturnUnits() {
+    UUID propertyId = UUID.randomUUID();
 
-        Unit unit = new Unit();
-        unit.setId(UUID.randomUUID());
-        unit.setName("Room");
-        unit.setDescription("Desc");
-        unit.setCapacity(2);
-        unit.setPricePerNight(BigDecimal.valueOf(200));
+    when(propertyRepository.existsById(propertyId)).thenReturn(true);
 
-        when(unitRepository.findByPropertyId(propertyId))
-                .thenReturn(List.of(unit));
+    Unit unit = new Unit();
+    unit.setId(UUID.randomUUID());
+    unit.setName("Room");
+    unit.setDescription("Desc");
+    unit.setCapacity(2);
+    unit.setPricePerNight(BigDecimal.valueOf(200));
 
-        var result = propertyService.getUnits(propertyId);
+    when(unitRepository.findByPropertyId(propertyId)).thenReturn(List.of(unit));
 
-        assertEquals(1, result.size());
-        assertEquals("Room", result.get(0).getName());
-    }
+    var result = propertyService.getUnits(propertyId);
 
-    @Test
-    void getUnits_shouldThrowWhenPropertyNotExists() {
-        UUID propertyId = UUID.randomUUID();
+    assertEquals(1, result.size());
+    assertEquals("Room", result.get(0).getName());
+  }
 
-        when(propertyRepository.existsById(propertyId)).thenReturn(false);
+  @Test
+  void getUnits_shouldThrowWhenPropertyNotExists() {
+    UUID propertyId = UUID.randomUUID();
 
-        assertThrows(ResponseStatusException.class,
-                () -> propertyService.getUnits(propertyId));
-    }
+    when(propertyRepository.existsById(propertyId)).thenReturn(false);
 
-    @Test
-    void getUnitById_shouldReturnUnit() {
-        UUID id = UUID.randomUUID();
+    assertThrows(ResponseStatusException.class, () -> propertyService.getUnits(propertyId));
+  }
 
-        Unit unit = new Unit();
-        unit.setId(id);
-        unit.setName("Room");
-        unit.setDescription("Desc");
-        unit.setCapacity(2);
-        unit.setPricePerNight(BigDecimal.valueOf(200));
+  @Test
+  void getUnitById_shouldReturnUnit() {
+    UUID id = UUID.randomUUID();
 
-        when(unitRepository.findById(id)).thenReturn(Optional.of(unit));
+    Unit unit = new Unit();
+    unit.setId(id);
+    unit.setName("Room");
+    unit.setDescription("Desc");
+    unit.setCapacity(2);
+    unit.setPricePerNight(BigDecimal.valueOf(200));
 
-        var result = propertyService.getUnitById(id);
+    when(unitRepository.findById(id)).thenReturn(Optional.of(unit));
 
-        assertEquals(id, result.getId());
-    }
+    var result = propertyService.getUnitById(id);
 
-    @Test
-    void getUnitById_shouldThrowWhenNotFound() {
-        UUID id = UUID.randomUUID();
+    assertEquals(id, result.getId());
+  }
 
-        when(unitRepository.findById(id)).thenReturn(Optional.empty());
+  @Test
+  void getUnitById_shouldThrowWhenNotFound() {
+    UUID id = UUID.randomUUID();
 
-        assertThrows(ResponseStatusException.class,
-                () -> propertyService.getUnitById(id));
-    }
+    when(unitRepository.findById(id)).thenReturn(Optional.empty());
+
+    assertThrows(ResponseStatusException.class, () -> propertyService.getUnitById(id));
+  }
 }

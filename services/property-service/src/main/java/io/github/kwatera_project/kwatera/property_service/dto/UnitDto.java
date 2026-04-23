@@ -10,14 +10,16 @@ public class UnitDto {
   private String description;
   private BigDecimal pricePerNight;
   private Integer capacity;
+  private String imageUrl;
 
   public UnitDto(
-      UUID id, String name, String description, BigDecimal pricePerNight, Integer capacity) {
+      UUID id, String name, String description, BigDecimal pricePerNight, Integer capacity, String imageUrl) {
     this.id = id;
     this.name = name;
     this.description = description;
     this.pricePerNight = pricePerNight;
     this.capacity = capacity;
+    this.imageUrl = imageUrl;
   }
 
   public UUID getId() {
@@ -38,5 +40,9 @@ public class UnitDto {
 
   public Integer getCapacity() {
     return capacity;
+  }
+
+  public String getImageUrl() {
+    return imageUrl;
   }
 }

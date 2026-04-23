@@ -5,11 +5,11 @@ import io.github.kwatera_project.kwatera.property_service.dto.UnitDto;
 import io.github.kwatera_project.kwatera.property_service.service.PropertyService;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.CrossOrigin;
 
 @CrossOrigin(origins = "http://localhost:5174")
 @RestController
@@ -28,17 +28,22 @@ public class PropertyController {
   }
 
   @GetMapping("/{id}")
-  public PropertyDto getPropertyById(@PathVariable UUID id) {
+  public PropertyDto getPropertyById(@PathVariable("id") UUID id) {
     return propertyService.getById(id);
   }
 
   @GetMapping("/{id}/units")
-  public List<UnitDto> getUnits(@PathVariable UUID id) {
+  public List<UnitDto> getUnits(@PathVariable("id") UUID id) {
     return propertyService.getUnits(id);
   }
 
   @GetMapping("/units/{id}")
-  public UnitDto getUnit(@PathVariable UUID id) {
+  public UnitDto getUnit(@PathVariable("id") UUID id) {
     return propertyService.getUnitById(id);
+  }
+
+  @GetMapping("/{id}/images")
+  public List<String> getPropertyImages(@PathVariable("id") UUID id) {
+    return propertyService.getPropertyImages(id);
   }
 }
