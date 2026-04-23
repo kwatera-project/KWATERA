@@ -87,7 +87,6 @@
                         <exclude>**/PropertyServiceApplication.class</exclude>
                         <exclude>**/config/JpaConfig.class</exclude>
                         <exclude>**/model/**/*.class</exclude>
-                        <exclude>**/dto/**/*.class</exclude>
                         <exclude>**/mapper/**/*.class</exclude>
                     </excludes>
                 </configuration>
