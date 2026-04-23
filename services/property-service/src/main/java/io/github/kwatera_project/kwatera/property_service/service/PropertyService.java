@@ -10,7 +10,6 @@ import io.github.kwatera_project.kwatera.property_service.repository.PropertyIma
 import io.github.kwatera_project.kwatera.property_service.repository.PropertyRepository;
 import io.github.kwatera_project.kwatera.property_service.repository.UnitImageRepository;
 import io.github.kwatera_project.kwatera.property_service.repository.UnitRepository;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -40,24 +39,11 @@ public class PropertyService {
     if (!propertyRepository.existsById(propertyId)) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found");
     }
-
-    List<Unit> units = unitRepository.findByPropertyId(propertyId);
-    List<UnitDto> result = new ArrayList<>();
-
-    for (Unit unit : units) {
-      result.add(mapToDto(unit));
-    }
-
-    return result;
+    return unitRepository.findByPropertyId(propertyId).stream().map(this::mapToDto).toList();
   }
 
   public List<PropertyDto> getAll() {
-    List<Property> properties = propertyRepository.findAll();
-    List<PropertyDto> result = new ArrayList<>();
-    for (Property property : properties) {
-      result.add(mapToDto(property));
-    }
-    return result;
+    return propertyRepository.findAll().stream().map(this::mapToDto).toList();
   }
 
   public PropertyDto getById(UUID id) {
