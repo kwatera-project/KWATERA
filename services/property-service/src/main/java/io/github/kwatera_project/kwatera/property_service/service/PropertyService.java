@@ -24,12 +24,15 @@ public class PropertyService {
   private final PropertyImageRepository propertyImageRepository;
   private final UnitImageRepository unitImageRepository;
 
-  public PropertyService(PropertyRepository propertyRepository, UnitRepository unitRepository,  PropertyImageRepository propertyImageRepository, UnitImageRepository unitImageRepository)  {
+  public PropertyService(
+      PropertyRepository propertyRepository,
+      UnitRepository unitRepository,
+      PropertyImageRepository propertyImageRepository,
+      UnitImageRepository unitImageRepository) {
     this.propertyRepository = propertyRepository;
     this.unitRepository = unitRepository;
     this.propertyImageRepository = propertyImageRepository;
     this.unitImageRepository = unitImageRepository;
-
   }
 
   public List<UnitDto> getUnits(UUID propertyId) {

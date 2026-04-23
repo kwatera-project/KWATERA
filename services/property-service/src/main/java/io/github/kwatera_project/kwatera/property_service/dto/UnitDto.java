@@ -13,7 +13,12 @@ public class UnitDto {
   private String imageUrl;
 
   public UnitDto(
-      UUID id, String name, String description, BigDecimal pricePerNight, Integer capacity, String imageUrl) {
+      UUID id,
+      String name,
+      String description,
+      BigDecimal pricePerNight,
+      Integer capacity,
+      String imageUrl) {
     this.id = id;
     this.name = name;
     this.description = description;

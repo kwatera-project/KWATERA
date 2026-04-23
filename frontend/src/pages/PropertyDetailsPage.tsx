@@ -2,35 +2,31 @@ import { useEffect, useState } from "react";
 import { getProperty, getUnits, getPropertyImages } from "../api/propertyApi";
 import { useParams } from "react-router-dom";
 import type { Unit } from "../types/property";
+import type { Property } from "../types/property";
 
 export default function PropertyDetailsPage() {
 
     const { id } = useParams();
 
-    const [property, setProperty] = useState<any>(null);
+    const [property, setProperty] = useState<Property | null>(null);
     const [units, setUnits] = useState<Unit[]>([]);
     const [images, setImages] = useState<string[]>([]);
     const [mainImage, setMainImage] = useState("");
 
     useEffect(() => {
-        if (id) {
-
-            getProperty(id).then(function (data) {
-                setProperty(data);
-            });
-
-            getUnits(id).then(function (data) {
-                setUnits(data);
-            });
-
-            getPropertyImages(id).then(function (data) {
-                setImages(data);
-
-                if (data.length > 0) {
-                    setMainImage(data[0]);
-                }
-            });
-        }
+        if (!id) return;
+        getProperty(id).then(function (data) {
+            setProperty(data);
+        });
+        getUnits(id).then(function (data) {
+            setUnits(data);
+        });
+        getPropertyImages(id).then(function (data) {
+            setImages(data);
+            if (data.length > 0) {
+                setMainImage(data[0]);
+            }
+        });
     }, [id]);
 
     if (!property) {
