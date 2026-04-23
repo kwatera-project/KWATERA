@@ -3,7 +3,8 @@ import {Routes, Route} from "react-router-dom"
 import Navbar from "./components/Navbar"
 import RegisterForm from "./components/RegisterForm"
 import LoginForm from "./components/LoginForm.tsx";
-
+import PropertyDetailsPage from "./pages/PropertyDetailsPage";
+import PropertiesPage from "./pages/PropertiesPage.tsx";
 
 function App() {
     return (
@@ -14,6 +15,8 @@ function App() {
                 <Route path="/" element={<h1 className="mb-6 text-3xl font-bold text-title text-center">Home</h1>}/>
                 <Route path="/register" element={<RegisterForm/>}/>
                 <Route path="/login" element={<LoginForm/>}/>
+                <Route path="/catalog" element={<PropertiesPage />} />
+                <Route path="/property/:id" element={<PropertyDetailsPage />} />
             </Routes>
         </>
     )

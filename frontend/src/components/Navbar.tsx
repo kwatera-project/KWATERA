@@ -22,6 +22,14 @@ export default function Navbar() {
                 >
                     Home
                 </Link>
+
+                <Link
+                    to="/catalog"
+                    className="hover:text-[rgb(var(--color-burgundy))] transition"
+                    >
+                        Catalog
+                </Link>
+
                 {isLoggedIn ? (
                     <button
                         onClick={logout}
@@ -36,6 +44,8 @@ export default function Navbar() {
                     >
                         Login
                     </Link>
+
+
                 )}
             </div>
 

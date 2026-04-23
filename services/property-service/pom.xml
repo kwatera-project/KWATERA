@@ -17,7 +17,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
@@ -88,7 +87,6 @@
                         <exclude>**/PropertyServiceApplication.class</exclude>
                         <exclude>**/config/JpaConfig.class</exclude>
                         <exclude>**/model/**/*.class</exclude>
-                        <exclude>**/dto/**/*.class</exclude>
                         <exclude>**/mapper/**/*.class</exclude>
                     </excludes>
                 </configuration>
