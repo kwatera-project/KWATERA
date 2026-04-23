@@ -12,11 +12,12 @@ interface ReservationOverview {
 export default function AdminReservationList() {
     const [reservations, setReservations] = useState<ReservationOverview[]>([]);
     const [statusFilter, setStatusFilter] = useState<string>("");
+    const API_BASE_URL = "http://localhost:8080";
 
     useEffect(() => {
         const url = statusFilter
-            ? `/api/v1/admin/reservations?status=${statusFilter}`
-            : "/api/v1/admin/reservations";
+            ? `${API_BASE_URL}/api/v1/admin/reservations?status=${statusFilter}`
+            : `${API_BASE_URL}/api/v1/admin/reservations`;
 
         const token = localStorage.getItem("token");
 

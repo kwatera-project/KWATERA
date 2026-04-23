@@ -20,7 +20,7 @@ public class AdminReservationController {
 
     @GetMapping
     public List<ReservationOverviewDto> getReservations(
-            @RequestParam(required = false) ReservationStatus status
+            @RequestParam(name = "status", required = false) ReservationStatus status
     ) {
         return adminReservationService.getReservationsOverview(status);
     }
