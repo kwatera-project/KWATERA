@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-public class PropertyDtoTest {
+class PropertyDtoTest {
 
   @Test
   void propertyDto_shouldReturnValues() {

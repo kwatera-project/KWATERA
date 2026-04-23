@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-public class UnitDtoTest {
+class UnitDtoTest {
 
   @Test
   void unitDto_shouldReturnValues() {

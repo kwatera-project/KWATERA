@@ -68,6 +68,7 @@ class PropertyServiceTest {
     var result = propertyService.getById(id);
 
     assertEquals(id, result.getId());
+    assertNull(result.getImageUrl());
   }
 
   @Test

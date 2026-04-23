@@ -5,6 +5,7 @@ import io.github.kwatera_project.kwatera.property_service.dto.UnitDto;
 import io.github.kwatera_project.kwatera.property_service.model.Property;
 import io.github.kwatera_project.kwatera.property_service.model.PropertyImage;
 import io.github.kwatera_project.kwatera.property_service.model.Unit;
+import io.github.kwatera_project.kwatera.property_service.model.UnitImage;
 import io.github.kwatera_project.kwatera.property_service.repository.PropertyImageRepository;
 import io.github.kwatera_project.kwatera.property_service.repository.PropertyRepository;
 import io.github.kwatera_project.kwatera.property_service.repository.UnitImageRepository;
@@ -79,12 +80,9 @@ public class PropertyService {
   }
 
   public List<String> getPropertyImages(UUID propertyId) {
-    List<PropertyImage> images = propertyImageRepository.findByPropertyId(propertyId);
-    List<String> result = new ArrayList<>();
-    for (PropertyImage propertyImage : images) {
-      result.add(propertyImage.getUrl());
-    }
-    return result;
+    return propertyImageRepository.findByPropertyId(propertyId).stream()
+        .map(PropertyImage::getUrl)
+        .toList();
   }
 
   private PropertyDto mapToDto(Property property) {
@@ -103,10 +101,11 @@ public class PropertyService {
   }
 
   private UnitDto mapToDto(Unit unit) {
+
     String imageUrl =
         unitImageRepository
             .findByUnitIdAndIsMainTrue(unit.getId())
-            .map(img -> img.getUrl())
+            .map(UnitImage::getUrl)
             .orElse(null);
 
     return new UnitDto(
