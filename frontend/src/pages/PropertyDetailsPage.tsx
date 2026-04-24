@@ -20,6 +20,7 @@ export default function PropertyDetailsPage() {
 
     const [loading, setLoading] = useState(false);
     const today = new Date().toISOString().split("T")[0];
+    const isInvalid = !from || !to || loading || new Date(from) >= new Date(to);
 
     useEffect(() => {
         if (!id) return;
@@ -84,10 +85,11 @@ export default function PropertyDetailsPage() {
                 />
 
                 <button
-                    disabled={!from || !to || loading}
+                    disabled={isInvalid}
                     onClick={async () => {
 
                         if (!from || !to) return;
+                        if (new Date(from) >= new Date(to)) return;
 
                         setLoading(true);
 
@@ -124,13 +126,18 @@ export default function PropertyDetailsPage() {
                         }
                     }}
                     className={`px-4 py-2 rounded ${
-                        !from || !to
-                            ? "bg-gray-300"
+                        isInvalid
+                            ? "bg-gray-300 cursor-not-allowed"
                             : "bg-blue-500 text-white"
                     }`}
                 >
                     {loading ? "Checking..." : "Check availability"}
                 </button>
+                {from && to && new Date(from) >= new Date(to) && (
+                    <p className="text-red-500 mt-2">
+                        End date must be after start date
+                    </p>
+                )}
 
             </div>
 

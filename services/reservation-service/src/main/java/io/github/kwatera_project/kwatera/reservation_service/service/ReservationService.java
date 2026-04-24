@@ -27,7 +27,7 @@ public class ReservationService {
     }
 
     if (from.isBefore(LocalDate.now())) {
-      return new AvailabilityDto(false, "Date is in the past");
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Date is in the past");
     }
 
     if (!from.isBefore(to)) {
@@ -42,7 +42,7 @@ public class ReservationService {
         continue;
       }
 
-      if (!from.isAfter(r.getEndDate()) && !to.isBefore(r.getStartDate())) {
+      if (from.isBefore(r.getEndDate()) && to.isAfter(r.getStartDate())) {
         return new AvailabilityDto(false, "Unit is not available in selected dates");
       }
     }

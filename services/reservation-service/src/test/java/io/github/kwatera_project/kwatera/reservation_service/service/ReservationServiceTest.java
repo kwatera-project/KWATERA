@@ -23,9 +23,9 @@ class ReservationServiceTest {
     UUID unitId = UUID.randomUUID();
 
     when(repository.findByUnitId(unitId)).thenReturn(List.of());
-
-    AvailabilityDto result =
-        service.checkAvailability(unitId, LocalDate.of(2026, 5, 1), LocalDate.of(2026, 5, 5));
+    LocalDate from = LocalDate.now().plusDays(1);
+    LocalDate to = LocalDate.now().plusDays(5);
+    AvailabilityDto result = service.checkAvailability(unitId, from, to);
 
     assertTrue(result.isAvailable());
     assertEquals("Unit is available", result.getMessage());
@@ -38,16 +38,19 @@ class ReservationServiceTest {
 
     UUID unitId = UUID.randomUUID();
 
+    LocalDate start = LocalDate.now().plusDays(10);
+    LocalDate end = LocalDate.now().plusDays(15);
+
     Reservation reservation = new Reservation();
     reservation.setUnitId(unitId);
-    reservation.setStartDate(LocalDate.of(2026, 5, 10));
-    reservation.setEndDate(LocalDate.of(2026, 5, 15));
+    reservation.setStartDate(start);
+    reservation.setEndDate(end);
     reservation.setStatus(ReservationStatus.CONFIRMED);
 
     when(repository.findByUnitId(unitId)).thenReturn(List.of(reservation));
 
     AvailabilityDto result =
-        service.checkAvailability(unitId, LocalDate.of(2026, 5, 12), LocalDate.of(2026, 5, 14));
+        service.checkAvailability(unitId, start.plusDays(2), start.plusDays(4));
 
     assertFalse(result.isAvailable());
     assertEquals("Unit is not available in selected dates", result.getMessage());
@@ -60,16 +63,19 @@ class ReservationServiceTest {
 
     UUID unitId = UUID.randomUUID();
 
+    LocalDate start = LocalDate.now().plusDays(10);
+    LocalDate end = LocalDate.now().plusDays(15);
+
     Reservation reservation = new Reservation();
     reservation.setUnitId(unitId);
-    reservation.setStartDate(LocalDate.of(2026, 5, 10));
-    reservation.setEndDate(LocalDate.of(2026, 5, 15));
+    reservation.setStartDate(start);
+    reservation.setEndDate(end);
     reservation.setStatus(ReservationStatus.CANCELLED);
 
     when(repository.findByUnitId(unitId)).thenReturn(List.of(reservation));
 
     AvailabilityDto result =
-        service.checkAvailability(unitId, LocalDate.of(2026, 5, 12), LocalDate.of(2026, 5, 14));
+        service.checkAvailability(unitId, start.plusDays(2), start.plusDays(4));
 
     assertTrue(result.isAvailable());
   }
@@ -79,8 +85,8 @@ class ReservationServiceTest {
     ReservationService service = new ReservationService(null);
 
     UUID id = UUID.randomUUID();
-    LocalDate from = LocalDate.of(2026, 5, 10);
-    LocalDate to = LocalDate.of(2026, 5, 10);
+    LocalDate from = LocalDate.now().plusDays(5);
+    LocalDate to = from; // ten sam dzień
 
     assertThrows(ResponseStatusException.class, () -> service.checkAvailability(id, from, to));
   }
@@ -92,16 +98,41 @@ class ReservationServiceTest {
 
     UUID unitId = UUID.randomUUID();
 
+    LocalDate start = LocalDate.now().plusDays(10);
+    LocalDate end = LocalDate.now().plusDays(15);
+
     Reservation reservation = new Reservation();
     reservation.setUnitId(unitId);
-    reservation.setStartDate(LocalDate.of(2026, 5, 10));
-    reservation.setEndDate(LocalDate.of(2026, 5, 15));
+    reservation.setStartDate(start);
+    reservation.setEndDate(end);
     reservation.setStatus(ReservationStatus.COMPLETED);
 
     when(repository.findByUnitId(unitId)).thenReturn(List.of(reservation));
 
     AvailabilityDto result =
-        service.checkAvailability(unitId, LocalDate.of(2026, 5, 12), LocalDate.of(2026, 5, 14));
+        service.checkAvailability(unitId, start.plusDays(2), start.plusDays(4));
+
+    assertTrue(result.isAvailable());
+  }
+
+  @Test
+  void shouldAllowReservationStartingOnEndDate() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    ReservationService service = new ReservationService(repository);
+
+    UUID unitId = UUID.randomUUID();
+
+    LocalDate start = LocalDate.now().plusDays(10);
+    LocalDate end = LocalDate.now().plusDays(15);
+
+    Reservation reservation = new Reservation();
+    reservation.setUnitId(unitId);
+    reservation.setStartDate(start);
+    reservation.setEndDate(end);
+    reservation.setStatus(ReservationStatus.CONFIRMED);
+
+    when(repository.findByUnitId(unitId)).thenReturn(List.of(reservation));
+    AvailabilityDto result = service.checkAvailability(unitId, end, end.plusDays(3));
 
     assertTrue(result.isAvailable());
   }
