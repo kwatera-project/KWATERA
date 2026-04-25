@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -22,19 +23,39 @@ public final class JwtService {
   }
 
   public String generateToken(UserDetails user) {
+
     return Jwts.builder()
-        .subject(user.getUsername())
-        .issuedAt(new Date())
-        .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1h
-        .signWith(key)
-        .compact();
+            .subject(user.getUsername())
+            .claim("role", user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList())
+            .issuedAt(new Date())
+            .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1h
+            .signWith(key)
+            .compact();
   }
 
   public String extractUsername(String token) {
     return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload().getSubject();
   }
 
+  private boolean isTokenExpired(String token) {
+    return Jwts.parser()
+            .verifyWith(key)
+            .build()
+            .parseSignedClaims(token)
+            .getPayload()
+            .getExpiration()
+            .before(new Date());
+  }
+
   public boolean isValid(String token, UserDetails user) {
-    return extractUsername(token).equals(user.getUsername());
+    try {
+      String username = extractUsername(token);
+
+      boolean notExpired = !isTokenExpired(token);
+
+      return username.equals(user.getUsername()) && notExpired;
+    } catch (Exception e) {
+      return false;
+    }
   }
 }

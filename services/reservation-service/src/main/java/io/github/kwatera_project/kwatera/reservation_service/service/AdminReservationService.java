@@ -18,12 +18,13 @@ public class AdminReservationService {
     private final ReservationRepository reservationRepository;
 
     public List<ReservationOverviewDto> getReservationsOverview(ReservationStatus status) {
-        return List.of(
-                new ReservationOverviewDto(
-                        UUID.randomUUID(), "Testowy Admin", "Apartament 1",
-                        LocalDate.now(), LocalDate.now().plusDays(2), ReservationStatus.CONFIRMED
-                )
-        );
+        List<Reservation> reservations = (status != null)
+                ? reservationRepository.findByStatus(status)
+                : reservationRepository.findAll();
+
+        return reservations.stream()
+                .map(this::mapToOverviewDto)
+                .toList();
     }
 
     private ReservationOverviewDto mapToOverviewDto(Reservation reservation) {

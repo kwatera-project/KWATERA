@@ -4,9 +4,22 @@ import {useLogout} from "./Logout.tsx"
 
 
 export default function Navbar() {
-    const isLoggedIn = localStorage.getItem("token") !== null;
-    const userRole = localStorage.getItem("userRole");
-    const logout = useLogout();
+
+    const token = localStorage.getItem("token");
+
+    let userRole = null;
+
+    if (token) {
+        try {
+            userRole = JSON.parse(atob(token.split(".")[1])).role;
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    const isLoggedIn = !!token;
+
+    const logout = useLogout()
 
     return (
         <nav className="flex justify-between p-4 bg-card shadow-md">
@@ -22,24 +35,6 @@ export default function Navbar() {
                 >
                     Home
                 </Link>
-
-                {isLoggedIn && (userRole === 'ADMIN' || userRole === 'OWNER') && (
-                    <Link
-                        to="/admin/reservations"
-                        className="hover:text-[rgb(var(--color-burgundy))] transition"
-                    >
-                        Reservations
-                    </Link>
-                )}
-
-
-                <Link
-                    to="/catalog"
-                    className="hover:text-[rgb(var(--color-burgundy))] transition"
-                    >
-                        Catalog
-                </Link>
-
                 {isLoggedIn ? (
                     <button
                         onClick={logout}
@@ -53,6 +48,14 @@ export default function Navbar() {
                         className="hover:text-[rgb(var(--color-burgundy))] transition"
                     >
                         Login
+                    </Link>
+                )}
+                {isLoggedIn && (userRole?.includes("ROLE_ADMIN") || userRole?.includes("ROLE_OWNER"))  && (
+                    <Link
+                        to="/admin/reservations"
+                        className="hover:text-[rgb(var(--color-burgundy))] transition"
+                    >
+                        Reservations
                     </Link>
                 )}
             </div>
