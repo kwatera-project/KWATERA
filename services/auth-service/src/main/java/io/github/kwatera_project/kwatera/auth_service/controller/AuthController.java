@@ -5,6 +5,12 @@ import io.github.kwatera_project.kwatera.auth_service.dto.LoginRequest;
 import io.github.kwatera_project.kwatera.auth_service.dto.RegisterRequest;
 import io.github.kwatera_project.kwatera.auth_service.service.JwtService;
 import io.github.kwatera_project.kwatera.auth_service.service.UserService;
+
+import io.github.kwatera_project.kwatera.auth_service.repository.UserRepository;
+import io.github.kwatera_project.kwatera.auth_service.model.User;
+import java.util.HashMap;
+import java.util.Map;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +32,8 @@ public class AuthController {
 
   private final JwtService jwtService;
 
+  private final UserRepository userRepository;
+
   @PostMapping("/register")
   public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest request) {
     userService.register(
@@ -36,13 +44,18 @@ public class AuthController {
   @PostMapping("/login")
   public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
 
-    Authentication authentication =
-        authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+    Authentication authentication = authenticationManager.authenticate(
+        new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
-    UserDetails user = (UserDetails) authentication.getPrincipal();
+    UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-    String token = jwtService.generateToken(user);
+    User userEntity = userRepository.findByEmail(request.getEmail())
+        .orElseThrow(() -> new RuntimeException("User not found"));
+
+    Map<String, Object> extraClaims = new HashMap<>();
+    extraClaims.put("userId", userEntity.getId().toString());
+
+    String token = jwtService.generateToken(extraClaims, userDetails);
 
     return ResponseEntity.ok(new AuthResponse(token));
   }

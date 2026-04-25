@@ -4,6 +4,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
@@ -23,8 +25,12 @@ public final class JwtService {
   }
 
   public String generateToken(UserDetails user) {
+    return generateToken(new HashMap<>(), user);
+  }
 
+  public String generateToken(Map<String, Object> extraClaims, UserDetails user) {
     return Jwts.builder()
+            .claims(extraClaims)
             .subject(user.getUsername())
             .claim("role", user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList())
             .issuedAt(new Date())
@@ -50,9 +56,7 @@ public final class JwtService {
   public boolean isValid(String token, UserDetails user) {
     try {
       String username = extractUsername(token);
-
       boolean notExpired = !isTokenExpired(token);
-
       return username.equals(user.getUsername()) && notExpired;
     } catch (Exception e) {
       return false;

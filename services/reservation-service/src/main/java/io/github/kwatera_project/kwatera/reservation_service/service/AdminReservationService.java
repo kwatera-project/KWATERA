@@ -6,8 +6,10 @@ import io.github.kwatera_project.kwatera.reservation_service.model.ReservationSt
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,14 +19,42 @@ public class AdminReservationService {
 
     private final ReservationRepository reservationRepository;
 
-    public List<ReservationOverviewDto> getReservationsOverview(ReservationStatus status) {
-        List<Reservation> reservations = (status != null)
-                ? reservationRepository.findByStatus(status)
-                : reservationRepository.findAll();
+    private final RestTemplate restTemplate = new RestTemplate();
 
-        return reservations.stream()
-                .map(this::mapToOverviewDto)
-                .toList();
+    public List<ReservationOverviewDto> getReservationsOverview(UUID ownerId, ReservationStatus status, boolean isAdmin) {
+
+        if (isAdmin) {
+            List<Reservation> reservations = (status != null)
+                    ? reservationRepository.findByStatus(status)
+                    : reservationRepository.findAll();
+
+            return reservations.stream()
+                    .map(this::mapToOverviewDto)
+                    .toList();
+        }
+
+        String propertyServiceUrl = "http://property-service:8083/api/properties/units/ids/" + ownerId;
+
+        try {
+            UUID[] unitIdsArray = restTemplate.getForObject(propertyServiceUrl, UUID[].class);
+            List<UUID> ownerUnitIds = unitIdsArray != null ? Arrays.asList(unitIdsArray) : Collections.emptyList();
+
+            if (ownerUnitIds.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            List<Reservation> reservations = (status != null)
+                    ? reservationRepository.findByUnitIdInAndStatus(ownerUnitIds, status)
+                    : reservationRepository.findByUnitIdIn(ownerUnitIds);
+
+            return reservations.stream()
+                    .map(this::mapToOverviewDto)
+                    .toList();
+
+        } catch (Exception e) {
+            System.err.println("Error connection with property-service: " + e.getMessage());
+            return Collections.emptyList();
+        }
     }
 
     private ReservationOverviewDto mapToOverviewDto(Reservation reservation) {
