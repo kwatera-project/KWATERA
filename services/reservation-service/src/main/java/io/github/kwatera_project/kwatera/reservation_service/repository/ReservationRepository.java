@@ -7,11 +7,13 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 @Repository
 public interface ReservationRepository extends JpaRepository<Reservation, UUID> {
 
-    List<Reservation> findByUnitIdIn(List<UUID> unitIds);
-    List<Reservation> findByUnitIdInAndStatus(List<UUID> unitIds, ReservationStatus status);
-    List<Reservation> findByStatus(ReservationStatus status);
+  List<Reservation> findByUnitIdIn(List<UUID> unitIds);
+  List<Reservation> findByUnitIdInAndStatus(List<UUID> unitIds, ReservationStatus status);
+  List<Reservation> findByStatus(ReservationStatus status);
+  List<Reservation> findByUnitId(UUID unitId);
 }
