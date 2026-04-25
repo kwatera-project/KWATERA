@@ -4,70 +4,72 @@ import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationOver
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 @RequiredArgsConstructor
 public class AdminReservationService {
 
-    private final ReservationRepository reservationRepository;
+  private final ReservationRepository reservationRepository;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+  private final RestTemplate restTemplate = new RestTemplate();
 
-    public List<ReservationOverviewDto> getReservationsOverview(UUID ownerId, ReservationStatus status, boolean isAdmin) {
+  public List<ReservationOverviewDto> getReservationsOverview(
+      UUID ownerId, ReservationStatus status, boolean isAdmin) {
 
-        if (isAdmin) {
-            List<Reservation> reservations = (status != null)
-                    ? reservationRepository.findByStatus(status)
-                    : reservationRepository.findAll();
+    if (isAdmin) {
+      List<Reservation> reservations =
+          (status != null)
+              ? reservationRepository.findByStatus(status)
+              : reservationRepository.findAll();
 
-            return reservations.stream()
-                    .map(this::mapToOverviewDto)
-                    .toList();
-        }
-
-        String propertyServiceUrl = "http://property-service:8083/api/properties/units/ids/" + ownerId;
-
-        try {
-            UUID[] unitIdsArray = restTemplate.getForObject(propertyServiceUrl, UUID[].class);
-            List<UUID> ownerUnitIds = unitIdsArray != null ? Arrays.asList(unitIdsArray) : Collections.emptyList();
-
-            if (ownerUnitIds.isEmpty()) {
-                return Collections.emptyList();
-            }
-
-            List<Reservation> reservations = (status != null)
-                    ? reservationRepository.findByUnitIdInAndStatus(ownerUnitIds, status)
-                    : reservationRepository.findByUnitIdIn(ownerUnitIds);
-
-            return reservations.stream()
-                    .map(this::mapToOverviewDto)
-                    .toList();
-
-        } catch (Exception e) {
-            System.err.println("Error connection with property-service: " + e.getMessage());
-            return Collections.emptyList();
-        }
+      return reservations.stream().map(this::mapToOverviewDto).toList();
     }
 
-    private ReservationOverviewDto mapToOverviewDto(Reservation reservation) {
-        String mockGuestName = "Guest (" + splitUuid(reservation.getUserId()) + ")";
-        String mockUnitName = "Room (" + splitUuid(reservation.getUnitId()) + ")";
+    String propertyServiceUrl = "http://property-service:8083/api/properties/units/ids/" + ownerId;
 
-        return new ReservationOverviewDto(
-                reservation.getId(), mockGuestName, mockUnitName,
-                reservation.getStartDate(), reservation.getEndDate(), reservation.getStatus()
-        );
-    }
+    try {
+      UUID[] unitIdsArray = restTemplate.getForObject(propertyServiceUrl, UUID[].class);
+      List<UUID> ownerUnitIds =
+          unitIdsArray != null ? Arrays.asList(unitIdsArray) : Collections.emptyList();
 
-    private String splitUuid(UUID uuid) {
-        return (uuid == null) ? "Blank" : uuid.toString().substring(0, 8);
+      if (ownerUnitIds.isEmpty()) {
+        return Collections.emptyList();
+      }
+
+      List<Reservation> reservations =
+          (status != null)
+              ? reservationRepository.findByUnitIdInAndStatus(ownerUnitIds, status)
+              : reservationRepository.findByUnitIdIn(ownerUnitIds);
+
+      return reservations.stream().map(this::mapToOverviewDto).toList();
+
+    } catch (Exception e) {
+      System.err.println("Error connection with property-service: " + e.getMessage());
+      return Collections.emptyList();
     }
+  }
+
+  private ReservationOverviewDto mapToOverviewDto(Reservation reservation) {
+    String mockGuestName = "Guest (" + splitUuid(reservation.getUserId()) + ")";
+    String mockUnitName = "Room (" + splitUuid(reservation.getUnitId()) + ")";
+
+    return new ReservationOverviewDto(
+        reservation.getId(),
+        mockGuestName,
+        mockUnitName,
+        reservation.getStartDate(),
+        reservation.getEndDate(),
+        reservation.getStatus());
+  }
+
+  private String splitUuid(UUID uuid) {
+    return (uuid == null) ? "Blank" : uuid.toString().substring(0, 8);
+  }
 }
