@@ -30,13 +30,13 @@ public final class JwtService {
 
   public String generateToken(Map<String, Object> extraClaims, UserDetails user) {
     return Jwts.builder()
-            .claims(extraClaims)
-            .subject(user.getUsername())
-            .claim("role", user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList())
-            .issuedAt(new Date())
-            .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1h
-            .signWith(key)
-            .compact();
+        .claims(extraClaims)
+        .subject(user.getUsername())
+        .claim("role", user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList())
+        .issuedAt(new Date())
+        .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1h
+        .signWith(key)
+        .compact();
   }
 
   public String extractUsername(String token) {
@@ -45,12 +45,12 @@ public final class JwtService {
 
   private boolean isTokenExpired(String token) {
     return Jwts.parser()
-            .verifyWith(key)
-            .build()
-            .parseSignedClaims(token)
-            .getPayload()
-            .getExpiration()
-            .before(new Date());
+        .verifyWith(key)
+        .build()
+        .parseSignedClaims(token)
+        .getPayload()
+        .getExpiration()
+        .before(new Date());
   }
 
   public boolean isValid(String token, UserDetails user) {

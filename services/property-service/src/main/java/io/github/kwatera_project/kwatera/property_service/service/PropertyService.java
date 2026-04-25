@@ -67,17 +67,13 @@ public class PropertyService {
 
   public List<UUID> getUnitIdsByOwnerId(UUID ownerId) {
     List<UUID> propertyIds =
-        propertyRepository.findByOwnerId(ownerId).stream()
-            .map(Property::getId)
-            .toList();
+        propertyRepository.findByOwnerId(ownerId).stream().map(Property::getId).toList();
 
     if (propertyIds.isEmpty()) {
       return List.of();
     }
 
-    return unitRepository.findByPropertyIdIn(propertyIds).stream()
-        .map(Unit::getId)
-        .toList();
+    return unitRepository.findByPropertyIdIn(propertyIds).stream().map(Unit::getId).toList();
   }
 
   public List<String> getPropertyImages(UUID propertyId) {
