@@ -8,6 +8,7 @@ import PropertiesPage from "./pages/PropertiesPage.tsx";
 import AdminReservationList from "./components/AdminReservationList"
 import ProtectedRoute from "./components/ProtectedRoute"
 import HomePage from "./pages/HomePage";
+import ReservationDetailsPage from "./pages/ReservationDetailsPage";
 
 function App() {
     return (
@@ -22,6 +23,14 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
                             <AdminReservationList />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/reservations/:id"
+                    element={
+                        <ProtectedRoute allowedRoles={[]}>
+                            <ReservationDetailsPage />
                         </ProtectedRoute>
                     }
                 />

@@ -1,13 +1,14 @@
 package io.github.kwatera_project.kwatera.reservation_service.controller;
 
 import io.github.kwatera_project.kwatera.reservation_service.dto.CreateReservationRequest;
+import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationDetailsDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.service.ReservationService;
-import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -22,26 +23,40 @@ public class ReservationController {
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public Reservation createReservation(
-      @Valid @RequestBody CreateReservationRequest request, Authentication authentication) {
+      @jakarta.validation.Valid @RequestBody CreateReservationRequest request,
+      Authentication authentication) {
+    UUID guestId = validateAndGetUserId(authentication);
+    return reservationService.createReservation(guestId, request);
+  }
 
+  @GetMapping("/{reservationId}")
+  public ReservationDetailsDto getReservationDetails(
+      @PathVariable("reservationId") UUID reservationId, Authentication authentication) {
+    UUID userId = validateAndGetUserId(authentication);
+
+    boolean isAdmin =
+        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
+
+    boolean isOwner =
+        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_OWNER"));
+
+    return reservationService.getReservationDetails(reservationId, userId, isAdmin, isOwner);
+  }
+
+  private UUID validateAndGetUserId(Authentication authentication) {
     if (authentication == null || !authentication.isAuthenticated()) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized: Token is missing");
     }
-
     Object details = authentication.getDetails();
-    if (!(details instanceof String userIdString) || userIdString.isBlank()) {
+    if (!(details instanceof String) || ((String) details).trim().isEmpty()) {
       throw new ResponseStatusException(
           HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
     }
-
-    UUID guestId;
     try {
-      guestId = UUID.fromString(userIdString);
-    } catch (IllegalArgumentException ex) {
+      return UUID.fromString((String) details);
+    } catch (IllegalArgumentException e) {
       throw new ResponseStatusException(
-          HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
+          HttpStatus.UNAUTHORIZED, "Unauthorized: Invalid token format");
     }
-
-    return reservationService.createReservation(guestId, request);
   }
 }

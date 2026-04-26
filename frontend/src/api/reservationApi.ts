@@ -27,3 +27,24 @@ export async function createReservation(unitId: string, from: string, to: string
 
     return res.json();
 }
+
+export async function getReservationDetails(id: string) {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+        throw new Error("Log in to view this reservation");
+    }
+
+    const res = await fetch(`${API_URL}/${id}`, {
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
+    });
+
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to fetch reservation details");
+    }
+
+    return res.json();
+}

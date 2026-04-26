@@ -29,13 +29,19 @@ public class AdminReservationController {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized: Token is missing");
     }
 
-    String userIdString = (String) authentication.getDetails();
-    if (userIdString == null) {
+    Object details = authentication.getDetails();
+    if (!(details instanceof String userIdString) || userIdString.isBlank()) {
       throw new ResponseStatusException(
           HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
     }
 
-    UUID ownerId = UUID.fromString(userIdString);
+    UUID ownerId;
+    try {
+      ownerId = UUID.fromString(userIdString);
+    } catch (IllegalArgumentException ex) {
+      throw new ResponseStatusException(
+          HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
+    }
     boolean isAdmin =
         authentication.getAuthorities().stream()
             .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
@@ -53,13 +59,19 @@ public class AdminReservationController {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized: Token is missing");
     }
 
-    String userIdString = (String) authentication.getDetails();
-    if (userIdString == null) {
+    Object details = authentication.getDetails();
+    if (!(details instanceof String userIdString) || userIdString.isBlank()) {
       throw new ResponseStatusException(
           HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
     }
 
-    UUID userId = UUID.fromString(userIdString);
+    UUID userId;
+    try {
+      userId = UUID.fromString(userIdString);
+    } catch (IllegalArgumentException ex) {
+      throw new ResponseStatusException(
+          HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
+    }
     boolean isAdmin =
         authentication.getAuthorities().stream()
             .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));

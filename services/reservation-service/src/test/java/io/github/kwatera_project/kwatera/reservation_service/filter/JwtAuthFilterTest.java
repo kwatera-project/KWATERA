@@ -104,4 +104,21 @@ class JwtAuthFilterTest {
     assertNull(SecurityContextHolder.getContext().getAuthentication());
     verify(filterChain).doFilter(request, response);
   }
+
+  @Test
+  void shouldSetEmptyAuthoritiesWhenRolesAreNull() throws Exception {
+    String token = "no-roles-token";
+    when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
+    when(jwtService.isValid(token)).thenReturn(true);
+    when(jwtService.extractUsername(token)).thenReturn("user@example.com");
+    when(jwtService.extractUserId(token)).thenReturn("12345");
+    when(jwtService.extractRoles(token)).thenReturn(null);
+
+    jwtAuthFilter.doFilterInternal(request, response, filterChain);
+
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    assertNotNull(auth);
+    assertTrue(auth.getAuthorities().isEmpty());
+    verify(filterChain).doFilter(request, response);
+  }
 }
