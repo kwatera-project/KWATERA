@@ -207,7 +207,8 @@ class ReservationControllerTest {
     dto.setId(reservationId);
     dto.setUserId(guestId);
 
-    when(reservationService.getReservationDetails(eq(reservationId), eq(adminId), eq(true)))
+    when(reservationService.getReservationDetails(
+            eq(reservationId), eq(adminId), eq(true), eq(false)))
         .thenReturn(dto);
 
     mockMvc
@@ -216,7 +217,8 @@ class ReservationControllerTest {
                 .with(authentication(buildAuth(adminId, "ROLE_ADMIN"))))
         .andExpect(status().isOk());
 
-    verify(reservationService).getReservationDetails(eq(reservationId), eq(adminId), eq(true));
+    verify(reservationService)
+        .getReservationDetails(eq(reservationId), eq(adminId), eq(true), eq(false));
   }
 
   @Test

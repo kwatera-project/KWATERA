@@ -230,7 +230,7 @@ class ReservationServiceTest {
 
     when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
 
-    ReservationDetailsDto dto = service.getReservationDetails(reservationId, userId, false);
+    ReservationDetailsDto dto = service.getReservationDetails(reservationId, userId, false, false);
 
     assertNotNull(dto);
     assertEquals(reservationId, dto.getId());
@@ -251,7 +251,7 @@ class ReservationServiceTest {
     ResponseStatusException exception =
         assertThrows(
             ResponseStatusException.class,
-            () -> service.getReservationDetails(reservationId, userId, false));
+            () -> service.getReservationDetails(reservationId, userId, false, false));
 
     assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
   }
@@ -274,7 +274,7 @@ class ReservationServiceTest {
     ResponseStatusException exception =
         assertThrows(
             ResponseStatusException.class,
-            () -> service.getReservationDetails(reservationId, differentUserId, false));
+            () -> service.getReservationDetails(reservationId, differentUserId, false, false));
 
     assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
   }
@@ -294,7 +294,8 @@ class ReservationServiceTest {
 
     when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
 
-    ReservationDetailsDto dto = service.getReservationDetails(reservationId, managerId, true);
+    ReservationDetailsDto dto =
+        service.getReservationDetails(reservationId, managerId, true, false);
 
     assertNotNull(dto);
     assertEquals(reservationId, dto.getId());
