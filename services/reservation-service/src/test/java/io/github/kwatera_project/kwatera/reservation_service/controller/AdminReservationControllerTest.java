@@ -33,6 +33,8 @@ class AdminReservationControllerTest {
 
   @Autowired private MockMvc mockMvc;
 
+  @Autowired private AdminReservationController adminReservationController;
+
   @MockitoBean private AdminReservationService adminReservationService;
 
   @MockitoBean private JwtService jwtService;
@@ -110,5 +112,28 @@ class AdminReservationControllerTest {
             get("/api/v1/admin/reservations")
                 .with(authentication(buildAuth(ownerId, "ROLE_GUEST"))))
         .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void shouldThrowUnauthorized_whenAuthenticationIsNullDirectly() {
+    org.springframework.web.server.ResponseStatusException ex =
+        org.junit.jupiter.api.Assertions.assertThrows(
+            org.springframework.web.server.ResponseStatusException.class,
+            () -> adminReservationController.getReservations(null, null));
+    org.junit.jupiter.api.Assertions.assertEquals(
+        org.springframework.http.HttpStatus.UNAUTHORIZED, ex.getStatusCode());
+  }
+
+  @Test
+  void shouldThrowUnauthorized_whenAuthenticationDetailsAreNullDirectly() {
+    Authentication auth =
+        new UsernamePasswordAuthenticationToken(
+            "user", "pass", List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+    org.springframework.web.server.ResponseStatusException ex =
+        org.junit.jupiter.api.Assertions.assertThrows(
+            org.springframework.web.server.ResponseStatusException.class,
+            () -> adminReservationController.getReservations(null, auth));
+    org.junit.jupiter.api.Assertions.assertEquals(
+        org.springframework.http.HttpStatus.UNAUTHORIZED, ex.getStatusCode());
   }
 }

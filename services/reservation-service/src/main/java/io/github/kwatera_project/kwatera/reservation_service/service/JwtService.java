@@ -15,9 +15,7 @@ public final class JwtService {
 
   private final SecretKey key;
 
-  public JwtService(
-      @Value("${jwt.secret:defaultSecretKeyWhichIsAtLeast32CharactersLongAndSecure!!!}")
-          String secret) {
+  public JwtService(@Value("${jwt.secret}") String secret) {
     if (secret == null || secret.isBlank()) {
       throw new IllegalArgumentException("JWT secret cannot be null or empty");
     }

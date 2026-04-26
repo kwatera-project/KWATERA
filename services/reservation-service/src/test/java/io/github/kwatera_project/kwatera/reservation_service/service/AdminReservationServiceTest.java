@@ -135,6 +135,64 @@ class AdminReservationServiceTest {
     verifyNoInteractions(reservationRepository);
   }
 
+  @Test
+  void shouldReturnEmptyList_whenUnitIdsArrayIsNull() {
+    UUID ownerId = UUID.randomUUID();
+
+    when(restTemplate.getForObject(
+            eq("http://property-service:8083/api/properties/units/ids/" + ownerId),
+            eq(UUID[].class)))
+        .thenReturn(null);
+
+    List<ReservationOverviewDto> result =
+        adminReservationService.getReservationsOverview(ownerId, null, false);
+
+    assertEquals(0, result.size());
+    verifyNoInteractions(reservationRepository);
+  }
+
+  @Test
+  void shouldMapToOverviewDtoSuccessfully_whenUnitDtoReturnsName() throws Exception {
+    Reservation reservation = createReservation();
+    when(reservationRepository.findAll()).thenReturn(List.of(reservation));
+
+    Class<?> clazz =
+        Class.forName(
+            "io.github.kwatera_project.kwatera.reservation_service.service.AdminReservationService$UnitNameDto");
+    java.lang.reflect.Constructor<?> constructor = clazz.getDeclaredConstructor(String.class);
+    constructor.setAccessible(true);
+    Object unitNameDto = constructor.newInstance("Beautiful Room");
+
+    when(restTemplate.getForObject(
+            eq("http://property-service:8083/api/properties/units/" + reservation.getUnitId()),
+            any(Class.class)))
+        .thenReturn(unitNameDto);
+
+    List<ReservationOverviewDto> result =
+        adminReservationService.getReservationsOverview(UUID.randomUUID(), null, true);
+
+    assertEquals(1, result.size());
+    assertEquals("Beautiful Room", result.get(0).unitName());
+  }
+
+  @Test
+  void shouldHandleNullUuidsInMapToOverviewDto() {
+    Reservation reservation = createReservation();
+    reservation.setUserId(null);
+    reservation.setUnitId(null);
+    when(reservationRepository.findAll()).thenReturn(List.of(reservation));
+
+    when(restTemplate.getForObject(anyString(), any(Class.class)))
+        .thenThrow(new RuntimeException("No unit ID"));
+
+    List<ReservationOverviewDto> result =
+        adminReservationService.getReservationsOverview(UUID.randomUUID(), null, true);
+
+    assertEquals(1, result.size());
+    assertEquals("Guest Blank", result.get(0).guestName());
+    assertEquals("Room Blank", result.get(0).unitName());
+  }
+
   private Reservation createReservation() {
     Reservation reservation = new Reservation();
     reservation.setId(UUID.randomUUID());
