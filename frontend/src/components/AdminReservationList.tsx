@@ -57,7 +57,7 @@ export default function AdminReservationList() {
         })
             .then(async (res) => {
                 if (res.ok) {
-                    setMessage({ text: "Reservation status updated successfully", type: 'success' });
+                    setMessage({ text: "Reservation status updated successfully!", type: 'success' });
                     setReservations(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
                 } else {
                     const errorData = await res.json().catch(() => ({ message: "An error occurred" }));
