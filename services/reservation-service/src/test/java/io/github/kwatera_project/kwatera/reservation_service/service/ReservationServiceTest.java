@@ -1,6 +1,8 @@
 package io.github.kwatera_project.kwatera.reservation_service.service;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import io.github.kwatera_project.kwatera.reservation_service.dto.AvailabilityDto;
@@ -17,6 +19,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 class ReservationServiceTest {
@@ -384,5 +388,95 @@ class ReservationServiceTest {
     AvailabilityDto result = service.checkAvailability(unitId, requestedStart, requestedEnd);
 
     assertTrue(result.isAvailable());
+  }
+
+  @Test
+  void shouldReturnDetailsWhenOwnerHasAccessToReservationUnit() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository);
+    ReflectionTestUtils.setField(service, "restTemplate", restTemplate);
+
+    UUID reservationId = UUID.randomUUID();
+    UUID guestId = UUID.randomUUID();
+    UUID ownerId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    Reservation reservation = new Reservation();
+    reservation.setId(reservationId);
+    reservation.setUserId(guestId);
+    reservation.setUnitId(unitId);
+    reservation.setStartDate(LocalDate.now());
+    reservation.setEndDate(LocalDate.now().plusDays(2));
+    reservation.setStatus(ReservationStatus.PENDING);
+    reservation.setCreatedAt(Instant.now());
+
+    when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
+    when(restTemplate.getForObject(anyString(), eq(UUID[].class))).thenReturn(new UUID[] {unitId});
+
+    ReservationDetailsDto dto = service.getReservationDetails(reservationId, ownerId, false, true);
+
+    assertNotNull(dto);
+    assertEquals(reservationId, dto.getId());
+    assertEquals(unitId, dto.getUnitId());
+  }
+
+  @Test
+  void shouldThrowForbiddenWhenOwnerDoesNotHaveAccessToReservationUnit() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository);
+    ReflectionTestUtils.setField(service, "restTemplate", restTemplate);
+
+    UUID reservationId = UUID.randomUUID();
+    UUID guestId = UUID.randomUUID();
+    UUID ownerId = UUID.randomUUID();
+    UUID reservationUnitId = UUID.randomUUID();
+    UUID differentOwnerUnitId = UUID.randomUUID();
+
+    Reservation reservation = new Reservation();
+    reservation.setId(reservationId);
+    reservation.setUserId(guestId);
+    reservation.setUnitId(reservationUnitId);
+
+    when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
+    when(restTemplate.getForObject(anyString(), eq(UUID[].class)))
+        .thenReturn(new UUID[] {differentOwnerUnitId});
+
+    ResponseStatusException exception =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> service.getReservationDetails(reservationId, ownerId, false, true));
+
+    assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
+  }
+
+  @Test
+  void shouldThrowForbiddenWhenOwnerAccessVerificationFails() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository);
+    ReflectionTestUtils.setField(service, "restTemplate", restTemplate);
+
+    UUID reservationId = UUID.randomUUID();
+    UUID guestId = UUID.randomUUID();
+    UUID ownerId = UUID.randomUUID();
+
+    Reservation reservation = new Reservation();
+    reservation.setId(reservationId);
+    reservation.setUserId(guestId);
+    reservation.setUnitId(UUID.randomUUID());
+
+    when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
+    when(restTemplate.getForObject(anyString(), eq(UUID[].class)))
+        .thenThrow(new RuntimeException("Property service unavailable"));
+
+    ResponseStatusException exception =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> service.getReservationDetails(reservationId, ownerId, false, true));
+
+    assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
+    assertTrue(exception.getReason().contains("Unable to verify ownership"));
   }
 }
