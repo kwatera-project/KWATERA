@@ -150,7 +150,7 @@ class PropertyServiceTest {
   @Test
   void getUnitIdsByOwnerId_shouldReturnUnitIdsWhenPropertiesExist() {
     UUID ownerId = UUID.randomUUID();
-    
+
     Property property = new Property();
     property.setId(UUID.randomUUID());
 
@@ -169,8 +169,9 @@ class PropertyServiceTest {
   @Test
   void getPropertyImages_shouldReturnImages() {
     UUID propertyId = UUID.randomUUID();
-    
-    io.github.kwatera_project.kwatera.property_service.model.PropertyImage img1 = new io.github.kwatera_project.kwatera.property_service.model.PropertyImage();
+
+    io.github.kwatera_project.kwatera.property_service.model.PropertyImage img1 =
+        new io.github.kwatera_project.kwatera.property_service.model.PropertyImage();
     img1.setUrl("img1.jpg");
 
     when(propertyImageRepository.findByPropertyId(propertyId)).thenReturn(List.of(img1));

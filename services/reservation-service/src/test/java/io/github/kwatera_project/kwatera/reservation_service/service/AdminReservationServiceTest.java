@@ -9,7 +9,7 @@ import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationOver
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
-import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -139,8 +139,8 @@ class AdminReservationServiceTest {
     reservation.setId(UUID.randomUUID());
     reservation.setUserId(UUID.randomUUID());
     reservation.setUnitId(UUID.randomUUID());
-    reservation.setStartDate(Instant.now());
-    reservation.setEndDate(Instant.now().plusSeconds(86400));
+    reservation.setStartDate(LocalDate.now());
+    reservation.setEndDate(LocalDate.now().plusDays(1));
     reservation.setStatus(ReservationStatus.CONFIRMED);
     return reservation;
   }
