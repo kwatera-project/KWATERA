@@ -33,11 +33,14 @@ public class ReservationController {
   public ReservationDetailsDto getReservationDetails(
       @PathVariable("reservationId") UUID reservationId, Authentication authentication) {
     UUID userId = validateAndGetUserId(authentication);
-    boolean hasManagementAccess =
-        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"))
-            || authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_OWNER"));
 
-    return reservationService.getReservationDetails(reservationId, userId, hasManagementAccess);
+    boolean isAdmin =
+        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
+
+    boolean isOwner =
+        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_OWNER"));
+
+    return reservationService.getReservationDetails(reservationId, userId, isAdmin, isOwner);
   }
 
   private UUID validateAndGetUserId(Authentication authentication) {

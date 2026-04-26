@@ -43,7 +43,16 @@ export default function PropertyDetailsPage() {
     }, [id]);
 
     const handleBook = async (unitId: string) => {
+        if (!from || !to || new Date(from) >= new Date(to)) {
+            setBookingState(prev => ({
+                ...prev,
+                [unitId]: { loading: false, error: "Select a valid date range first" }
+            }));
+            return;
+        }
+
         setBookingState(prev => ({ ...prev, [unitId]: { loading: true } }));
+
         try {
             const res = await createReservation(unitId, from, to);
             setBookingState(prev => ({ ...prev, [unitId]: { loading: false, success: true } }));
@@ -51,7 +60,7 @@ export default function PropertyDetailsPage() {
                 navigate(`/reservations/${res.id}`);
             }, 1500);
         } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : "Failed to book";
+            const message = err instanceof Error ? err.message : "An error occurred";
             setBookingState(prev => ({ ...prev, [unitId]: { loading: false, error: message } }));
         }
     };
@@ -185,7 +194,7 @@ export default function PropertyDetailsPage() {
                     <h3 className="font-bold mt-2">{u.name}</h3>
                     <p className="text-details">{u.description}</p>
 
-                    <p className="mt-2">{u.pricePerNight} PLN</p>
+                    <p className="mt-2">{u.pricePerNight} zł</p>
                     <p>
                         {u.capacity} {u.capacity === 1 ? "person" : "people"}
                     </p>

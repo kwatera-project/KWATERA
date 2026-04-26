@@ -7,17 +7,21 @@ import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class ReservationService {
 
   private final ReservationRepository reservationRepository;
+
+  private final RestTemplate restTemplate = new RestTemplate();
 
   public ReservationService(ReservationRepository reservationRepository) {
     this.reservationRepository = reservationRepository;
@@ -32,6 +36,9 @@ public class ReservationService {
     }
     if (!from.isBefore(to)) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid date range");
+    }
+    if (unitId == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unit id is required");
     }
     List<Reservation> reservations = reservationRepository.findByUnitId(unitId);
     for (Reservation r : reservations) {
@@ -48,6 +55,12 @@ public class ReservationService {
 
   @Transactional
   public Reservation createReservation(UUID userId, CreateReservationRequest request) {
+    if (userId == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User id is required");
+    }
+    if (request == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reservation request is required");
+    }
     AvailabilityDto availability =
         checkAvailability(request.getUnitId(), request.getStartDate(), request.getEndDate());
     if (!availability.isAvailable()) {
@@ -64,14 +77,17 @@ public class ReservationService {
   }
 
   public ReservationDetailsDto getReservationDetails(
-      UUID reservationId, UUID userId, boolean hasManagementAccess) {
+      UUID reservationId, UUID userId, boolean isAdmin, boolean isOwner) {
     Reservation reservation =
         reservationRepository
             .findById(reservationId)
             .orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reservation not found"));
 
-    if (!hasManagementAccess && !reservation.getUserId().equals(userId)) {
+    boolean isGuestOwner = reservation.getUserId().equals(userId);
+    boolean isPropertyOwner = isOwner && ownerHasAccessToUnit(userId, reservation.getUnitId());
+
+    if (!isAdmin && !isGuestOwner && !isPropertyOwner) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
     }
 
@@ -84,5 +100,21 @@ public class ReservationService {
     dto.setStatus(reservation.getStatus());
     dto.setCreatedAt(reservation.getCreatedAt());
     return dto;
+  }
+
+  private boolean ownerHasAccessToUnit(UUID ownerId, UUID unitId) {
+    String propertyServiceUrl = "http://property-service:8083/api/properties/units/ids/" + ownerId;
+
+    try {
+      UUID[] unitIdsArray = restTemplate.getForObject(propertyServiceUrl, UUID[].class);
+      if (unitIdsArray == null) {
+        return false;
+      }
+
+      return Arrays.asList(unitIdsArray).contains(unitId);
+    } catch (Exception e) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Unable to verify ownership: " + e.getMessage());
+    }
   }
 }
