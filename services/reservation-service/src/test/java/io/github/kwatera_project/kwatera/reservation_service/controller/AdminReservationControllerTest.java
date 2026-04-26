@@ -13,8 +13,8 @@ import java.util.Collections;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(AdminReservationController.class)
@@ -22,7 +22,7 @@ class AdminReservationControllerTest {
 
   @Autowired private MockMvc mockMvc;
 
-  @MockBean private AdminReservationService adminReservationService;
+  @MockitoBean private AdminReservationService adminReservationService;
 
   private String createMockToken(UUID userId, String role) {
     String payload = "{";
