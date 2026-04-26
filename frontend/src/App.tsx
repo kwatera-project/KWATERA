@@ -7,13 +7,14 @@ import PropertyDetailsPage from "./pages/PropertyDetailsPage";
 import PropertiesPage from "./pages/PropertiesPage.tsx";
 import AdminReservationList from "./components/AdminReservationList"
 import ProtectedRoute from "./components/ProtectedRoute"
+import HomePage from "./pages/HomePage";
 
 function App() {
     return (
         <>
             <Navbar/>
             <Routes>
-                <Route path="/" element={<h1 className="mb-6 text-3xl font-bold text-title text-center">Home</h1>}/>
+                <Route path="/" element={<HomePage />} />
                 <Route path="/register" element={<RegisterForm/>}/>
                 <Route path="/login" element={<LoginForm/>}/>
                 <Route
