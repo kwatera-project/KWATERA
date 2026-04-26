@@ -36,17 +36,17 @@ The project is planned as a microservice-based solution with:
 - PostgreSQL as the primary database
 - Spring Cloud Eureka for service discovery
 - Spring Cloud Config Server for centralized configuration
-- Spring Authorization Server for authentication and authorization
+- JWT-based authentication and authorization in auth-service
 - Docker and Docker Compose for local development and deployment
 - OpenAPI-based API documentation
 
 ## Roles
 
-The main user roles considered in the project are:
+The currently implemented roles in the authentication layer are:
 
-- Administrator
-- Reception
-- Guest
+- ADMIN
+- OWNER
+- GUEST
 
 ## Repository Workflow
 
@@ -62,7 +62,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for issue and pull request workflow con
 
 ## Local run
 
-Run the empty runtime environment with Docker Compose:
+Run the local development environment with Docker Compose:
 
 ```bash
 docker compose -f infra/compose/docker-compose.yml up --build
@@ -72,6 +72,7 @@ docker compose -f infra/compose/docker-compose.yml up --build
 
 - Java 25
 - Maven 3.9+
+- Bun
 - Docker with Compose support
 
 ### Local quality checks before pull request
@@ -82,11 +83,19 @@ Before opening a pull request, run local quality checks:
 .\scripts\quality\pre-PR-check.ps1
 ```
 
-This script runs the current local quality gate for all Java services:
+This script runs the current local quality gate for the backend services and the frontend application.
+
+For Java services it runs:
 
 - `spotless:check`
 - `clean verify`
 - `spotbugs:check`
+
+For the frontend it runs:
+
+- `bun install --frozen-lockfile`
+- `bun run lint`
+- `bun run build`
 
 JaCoCo coverage reports are generated locally during `verify` and can be opened in a browser from:
 
@@ -96,7 +105,24 @@ JaCoCo coverage reports are generated locally during `verify` and can be opened 
 
 ### Useful URLs after startup:
 
+#### Backend
 - Config Server health: [http://localhost:8888/actuator/health](http://localhost:8888/actuator/health)
 - Eureka dashboard: [http://localhost:8761](http://localhost:8761)
 - Reservation service ping: [http://localhost:8080/api/ping](http://localhost:8080/api/ping)
 - Reservation service health: [http://localhost:8080/actuator/health](http://localhost:8080/actuator/health)
+
+#### Frontend
+- Vite dev server for React [http://localhost:5173](http://localhost:5173)
+
+#### Auth / local testing
+
+Current authentication endpoints:
+- Auth service login: [http://localhost:8081/api/auth/login](http://localhost:8081/api/auth/login)
+- Auth service register: [http://localhost:8081/api/auth/register](http://localhost:8081/api/auth/register)
+
+> Demo users are seeded through database migrations for local testing.
+
+## Additional documentation
+
+- [CI quality pipeline](docs/ci/CI_QUALITY_PIPELINE.md)
+
