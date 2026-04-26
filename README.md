@@ -120,9 +120,14 @@ Current authentication endpoints:
 - Auth service login: [http://localhost:8081/api/auth/login](http://localhost:8081/api/auth/login)
 - Auth service register: [http://localhost:8081/api/auth/register](http://localhost:8081/api/auth/register)
 
+#### OpenAPI / Swagger UI
+- Auth Service Swagger UI: [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
+- Property Service Swagger UI: [http://localhost:8083/swagger-ui.html](http://localhost:8083/swagger-ui.html)
+- Reservation Service Swagger UI: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+
 > Demo users are seeded through database migrations for local testing.
 
 ## Additional documentation
 
 - [CI quality pipeline](docs/ci/CI_QUALITY_PIPELINE.md)
-
+- [Stage 2 API contract and local demo setup](docs/stage-2-api-and-demo.md)
