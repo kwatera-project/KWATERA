@@ -3,6 +3,7 @@ import { getProperty, getUnits, getPropertyImages } from "../api/propertyApi";
 import { useParams } from "react-router-dom";
 import type { Unit, Property } from "../types/property";
 import { checkAvailability } from "../api/availabilityApi";
+import { createReservation } from "../api/reservationApi";
 
 export default function PropertyDetailsPage() {
 
@@ -16,6 +17,10 @@ export default function PropertyDetailsPage() {
 
     const [availabilityMap, setAvailabilityMap] = useState<
         Record<string, { available: boolean; message: string }>
+    >({});
+
+    const [bookingState, setBookingState] = useState<
+        Record<string, { loading: boolean; success?: boolean; error?: string }>
     >({});
 
     const [loading, setLoading] = useState(false);
@@ -35,6 +40,26 @@ export default function PropertyDetailsPage() {
             }
         });
     }, [id]);
+
+    const handleBook = async (unitId: string) => {
+        if (!from || !to || new Date(from) >= new Date(to)) {
+            setBookingState(prev => ({
+                ...prev,
+                [unitId]: { loading: false, error: "Select a valid date range first" }
+            }));
+            return;
+        }
+
+        setBookingState(prev => ({ ...prev, [unitId]: { loading: true } }));
+
+        try {
+            await createReservation(unitId, from, to);
+            setBookingState(prev => ({ ...prev, [unitId]: { loading: false, success: true } }));
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "An error occurred";
+            setBookingState(prev => ({ ...prev, [unitId]: { loading: false, error: message } }));
+        }
+    };
 
     if (!property) {
         return <div className="p-6">Loading...</div>;
@@ -69,6 +94,7 @@ export default function PropertyDetailsPage() {
                     onChange={(e) => {
                         setFrom(e.target.value);
                         setAvailabilityMap({});
+                        setBookingState({});
                     }}
                     className="border p-2 rounded"
                 />
@@ -80,6 +106,7 @@ export default function PropertyDetailsPage() {
                     onChange={(e) => {
                         setTo(e.target.value);
                         setAvailabilityMap({});
+                        setBookingState({});
                     }}
                     className="border p-2 rounded"
                 />
@@ -178,6 +205,30 @@ export default function PropertyDetailsPage() {
                         >
                             {availabilityMap[u.id].message}
                         </p>
+                    )}
+
+                    {availabilityMap[u.id]?.available && (
+                        <div className="mt-4">
+                            <button
+                                onClick={() => handleBook(u.id)}
+                                disabled={bookingState[u.id]?.loading || bookingState[u.id]?.success}
+                                className={`px-4 py-2 font-bold rounded ${
+                                    bookingState[u.id]?.success
+                                        ? "bg-green-500 text-white cursor-default"
+                                        : bookingState[u.id]?.loading
+                                            ? "bg-gray-400 text-white cursor-wait"
+                                            : "bg-blue-600 text-white hover:bg-blue-700"
+                                }`}
+                            >
+                                {bookingState[u.id]?.loading ? "Processing..." :
+                                    bookingState[u.id]?.success ? "Booked successfully!" :
+                                        "Book this unit"}
+                            </button>
+
+                            {bookingState[u.id]?.error && (
+                                <p className="text-red-500 text-sm mt-1">{bookingState[u.id].error}</p>
+                            )}
+                        </div>
                     )}
 
                 </div>

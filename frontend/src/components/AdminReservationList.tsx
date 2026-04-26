@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 interface ReservationOverview {
     id: string;
@@ -15,7 +15,7 @@ export default function AdminReservationList() {
     const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
     const API_BASE_URL = "http://localhost:8080";
 
-    const fetchReservations = () => {
+    const fetchReservations = useCallback(() => {
         const url = statusFilter
             ? `${API_BASE_URL}/api/v1/admin/reservations?status=${statusFilter}`
             : `${API_BASE_URL}/api/v1/admin/reservations`;
@@ -38,11 +38,11 @@ export default function AdminReservationList() {
             })
             .then((data) => setReservations(data))
             .catch((err) => console.error(err));
-    };
+    }, [statusFilter, API_BASE_URL]);
 
     useEffect(() => {
         fetchReservations();
-    }, [statusFilter]);
+    }, [fetchReservations]);
 
     const handleStatusChange = (id: string, newStatus: string) => {
         const token = localStorage.getItem("token");
