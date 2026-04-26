@@ -94,6 +94,7 @@
                         <exclude>**/config/JpaConfig.class</exclude>
                         <exclude>**/model/**/*.class</exclude>
                         <exclude>**/mapper/**/*.class</exclude>
+                        <exclude>**/config/OpenApiConfig.class</exclude>
                     </excludes>
                 </configuration>
             </plugin>

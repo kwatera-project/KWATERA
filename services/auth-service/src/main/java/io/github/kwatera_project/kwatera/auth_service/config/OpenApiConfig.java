@@ -8,13 +8,14 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
-    @Bean
-    public OpenAPI authServiceOpenApi() {
-        return new OpenAPI()
-                .info(
-                        new Info()
-                                .title("KWATERA Auth Service API")
-                                .version("Stage 2")
-                                .description("Authentication and user profile API for the KWATERA Stage 2 prototype."));
-    }
+  @Bean
+  public OpenAPI authServiceOpenApi() {
+    return new OpenAPI()
+        .info(
+            new Info()
+                .title("KWATERA Auth Service API")
+                .version("Stage 2")
+                .description(
+                    "Authentication and user profile API for the KWATERA Stage 2 prototype."));
+  }
 }

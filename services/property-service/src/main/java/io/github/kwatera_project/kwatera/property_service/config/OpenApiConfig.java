@@ -8,13 +8,14 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
-    @Bean
-    public OpenAPI propertyServiceOpenApi() {
-        return new OpenAPI()
-                .info(
-                        new Info()
-                                .title("KWATERA Property Service API")
-                                .version("Stage 2")
-                                .description("Property, unit, and image catalogue API for the KWATERA Stage 2 prototype."));
-    }
+  @Bean
+  public OpenAPI propertyServiceOpenApi() {
+    return new OpenAPI()
+        .info(
+            new Info()
+                .title("KWATERA Property Service API")
+                .version("Stage 2")
+                .description(
+                    "Property, unit, and image catalogue API for the KWATERA Stage 2 prototype."));
+  }
 }

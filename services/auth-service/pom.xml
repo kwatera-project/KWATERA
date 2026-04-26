@@ -127,6 +127,7 @@
                         <exclude>**/model/**/*.class</exclude>
                         <exclude>**/dto/**/*.class</exclude>
                         <exclude>**/mapper/**/*.class</exclude>
+                        <exclude>**/config/OpenApiConfig.class</exclude>
                     </excludes>
                 </configuration>
             </plugin>
