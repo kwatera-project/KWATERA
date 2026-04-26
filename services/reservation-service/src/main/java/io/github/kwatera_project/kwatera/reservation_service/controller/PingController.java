@@ -1,4 +1,4 @@
-package io.github.kwatera_project.kwatera.reservation_service;
+package io.github.kwatera_project.kwatera.reservation_service.controller;
 
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;

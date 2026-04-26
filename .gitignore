@@ -38,3 +38,4 @@ Thumbs.db
 *.zip
 *.tar.gz
 *.rar
+.vscode/settings.json
