@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Link } from "react-router-dom";
 
 interface ReservationOverview {
     id: string;
@@ -56,7 +57,7 @@ export default function AdminReservationList() {
         })
             .then(async (res) => {
                 if (res.ok) {
-                    setMessage({ text: "Reservation status updated successfully", type: 'success' });
+                    setMessage({ text: "Reservation status updated successfully!", type: 'success' });
                     setReservations(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
                 } else {
                     const errorData = await res.json().catch(() => ({ message: "An error occurred" }));
@@ -126,7 +127,8 @@ export default function AdminReservationList() {
                                 <td className="px-4 py-3">{res.unitName}</td>
                                 <td className="px-4 py-3">{res.startDate} to {res.endDate}</td>
                                 <td className="px-4 py-3">
-                                    <span className={`px-2 py-1 rounded text-sm font-bold ${res.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
+                                    <span
+                                        className={`px-2 py-1 rounded text-sm font-bold ${res.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
                                             res.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
                                                 res.status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
                                                     'bg-gray-100 text-gray-800'
@@ -136,18 +138,47 @@ export default function AdminReservationList() {
                                 </td>
                                 <td className="px-4 py-3 text-center">
                                     <div className="flex justify-center gap-4">
+                                        <Link
+                                            to={`/reservations/${res.id}`}
+                                            className="text-blue-600 hover:underline text-sm"
+                                        >
+                                            View Details
+                                        </Link>
+
                                         {res.status === 'PENDING' && (
                                             <>
-                                                <button onClick={() => handleStatusChange(res.id, 'CONFIRMED')} className="text-green-600 hover:underline text-sm">Confirm</button>
-                                                <button onClick={() => handleStatusChange(res.id, 'CANCELLED')} className="text-red-600 hover:underline text-sm">Cancel</button>
+                                                <button
+                                                    onClick={() => handleStatusChange(res.id, 'CONFIRMED')}
+                                                    className="text-green-600 hover:underline text-sm"
+                                                >
+                                                    Confirm
+                                                </button>
+                                                <button
+                                                    onClick={() => handleStatusChange(res.id, 'CANCELLED')}
+                                                    className="text-red-600 hover:underline text-sm"
+                                                >
+                                                    Cancel
+                                                </button>
                                             </>
                                         )}
+
                                         {res.status === 'CONFIRMED' && (
                                             <>
-                                                <button onClick={() => handleStatusChange(res.id, 'COMPLETED')} className="text-blue-600 hover:underline text-sm">Complete</button>
-                                                <button onClick={() => handleStatusChange(res.id, 'CANCELLED')} className="text-red-600 hover:underline text-sm">Cancel</button>
+                                                <button
+                                                    onClick={() => handleStatusChange(res.id, 'COMPLETED')}
+                                                    className="text-blue-600 hover:underline text-sm"
+                                                >
+                                                    Complete
+                                                </button>
+                                                <button
+                                                    onClick={() => handleStatusChange(res.id, 'CANCELLED')}
+                                                    className="text-red-600 hover:underline text-sm"
+                                                >
+                                                    Cancel
+                                                </button>
                                             </>
                                         )}
+
                                         {(res.status === 'COMPLETED' || res.status === 'CANCELLED') && (
                                             <span className="text-gray-400 text-sm">None</span>
                                         )}
@@ -157,7 +188,8 @@ export default function AdminReservationList() {
                         ))}
                         {filteredReservations.length === 0 && (
                             <tr>
-                                <td colSpan={5} className="px-4 py-6 text-center text-gray-500">No reservations found.</td>
+                                <td colSpan={5} className="px-4 py-6 text-center text-gray-500">No reservations found.
+                                </td>
                             </tr>
                         )}
                     </tbody>
