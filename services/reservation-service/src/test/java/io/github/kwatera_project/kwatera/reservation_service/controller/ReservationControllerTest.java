@@ -132,4 +132,66 @@ class ReservationControllerTest {
 
     verifyNoInteractions(reservationService);
   }
+
+  @Test
+  void shouldFail_whenAuthenticationIsNotAuthenticated() throws Exception {
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken("user@test.com", null, List.of());
+    auth.setAuthenticated(false);
+
+    String json =
+        "{\"unitId\":\""
+            + UUID.randomUUID()
+            + "\", \"startDate\":\"2026-10-10\", \"endDate\":\"2026-10-15\"}";
+
+    mockMvc
+        .perform(
+            post("/api/v1/reservations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json)
+                .with(authentication(auth)))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void shouldFail_whenDetailsAreNotAString() throws Exception {
+    List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_GUEST"));
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken("user@test.com", null, authorities);
+    auth.setDetails(12345); // Integer instead of String UUID
+
+    String json =
+        "{\"unitId\":\""
+            + UUID.randomUUID()
+            + "\", \"startDate\":\"2026-10-10\", \"endDate\":\"2026-10-15\"}";
+
+    mockMvc
+        .perform(
+            post("/api/v1/reservations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json)
+                .with(authentication(auth)))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void shouldFail_whenUserIdIsBlankInToken() throws Exception {
+    List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_GUEST"));
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken("user@test.com", null, authorities);
+    auth.setDetails("   ");
+
+    String json =
+        "{\"unitId\":\""
+            + UUID.randomUUID()
+            + "\", \"startDate\":\"2026-10-10\", \"endDate\":\"2026-10-15\"}";
+
+    mockMvc
+        .perform(
+            post("/api/v1/reservations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json)
+                .with(authentication(auth)))
+        .andExpect(status().isUnauthorized());
+  }
 }

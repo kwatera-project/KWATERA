@@ -165,4 +165,55 @@ class ReservationServiceTest {
             () -> reservationService.createReservation(userId, request));
     assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
   }
+
+  @Test
+  void shouldIgnoreCompletedReservation() {
+    UUID unitId = UUID.randomUUID();
+    LocalDate start = LocalDate.now().plusDays(10);
+    LocalDate end = LocalDate.now().plusDays(15);
+
+    Reservation reservation = new Reservation();
+    reservation.setStatus(ReservationStatus.COMPLETED);
+    reservation.setStartDate(start);
+    reservation.setEndDate(end);
+
+    when(reservationRepository.findByUnitId(unitId)).thenReturn(List.of(reservation));
+
+    AvailabilityDto result =
+        reservationService.checkAvailability(unitId, start.plusDays(2), start.plusDays(4));
+
+    assertTrue(result.isAvailable());
+  }
+
+  @Test
+  void shouldThrowWhenUnitIdIsNull() {
+    LocalDate from = LocalDate.now().plusDays(1);
+    LocalDate to = LocalDate.now().plusDays(3);
+
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> reservationService.checkAvailability(null, from, to));
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+  }
+
+  @Test
+  void shouldThrowWhenUserIdIsNull() {
+    CreateReservationRequest request = new CreateReservationRequest();
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> reservationService.createReservation(null, request));
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+  }
+
+  @Test
+  void shouldThrowWhenRequestIsNull() {
+    UUID userId = UUID.randomUUID();
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> reservationService.createReservation(userId, null));
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+  }
 }
