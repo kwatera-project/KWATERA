@@ -6,11 +6,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.github.kwatera_project.kwatera.reservation_service.config.SecurityConfig;
 import io.github.kwatera_project.kwatera.reservation_service.dto.CreateReservationRequest;
+import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationDetailsDto;
 import io.github.kwatera_project.kwatera.reservation_service.filter.JwtAuthFilter;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.service.JwtService;
@@ -158,7 +160,7 @@ class ReservationControllerTest {
     List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_GUEST"));
     UsernamePasswordAuthenticationToken auth =
         new UsernamePasswordAuthenticationToken("user@test.com", null, authorities);
-    auth.setDetails(12345); // Integer instead of String UUID
+    auth.setDetails(12345);
 
     String json =
         "{\"unitId\":\""
@@ -192,6 +194,44 @@ class ReservationControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json)
                 .with(authentication(auth)))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void shouldGetReservationDetails_whenUserHasAdminRole() throws Exception {
+    UUID adminId = UUID.randomUUID();
+    UUID guestId = UUID.randomUUID();
+    UUID reservationId = UUID.randomUUID();
+
+    ReservationDetailsDto dto = new ReservationDetailsDto();
+    dto.setId(reservationId);
+    dto.setUserId(guestId);
+
+    when(reservationService.getReservationDetails(eq(reservationId), eq(adminId), eq(true)))
+        .thenReturn(dto);
+
+    mockMvc
+        .perform(
+            get("/api/v1/reservations/" + reservationId)
+                .with(authentication(buildAuth(adminId, "ROLE_ADMIN"))))
+        .andExpect(status().isOk());
+
+    verify(reservationService).getReservationDetails(eq(reservationId), eq(adminId), eq(true));
+  }
+
+  @Test
+  void shouldFailGetDetails_whenTokenIsMissing() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/reservations/" + UUID.randomUUID()))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void shouldFailGetDetails_whenUserIdIsMissingInToken() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/v1/reservations/" + UUID.randomUUID())
+                .with(authentication(buildAuth(null, "ROLE_GUEST"))))
         .andExpect(status().isUnauthorized());
   }
 }

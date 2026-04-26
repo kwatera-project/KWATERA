@@ -178,4 +178,32 @@ class AdminReservationControllerTest {
     org.junit.jupiter.api.Assertions.assertEquals(
         org.springframework.http.HttpStatus.UNAUTHORIZED, ex.getStatusCode());
   }
+
+  @Test
+  void shouldThrowUnauthorized_whenAuthenticationDetailsAreBlank() {
+    Authentication auth =
+        new UsernamePasswordAuthenticationToken(
+            "user", "pass", List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+    ((UsernamePasswordAuthenticationToken) auth).setDetails("   ");
+    org.springframework.web.server.ResponseStatusException ex =
+        org.junit.jupiter.api.Assertions.assertThrows(
+            org.springframework.web.server.ResponseStatusException.class,
+            () -> adminReservationController.getReservations(null, auth));
+    org.junit.jupiter.api.Assertions.assertEquals(
+        org.springframework.http.HttpStatus.UNAUTHORIZED, ex.getStatusCode());
+  }
+
+  @Test
+  void shouldThrowUnauthorized_whenAuthenticationDetailsAreNotString() {
+    Authentication auth =
+        new UsernamePasswordAuthenticationToken(
+            "user", "pass", List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+    ((UsernamePasswordAuthenticationToken) auth).setDetails(12345);
+    org.springframework.web.server.ResponseStatusException ex =
+        org.junit.jupiter.api.Assertions.assertThrows(
+            org.springframework.web.server.ResponseStatusException.class,
+            () -> adminReservationController.getReservations(null, auth));
+    org.junit.jupiter.api.Assertions.assertEquals(
+        org.springframework.http.HttpStatus.UNAUTHORIZED, ex.getStatusCode());
+  }
 }

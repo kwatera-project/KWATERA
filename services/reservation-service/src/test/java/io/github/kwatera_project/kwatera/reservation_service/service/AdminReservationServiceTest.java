@@ -261,6 +261,29 @@ class AdminReservationServiceTest {
         "Room " + reservation.getUnitId().toString().substring(0, 8), result.get(0).unitName());
   }
 
+  @Test
+  void shouldHandlePropertyServiceErrorInOverview() {
+    UUID ownerId = UUID.randomUUID();
+    when(restTemplate.getForObject(anyString(), eq(UUID[].class)))
+        .thenThrow(new RuntimeException("Connection error"));
+
+    List<ReservationOverviewDto> result =
+        adminReservationService.getReservationsOverview(ownerId, null, false);
+
+    assertTrue(result.isEmpty());
+  }
+
+  @Test
+  void shouldHandleNullUnitIdsArrayFromPropertyService() {
+    UUID ownerId = UUID.randomUUID();
+    when(restTemplate.getForObject(anyString(), eq(UUID[].class))).thenReturn(null);
+
+    List<ReservationOverviewDto> result =
+        adminReservationService.getReservationsOverview(ownerId, null, false);
+
+    assertTrue(result.isEmpty());
+  }
+
   private Reservation createReservation() {
     Reservation reservation = new Reservation();
     reservation.setId(UUID.randomUUID());

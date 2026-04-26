@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getProperty, getUnits, getPropertyImages } from "../api/propertyApi";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import type { Unit, Property } from "../types/property";
 import { checkAvailability } from "../api/availabilityApi";
 import { createReservation } from "../api/reservationApi";
@@ -8,6 +8,7 @@ import { createReservation } from "../api/reservationApi";
 export default function PropertyDetailsPage() {
 
     const { id } = useParams();
+    const navigate = useNavigate();
     const [property, setProperty] = useState<Property | null>(null);
     const [units, setUnits] = useState<Unit[]>([]);
     const [images, setImages] = useState<string[]>([]);
@@ -42,21 +43,15 @@ export default function PropertyDetailsPage() {
     }, [id]);
 
     const handleBook = async (unitId: string) => {
-        if (!from || !to || new Date(from) >= new Date(to)) {
-            setBookingState(prev => ({
-                ...prev,
-                [unitId]: { loading: false, error: "Select a valid date range first" }
-            }));
-            return;
-        }
-
         setBookingState(prev => ({ ...prev, [unitId]: { loading: true } }));
-
         try {
-            await createReservation(unitId, from, to);
+            const res = await createReservation(unitId, from, to);
             setBookingState(prev => ({ ...prev, [unitId]: { loading: false, success: true } }));
+            setTimeout(() => {
+                navigate(`/reservations/${res.id}`);
+            }, 1500);
         } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : "An error occurred";
+            const message = err instanceof Error ? err.message : "Failed to book";
             setBookingState(prev => ({ ...prev, [unitId]: { loading: false, error: message } }));
         }
     };
@@ -190,7 +185,7 @@ export default function PropertyDetailsPage() {
                     <h3 className="font-bold mt-2">{u.name}</h3>
                     <p className="text-details">{u.description}</p>
 
-                    <p className="mt-2">{u.pricePerNight} zł</p>
+                    <p className="mt-2">{u.pricePerNight} PLN</p>
                     <p>
                         {u.capacity} {u.capacity === 1 ? "person" : "people"}
                     </p>
