@@ -12,6 +12,10 @@
     <artifactId>reservation-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
+    <properties>
+        <sonar.coverage.exclusions>**/config/OpenApiConfig.java</sonar.coverage.exclusions>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
