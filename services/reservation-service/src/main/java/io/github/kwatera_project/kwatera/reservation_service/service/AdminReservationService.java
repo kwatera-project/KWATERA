@@ -57,13 +57,26 @@ public class AdminReservationService {
   }
 
   private ReservationOverviewDto mapToOverviewDto(Reservation reservation) {
-    String mockGuestName = "Guest (" + splitUuid(reservation.getUserId()) + ")";
-    String mockUnitName = "Room (" + splitUuid(reservation.getUnitId()) + ")";
+    String guestName = "Guest " + splitUuid(reservation.getUserId());
+    String unitName = "Unknown Room";
+
+    try {
+      String unitUrl =
+          "http://property-service:8083/api/properties/units/" + reservation.getUnitId();
+      UnitNameDto unitDto = restTemplate.getForObject(unitUrl, UnitNameDto.class);
+      if (unitDto != null && unitDto.name() != null) {
+        unitName = unitDto.name();
+      } else {
+        unitName = "Room " + splitUuid(reservation.getUnitId());
+      }
+    } catch (Exception e) {
+      unitName = "Room " + splitUuid(reservation.getUnitId());
+    }
 
     return new ReservationOverviewDto(
         reservation.getId(),
-        mockGuestName,
-        mockUnitName,
+        guestName,
+        unitName,
         reservation.getStartDate(),
         reservation.getEndDate(),
         reservation.getStatus());
@@ -72,4 +85,6 @@ public class AdminReservationService {
   private String splitUuid(UUID uuid) {
     return (uuid == null) ? "Blank" : uuid.toString().substring(0, 8);
   }
+
+  private record UnitNameDto(String name) {}
 }

@@ -45,7 +45,6 @@ class AdminReservationServiceTest {
 
     assertEquals(1, result.size());
     verify(reservationRepository).findAll();
-    verifyNoInteractions(restTemplate);
   }
 
   @Test
@@ -60,7 +59,6 @@ class AdminReservationServiceTest {
 
     assertEquals(1, result.size());
     verify(reservationRepository).findByStatus(ReservationStatus.CONFIRMED);
-    verifyNoInteractions(restTemplate);
   }
 
   @Test
@@ -71,7 +69,8 @@ class AdminReservationServiceTest {
     Reservation reservation = createReservation();
 
     when(restTemplate.getForObject(
-            "http://property-service:8083/api/properties/units/ids/" + ownerId, UUID[].class))
+            eq("http://property-service:8083/api/properties/units/ids/" + ownerId),
+            eq(UUID[].class)))
         .thenReturn(unitIds);
     when(reservationRepository.findByUnitIdIn(List.of(unitId))).thenReturn(List.of(reservation));
 
@@ -90,7 +89,8 @@ class AdminReservationServiceTest {
     Reservation reservation = createReservation();
 
     when(restTemplate.getForObject(
-            "http://property-service:8083/api/properties/units/ids/" + ownerId, UUID[].class))
+            eq("http://property-service:8083/api/properties/units/ids/" + ownerId),
+            eq(UUID[].class)))
         .thenReturn(unitIds);
     when(reservationRepository.findByUnitIdInAndStatus(
             List.of(unitId), ReservationStatus.CONFIRMED))
@@ -110,7 +110,8 @@ class AdminReservationServiceTest {
     UUID ownerId = UUID.randomUUID();
 
     when(restTemplate.getForObject(
-            "http://property-service:8083/api/properties/units/ids/" + ownerId, UUID[].class))
+            eq("http://property-service:8083/api/properties/units/ids/" + ownerId),
+            eq(UUID[].class)))
         .thenReturn(new UUID[0]);
 
     List<ReservationOverviewDto> result =

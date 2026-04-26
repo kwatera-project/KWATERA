@@ -1,16 +1,13 @@
 package io.github.kwatera_project.kwatera.reservation_service.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationOverviewDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
 import io.github.kwatera_project.kwatera.reservation_service.service.AdminReservationService;
-import jakarta.servlet.http.HttpServletRequest;
-import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -25,51 +22,22 @@ public class AdminReservationController {
   @GetMapping
   public List<ReservationOverviewDto> getReservations(
       @RequestParam(name = "status", required = false) ReservationStatus status,
-      HttpServletRequest request) {
-    String authHeader = request.getHeader("Authorization");
-    UUID ownerId = null;
-    boolean isAdmin = false;
+      Authentication authentication) {
 
-    if (authHeader != null && authHeader.startsWith("Bearer ")) {
-      String token = authHeader.substring(7);
-      String[] chunks = token.split("\\.");
-
-      if (chunks.length > 1) {
-        try {
-          Base64.Decoder decoder = Base64.getUrlDecoder();
-          String payload =
-              new String(decoder.decode(chunks[1]), java.nio.charset.StandardCharsets.UTF_8);
-
-          ObjectMapper mapper = new ObjectMapper();
-          JsonNode payloadNode = mapper.readTree(payload);
-
-          if (payloadNode.has("userId")) {
-            String userIdString = payloadNode.get("userId").asText();
-            ownerId = UUID.fromString(userIdString);
-          } else {
-            System.err.println("No userID in token. Login again");
-          }
-
-          if (payloadNode.has("role")) {
-            JsonNode rolesNode = payloadNode.get("role");
-            for (JsonNode roleNode : rolesNode) {
-              if ("ROLE_ADMIN".equals(roleNode.asText())) {
-                isAdmin = true;
-                break;
-              }
-            }
-          }
-
-        } catch (Exception e) {
-          System.err.println("Parssing error: " + e.getMessage());
-        }
-      }
+    if (authentication == null || !authentication.isAuthenticated()) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized: Token is missing");
     }
 
-    if (ownerId == null) {
+    String userIdString = (String) authentication.getDetails();
+    if (userIdString == null) {
       throw new ResponseStatusException(
           HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
     }
+
+    UUID ownerId = UUID.fromString(userIdString);
+    boolean isAdmin =
+        authentication.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
     return adminReservationService.getReservationsOverview(ownerId, status, isAdmin);
   }
