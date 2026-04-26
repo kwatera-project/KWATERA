@@ -81,7 +81,7 @@ class AdminReservationControllerTest {
 
   @Test
   void shouldFail_whenAuthorizationHeaderIsMissing() throws Exception {
-    mockMvc.perform(get("/api/v1/admin/reservations")).andExpect(status().isInternalServerError());
+    mockMvc.perform(get("/api/v1/admin/reservations")).andExpect(status().isUnauthorized());
   }
 
   @Test
@@ -90,7 +90,7 @@ class AdminReservationControllerTest {
         .perform(
             get("/api/v1/admin/reservations")
                 .header("Authorization", "Bearer to_nie_jest_poprawny_token.JWT"))
-        .andExpect(status().isInternalServerError());
+        .andExpect(status().isUnauthorized());
   }
 
   @Test
@@ -99,6 +99,6 @@ class AdminReservationControllerTest {
 
     mockMvc
         .perform(get("/api/v1/admin/reservations").header("Authorization", "Bearer " + token))
-        .andExpect(status().isInternalServerError());
+        .andExpect(status().isUnauthorized());
   }
 }

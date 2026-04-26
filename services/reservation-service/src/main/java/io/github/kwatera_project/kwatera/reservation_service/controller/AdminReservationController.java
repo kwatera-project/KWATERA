@@ -10,7 +10,9 @@ import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @CrossOrigin(origins = "http://localhost:5173")
 @RestController
@@ -65,7 +67,7 @@ public class AdminReservationController {
     }
 
     if (ownerId == null) {
-      throw new RuntimeException("Unauthorized: Token is incorrect");
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
     }
 
     return adminReservationService.getReservationsOverview(ownerId, status, isAdmin);

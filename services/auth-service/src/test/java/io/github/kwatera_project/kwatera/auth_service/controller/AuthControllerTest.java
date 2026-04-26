@@ -12,8 +12,11 @@ import io.github.kwatera_project.kwatera.auth_service.dto.LoginRequest;
 import io.github.kwatera_project.kwatera.auth_service.dto.RegisterRequest;
 import io.github.kwatera_project.kwatera.auth_service.model.Role;
 import io.github.kwatera_project.kwatera.auth_service.model.User;
+import io.github.kwatera_project.kwatera.auth_service.repository.UserRepository;
 import io.github.kwatera_project.kwatera.auth_service.service.JwtService;
 import io.github.kwatera_project.kwatera.auth_service.service.UserService;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.security.autoconfigure.SecurityAutoConfiguration;
@@ -43,6 +46,8 @@ class AuthControllerTest {
   @MockitoBean private AuthenticationManager authenticationManager;
 
   @MockitoBean private JwtService jwtService;
+
+  @MockitoBean private UserRepository userRepository;
 
   @Autowired private ObjectMapper objectMapper;
 
@@ -152,6 +157,7 @@ class AuthControllerTest {
     request.setPassword("password");
 
     User user = new User();
+    user.setId(UUID.randomUUID());
     user.setUsername("test");
     user.setEmail("test@test.com");
     user.setRole(Role.GUEST);
@@ -162,7 +168,9 @@ class AuthControllerTest {
     when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
         .thenReturn(authentication);
 
-    when(jwtService.generateToken(user)).thenReturn("jwt-token");
+    when(userRepository.findByEmail("test@test.com")).thenReturn(Optional.of(user));
+
+    when(jwtService.generateToken(anyMap(), any(UserDetails.class))).thenReturn("jwt-token");
 
     mockMvc
         .perform(
@@ -173,8 +181,8 @@ class AuthControllerTest {
         .andExpect(content().json("{\"token\":\"jwt-token\"}"));
 
     verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-
-    verify(jwtService).generateToken(user);
+    verify(userRepository).findByEmail("test@test.com");
+    verify(jwtService).generateToken(anyMap(), any(UserDetails.class));
   }
 
   @Test
