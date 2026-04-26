@@ -136,4 +136,49 @@ class PropertyServiceTest {
 
     assertThrows(ResponseStatusException.class, () -> propertyService.getUnitById(id));
   }
+
+  @Test
+  void getUnitIdsByOwnerId_shouldReturnEmptyWhenNoProperties() {
+    UUID ownerId = UUID.randomUUID();
+    when(propertyRepository.findByOwnerId(ownerId)).thenReturn(List.of());
+
+    var result = propertyService.getUnitIdsByOwnerId(ownerId);
+
+    assertTrue(result.isEmpty());
+  }
+
+  @Test
+  void getUnitIdsByOwnerId_shouldReturnUnitIdsWhenPropertiesExist() {
+    UUID ownerId = UUID.randomUUID();
+
+    Property property = new Property();
+    property.setId(UUID.randomUUID());
+
+    Unit unit = new Unit();
+    unit.setId(UUID.randomUUID());
+
+    when(propertyRepository.findByOwnerId(ownerId)).thenReturn(List.of(property));
+    when(unitRepository.findByPropertyIdIn(List.of(property.getId()))).thenReturn(List.of(unit));
+
+    var result = propertyService.getUnitIdsByOwnerId(ownerId);
+
+    assertEquals(1, result.size());
+    assertEquals(unit.getId(), result.get(0));
+  }
+
+  @Test
+  void getPropertyImages_shouldReturnImages() {
+    UUID propertyId = UUID.randomUUID();
+
+    io.github.kwatera_project.kwatera.property_service.model.PropertyImage img1 =
+        new io.github.kwatera_project.kwatera.property_service.model.PropertyImage();
+    img1.setUrl("img1.jpg");
+
+    when(propertyImageRepository.findByPropertyId(propertyId)).thenReturn(List.of(img1));
+
+    var result = propertyService.getPropertyImages(propertyId);
+
+    assertEquals(1, result.size());
+    assertEquals("img1.jpg", result.get(0));
+  }
 }

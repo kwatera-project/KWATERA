@@ -1,11 +1,15 @@
 import '../App.css'
 import {Link} from "react-router-dom"
 import {useLogout} from "./Logout.tsx"
+import {getUserRoles} from "../utils/jwtUtils.ts"
 
 
 export default function Navbar() {
 
-    const isLoggedIn = localStorage.getItem("token") !== null
+    const token = localStorage.getItem("token");
+    const userRoles = getUserRoles(token);
+    const isLoggedIn = !!token;
+
     const logout = useLogout()
 
     return (
@@ -22,14 +26,6 @@ export default function Navbar() {
                 >
                     Home
                 </Link>
-
-                <Link
-                    to="/catalog"
-                    className="hover:text-[rgb(var(--color-burgundy))] transition"
-                    >
-                        Catalog
-                </Link>
-
                 {isLoggedIn ? (
                     <button
                         onClick={logout}
@@ -44,8 +40,20 @@ export default function Navbar() {
                     >
                         Login
                     </Link>
-
-
+                )}
+                <Link
+                    to="/catalog"
+                    className="hover:text-[rgb(var(--color-burgundy))] transition"
+                >
+                    Catalog
+                </Link>
+                {isLoggedIn && (userRoles.includes("ROLE_ADMIN") || userRoles.includes("ROLE_OWNER"))  && (
+                    <Link
+                        to="/admin/reservations"
+                        className="hover:text-[rgb(var(--color-burgundy))] transition"
+                    >
+                        Reservations
+                    </Link>
                 )}
             </div>
 

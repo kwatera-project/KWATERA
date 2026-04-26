@@ -68,4 +68,29 @@ class PropertyControllerTest {
 
     assertEquals(id, result.getId());
   }
+
+  @Test
+  void getUnitIdsByOwnerId_shouldReturnIds() {
+    UUID ownerId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    when(service.getUnitIdsByOwnerId(ownerId)).thenReturn(List.of(unitId));
+
+    var result = controller.getUnitIdsByOwnerId(ownerId);
+
+    assertEquals(1, result.size());
+    assertEquals(unitId, result.get(0));
+  }
+
+  @Test
+  void getPropertyImages_shouldReturnImages() {
+    UUID propertyId = UUID.randomUUID();
+
+    when(service.getPropertyImages(propertyId)).thenReturn(List.of("img1.jpg", "img2.jpg"));
+
+    var result = controller.getPropertyImages(propertyId);
+
+    assertEquals(2, result.size());
+    assertEquals("img1.jpg", result.get(0));
+  }
 }
