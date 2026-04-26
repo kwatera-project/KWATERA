@@ -1,9 +1,11 @@
 package io.github.kwatera_project.kwatera.reservation_service.controller;
 
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.github.kwatera_project.kwatera.reservation_service.config.SecurityConfig;
@@ -20,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -67,18 +70,57 @@ class AdminReservationControllerTest {
   }
 
   @Test
-  void shouldReturnReservations_whenValidOwnerTokenProvided() throws Exception {
-    UUID ownerId = UUID.randomUUID();
-    when(adminReservationService.getReservationsOverview(ownerId, null, false))
-        .thenReturn(Collections.emptyList());
+  void shouldUpdateStatus_whenValidAdminTokenProvided() throws Exception {
+    UUID resId = UUID.randomUUID();
+    UUID userId = UUID.randomUUID();
+    String json = "{\"newStatus\":\"CONFIRMED\"}";
 
     mockMvc
         .perform(
-            get("/api/v1/admin/reservations")
-                .with(authentication(buildAuth(ownerId, "ROLE_OWNER"))))
+            patch("/api/v1/admin/reservations/" + resId + "/status")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json)
+                .with(authentication(buildAuth(userId, "ROLE_ADMIN"))))
         .andExpect(status().isOk());
 
-    verify(adminReservationService).getReservationsOverview(ownerId, null, false);
+    verify(adminReservationService)
+        .updateReservationStatus(eq(resId), eq(ReservationStatus.CONFIRMED), eq(userId), eq(true));
+  }
+
+  @Test
+  void shouldUpdateStatus_whenValidOwnerTokenProvided() throws Exception {
+    UUID resId = UUID.randomUUID();
+    UUID userId = UUID.randomUUID();
+    String json = "{\"newStatus\":\"CANCELLED\"}";
+
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/reservations/" + resId + "/status")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json)
+                .with(authentication(buildAuth(userId, "ROLE_OWNER"))))
+        .andExpect(status().isOk());
+
+    verify(adminReservationService)
+        .updateReservationStatus(eq(resId), eq(ReservationStatus.CANCELLED), eq(userId), eq(false));
+  }
+
+  @Test
+  void shouldFailPatch_whenTokenIsMissing() throws Exception {
+    mockMvc
+        .perform(patch("/api/v1/admin/reservations/" + UUID.randomUUID() + "/status"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void shouldFailPatch_whenUserHasGuestRole() throws Exception {
+    mockMvc
+        .perform(
+            patch("/api/v1/admin/reservations/" + UUID.randomUUID() + "/status")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"newStatus\":\"CONFIRMED\"}")
+                .with(authentication(buildAuth(UUID.randomUUID(), "ROLE_GUEST"))))
+        .andExpect(status().isForbidden());
   }
 
   @Test
@@ -105,7 +147,7 @@ class AdminReservationControllerTest {
   }
 
   @Test
-  void shouldFail_whenUserHasGuestRole() throws Exception {
+  void shouldFail_whenUserHasGuestRoleGet() throws Exception {
     UUID ownerId = UUID.randomUUID();
     mockMvc
         .perform(

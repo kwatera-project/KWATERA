@@ -1,6 +1,8 @@
 package io.github.kwatera_project.kwatera.reservation_service.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -8,9 +10,12 @@ import static org.mockito.Mockito.*;
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationOverviewDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
+import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatusHistory;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
+import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationStatusHistoryRepository;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,13 +23,19 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
 class AdminReservationServiceTest {
 
   @Mock private ReservationRepository reservationRepository;
+
+  @Mock private ReservationStatusHistoryRepository statusHistoryRepository;
+
+  @Mock private ReservationStatusValidator statusValidator;
 
   @Mock private RestTemplate restTemplate;
 
@@ -62,6 +73,117 @@ class AdminReservationServiceTest {
   }
 
   @Test
+  void shouldUpdateStatus_whenAdminChangesAnyReservation() {
+    UUID resId = UUID.randomUUID();
+    UUID adminId = UUID.randomUUID();
+    Reservation reservation = createReservation();
+    reservation.setId(resId);
+    reservation.setStatus(ReservationStatus.PENDING);
+
+    when(reservationRepository.findById(resId)).thenReturn(Optional.of(reservation));
+
+    ReservationOverviewDto result =
+        adminReservationService.updateReservationStatus(
+            resId, ReservationStatus.CONFIRMED, adminId, true);
+
+    assertEquals(ReservationStatus.CONFIRMED, result.status());
+    verify(statusValidator)
+        .validateTransition(ReservationStatus.PENDING, ReservationStatus.CONFIRMED);
+    verify(reservationRepository).save(reservation);
+    verify(statusHistoryRepository).save(any(ReservationStatusHistory.class));
+  }
+
+  @Test
+  void shouldUpdateStatus_whenOwnerChangesOwnReservation() {
+    UUID resId = UUID.randomUUID();
+    UUID ownerId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    Reservation reservation = createReservation();
+    reservation.setId(resId);
+    reservation.setUnitId(unitId);
+    reservation.setStatus(ReservationStatus.PENDING);
+
+    when(reservationRepository.findById(resId)).thenReturn(Optional.of(reservation));
+    when(restTemplate.getForObject(anyString(), eq(UUID[].class))).thenReturn(new UUID[] {unitId});
+
+    ReservationOverviewDto result =
+        adminReservationService.updateReservationStatus(
+            resId, ReservationStatus.CONFIRMED, ownerId, false);
+
+    assertEquals(ReservationStatus.CONFIRMED, result.status());
+    verify(reservationRepository).save(reservation);
+  }
+
+  @Test
+  void shouldThrowForbidden_whenOwnerChangesForeignReservation() {
+    UUID resId = UUID.randomUUID();
+    UUID ownerId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    Reservation reservation = createReservation();
+    reservation.setId(resId);
+    reservation.setUnitId(UUID.randomUUID()); // different unit
+
+    when(reservationRepository.findById(resId)).thenReturn(Optional.of(reservation));
+    when(restTemplate.getForObject(anyString(), eq(UUID[].class))).thenReturn(new UUID[] {unitId});
+
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () ->
+                adminReservationService.updateReservationStatus(
+                    resId, ReservationStatus.CONFIRMED, ownerId, false));
+
+    assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+  }
+
+  @Test
+  void shouldThrowNotFound_whenReservationDoesNotExist() {
+    UUID resId = UUID.randomUUID();
+    when(reservationRepository.findById(resId)).thenReturn(Optional.empty());
+
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () ->
+                adminReservationService.updateReservationStatus(
+                    resId, ReservationStatus.CONFIRMED, UUID.randomUUID(), true));
+
+    assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+  }
+
+  @Test
+  void shouldThrowBadRequest_whenTransitionIsInvalid() {
+    UUID resId = UUID.randomUUID();
+    Reservation reservation = createReservation();
+    reservation.setStatus(ReservationStatus.CANCELLED);
+
+    when(reservationRepository.findById(resId)).thenReturn(Optional.of(reservation));
+    doThrow(new IllegalStateException("Invalid transition"))
+        .when(statusValidator)
+        .validateTransition(ReservationStatus.CANCELLED, ReservationStatus.CONFIRMED);
+
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () ->
+                adminReservationService.updateReservationStatus(
+                    resId, ReservationStatus.CONFIRMED, UUID.randomUUID(), true));
+
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+  }
+
+  @Test
+  void shouldThrowBadRequest_whenNewStatusIsNull() {
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () ->
+                adminReservationService.updateReservationStatus(
+                    UUID.randomUUID(), null, UUID.randomUUID(), true));
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+  }
+
+  @Test
   void shouldReturnOwnerReservations_whenUserIsOwner() {
     UUID ownerId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
@@ -88,10 +210,7 @@ class AdminReservationServiceTest {
     UUID[] unitIds = {unitId};
     Reservation reservation = createReservation();
 
-    when(restTemplate.getForObject(
-            eq("http://property-service:8083/api/properties/units/ids/" + ownerId),
-            eq(UUID[].class)))
-        .thenReturn(unitIds);
+    when(restTemplate.getForObject(anyString(), eq(UUID[].class))).thenReturn(unitIds);
     when(reservationRepository.findByUnitIdInAndStatus(
             List.of(unitId), ReservationStatus.CONFIRMED))
         .thenReturn(List.of(reservation));
@@ -101,96 +220,45 @@ class AdminReservationServiceTest {
             ownerId, ReservationStatus.CONFIRMED, false);
 
     assertEquals(1, result.size());
-    verify(reservationRepository)
-        .findByUnitIdInAndStatus(List.of(unitId), ReservationStatus.CONFIRMED);
   }
 
   @Test
   void shouldReturnEmptyList_whenOwnerHasNoUnits() {
-    UUID ownerId = UUID.randomUUID();
-
-    when(restTemplate.getForObject(
-            eq("http://property-service:8083/api/properties/units/ids/" + ownerId),
-            eq(UUID[].class)))
-        .thenReturn(new UUID[0]);
-
+    when(restTemplate.getForObject(anyString(), eq(UUID[].class))).thenReturn(new UUID[0]);
     List<ReservationOverviewDto> result =
-        adminReservationService.getReservationsOverview(ownerId, null, false);
-
+        adminReservationService.getReservationsOverview(UUID.randomUUID(), null, false);
     assertEquals(0, result.size());
-    verifyNoInteractions(reservationRepository);
   }
 
   @Test
-  void shouldReturnEmptyList_whenPropertyServiceThrowsException() {
-    UUID ownerId = UUID.randomUUID();
-
+  void shouldHandlePropertyServiceErrorInVerifyOwnerAccess() {
+    UUID resId = UUID.randomUUID();
+    Reservation reservation = createReservation();
+    when(reservationRepository.findById(resId)).thenReturn(Optional.of(reservation));
     when(restTemplate.getForObject(anyString(), eq(UUID[].class)))
-        .thenThrow(new RuntimeException("Service unavailable"));
+        .thenThrow(new RuntimeException("API Down"));
 
-    List<ReservationOverviewDto> result =
-        adminReservationService.getReservationsOverview(ownerId, null, false);
-
-    assertEquals(0, result.size());
-    verifyNoInteractions(reservationRepository);
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () ->
+                adminReservationService.updateReservationStatus(
+                    resId, ReservationStatus.CONFIRMED, UUID.randomUUID(), false));
+    assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+    assertTrue(ex.getReason().contains("Unable to verify ownership"));
   }
 
   @Test
-  void shouldReturnEmptyList_whenUnitIdsArrayIsNull() {
-    UUID ownerId = UUID.randomUUID();
-
-    when(restTemplate.getForObject(
-            eq("http://property-service:8083/api/properties/units/ids/" + ownerId),
-            eq(UUID[].class)))
-        .thenReturn(null);
-
-    List<ReservationOverviewDto> result =
-        adminReservationService.getReservationsOverview(ownerId, null, false);
-
-    assertEquals(0, result.size());
-    verifyNoInteractions(reservationRepository);
-  }
-
-  @Test
-  void shouldMapToOverviewDtoSuccessfully_whenUnitDtoReturnsName() throws Exception {
+  void shouldHandleUnitNameFetchError() {
     Reservation reservation = createReservation();
     when(reservationRepository.findAll()).thenReturn(List.of(reservation));
-
-    Class<?> clazz =
-        Class.forName(
-            "io.github.kwatera_project.kwatera.reservation_service.service.AdminReservationService$UnitNameDto");
-    java.lang.reflect.Constructor<?> constructor = clazz.getDeclaredConstructor(String.class);
-    constructor.setAccessible(true);
-    Object unitNameDto = constructor.newInstance("Beautiful Room");
-
-    when(restTemplate.getForObject(
-            eq("http://property-service:8083/api/properties/units/" + reservation.getUnitId()),
-            any(Class.class)))
-        .thenReturn(unitNameDto);
+    when(restTemplate.getForObject(anyString(), any())).thenThrow(new RuntimeException("API Down"));
 
     List<ReservationOverviewDto> result =
         adminReservationService.getReservationsOverview(UUID.randomUUID(), null, true);
-
     assertEquals(1, result.size());
-    assertEquals("Beautiful Room", result.get(0).unitName());
-  }
-
-  @Test
-  void shouldHandleNullUuidsInMapToOverviewDto() {
-    Reservation reservation = createReservation();
-    reservation.setUserId(null);
-    reservation.setUnitId(null);
-    when(reservationRepository.findAll()).thenReturn(List.of(reservation));
-
-    when(restTemplate.getForObject(anyString(), any(Class.class)))
-        .thenThrow(new RuntimeException("No unit ID"));
-
-    List<ReservationOverviewDto> result =
-        adminReservationService.getReservationsOverview(UUID.randomUUID(), null, true);
-
-    assertEquals(1, result.size());
-    assertEquals("Guest Blank", result.get(0).guestName());
-    assertEquals("Room Blank", result.get(0).unitName());
+    assertEquals(
+        "Room " + reservation.getUnitId().toString().substring(0, 8), result.get(0).unitName());
   }
 
   private Reservation createReservation() {

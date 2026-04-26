@@ -125,7 +125,6 @@
                     <excludes>
                         <exclude>**/ReservationServiceApplication.class</exclude>
                         <exclude>**/config/JpaConfig.class</exclude>
-                        <exclude>**/model/**/*.class</exclude>
                         <exclude>**/mapper/**/*.class</exclude>
                     </excludes>
                 </configuration>
