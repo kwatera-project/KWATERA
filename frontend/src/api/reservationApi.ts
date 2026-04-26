@@ -3,6 +3,10 @@ const API_URL = "http://localhost:8080/api/v1/reservations";
 export async function createReservation(unitId: string, from: string, to: string) {
     const token = localStorage.getItem("token");
 
+    if (!token) {
+        throw new Error("Log in to book this unit");
+    }
+
     const res = await fetch(API_URL, {
         method: "POST",
         headers: {

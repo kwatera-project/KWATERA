@@ -3,6 +3,7 @@ package io.github.kwatera_project.kwatera.reservation_service.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -66,7 +67,7 @@ class ReservationControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json)
                 .with(authentication(buildAuth(userId, "ROLE_GUEST"))))
-        .andExpect(status().isOk());
+        .andExpect(status().isCreated());
 
     verify(reservationService).createReservation(eq(userId), any(CreateReservationRequest.class));
   }
@@ -80,12 +81,55 @@ class ReservationControllerTest {
 
   @Test
   void shouldFail_whenUserIdIsMissingInToken() throws Exception {
+    String json =
+        "{\"unitId\":\""
+            + UUID.randomUUID()
+            + "\", \"startDate\":\"2026-10-10\", \"endDate\":\"2026-10-15\"}";
+
+    mockMvc
+        .perform(
+            post("/api/v1/reservations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json)
+                .with(authentication(buildAuth(null, "ROLE_GUEST"))))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void shouldFail_whenRequiredFieldsAreMissing() throws Exception {
+    UUID userId = UUID.randomUUID();
+
     mockMvc
         .perform(
             post("/api/v1/reservations")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}")
-                .with(authentication(buildAuth(null, "ROLE_GUEST"))))
+                .with(authentication(buildAuth(userId, "ROLE_GUEST"))))
+        .andExpect(status().isBadRequest());
+
+    verifyNoInteractions(reservationService);
+  }
+
+  @Test
+  void shouldFail_whenUserIdIsMalformedInToken() throws Exception {
+    List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_GUEST"));
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken("user@test.com", null, authorities);
+    auth.setDetails("not-a-uuid");
+
+    String json =
+        "{\"unitId\":\""
+            + UUID.randomUUID()
+            + "\", \"startDate\":\"2026-10-10\", \"endDate\":\"2026-10-15\"}";
+
+    mockMvc
+        .perform(
+            post("/api/v1/reservations")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json)
+                .with(authentication(auth)))
         .andExpect(status().isUnauthorized());
+
+    verifyNoInteractions(reservationService);
   }
 }

@@ -42,7 +42,16 @@ export default function PropertyDetailsPage() {
     }, [id]);
 
     const handleBook = async (unitId: string) => {
+        if (!from || !to || new Date(from) >= new Date(to)) {
+            setBookingState(prev => ({
+                ...prev,
+                [unitId]: { loading: false, error: "Select a valid date range first" }
+            }));
+            return;
+        }
+
         setBookingState(prev => ({ ...prev, [unitId]: { loading: true } }));
+
         try {
             await createReservation(unitId, from, to);
             setBookingState(prev => ({ ...prev, [unitId]: { loading: false, success: true } }));

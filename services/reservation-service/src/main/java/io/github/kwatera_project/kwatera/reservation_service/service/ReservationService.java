@@ -36,6 +36,10 @@ public class ReservationService {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid date range");
     }
 
+    if (unitId == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unit id is required");
+    }
+
     List<Reservation> reservations = reservationRepository.findByUnitId(unitId);
 
     for (Reservation r : reservations) {
@@ -54,6 +58,14 @@ public class ReservationService {
 
   @Transactional
   public Reservation createReservation(UUID userId, CreateReservationRequest request) {
+    if (userId == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User id is required");
+    }
+
+    if (request == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reservation request is required");
+    }
+
     AvailabilityDto availability =
         checkAvailability(request.getUnitId(), request.getStartDate(), request.getEndDate());
 
