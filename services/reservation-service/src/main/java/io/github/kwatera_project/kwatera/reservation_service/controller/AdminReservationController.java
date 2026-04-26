@@ -67,7 +67,8 @@ public class AdminReservationController {
     }
 
     if (ownerId == null) {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
+      throw new ResponseStatusException(
+          HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
     }
 
     return adminReservationService.getReservationsOverview(ownerId, status, isAdmin);
