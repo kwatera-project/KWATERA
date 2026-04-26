@@ -34,6 +34,8 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/v1/reservations")
+                    .hasAuthority("ROLE_GUEST")
                     .requestMatchers("/api/v1/admin/reservations", "/api/v1/admin/reservations/**")
                     .hasAnyAuthority("ROLE_ADMIN", "ROLE_OWNER")
                     .anyRequest()
