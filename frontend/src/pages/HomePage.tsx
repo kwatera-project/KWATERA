@@ -2,21 +2,27 @@ import { useEffect, useState } from "react";
 import { getProperties } from "../api/propertyApi";
 import Slider from "../components/Slider";
 
+type Property = {
+    id: string;
+    imageUrl: string;
+};
+
 export default function HomePage() {
     const [slides, setSlides] = useState<{ id: string; image: string }[]>([]);
+
 
     useEffect(() => {
         async function load() {
             try {
                 const response = await getProperties();
 
-                const props = Array.isArray(response)
+                const props: Property[] = Array.isArray(response)
                     ? response
                     : response.content || response.data || [];
 
                 const allSlides = props
-                    .filter((p: any) => p.imageUrl)
-                    .map((p: any) => ({
+                    .filter((p: Property) => p.imageUrl)
+                    .map((p: Property) => ({
                         id: p.id,
                         image: p.imageUrl
                     }));

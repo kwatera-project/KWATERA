@@ -20,7 +20,7 @@ export default function Slider({ slides }: SliderProps) {
             setIndex(prev => (prev + 1) % slides.length);
         }, 5000);
         return () => clearInterval(interval);
-    }, [slides.length]);
+    }, [slides]);
 
     function next() {
         if (slides.length === 0) return;
