@@ -1,6 +1,7 @@
 package io.github.kwatera_project.kwatera.reservation_service.service;
 
 import io.github.kwatera_project.kwatera.reservation_service.dto.AvailabilityDto;
+import io.github.kwatera_project.kwatera.reservation_service.dto.CreateReservationRequest;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
@@ -9,6 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -48,5 +50,25 @@ public class ReservationService {
     }
 
     return new AvailabilityDto(true, "Unit is available");
+  }
+
+  @Transactional
+  public Reservation createReservation(UUID userId, CreateReservationRequest request) {
+    AvailabilityDto availability =
+        checkAvailability(request.getUnitId(), request.getStartDate(), request.getEndDate());
+
+    if (!availability.isAvailable()) {
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT, "The selected dates are no longer available");
+    }
+
+    Reservation reservation = new Reservation();
+    reservation.setUserId(userId);
+    reservation.setUnitId(request.getUnitId());
+    reservation.setStartDate(request.getStartDate());
+    reservation.setEndDate(request.getEndDate());
+    reservation.setStatus(ReservationStatus.PENDING);
+
+    return reservationRepository.save(reservation);
   }
 }
