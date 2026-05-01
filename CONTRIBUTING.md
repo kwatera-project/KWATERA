@@ -41,27 +41,46 @@ Minimum PR completion rules:
 
 Every pull request should be linked to its issue in the PR description.
 
-Use one of the standard closing keywords, for example:
+Use a closing keyword only when the pull request fully completes the issue, for example:
 
 `Closes #14`
 
+If the pull request implements only part of the issue, use a non-closing reference instead, for example:
+
+`Refs #14`
+
+or
+
+`Part of #14`
+
 Preferred convention:
-- one PR should address one main issue
-- if needed, additional related issues can be referenced in the description
-- if the PR is not intended to close the issue yet, reference the issue without a closing keyword
+- one issue may be completed by one or more pull requests
+- smaller focused PRs are preferred when an issue covers multiple independent changes
+- use `Closes #...` only in the PR that completes the issue
+- use `Refs #...` or `Part of #...` for partial PRs
+- unrelated changes must not be included in a PR, even if they are small
+
+## CODEOWNERS maintenance
+
+When a PR introduces a new service, module, directory, or clearly separated feature area, update `.github/CODEOWNERS` in the same PR.
 
 ## Recommended workflow
 
 1. Create an issue using the correct issue template.
 2. Define context, scope, and Definition of Done.
-3. Create a branch for the issue.
-4. Implement only the changes required by that issue.
-5. Run local quality checks with `.\scripts\quality\pre-PR-check.ps1`.
-6. Open a pull request using the shared PR template.
-7. Link the issue in the PR description.
-8. Provide testing status and complete the checklist.
-9. Request review.
-10. Merge after review is complete.
+3. Create a branch for the first focused part of the issue.
+4. Implement only the changes required by that branch scope.
+5. Check whether the change introduces a new service, module, directory, or clearly separated feature area.
+6. Update `.github/CODEOWNERS` in the same PR if ownership changes are needed.
+7. Run local quality checks with `.\scripts\quality\pre-PR-check.ps1`.
+8. Open a pull request using the shared PR template.
+9. Link the issue in the PR description:
+   - use `Refs #...` or `Part of #...` for partial PRs
+   - use `Closes #...` only when the PR completes the issue
+10. Provide testing status and complete the checklist.
+11. Request review.
+12. Merge after review is complete.
+13. Continue with another focused PR if the issue is not fully completed yet.
 
 
 ## Local quality checks before PR

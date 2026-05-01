@@ -26,4 +26,5 @@ Describe how this was verified.
 - [ ] Scope matches the issue
 - [ ] No unrelated changes were added
 - [ ] Documentation updated if needed
+- [ ] CODEOWNERS updated if this PR adds or changes ownership of a service, module, directory, or major feature area
 - [ ] Ready for review
