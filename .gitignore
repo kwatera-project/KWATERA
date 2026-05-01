@@ -39,3 +39,6 @@ Thumbs.db
 *.tar.gz
 *.rar
 .vscode/settings.json
+
+__pycache__
+.venv
