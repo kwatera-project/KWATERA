@@ -46,6 +46,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python 3.12
         uses: actions/setup-python@v5
@@ -65,11 +67,21 @@ jobs:
       - name: Check Ruff formatting
         run: ruff format --check .
 
-      - name: Run pytest
-        run: pytest -q
+      - name: Run pytest with coverage
+        run: pytest --cov=app --cov-report=xml:coverage.xml --cov-report=term-missing -q
 
       - name: Build Docker image
         run: docker build -f Dockerfile -t kwatera-ocr-service:ci ../..
+
+      - name: SonarQube Cloud analysis
+        uses: SonarSource/sonarqube-scan-action@v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: services/ocr-service
+          args: >
+            -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+            -Dsonar.qualitygate.wait=true
 
   quality:
     name: Quality - ${{ matrix.service }}

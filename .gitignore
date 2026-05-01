@@ -42,3 +42,8 @@ Thumbs.db
 
 __pycache__
 .venv
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.ruff_cache/
