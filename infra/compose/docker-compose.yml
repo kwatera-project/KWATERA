@@ -131,6 +131,26 @@ services:
           condition: service_healthy
     restart: on-failure
 
+  ocr-service:
+    build:
+      context: ../..
+      dockerfile: services/ocr-service/Dockerfile
+    container_name: kwatera-ocr-service
+    ports:
+      - "8085:8085"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8085/health').read()",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: on-failure
+
   frontend:
     build:
       context: ../..
