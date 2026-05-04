@@ -1,7 +1,57 @@
-*                               @lukaszjecek
-/.github/                       @lukaszjecek
-/README.md                      @lukaszjecek
-/CONTRIBUTING.md                @lukaszjecek
-/infra/                         @lukaszjecek
-/config-repo/                   @lukaszjecek
-/services/                      @lukaszjecek
+# Default fallback.
+* @lukaszjecek
+
+# Repository governance, workflow and documentation.
+/.github/ @lukaszjecek
+/.github/CODEOWNERS @lukaszjecek
+/README.md @lukaszjecek
+/CONTRIBUTING.md @lukaszjecek
+/docs/ @lukaszjecek
+/scripts/ @lukaszjecek
+
+# Shared build, runtime and infrastructure.
+/pom.xml @lukaszjecek @sinadzeya
+/config-repo/ @lukaszjecek @sinadzeya
+/infra/ @lukaszjecek @sinadzeya
+/services/config-server/ @lukaszjecek @sinadzeya
+/services/service-registry/ @lukaszjecek @sinadzeya
+/services/api-gateway/ @lukaszjecek @sinadzeya
+
+# Authentication, authorization and security.
+/services/auth-service/ @sinadzeya @lukaszjecek
+
+# Database schema, migrations and seed data.
+/services/db-migrations/ @sinadzeya @lukaszjecek
+
+# Property catalog domain.
+/services/property-service/ @ZuzannaAdamczyk @lukaszjecek
+
+# Reservation domain and owner/admin reservation flow.
+/services/reservation-service/ @alicjaswiers @lukaszjecek
+
+# OCR service.
+/services/ocr-service/ @lukaszjecek
+
+# Frontend.
+/frontend/ @ZuzannaAdamczyk @alicjaswiers @sinadzeya @lukaszjecek
+
+# Frontend authentication flow.
+/frontend/src/components/LoginForm.tsx @sinadzeya @lukaszjecek
+/frontend/src/components/RegisterForm.tsx @sinadzeya @lukaszjecek
+/frontend/src/components/Logout.tsx @sinadzeya @lukaszjecek
+/frontend/src/components/ProtectedRoute.tsx @sinadzeya @alicjaswiers @lukaszjecek
+/frontend/src/utils/jwtUtils.ts @sinadzeya @alicjaswiers @lukaszjecek
+
+# Frontend property/catalog flow.
+/frontend/src/api/propertyApi.ts @ZuzannaAdamczyk @lukaszjecek
+/frontend/src/types/property.ts @ZuzannaAdamczyk @lukaszjecek
+/frontend/src/pages/PropertiesPage.tsx @ZuzannaAdamczyk @lukaszjecek
+/frontend/src/pages/PropertyDetailsPage.tsx @ZuzannaAdamczyk @alicjaswiers @lukaszjecek
+/frontend/src/components/Slider.tsx @ZuzannaAdamczyk @lukaszjecek
+/frontend/src/pages/HomePage.tsx @ZuzannaAdamczyk @lukaszjecek
+
+# Frontend reservation/admin flow.
+/frontend/src/api/reservationApi.ts @alicjaswiers @lukaszjecek
+/frontend/src/types/reservation.ts @alicjaswiers @lukaszjecek
+/frontend/src/pages/ReservationDetailsPage.tsx @alicjaswiers @lukaszjecek
+/frontend/src/components/AdminReservationList.tsx @alicjaswiers @lukaszjecek
