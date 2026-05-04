@@ -110,6 +110,7 @@ JaCoCo coverage reports are generated locally during `verify` and can be opened 
 - Eureka dashboard: [http://localhost:8761](http://localhost:8761)
 - Reservation service ping: [http://localhost:8080/api/ping](http://localhost:8080/api/ping)
 - Reservation service health: [http://localhost:8080/actuator/health](http://localhost:8080/actuator/health)
+- OCR service health: [http://localhost:8085/health](http://localhost:8085/health)
 
 #### Frontend
 - Vite dev server for React [http://localhost:5173](http://localhost:5173)
@@ -131,3 +132,4 @@ Current authentication endpoints:
 
 - [CI quality pipeline](docs/ci/CI_QUALITY_PIPELINE.md)
 - [Stage 2 API contract and local demo setup](docs/stage-2-api-and-demo.md)
+- [OCR service](services/ocr-service/README.md)

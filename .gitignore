@@ -39,3 +39,11 @@ Thumbs.db
 *.tar.gz
 *.rar
 .vscode/settings.json
+
+__pycache__
+.venv
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.ruff_cache/
