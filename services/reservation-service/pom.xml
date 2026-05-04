@@ -13,7 +13,10 @@
     <version>0.0.1-SNAPSHOT</version>
 
     <properties>
-        <sonar.coverage.exclusions>**/config/OpenApiConfig.java</sonar.coverage.exclusions>
+        <sonar.coverage.exclusions>
+            **/config/OpenApiConfig.java,
+            **/config/RestTemplateConfig.java
+        </sonar.coverage.exclusions>
     </properties>
 
     <dependencies>
@@ -141,6 +144,7 @@
                         <exclude>**/config/JpaConfig.class</exclude>
                         <exclude>**/mapper/**/*.class</exclude>
                         <exclude>**/config/OpenApiConfig.class</exclude>
+                        <exclude>**/config/RestTemplateConfig.class</exclude>
                     </excludes>
                 </configuration>
             </plugin>
