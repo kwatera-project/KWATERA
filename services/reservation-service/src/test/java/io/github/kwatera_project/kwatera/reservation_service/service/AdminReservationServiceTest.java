@@ -24,7 +24,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -191,8 +190,7 @@ class AdminReservationServiceTest {
     Reservation reservation = createReservation();
 
     when(restTemplate.getForObject(
-            eq("http://property-service/api/properties/units/ids/" + ownerId),
-            eq(UUID[].class)))
+            eq("http://property-service/api/properties/units/ids/" + ownerId), eq(UUID[].class)))
         .thenReturn(unitIds);
     when(reservationRepository.findByUnitIdIn(List.of(unitId))).thenReturn(List.of(reservation));
 

@@ -128,8 +128,7 @@ public class AdminReservationService {
     String unitName = "Unknown Room";
 
     try {
-      String unitUrl =
-          "http://property-service/api/properties/units/" + reservation.getUnitId();
+      String unitUrl = "http://property-service/api/properties/units/" + reservation.getUnitId();
       UnitNameDto unitDto = restTemplate.getForObject(unitUrl, UnitNameDto.class);
       if (unitDto != null && unitDto.name() != null) {
         unitName = unitDto.name();
