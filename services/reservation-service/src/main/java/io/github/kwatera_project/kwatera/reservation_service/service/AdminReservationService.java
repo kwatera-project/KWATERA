@@ -27,7 +27,7 @@ public class AdminReservationService {
 
   private final ReservationStatusValidator statusValidator;
 
-  private final RestTemplate restTemplate = new RestTemplate();
+  private final RestTemplate restTemplate;
 
   public List<ReservationOverviewDto> getReservationsOverview(
       UUID ownerId, ReservationStatus status, boolean isAdmin) {
@@ -41,7 +41,7 @@ public class AdminReservationService {
       return reservations.stream().map(this::mapToOverviewDto).toList();
     }
 
-    String propertyServiceUrl = "http://property-service:8083/api/properties/units/ids/" + ownerId;
+    String propertyServiceUrl = "http://property-service/api/properties/units/ids/" + ownerId;
 
     try {
       UUID[] unitIdsArray = restTemplate.getForObject(propertyServiceUrl, UUID[].class);
@@ -105,7 +105,7 @@ public class AdminReservationService {
   }
 
   private void verifyOwnerAccess(UUID ownerId, UUID unitId) {
-    String propertyServiceUrl = "http://property-service:8083/api/properties/units/ids/" + ownerId;
+    String propertyServiceUrl = "http://property-service/api/properties/units/ids/" + ownerId;
     try {
       UUID[] unitIdsArray = restTemplate.getForObject(propertyServiceUrl, UUID[].class);
       List<UUID> ownerUnitIds =
@@ -129,7 +129,7 @@ public class AdminReservationService {
 
     try {
       String unitUrl =
-          "http://property-service:8083/api/properties/units/" + reservation.getUnitId();
+          "http://property-service/api/properties/units/" + reservation.getUnitId();
       UnitNameDto unitDto = restTemplate.getForObject(unitUrl, UnitNameDto.class);
       if (unitDto != null && unitDto.name() != null) {
         unitName = unitDto.name();

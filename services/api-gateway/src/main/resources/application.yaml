@@ -8,13 +8,48 @@ spring:
     import: optional:configserver:http://config-server:8888
   cloud:
     gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:5173"
+              - "http://localhost:5174"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
       routes:
         - id: auth-service
-          uri: http://auth-service:8081
+          uri: lb://auth-service
           predicates:
             - Path=/api/auth/**
-          filters:
-            - TokenRelay
+
+        - id: reservation-service
+          uri: lb://reservation-service
+          predicates:
+            - Path=/api/v1/reservations/**
+
+        - id: reservation-service-admin
+          uri: lb://reservation-service
+          predicates:
+            - Path=/api/v1/admin/reservations/**
+
+        - id: reservation-service-availability
+          uri: lb://reservation-service
+          predicates:
+            - Path=/api/availability/**
+
+        - id: property-service
+          uri: lb://property-service
+          predicates:
+            - Path=/api/properties/**
+
   security:
     oauth2:
       client:

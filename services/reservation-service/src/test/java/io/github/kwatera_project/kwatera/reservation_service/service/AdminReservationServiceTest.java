@@ -43,7 +43,7 @@ class AdminReservationServiceTest {
 
   @BeforeEach
   void setUp() {
-    ReflectionTestUtils.setField(adminReservationService, "restTemplate", restTemplate);
+    // restTemplate is injected via @InjectMocks (Lombok @RequiredArgsConstructor)
   }
 
   @Test
@@ -191,7 +191,7 @@ class AdminReservationServiceTest {
     Reservation reservation = createReservation();
 
     when(restTemplate.getForObject(
-            eq("http://property-service:8083/api/properties/units/ids/" + ownerId),
+            eq("http://property-service/api/properties/units/ids/" + ownerId),
             eq(UUID[].class)))
         .thenReturn(unitIds);
     when(reservationRepository.findByUnitIdIn(List.of(unitId))).thenReturn(List.of(reservation));

@@ -44,11 +44,10 @@ class Stage2ReservationFlowTest {
 
   @BeforeEach
   void setUp() {
-    reservationService = new ReservationService(reservationRepository);
+    reservationService = new ReservationService(reservationRepository, restTemplate);
     adminReservationService =
         new AdminReservationService(
-            reservationRepository, statusHistoryRepository, statusValidator);
-    ReflectionTestUtils.setField(adminReservationService, "restTemplate", restTemplate);
+            reservationRepository, statusHistoryRepository, statusValidator, restTemplate);
   }
 
   @Test

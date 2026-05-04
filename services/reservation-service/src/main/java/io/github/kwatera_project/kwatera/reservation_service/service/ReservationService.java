@@ -21,10 +21,12 @@ public class ReservationService {
 
   private final ReservationRepository reservationRepository;
 
-  private final RestTemplate restTemplate = new RestTemplate();
+  private final RestTemplate restTemplate;
 
-  public ReservationService(ReservationRepository reservationRepository) {
+  public ReservationService(
+      ReservationRepository reservationRepository, RestTemplate restTemplate) {
     this.reservationRepository = reservationRepository;
+    this.restTemplate = restTemplate;
   }
 
   public AvailabilityDto checkAvailability(UUID unitId, LocalDate from, LocalDate to) {
@@ -103,7 +105,7 @@ public class ReservationService {
   }
 
   private boolean ownerHasAccessToUnit(UUID ownerId, UUID unitId) {
-    String propertyServiceUrl = "http://property-service:8083/api/properties/units/ids/" + ownerId;
+    String propertyServiceUrl = "http://property-service/api/properties/units/ids/" + ownerId;
 
     try {
       UUID[] unitIdsArray = restTemplate.getForObject(propertyServiceUrl, UUID[].class);

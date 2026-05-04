@@ -126,7 +126,9 @@ services:
       EUREKA_DEFAULT_ZONE: http://service-registry:8761/eureka
     depends_on:
       config-server:
-          condition: service_started
+          condition: service_healthy
+      service-registry:
+          condition: service_healthy
     restart: on-failure
 
   frontend:
