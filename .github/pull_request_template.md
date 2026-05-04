@@ -27,4 +27,5 @@ Describe how this was verified.
 - [ ] No unrelated changes were added
 - [ ] Documentation updated if needed
 - [ ] CODEOWNERS updated if this PR adds or changes ownership of a service, module, directory, or major feature area
+- [ ] OpenAPI/Swagger verified and updated if this PR adds, removes, or changes backend API endpoints, DTOs, request/response contracts, or authorization rules
 - [ ] Ready for review
