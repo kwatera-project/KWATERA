@@ -29,6 +29,9 @@
 # Reservation domain and owner/admin reservation flow.
 /services/reservation-service/ @alicjaswiers @lukaszjecek
 
+# OCR service.
+/services/ocr-service/ @lukaszjecek
+
 # Frontend.
 /frontend/ @ZuzannaAdamczyk @alicjaswiers @sinadzeya @lukaszjecek
 
