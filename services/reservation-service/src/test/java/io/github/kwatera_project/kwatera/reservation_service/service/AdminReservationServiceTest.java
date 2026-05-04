@@ -190,7 +190,7 @@ class AdminReservationServiceTest {
     Reservation reservation = createReservation();
 
     when(restTemplate.getForObject(
-            eq("http://property-service/api/properties/units/ids/" + ownerId), eq(UUID[].class)))
+            "http://property-service/api/properties/units/ids/" + ownerId, UUID[].class))
         .thenReturn(unitIds);
     when(reservationRepository.findByUnitIdIn(List.of(unitId))).thenReturn(List.of(reservation));
 
