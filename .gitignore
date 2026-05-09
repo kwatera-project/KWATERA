@@ -48,4 +48,4 @@ htmlcov/
 .pytest_cache/
 .ruff_cache/
 
-./infra/compose/.env
+infra/compose/.env
