@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getProperty, getUnits, getPropertyImages } from "../api/propertyApi";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import type { Unit, Property } from "../types/property";
 import { checkAvailability } from "../api/availabilityApi";
 import { createReservation } from "../api/reservationApi";
@@ -8,7 +8,6 @@ import { createReservation } from "../api/reservationApi";
 export default function PropertyDetailsPage() {
 
     const { id } = useParams();
-    const navigate = useNavigate();
     const [property, setProperty] = useState<Property | null>(null);
     const [units, setUnits] = useState<Unit[]>([]);
     const [images, setImages] = useState<string[]>([]);
@@ -55,10 +54,25 @@ export default function PropertyDetailsPage() {
 
         try {
             const res = await createReservation(unitId, from, to);
+
             setBookingState(prev => ({ ...prev, [unitId]: { loading: false, success: true } }));
-            setTimeout(() => {
-                navigate(`/reservations/${res.id}`);
-            }, 1500);
+
+            const token = localStorage.getItem("token");
+
+            const checkoutRes = await fetch(
+                `http://localhost:8086/api/billing/checkout/${res.id}`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            const checkoutUrl = await checkoutRes.text();
+
+            window.location.href = checkoutUrl;
+
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "An error occurred";
             setBookingState(prev => ({ ...prev, [unitId]: { loading: false, error: message } }));

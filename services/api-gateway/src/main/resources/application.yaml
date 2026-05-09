@@ -15,6 +15,10 @@ spring:
             - Path=/api/auth/**
           filters:
             - TokenRelay
+        - id: billing-service
+          uri: http://billing-service:8086
+          predicates:
+            - Path=/api//billing/**
   security:
     oauth2:
       client:

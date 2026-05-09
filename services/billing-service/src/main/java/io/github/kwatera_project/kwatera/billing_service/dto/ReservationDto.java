@@ -1,20 +1,25 @@
-package io.github.kwatera_project.kwatera.reservation_service.dto;
+package io.github.kwatera_project.kwatera.billing_service.dto;
 
-import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
-public class ReservationDetailsDto {
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class ReservationDto {
   private UUID id;
   private UUID userId;
   private UUID unitId;
   private LocalDate startDate;
   private LocalDate endDate;
-  private ReservationStatus status;
+  private String status;
   private Instant createdAt;
   private BigDecimal pricePerNightSnapshot;
   private BigDecimal totalPrice;

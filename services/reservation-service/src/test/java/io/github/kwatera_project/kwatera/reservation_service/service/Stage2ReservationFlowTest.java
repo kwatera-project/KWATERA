@@ -2,19 +2,20 @@ package io.github.kwatera_project.kwatera.reservation_service.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import io.github.kwatera_project.kwatera.reservation_service.dto.AvailabilityDto;
 import io.github.kwatera_project.kwatera.reservation_service.dto.CreateReservationRequest;
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationOverviewDto;
+import io.github.kwatera_project.kwatera.reservation_service.dto.UnitDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatusHistory;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationStatusHistoryRepository;
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,6 +25,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
@@ -44,7 +48,7 @@ class Stage2ReservationFlowTest {
 
   @BeforeEach
   void setUp() {
-    reservationService = new ReservationService(reservationRepository);
+    reservationService = new ReservationService(reservationRepository, restTemplate);
     adminReservationService =
         new AdminReservationService(
             reservationRepository, statusHistoryRepository, statusValidator);
@@ -57,6 +61,7 @@ class Stage2ReservationFlowTest {
     UUID guestId = UUID.randomUUID();
     UUID adminId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
+    String mockToken = "some-jwt-token";
     LocalDate startDate = LocalDate.now().plusDays(14);
     LocalDate endDate = startDate.plusDays(4);
 
@@ -76,9 +81,17 @@ class Stage2ReservationFlowTest {
               return reservation;
             });
 
+    UnitDto mockUnit = new UnitDto();
+    mockUnit.setPricePerNight(new BigDecimal("250.00"));
+
+    when(restTemplate.exchange(
+            anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(UnitDto.class)))
+        .thenReturn(ResponseEntity.ok(mockUnit));
+
     AvailabilityDto availability = reservationService.checkAvailability(unitId, startDate, endDate);
 
-    Reservation createdReservation = reservationService.createReservation(guestId, request);
+    Reservation createdReservation =
+        reservationService.createReservation(guestId, request, mockToken);
 
     when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(createdReservation));
 
@@ -109,5 +122,8 @@ class Stage2ReservationFlowTest {
     assertThat(history.getNewStatus()).isEqualTo(ReservationStatus.CONFIRMED);
     assertThat(history.getChangedBy()).isEqualTo(adminId);
     assertThat(history.getChangedAt()).isNotNull();
+    long nights = ChronoUnit.DAYS.between(startDate, endDate);
+    assertThat(createdReservation.getTotalPrice())
+        .isEqualByComparingTo(new BigDecimal("250.00").multiply(BigDecimal.valueOf(nights)));
   }
 }

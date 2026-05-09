@@ -1,6 +1,8 @@
 package io.github.kwatera_project.kwatera.reservation_service.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Positive;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -45,4 +47,12 @@ public class Reservation {
   @Column(name = "updated_at")
   @LastModifiedDate
   private Instant updatedAt;
+
+  @Column(name = "price_per_night_snapshot", nullable = false)
+  @Positive
+  private BigDecimal pricePerNightSnapshot;
+
+  @Column(name = "total_price", nullable = false)
+  @Positive
+  private BigDecimal totalPrice;
 }

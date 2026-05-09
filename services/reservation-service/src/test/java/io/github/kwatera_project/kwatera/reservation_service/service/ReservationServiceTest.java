@@ -8,9 +8,11 @@ import static org.mockito.Mockito.*;
 import io.github.kwatera_project.kwatera.reservation_service.dto.AvailabilityDto;
 import io.github.kwatera_project.kwatera.reservation_service.dto.CreateReservationRequest;
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationDetailsDto;
+import io.github.kwatera_project.kwatera.reservation_service.dto.UnitDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -18,7 +20,10 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
@@ -28,7 +33,8 @@ class ReservationServiceTest {
   @Test
   void shouldReturnAvailableWhenNoReservations() {
     ReservationRepository repository = mock(ReservationRepository.class);
-    ReservationService service = new ReservationService(repository);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository, restTemplate);
 
     UUID unitId = UUID.randomUUID();
 
@@ -44,7 +50,8 @@ class ReservationServiceTest {
   @Test
   void shouldReturnFalseWhenDatesOverlap() {
     ReservationRepository repository = mock(ReservationRepository.class);
-    ReservationService service = new ReservationService(repository);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository, restTemplate);
 
     UUID unitId = UUID.randomUUID();
 
@@ -69,7 +76,8 @@ class ReservationServiceTest {
   @Test
   void shouldIgnoreCancelledReservation() {
     ReservationRepository repository = mock(ReservationRepository.class);
-    ReservationService service = new ReservationService(repository);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository, restTemplate);
 
     UUID unitId = UUID.randomUUID();
 
@@ -92,7 +100,7 @@ class ReservationServiceTest {
 
   @Test
   void shouldThrowWhenDatesAreInvalid() {
-    ReservationService service = new ReservationService(null);
+    ReservationService service = new ReservationService(null, null);
 
     UUID id = UUID.randomUUID();
     LocalDate from = LocalDate.now().plusDays(5);
@@ -104,7 +112,8 @@ class ReservationServiceTest {
   @Test
   void shouldIgnoreCompletedReservation() {
     ReservationRepository repository = mock(ReservationRepository.class);
-    ReservationService service = new ReservationService(repository);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository, restTemplate);
 
     UUID unitId = UUID.randomUUID();
 
@@ -128,7 +137,8 @@ class ReservationServiceTest {
   @Test
   void shouldAllowReservationStartingOnEndDate() {
     ReservationRepository repository = mock(ReservationRepository.class);
-    ReservationService service = new ReservationService(repository);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository, restTemplate);
 
     UUID unitId = UUID.randomUUID();
 
@@ -150,10 +160,13 @@ class ReservationServiceTest {
   @Test
   void shouldCreateReservationSuccessfullyWhenDatesAreAvailable() {
     ReservationRepository repository = mock(ReservationRepository.class);
-    ReservationService service = new ReservationService(repository);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+
+    ReservationService service = new ReservationService(repository, restTemplate);
 
     UUID userId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
+    String mockToken = "some-jwt-token";
     LocalDate start = LocalDate.now().plusDays(10);
     LocalDate end = LocalDate.now().plusDays(15);
 
@@ -162,11 +175,18 @@ class ReservationServiceTest {
     request.setStartDate(start);
     request.setEndDate(end);
 
+    UnitDto mockUnit = new UnitDto();
+    mockUnit.setPricePerNight(new BigDecimal("200.00"));
+
+    when(restTemplate.exchange(
+            anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(UnitDto.class)))
+        .thenReturn(ResponseEntity.ok(mockUnit));
+
     when(repository.findByUnitId(unitId)).thenReturn(List.of());
     when(repository.save(any(Reservation.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
-    Reservation created = service.createReservation(userId, request);
+    Reservation created = service.createReservation(userId, request, mockToken);
 
     assertNotNull(created);
     assertEquals(userId, created.getUserId());
@@ -174,6 +194,8 @@ class ReservationServiceTest {
     assertEquals(start, created.getStartDate());
     assertEquals(end, created.getEndDate());
     assertEquals(ReservationStatus.PENDING, created.getStatus());
+
+    assertEquals(new BigDecimal("1000.00"), created.getTotalPrice());
 
     ArgumentCaptor<Reservation> captor = ArgumentCaptor.forClass(Reservation.class);
     verify(repository).save(captor.capture());
@@ -184,10 +206,12 @@ class ReservationServiceTest {
   @Test
   void shouldThrowConflictWhenTryingToReserveUnavailableDates() {
     ReservationRepository repository = mock(ReservationRepository.class);
-    ReservationService service = new ReservationService(repository);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository, restTemplate);
 
     UUID userId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
+    String mockToken = "some-jwt-token";
     LocalDate start = LocalDate.now().plusDays(10);
     LocalDate end = LocalDate.now().plusDays(15);
 
@@ -206,7 +230,8 @@ class ReservationServiceTest {
 
     ResponseStatusException exception =
         assertThrows(
-            ResponseStatusException.class, () -> service.createReservation(userId, request));
+            ResponseStatusException.class,
+            () -> service.createReservation(userId, request, mockToken));
 
     assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
     assertEquals("The selected dates are no longer available", exception.getReason());
@@ -217,7 +242,8 @@ class ReservationServiceTest {
   @Test
   void shouldReturnDetailsWhenUserOwnsReservation() {
     ReservationRepository repository = mock(ReservationRepository.class);
-    ReservationService service = new ReservationService(repository);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository, restTemplate);
 
     UUID reservationId = UUID.randomUUID();
     UUID userId = UUID.randomUUID();
@@ -245,7 +271,8 @@ class ReservationServiceTest {
   @Test
   void shouldThrowNotFoundWhenReservationDoesNotExist() {
     ReservationRepository repository = mock(ReservationRepository.class);
-    ReservationService service = new ReservationService(repository);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository, restTemplate);
 
     UUID reservationId = UUID.randomUUID();
     UUID userId = UUID.randomUUID();
@@ -263,7 +290,8 @@ class ReservationServiceTest {
   @Test
   void shouldThrowForbiddenWhenUserDoesNotOwnReservation() {
     ReservationRepository repository = mock(ReservationRepository.class);
-    ReservationService service = new ReservationService(repository);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository, restTemplate);
 
     UUID reservationId = UUID.randomUUID();
     UUID ownerId = UUID.randomUUID();
@@ -286,7 +314,8 @@ class ReservationServiceTest {
   @Test
   void shouldAllowViewingOtherUserReservationWhenHasManagementAccess() {
     ReservationRepository repository = mock(ReservationRepository.class);
-    ReservationService service = new ReservationService(repository);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository, restTemplate);
 
     UUID reservationId = UUID.randomUUID();
     UUID ownerId = UUID.randomUUID();
@@ -309,7 +338,8 @@ class ReservationServiceTest {
   @Test
   void shouldReturnAvailable_whenReservationEndsExactlyAtRequestedStart() {
     ReservationRepository repository = mock(ReservationRepository.class);
-    ReservationService service = new ReservationService(repository);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository, restTemplate);
 
     UUID unitId = UUID.randomUUID();
     LocalDate requestedStart = LocalDate.now().plusDays(10);
@@ -330,7 +360,8 @@ class ReservationServiceTest {
   @Test
   void shouldReturnAvailable_whenReservationStartsExactlyAtRequestedEnd() {
     ReservationRepository repository = mock(ReservationRepository.class);
-    ReservationService service = new ReservationService(repository);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository, restTemplate);
 
     UUID unitId = UUID.randomUUID();
     LocalDate requestedStart = LocalDate.now().plusDays(10);
@@ -351,7 +382,8 @@ class ReservationServiceTest {
   @Test
   void shouldReturnAvailable_whenReservationIsBeforeRequestedRange() {
     ReservationRepository repository = mock(ReservationRepository.class);
-    ReservationService service = new ReservationService(repository);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository, restTemplate);
 
     UUID unitId = UUID.randomUUID();
     LocalDate requestedStart = LocalDate.now().plusDays(10);
@@ -372,7 +404,8 @@ class ReservationServiceTest {
   @Test
   void shouldReturnAvailable_whenReservationIsAfterRequestedRange() {
     ReservationRepository repository = mock(ReservationRepository.class);
-    ReservationService service = new ReservationService(repository);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository, restTemplate);
 
     UUID unitId = UUID.randomUUID();
     LocalDate requestedStart = LocalDate.now().plusDays(10);
@@ -394,7 +427,7 @@ class ReservationServiceTest {
   void shouldReturnDetailsWhenOwnerHasAccessToReservationUnit() {
     ReservationRepository repository = mock(ReservationRepository.class);
     RestTemplate restTemplate = mock(RestTemplate.class);
-    ReservationService service = new ReservationService(repository);
+    ReservationService service = new ReservationService(repository, restTemplate);
     ReflectionTestUtils.setField(service, "restTemplate", restTemplate);
 
     UUID reservationId = UUID.randomUUID();
@@ -425,7 +458,7 @@ class ReservationServiceTest {
   void shouldThrowForbiddenWhenOwnerDoesNotHaveAccessToReservationUnit() {
     ReservationRepository repository = mock(ReservationRepository.class);
     RestTemplate restTemplate = mock(RestTemplate.class);
-    ReservationService service = new ReservationService(repository);
+    ReservationService service = new ReservationService(repository, restTemplate);
     ReflectionTestUtils.setField(service, "restTemplate", restTemplate);
 
     UUID reservationId = UUID.randomUUID();
@@ -455,7 +488,7 @@ class ReservationServiceTest {
   void shouldThrowForbiddenWhenOwnerAccessVerificationFails() {
     ReservationRepository repository = mock(ReservationRepository.class);
     RestTemplate restTemplate = mock(RestTemplate.class);
-    ReservationService service = new ReservationService(repository);
+    ReservationService service = new ReservationService(repository, restTemplate);
     ReflectionTestUtils.setField(service, "restTemplate", restTemplate);
 
     UUID reservationId = UUID.randomUUID();

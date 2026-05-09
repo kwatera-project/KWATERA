@@ -3,14 +3,16 @@ package io.github.kwatera_project.kwatera.reservation_service.service;
 import io.github.kwatera_project.kwatera.reservation_service.dto.AvailabilityDto;
 import io.github.kwatera_project.kwatera.reservation_service.dto.CreateReservationRequest;
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationDetailsDto;
+import io.github.kwatera_project.kwatera.reservation_service.dto.UnitDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -21,10 +23,12 @@ public class ReservationService {
 
   private final ReservationRepository reservationRepository;
 
-  private final RestTemplate restTemplate = new RestTemplate();
+  private final RestTemplate restTemplate;
 
-  public ReservationService(ReservationRepository reservationRepository) {
+  public ReservationService(
+      ReservationRepository reservationRepository, RestTemplate restTemplate) {
     this.reservationRepository = reservationRepository;
+    this.restTemplate = restTemplate;
   }
 
   public AvailabilityDto checkAvailability(UUID unitId, LocalDate from, LocalDate to) {
@@ -53,26 +57,70 @@ public class ReservationService {
     return new AvailabilityDto(true, "Unit is available");
   }
 
+  private BigDecimal fetchUnitPrice(UUID unitId, String token) {
+    String url = "http://property-service:8083/api/properties/units/" + unitId;
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("Authorization", token);
+
+    HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+    try {
+      ResponseEntity<UnitDto> response =
+          restTemplate.exchange(url, HttpMethod.GET, entity, UnitDto.class);
+
+      UnitDto unit = response.getBody();
+
+      System.out.println("unit: " + unit);
+
+      if (unit == null) {
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found");
+      }
+      return unit.getPricePerNight();
+
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new ResponseStatusException(
+          HttpStatus.BAD_GATEWAY, "Cannot fetch unit price: " + e.getMessage());
+    }
+  }
+
   @Transactional
-  public Reservation createReservation(UUID userId, CreateReservationRequest request) {
+  public Reservation createReservation(
+      UUID userId, CreateReservationRequest request, String token) {
+
     if (userId == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User id is required");
     }
+
     if (request == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reservation request is required");
     }
+
     AvailabilityDto availability =
         checkAvailability(request.getUnitId(), request.getStartDate(), request.getEndDate());
     if (!availability.isAvailable()) {
       throw new ResponseStatusException(
           HttpStatus.CONFLICT, "The selected dates are no longer available");
     }
+
     Reservation reservation = new Reservation();
     reservation.setUserId(userId);
     reservation.setUnitId(request.getUnitId());
     reservation.setStartDate(request.getStartDate());
     reservation.setEndDate(request.getEndDate());
     reservation.setStatus(ReservationStatus.PENDING);
+
+    BigDecimal pricePerNight = fetchUnitPrice(request.getUnitId(), token);
+
+    long days =
+        java.time.temporal.ChronoUnit.DAYS.between(request.getStartDate(), request.getEndDate());
+
+    BigDecimal totalPrice = pricePerNight.multiply(BigDecimal.valueOf(days));
+
+    reservation.setPricePerNightSnapshot(pricePerNight);
+    reservation.setTotalPrice(totalPrice);
+
     return reservationRepository.save(reservation);
   }
 
@@ -99,6 +147,8 @@ public class ReservationService {
     dto.setEndDate(reservation.getEndDate());
     dto.setStatus(reservation.getStatus());
     dto.setCreatedAt(reservation.getCreatedAt());
+    dto.setPricePerNightSnapshot(reservation.getPricePerNightSnapshot());
+    dto.setTotalPrice(reservation.getTotalPrice());
     return dto;
   }
 

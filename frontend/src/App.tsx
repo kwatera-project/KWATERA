@@ -9,6 +9,7 @@ import AdminReservationList from "./components/AdminReservationList"
 import ProtectedRoute from "./components/ProtectedRoute"
 import HomePage from "./pages/HomePage";
 import ReservationDetailsPage from "./pages/ReservationDetailsPage";
+import PaymentCancelPage from "./pages/PaymentCancelPage";
 
 function App() {
     return (
@@ -36,6 +37,7 @@ function App() {
                 />
                 <Route path="/catalog" element={<PropertiesPage />} />
                 <Route path="/property/:id" element={<PropertyDetailsPage />} />
+                <Route path="/payment-cancel" element={<PaymentCancelPage />} />
             </Routes>
         </>
     )
