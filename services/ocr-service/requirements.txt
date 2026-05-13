@@ -1,2 +1,10 @@
 fastapi>=0.110.0
 uvicorn[standard]>=0.24.0
+python-multipart
+python-dotenv
+ultralytics
+opencv-python
+numpy
+pillow
+paddleocr
+paddlepaddle

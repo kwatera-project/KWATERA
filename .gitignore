@@ -47,3 +47,8 @@ coverage.xml
 htmlcov/
 .pytest_cache/
 .ruff_cache/
+# OCR / YOLO
+datasets/
+runs/
+models/
+*.pt
