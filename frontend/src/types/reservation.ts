@@ -12,3 +12,11 @@ export interface ReservationDetails extends ReservationOverview {
     unitId: string;
     createdAt: string;
 }
+
+export interface GuestReservation {
+    id: string;
+    unitId: string;
+    startDate: string;
+    endDate: string;
+    status: string;
+}

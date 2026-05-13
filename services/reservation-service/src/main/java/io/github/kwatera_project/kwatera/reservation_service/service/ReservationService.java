@@ -2,6 +2,7 @@ package io.github.kwatera_project.kwatera.reservation_service.service;
 
 import io.github.kwatera_project.kwatera.reservation_service.dto.AvailabilityDto;
 import io.github.kwatera_project.kwatera.reservation_service.dto.CreateReservationRequest;
+import io.github.kwatera_project.kwatera.reservation_service.dto.GuestReservationDto;
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationDetailsDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
@@ -100,6 +101,15 @@ public class ReservationService {
     dto.setStatus(reservation.getStatus());
     dto.setCreatedAt(reservation.getCreatedAt());
     return dto;
+  }
+
+  public List<GuestReservationDto> getMyReservations(UUID userId) {
+    return reservationRepository.findByUserId(userId).stream()
+        .map(
+            r ->
+                new GuestReservationDto(
+                    r.getId(), r.getUnitId(), r.getStartDate(), r.getEndDate(), r.getStatus()))
+        .toList();
   }
 
   private boolean ownerHasAccessToUnit(UUID ownerId, UUID unitId) {
