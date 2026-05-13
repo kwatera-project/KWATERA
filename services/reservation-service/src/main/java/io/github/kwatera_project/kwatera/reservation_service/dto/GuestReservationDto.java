@@ -5,9 +5,4 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 public record GuestReservationDto(
-        UUID id,
-        UUID unitId,
-        LocalDate startDate,
-        LocalDate endDate,
-        ReservationStatus status
-) {}
+    UUID id, UUID unitId, LocalDate startDate, LocalDate endDate, ReservationStatus status) {}

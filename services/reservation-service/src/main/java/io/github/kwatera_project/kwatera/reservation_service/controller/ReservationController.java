@@ -25,8 +25,8 @@ public class ReservationController {
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public Reservation createReservation(
-          @jakarta.validation.Valid @RequestBody CreateReservationRequest request,
-          Authentication authentication) {
+      @jakarta.validation.Valid @RequestBody CreateReservationRequest request,
+      Authentication authentication) {
     UUID guestId = validateAndGetUserId(authentication);
     return reservationService.createReservation(guestId, request);
   }
@@ -35,7 +35,8 @@ public class ReservationController {
   public List<GuestReservationDto> getMyReservations(Authentication authentication) {
     UUID userId = validateAndGetUserId(authentication);
 
-    boolean isGuest = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_GUEST"));
+    boolean isGuest =
+        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_GUEST"));
     if (!isGuest) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
     }
@@ -45,14 +46,14 @@ public class ReservationController {
 
   @GetMapping("/{reservationId}")
   public ReservationDetailsDto getReservationDetails(
-          @PathVariable("reservationId") UUID reservationId, Authentication authentication) {
+      @PathVariable("reservationId") UUID reservationId, Authentication authentication) {
     UUID userId = validateAndGetUserId(authentication);
 
     boolean isAdmin =
-            authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
 
     boolean isOwner =
-            authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_OWNER"));
+        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_OWNER"));
 
     return reservationService.getReservationDetails(reservationId, userId, isAdmin, isOwner);
   }
@@ -64,13 +65,13 @@ public class ReservationController {
     Object details = authentication.getDetails();
     if (!(details instanceof String) || ((String) details).trim().isEmpty()) {
       throw new ResponseStatusException(
-              HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
+          HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
     }
     try {
       return UUID.fromString((String) details);
     } catch (IllegalArgumentException e) {
       throw new ResponseStatusException(
-              HttpStatus.UNAUTHORIZED, "Unauthorized: Invalid token format");
+          HttpStatus.UNAUTHORIZED, "Unauthorized: Invalid token format");
     }
   }
 }
