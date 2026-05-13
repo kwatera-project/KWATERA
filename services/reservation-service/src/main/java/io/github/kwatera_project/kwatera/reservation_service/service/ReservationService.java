@@ -2,6 +2,7 @@ package io.github.kwatera_project.kwatera.reservation_service.service;
 
 import io.github.kwatera_project.kwatera.reservation_service.dto.AvailabilityDto;
 import io.github.kwatera_project.kwatera.reservation_service.dto.CreateReservationRequest;
+import io.github.kwatera_project.kwatera.reservation_service.dto.GuestReservationDto;
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationDetailsDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
@@ -43,7 +44,7 @@ public class ReservationService {
     List<Reservation> reservations = reservationRepository.findByUnitId(unitId);
     for (Reservation r : reservations) {
       if (r.getStatus() == ReservationStatus.CANCELLED
-          || r.getStatus() == ReservationStatus.COMPLETED) {
+              || r.getStatus() == ReservationStatus.COMPLETED) {
         continue;
       }
       if (from.isBefore(r.getEndDate()) && to.isAfter(r.getStartDate())) {
@@ -62,10 +63,10 @@ public class ReservationService {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reservation request is required");
     }
     AvailabilityDto availability =
-        checkAvailability(request.getUnitId(), request.getStartDate(), request.getEndDate());
+            checkAvailability(request.getUnitId(), request.getStartDate(), request.getEndDate());
     if (!availability.isAvailable()) {
       throw new ResponseStatusException(
-          HttpStatus.CONFLICT, "The selected dates are no longer available");
+              HttpStatus.CONFLICT, "The selected dates are no longer available");
     }
     Reservation reservation = new Reservation();
     reservation.setUserId(userId);
@@ -77,12 +78,12 @@ public class ReservationService {
   }
 
   public ReservationDetailsDto getReservationDetails(
-      UUID reservationId, UUID userId, boolean isAdmin, boolean isOwner) {
+          UUID reservationId, UUID userId, boolean isAdmin, boolean isOwner) {
     Reservation reservation =
-        reservationRepository
-            .findById(reservationId)
-            .orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reservation not found"));
+            reservationRepository
+                    .findById(reservationId)
+                    .orElseThrow(
+                            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reservation not found"));
 
     boolean isGuestOwner = reservation.getUserId().equals(userId);
     boolean isPropertyOwner = isOwner && ownerHasAccessToUnit(userId, reservation.getUnitId());
@@ -102,6 +103,18 @@ public class ReservationService {
     return dto;
   }
 
+  public List<GuestReservationDto> getMyReservations(UUID userId) {
+    return reservationRepository.findByUserId(userId).stream()
+            .map(r -> new GuestReservationDto(
+                    r.getId(),
+                    r.getUnitId(),
+                    r.getStartDate(),
+                    r.getEndDate(),
+                    r.getStatus()
+            ))
+            .toList();
+  }
+
   private boolean ownerHasAccessToUnit(UUID ownerId, UUID unitId) {
     String propertyServiceUrl = "http://property-service:8083/api/properties/units/ids/" + ownerId;
 
@@ -114,7 +127,7 @@ public class ReservationService {
       return Arrays.asList(unitIdsArray).contains(unitId);
     } catch (Exception e) {
       throw new ResponseStatusException(
-          HttpStatus.FORBIDDEN, "Unable to verify ownership: " + e.getMessage());
+              HttpStatus.FORBIDDEN, "Unable to verify ownership: " + e.getMessage());
     }
   }
 }
