@@ -50,3 +50,24 @@ export async function getReservationDetails(id: string) {
 
     return res.json();
 }
+
+export async function getMyReservations() {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+        throw new Error("Log in to view your reservations");
+    }
+
+    const res = await fetch(`${API_URL}/my`, {
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
+    });
+
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to fetch your reservations");
+    }
+
+    return res.json();
+}

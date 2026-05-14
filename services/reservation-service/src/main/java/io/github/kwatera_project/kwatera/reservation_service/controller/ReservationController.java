@@ -1,9 +1,11 @@
 package io.github.kwatera_project.kwatera.reservation_service.controller;
 
 import io.github.kwatera_project.kwatera.reservation_service.dto.CreateReservationRequest;
+import io.github.kwatera_project.kwatera.reservation_service.dto.GuestReservationDto;
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationDetailsDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.service.ReservationService;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,6 +29,19 @@ public class ReservationController {
       Authentication authentication) {
     UUID guestId = validateAndGetUserId(authentication);
     return reservationService.createReservation(guestId, request);
+  }
+
+  @GetMapping("/my")
+  public List<GuestReservationDto> getMyReservations(Authentication authentication) {
+    UUID userId = validateAndGetUserId(authentication);
+
+    boolean isGuest =
+        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_GUEST"));
+    if (!isGuest) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+    }
+
+    return reservationService.getMyReservations(userId);
   }
 
   @GetMapping("/{reservationId}")

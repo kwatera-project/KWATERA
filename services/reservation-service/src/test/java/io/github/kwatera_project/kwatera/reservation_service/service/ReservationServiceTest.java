@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 
 import io.github.kwatera_project.kwatera.reservation_service.dto.AvailabilityDto;
 import io.github.kwatera_project.kwatera.reservation_service.dto.CreateReservationRequest;
+import io.github.kwatera_project.kwatera.reservation_service.dto.GuestReservationDto;
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationDetailsDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
@@ -474,5 +475,33 @@ class ReservationServiceTest {
 
     assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
     assertTrue(exception.getReason().contains("Unable to verify ownership"));
+  }
+
+  @Test
+  void shouldReturnMyReservations() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    ReservationService service = new ReservationService(repository);
+
+    UUID userId = UUID.randomUUID();
+    UUID reservationId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    Reservation reservation = new Reservation();
+    reservation.setId(reservationId);
+    reservation.setUserId(userId);
+    reservation.setUnitId(unitId);
+    reservation.setStartDate(LocalDate.now());
+    reservation.setEndDate(LocalDate.now().plusDays(2));
+    reservation.setStatus(ReservationStatus.CONFIRMED);
+
+    when(repository.findByUserId(userId)).thenReturn(List.of(reservation));
+
+    List<GuestReservationDto> result = service.getMyReservations(userId);
+
+    assertNotNull(result);
+    assertEquals(1, result.size());
+    assertEquals(reservationId, result.get(0).id());
+    assertEquals(unitId, result.get(0).unitId());
+    assertEquals(ReservationStatus.CONFIRMED, result.get(0).status());
   }
 }
