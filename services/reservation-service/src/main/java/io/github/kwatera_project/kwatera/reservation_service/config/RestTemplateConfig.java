@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 
-/** Provides a load-balanced RestTemplate that resolves lb:// URIs via Eureka. */
+/** Provides a load-balanced RestTemplate that resolves service names via Eureka. */
 @Configuration
 public class RestTemplateConfig {
 

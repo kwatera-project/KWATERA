@@ -34,31 +34,6 @@ spring:
           predicates:
             - Path=/api/properties/**
 
-  security:
-    oauth2:
-      client:
-        provider:
-          platform-auth-server:
-            authorization-uri: http://localhost:8081/oauth2/authorize
-            token-uri: http://localhost:8081/oauth2/token
-            jwk-set-uri: http://localhost:8081/oauth2/jwks
-        registration:
-          gateway-client:
-            provider: platform-auth-server
-            client-id: gateway-client
-            client-secret: "secret"
-            client-authentication-method: client_secret_basic
-            authorization-grant-type: authorization_code
-            redirect-uri: http://localhost:8090/login/oauth2/code/gateway-client
-            scope:
-              - openid
-              - profile
-              - email
-
-      resourceserver:
-        jwt:
-          issuer-uri: http://localhost:8081
-
 eureka:
   client:
     serviceUrl:
