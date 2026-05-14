@@ -8,31 +8,35 @@ spring:
     import: optional:configserver:http://config-server:8888
   cloud:
     gateway:
-      routes:
-        - id: auth-service
-          uri: lb://auth-service
-          predicates:
-            - Path=/api/auth/**
+      server:
+        webflux:
+          default-filters:
+            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin RETAIN_FIRST
+          routes:
+            - id: auth-service
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/auth,/api/auth/**
 
-        - id: reservation-service
-          uri: lb://reservation-service
-          predicates:
-            - Path=/api/v1/reservations/**
+            - id: reservation-service
+              uri: lb://reservation-service
+              predicates:
+                - Path=/api/v1/reservations,/api/v1/reservations/**
 
-        - id: reservation-service-admin
-          uri: lb://reservation-service
-          predicates:
-            - Path=/api/v1/admin/reservations/**
+            - id: reservation-service-admin
+              uri: lb://reservation-service
+              predicates:
+                - Path=/api/v1/admin/reservations,/api/v1/admin/reservations/**
 
-        - id: reservation-service-availability
-          uri: lb://reservation-service
-          predicates:
-            - Path=/api/availability/**
+            - id: reservation-service-availability
+              uri: lb://reservation-service
+              predicates:
+                - Path=/api/availability,/api/availability/**
 
-        - id: property-service
-          uri: lb://property-service
-          predicates:
-            - Path=/api/properties/**
+            - id: property-service
+              uri: lb://property-service
+              predicates:
+                - Path=/api/properties,/api/properties/**
 
 eureka:
   client:
