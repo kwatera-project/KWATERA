@@ -480,7 +480,7 @@ class ReservationServiceTest {
   @Test
   void shouldReturnMyReservations() {
     ReservationRepository repository = mock(ReservationRepository.class);
-    ReservationService service = new ReservationService(repository);
+    ReservationService service = new ReservationService(repository, mock(RestTemplate.class));
 
     UUID userId = UUID.randomUUID();
     UUID reservationId = UUID.randomUUID();
