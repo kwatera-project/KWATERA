@@ -173,7 +173,11 @@ class ReservationServiceTest {
     mockUnit.setPricePerNight(new BigDecimal("200.00"));
 
     when(restTemplate.exchange(
-            anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(UnitDto.class)))
+            anyString(),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(UnitDto.class),
+            any(UUID.class)))
         .thenReturn(ResponseEntity.ok(mockUnit));
 
     when(repository.findByUnitId(unitId)).thenReturn(List.of());
@@ -429,7 +433,8 @@ class ReservationServiceTest {
     reservation.setCreatedAt(Instant.now());
 
     when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
-    when(restTemplate.getForObject(anyString(), eq(UUID[].class))).thenReturn(new UUID[] {unitId});
+    when(restTemplate.getForObject(anyString(), eq(UUID[].class), any(UUID.class)))
+        .thenReturn(new UUID[] {unitId});
 
     ReservationDetailsDto dto = service.getReservationDetails(reservationId, ownerId, false, true);
 
@@ -456,7 +461,7 @@ class ReservationServiceTest {
     reservation.setUnitId(reservationUnitId);
 
     when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
-    when(restTemplate.getForObject(anyString(), eq(UUID[].class)))
+    when(restTemplate.getForObject(anyString(), eq(UUID[].class), any(UUID.class)))
         .thenReturn(new UUID[] {differentOwnerUnitId});
 
     ResponseStatusException exception =
@@ -483,7 +488,7 @@ class ReservationServiceTest {
     reservation.setUnitId(UUID.randomUUID());
 
     when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
-    when(restTemplate.getForObject(anyString(), eq(UUID[].class)))
+    when(restTemplate.getForObject(anyString(), eq(UUID[].class), any(UUID.class)))
         .thenThrow(new RuntimeException("Property service unavailable"));
 
     ResponseStatusException exception =

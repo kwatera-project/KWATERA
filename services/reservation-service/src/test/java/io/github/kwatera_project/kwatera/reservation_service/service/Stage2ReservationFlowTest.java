@@ -83,7 +83,11 @@ class Stage2ReservationFlowTest {
     mockUnit.setPricePerNight(new BigDecimal("250.00"));
 
     when(restTemplate.exchange(
-            anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(UnitDto.class)))
+            anyString(),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(UnitDto.class),
+            any(UUID.class)))
         .thenReturn(ResponseEntity.ok(mockUnit));
 
     AvailabilityDto availability = reservationService.checkAvailability(unitId, startDate, endDate);

@@ -65,7 +65,7 @@ public class ReservationService {
 
     try {
       ResponseEntity<UnitDto> response =
-          restTemplate.exchange(url, HttpMethod.GET, entity, UnitDto.class);
+          restTemplate.exchange(url, HttpMethod.GET, entity, UnitDto.class, unitId);
 
       UnitDto unit = response.getBody();
 
@@ -161,7 +161,7 @@ public class ReservationService {
     String propertyServiceUrl = "http://property-service/api/properties/units/ids/{ownerId}";
 
     try {
-      UUID[] unitIdsArray = restTemplate.getForObject(propertyServiceUrl, UUID[].class);
+      UUID[] unitIdsArray = restTemplate.getForObject(propertyServiceUrl, UUID[].class, ownerId);
       if (unitIdsArray == null) {
         return false;
       }
