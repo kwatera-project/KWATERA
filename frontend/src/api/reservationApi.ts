@@ -1,4 +1,6 @@
-const API_URL = "http://localhost:8080/api/v1/reservations";
+import { GATEWAY_BASE_URL } from "./apiConfig";
+
+const API_URL = `${GATEWAY_BASE_URL}/api/v1/reservations`;
 
 export async function createReservation(unitId: string, from: string, to: string) {
     const token = localStorage.getItem("token");

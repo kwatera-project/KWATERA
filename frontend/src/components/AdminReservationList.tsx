@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from "react-router-dom";
+import { GATEWAY_BASE_URL } from '../api/apiConfig';
 
 interface ReservationOverview {
     id: string;
@@ -14,7 +15,7 @@ export default function AdminReservationList() {
     const [reservations, setReservations] = useState<ReservationOverview[]>([]);
     const [statusFilter, setStatusFilter] = useState<string>("");
     const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
-    const API_BASE_URL = "http://localhost:8080";
+    const API_BASE_URL = GATEWAY_BASE_URL;
 
     const fetchReservations = useCallback(() => {
         const url = statusFilter

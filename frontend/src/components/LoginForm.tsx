@@ -1,4 +1,5 @@
 import '../App.css'
+import { GATEWAY_BASE_URL } from '../api/apiConfig'
 import {useState} from "react"
 import {useNavigate, Link} from "react-router-dom"
 
@@ -16,7 +17,7 @@ export default function LoginForm() {
         e.preventDefault()
 
         try {
-            const response = await fetch('http://localhost:8081/api/auth/login', {
+            const response = await fetch(`${GATEWAY_BASE_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
