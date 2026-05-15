@@ -56,7 +56,7 @@ public class ReservationService {
   }
 
   private BigDecimal fetchUnitPrice(UUID unitId, String token) {
-    String url = "http://property-service:8083/api/properties/units/" + unitId;
+    String url = "http://property-service/api/properties/units/{unitId}";
 
     HttpHeaders headers = new HttpHeaders();
     headers.set("Authorization", token);
@@ -68,8 +68,6 @@ public class ReservationService {
           restTemplate.exchange(url, HttpMethod.GET, entity, UnitDto.class);
 
       UnitDto unit = response.getBody();
-
-      System.out.println("unit: " + unit);
 
       if (unit == null) {
         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found");
@@ -160,7 +158,7 @@ public class ReservationService {
   }
 
   private boolean ownerHasAccessToUnit(UUID ownerId, UUID unitId) {
-    String propertyServiceUrl = "http://property-service/api/properties/units/ids/" + ownerId;
+    String propertyServiceUrl = "http://property-service/api/properties/units/ids/{ownerId}";
 
     try {
       UUID[] unitIdsArray = restTemplate.getForObject(propertyServiceUrl, UUID[].class);

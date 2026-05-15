@@ -77,7 +77,7 @@ export default function PropertyDetailsPage() {
             );
 
             const checkoutUrl = await checkoutRes.text();
-            window.location.href = checkoutUrl;
+            window.location.assign(checkoutUrl);
 
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "An error occurred";
