@@ -4,7 +4,10 @@ import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 import io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto;
+import io.github.kwatera_project.kwatera.billing_service.model.Settlement;
+import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
@@ -16,9 +19,9 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class StripeService {
 
-  private final RestTemplate restTemplate = new RestTemplate();
+  private final RestTemplate restTemplate;
 
-  private ReservationDto getReservation(UUID reservationId, String token) {
+  ReservationDto getReservation(UUID reservationId, String token) {
     String url = "http://reservation-service:8080/api/v1/reservations/" + reservationId;
 
     HttpHeaders headers = new HttpHeaders();
@@ -45,10 +48,22 @@ public class StripeService {
     }
   }
 
-  public String createCheckoutSession(UUID reservationId, String token) throws StripeException {
+  public String createCheckoutSession(
+      Settlement settlement,
+      SettlementItemType type,
+      String description,
+      BigDecimal quantity,
+      BigDecimal unitPrice)
+      throws StripeException {
 
-    ReservationDto reservation = getReservation(reservationId, token);
-    BigDecimal totalPrice = reservation.getTotalPrice();
+    UUID reservationId = settlement.getReservationId();
+
+    if (unitPrice == null || quantity == null) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "unitPrice and quantity are required");
+    }
+
+    BigDecimal totalPrice = unitPrice.multiply(quantity);
 
     if (totalPrice == null || totalPrice.compareTo(BigDecimal.ZERO) <= 0) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid reservation price");
@@ -57,7 +72,7 @@ public class StripeService {
     long amount =
         totalPrice
             .multiply(BigDecimal.valueOf(100))
-            .setScale(0, BigDecimal.ROUND_HALF_UP)
+            .setScale(0, RoundingMode.HALF_UP)
             .longValueExact();
 
     SessionCreateParams params =
@@ -66,6 +81,11 @@ public class StripeService {
             .setSuccessUrl("http://localhost:5173/reservations/" + reservationId)
             .setCancelUrl("http://localhost:5173/payment-cancel")
             .putMetadata("reservationId", reservationId.toString())
+            .putMetadata("settlementId", settlement.getId().toString())
+            .putMetadata("type", type.toString())
+            .putMetadata("description", description)
+            .putMetadata("quantity", quantity.toString())
+            .putMetadata("unitPrice", unitPrice.toString())
             .addLineItem(
                 SessionCreateParams.LineItem.builder()
                     .setQuantity(1L)
@@ -75,7 +95,7 @@ public class StripeService {
                             .setUnitAmount(amount)
                             .setProductData(
                                 SessionCreateParams.LineItem.PriceData.ProductData.builder()
-                                    .setName("Reservation payment")
+                                    .setName(description)
                                     .build())
                             .build())
                     .build())

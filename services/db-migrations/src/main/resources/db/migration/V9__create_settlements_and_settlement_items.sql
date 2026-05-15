@@ -1,11 +1,12 @@
 CREATE TABLE settlements
 (
     id                   UUID PRIMARY KEY,
-    reservation_id       UUID           NOT NULL,
+    reservation_id       UUID UNIQUE    NOT NULL,
     status               VARCHAR(50)    NOT NULL,
     accommodation_amount NUMERIC(12, 2) NOT NULL,
     utilities_amount     NUMERIC(12, 2) NOT NULL,
     deposit_amount       NUMERIC(12, 2) NOT NULL,
+    discount_amount      NUMERIC(12, 2) NOT NULL,
     total_amount         NUMERIC(12, 2) NOT NULL,
     amount_paid          NUMERIC(12, 2) NOT NULL,
     balance_due          NUMERIC(12, 2) NOT NULL,
@@ -13,11 +14,13 @@ CREATE TABLE settlements
     paid_at              TIMESTAMP,
     created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    finalized            BOOLEAN   DEFAULT FALSE,
 
     CONSTRAINT fk_settlement_reservation
         FOREIGN KEY (reservation_id)
             REFERENCES reservations (id)
-            ON DELETE CASCADE
+            ON DELETE
+                CASCADE
 );
 
 CREATE INDEX idx_settlement_reservation_id ON settlements (reservation_id);
@@ -60,11 +63,13 @@ INSERT INTO settlements (id,
                          accommodation_amount,
                          utilities_amount,
                          deposit_amount,
+                         discount_amount,
                          total_amount,
                          amount_paid,
                          balance_due,
                          issued_at,
-                         paid_at)
+                         paid_at,
+                         finalized)
 VALUES
 
 -- 1 COMPLETED -> PAID
@@ -74,24 +79,28 @@ VALUES
  1000.00,
  40.00,
  0.00,
+ 0.00,
  1040.00,
  1040.00,
  0.00,
  '2025-01-15 10:00:00',
- '2025-01-15 15:00:00'),
+ '2025-01-15 15:00:00',
+ TRUE),
 
--- 2 CONFIRMED -> PAID_ACCOMMODATION
+-- 2 CONFIRMED -> PARTIALLY_PAID
 ('aaaaaaaa-aaaa-aaaa-aaaa-222222222222',
  '00000000-0000-0000-0000-222222222222',
- 'PAID_ACCOMMODATION',
+ 'PARTIALLY_PAID',
  1400.00,
+ 0.00,
  0.00,
  0.00,
  1400.00,
  1400.00,
  0.00,
  NULL,
- NULL),
+ NULL,
+ FALSE),
 
 -- 3 PENDING -> DRAFT
 ('aaaaaaaa-aaaa-aaaa-aaaa-333333333333',
@@ -100,11 +109,13 @@ VALUES
  900.00,
  0.00,
  0.00,
+ 0.00,
  900.00,
  0.00,
  900.00,
  NULL,
- NULL),
+ NULL,
+ FALSE),
 
 -- 4 CANCELLED -> CANCELLED
 ('aaaaaaaa-aaaa-aaaa-aaaa-444444444444',
@@ -113,24 +124,28 @@ VALUES
  1200.00,
  0.00,
  0.00,
+ 0.00,
  1200.00,
  0.00,
  0.00,
  NULL,
- NULL),
+ NULL,
+ FALSE),
 
--- 5 CONFIRMED -> PAID_ACCOMMODATION
+-- 5 CONFIRMED -> PARTIALLY_PAID
 ('aaaaaaaa-aaaa-aaaa-aaaa-555555555555',
  '00000000-0000-0000-0000-555555555555',
- 'PAID_ACCOMMODATION',
+ 'PARTIALLY_PAID',
  1000.00,
+ 0.00,
  0.00,
  0.00,
  1000.00,
  1000.00,
  0.00,
  NULL,
- NULL) ON CONFLICT (id) DO NOTHING;
+ NULL,
+ FALSE) ON CONFLICT (id) DO NOTHING;
 
 
 INSERT INTO settlement_items (id,

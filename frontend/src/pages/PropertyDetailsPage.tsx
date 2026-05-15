@@ -64,13 +64,19 @@ export default function PropertyDetailsPage() {
                 {
                     method: "POST",
                     headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        type: "ACCOMMODATION",
+                        description: "Accommodation fee",
+                        quantity: 1,
+                        unitPrice: res.totalPrice
+                    })
                 }
             );
 
             const checkoutUrl = await checkoutRes.text();
-
             window.location.href = checkoutUrl;
 
         } catch (err: unknown) {

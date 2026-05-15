@@ -1,7 +1,9 @@
 package io.github.kwatera_project.kwatera.billing_service.controller;
 
 import com.stripe.exception.StripeException;
-import io.github.kwatera_project.kwatera.billing_service.service.StripeService;
+import io.github.kwatera_project.kwatera.billing_service.dto.CheckoutRequest;
+import io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto;
+import io.github.kwatera_project.kwatera.billing_service.service.PaymentService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -13,16 +15,36 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class BillingController {
 
-  private final StripeService stripeService;
+  private final PaymentService paymentService;
 
   @PostMapping("/checkout/{reservationId}")
   public ResponseEntity<String> createCheckout(
-      @PathVariable("reservationId") UUID reservationId, HttpServletRequest request)
+      @PathVariable("reservationId") UUID reservationId,
+      HttpServletRequest request,
+      @RequestBody CheckoutRequest checkoutRequest)
       throws StripeException {
 
     String token = request.getHeader("Authorization");
 
-    String checkoutUrl = stripeService.createCheckoutSession(reservationId, token);
+    String checkoutUrl =
+        paymentService.createCheckoutSession(
+            reservationId,
+            token,
+            checkoutRequest.getType(),
+            checkoutRequest.getDescription(),
+            checkoutRequest.getQuantity(),
+            checkoutRequest.getUnitPrice());
+
     return ResponseEntity.ok(checkoutUrl);
+  }
+
+  @GetMapping("settlements/{reservationId}")
+  public ResponseEntity<SettlementResponseDto> getSettlementAndSettlementItems(
+      @PathVariable("reservationId") UUID reservationId, HttpServletRequest request) {
+    String token = request.getHeader("Authorization");
+
+    SettlementResponseDto response = paymentService.getSettlementWithItems(reservationId, token);
+
+    return ResponseEntity.ok(response);
   }
 }

@@ -32,6 +32,8 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/billing/webhook")
+                    .permitAll()
                     .requestMatchers("/api/billing/**")
                     .authenticated()
                     .anyRequest()
