@@ -1,4 +1,6 @@
-const API_URL = "http://localhost:8083/api";
+import { GATEWAY_BASE_URL } from "./apiConfig";
+
+const API_URL = `${GATEWAY_BASE_URL}/api`;
 
 export async function getProperties() {
     const res = await fetch(`${API_URL}/properties`);

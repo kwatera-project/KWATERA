@@ -8,6 +8,28 @@ Run the local environment from the repository root:
 docker compose -f infra/compose/docker-compose.yml up --build
 ```
 
+## API entry point
+
+All application traffic is routed through the **API Gateway** at:
+
+```
+http://localhost:8090
+```
+
+The frontend (served at `http://localhost:5173`) sends all API calls to this address.
+Direct service ports (8080, 8081, 8083) are still exposed for developer tools (Swagger, debugging)
+but must **not** be used by application code.
+
+### Routes exposed through the gateway
+
+| Path prefix | Downstream service |
+|---|---|
+| `/api/auth/**` | auth-service |
+| `/api/v1/reservations/**` | reservation-service |
+| `/api/v1/admin/reservations/**` | reservation-service |
+| `/api/availability/**` | reservation-service |
+| `/api/properties/**` | property-service |
+
 ## OpenAPI / Swagger UI
 
 After startup, API documentation is available at:
@@ -42,3 +64,5 @@ Raw OpenAPI JSON is available at:
 ## Maintenance rule
 
 Every new or changed REST endpoint should be checked in Swagger UI before opening a pull request. If the generated description is unclear, the author should add OpenAPI annotations or improve DTO names and validation.
+
+New Stage 3 services (billing, pricing/weather, OCR) should register with Eureka and add a corresponding route in `services/api-gateway/src/main/resources/application.yaml` as part of their implementation PR.

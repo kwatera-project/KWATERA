@@ -1,4 +1,6 @@
-const API_URL = "http://localhost:8080/api/v1/reservations";
+import { GATEWAY_BASE_URL } from "./apiConfig";
+
+const API_URL = `${GATEWAY_BASE_URL}/api/v1/reservations`;
 
 export async function createReservation(unitId: string, from: string, to: string) {
     const token = localStorage.getItem("token");
@@ -44,6 +46,27 @@ export async function getReservationDetails(id: string) {
     if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to fetch reservation details");
+    }
+
+    return res.json();
+}
+
+export async function getMyReservations() {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+        throw new Error("Log in to view your reservations");
+    }
+
+    const res = await fetch(`${API_URL}/my`, {
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
+    });
+
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to fetch your reservations");
     }
 
     return res.json();

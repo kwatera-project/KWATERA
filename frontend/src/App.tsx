@@ -9,6 +9,7 @@ import AdminReservationList from "./components/AdminReservationList"
 import ProtectedRoute from "./components/ProtectedRoute"
 import HomePage from "./pages/HomePage";
 import ReservationDetailsPage from "./pages/ReservationDetailsPage";
+import MyReservationsPage from "./pages/MyReservationsPage";
 import PaymentCancelPage from "./pages/PaymentCancelPage";
 
 function App() {
@@ -24,6 +25,14 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
                             <AdminReservationList />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/my-reservations"
+                    element={
+                        <ProtectedRoute allowedRoles={['ROLE_GUEST']}>
+                            <MyReservationsPage />
                         </ProtectedRoute>
                     }
                 />

@@ -28,7 +28,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
 @ExtendWith(MockitoExtension.class)
@@ -51,8 +50,7 @@ class Stage2ReservationFlowTest {
     reservationService = new ReservationService(reservationRepository, restTemplate);
     adminReservationService =
         new AdminReservationService(
-            reservationRepository, statusHistoryRepository, statusValidator);
-    ReflectionTestUtils.setField(adminReservationService, "restTemplate", restTemplate);
+            reservationRepository, statusHistoryRepository, statusValidator, restTemplate);
   }
 
   @Test

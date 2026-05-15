@@ -238,4 +238,30 @@ class ReservationControllerTest {
                 .with(authentication(buildAuth(null, "ROLE_GUEST"))))
         .andExpect(status().isUnauthorized());
   }
+
+  @Test
+  void shouldGetMyReservations_whenUserIsGuest() throws Exception {
+    UUID guestId = UUID.randomUUID();
+
+    when(reservationService.getMyReservations(guestId)).thenReturn(List.of());
+
+    mockMvc
+        .perform(
+            get("/api/v1/reservations/my").with(authentication(buildAuth(guestId, "ROLE_GUEST"))))
+        .andExpect(status().isOk());
+
+    verify(reservationService).getMyReservations(guestId);
+  }
+
+  @Test
+  void shouldFailGetMyReservations_whenUserIsNotGuest() throws Exception {
+    UUID adminId = UUID.randomUUID();
+
+    mockMvc
+        .perform(
+            get("/api/v1/reservations/my").with(authentication(buildAuth(adminId, "ROLE_ADMIN"))))
+        .andExpect(status().isForbidden());
+
+    verifyNoInteractions(reservationService);
+  }
 }

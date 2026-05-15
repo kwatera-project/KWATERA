@@ -1,4 +1,6 @@
-const API_URL = "http://localhost:8080/api";
+import { GATEWAY_BASE_URL } from "./apiConfig";
+
+const API_URL = `${GATEWAY_BASE_URL}/api`;
 
 export async function checkAvailability(unitId: string, from: string, to: string) {
     const res = await fetch(

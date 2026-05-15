@@ -3,7 +3,6 @@ import {Link} from "react-router-dom"
 import {useLogout} from "./Logout.tsx"
 import {getUserRoles} from "../utils/jwtUtils.ts"
 
-
 export default function Navbar() {
 
     const token = localStorage.getItem("token");
@@ -47,6 +46,16 @@ export default function Navbar() {
                 >
                     Catalog
                 </Link>
+
+                {isLoggedIn && userRoles.includes("ROLE_GUEST") && (
+                    <Link
+                        to="/my-reservations"
+                        className="hover:text-[rgb(var(--color-burgundy))] transition"
+                    >
+                        My reservations
+                    </Link>
+                )}
+
                 {isLoggedIn && (userRoles.includes("ROLE_ADMIN") || userRoles.includes("ROLE_OWNER"))  && (
                     <Link
                         to="/admin/reservations"
