@@ -75,7 +75,6 @@ public class ReservationService {
       return unit.getPricePerNight();
 
     } catch (Exception e) {
-      e.printStackTrace();
       throw new ResponseStatusException(
           HttpStatus.BAD_GATEWAY, "Cannot fetch unit price: " + e.getMessage());
     }
