@@ -2,6 +2,7 @@ package io.github.kwatera_project.kwatera.billing_service.config;
 
 import io.github.kwatera_project.kwatera.billing_service.filter.JwtAuthFilter;
 import java.util.List;
+import org.apache.logging.log4j.internal.annotation.SuppressFBWarnings;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,6 +19,9 @@ public class SecurityConfig {
 
   private final JwtAuthFilter jwtAuthFilter;
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification = "Spring bean injected via constructor")
   public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
     this.jwtAuthFilter = jwtAuthFilter;
   }

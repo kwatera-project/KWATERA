@@ -3,6 +3,7 @@ package io.github.kwatera_project.kwatera.billing_service.service;
 import static io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType.*;
 import static io.github.kwatera_project.kwatera.billing_service.model.SettlementStatus.*;
 
+import io.github.kwatera_project.kwatera.billing_service.dto.SettlementDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto;
 import io.github.kwatera_project.kwatera.billing_service.model.Settlement;
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementItem;
@@ -210,6 +211,6 @@ public class SettlementService {
 
     List<SettlementItem> items = settlementItemRepository.findBySettlementId(settlement.getId());
 
-    return new SettlementResponseDto(settlement, items);
+    return new SettlementResponseDto(SettlementDto.from(settlement), items);
   }
 }

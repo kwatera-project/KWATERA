@@ -7,6 +7,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -37,7 +38,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     try {
       Claims claims =
           Jwts.parserBuilder()
-              .setSigningKey(secret.getBytes())
+              .setSigningKey(secret.getBytes(StandardCharsets.UTF_8))
               .build()
               .parseClaimsJws(token)
               .getBody();
