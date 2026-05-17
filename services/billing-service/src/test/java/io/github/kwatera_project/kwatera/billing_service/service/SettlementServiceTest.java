@@ -24,7 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class SettlementServiceTest {
+class SettlementServiceTest {
 
   @Mock private SettlementRepository settlementRepository;
 
@@ -115,15 +115,13 @@ public class SettlementServiceTest {
 
     when(settlementItemRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
+    BigDecimal amount = BigDecimal.valueOf(100); // 450 + 100 = 550; 550 > 500
+
     assertThrows(
         IllegalStateException.class,
         () ->
             settlementService.registerPayment(
-                settlementId,
-                SettlementItemType.ACCOMMODATION,
-                "fee",
-                BigDecimal.ONE,
-                BigDecimal.valueOf(100))); // 450 + 100 = 550; 550 > 500
+                settlementId, SettlementItemType.ACCOMMODATION, "fee", BigDecimal.ONE, amount));
   }
 
   @Test

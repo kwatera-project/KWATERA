@@ -18,7 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class PaymentServiceTest {
+class PaymentServiceTest {
 
   @Mock private StripeService stripeService;
 
@@ -50,6 +50,8 @@ public class PaymentServiceTest {
             "Test",
             BigDecimal.ONE,
             BigDecimal.TEN);
+
+    assertEquals("https://checkout.stripe.com/session", url);
   }
 
   @Test

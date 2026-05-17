@@ -33,7 +33,7 @@ public class PaymentService {
               try {
                 return settlementService.createSettlement(
                     reservationId, reservation.getTotalPrice());
-              } catch (DataIntegrityViolationException e) {
+              } catch (DataIntegrityViolationException _) {
                 return settlementRepository.findByReservationId(reservationId).orElseThrow();
               }
             });

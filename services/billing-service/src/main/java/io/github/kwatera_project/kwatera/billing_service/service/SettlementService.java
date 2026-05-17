@@ -27,6 +27,8 @@ public class SettlementService {
   private final SettlementRepository settlementRepository;
   private final SettlementItemRepository settlementItemRepository;
 
+  private static final String SETTLEMENT_NOT_FOUND = "Settlement not found";
+
   @Transactional
   public void registerPayment(
       UUID settlementId,
@@ -37,7 +39,7 @@ public class SettlementService {
     Settlement settlement =
         settlementRepository
             .findById(settlementId)
-            .orElseThrow(() -> new RuntimeException("Settlement not found"));
+            .orElseThrow(() -> new RuntimeException(SETTLEMENT_NOT_FOUND));
 
     SettlementItem item =
         createSettlementItem(settlementId, type, description, quantity, unitPrice);
@@ -172,7 +174,7 @@ public class SettlementService {
     Settlement settlement =
         settlementRepository
             .findById(settlementId)
-            .orElseThrow(() -> new RuntimeException("Settlement not found"));
+            .orElseThrow(() -> new RuntimeException(SETTLEMENT_NOT_FOUND));
 
     settlement.setDiscountAmount(discountAmount);
 
@@ -187,7 +189,7 @@ public class SettlementService {
     Settlement settlement =
         settlementRepository
             .findById(settlementId)
-            .orElseThrow(() -> new RuntimeException("Settlement not found"));
+            .orElseThrow(() -> new RuntimeException(SETTLEMENT_NOT_FOUND));
 
     if (Boolean.TRUE.equals(settlement.getFinalized())) {
       return;
@@ -207,7 +209,7 @@ public class SettlementService {
         settlementRepository
             .findByReservationId(reservationId)
             .orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Settlement not found"));
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, SETTLEMENT_NOT_FOUND));
 
     List<SettlementItem> items = settlementItemRepository.findBySettlementId(settlement.getId());
 

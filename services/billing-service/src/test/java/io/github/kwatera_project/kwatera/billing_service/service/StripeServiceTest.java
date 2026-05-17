@@ -25,7 +25,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
-public class StripeServiceTest {
+class StripeServiceTest {
   @Mock private RestTemplate restTemplate;
 
   @InjectMocks private StripeService stripeService;
@@ -114,6 +114,8 @@ public class StripeServiceTest {
     Settlement settlement = new Settlement();
     settlement.setReservationId(UUID.randomUUID());
 
+    BigDecimal negativeAmount = BigDecimal.valueOf(-1);
+
     ResponseStatusException ex =
         assertThrows(
             ResponseStatusException.class,
@@ -122,7 +124,7 @@ public class StripeServiceTest {
                     settlement,
                     SettlementItemType.ACCOMMODATION,
                     "Accommodation fee",
-                    BigDecimal.valueOf(-1),
+                    negativeAmount,
                     BigDecimal.TEN));
 
     assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
