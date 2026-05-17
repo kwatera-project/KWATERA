@@ -6,5 +6,4 @@ ultralytics
 opencv-python
 numpy
 pillow
-paddleocr
-paddlepaddle
+pillow-heif
