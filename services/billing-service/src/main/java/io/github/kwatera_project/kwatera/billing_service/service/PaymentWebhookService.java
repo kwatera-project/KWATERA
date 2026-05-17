@@ -38,13 +38,14 @@ public class PaymentWebhookService {
       sessionData =
           dataObjectDeserializer
               .getObject()
-              .map(obj -> (Session) obj)
+              .map(Session.class::cast)
               .orElseGet(
                   () -> {
                     try {
                       return (Session) dataObjectDeserializer.deserializeUnsafe();
                     } catch (EventDataObjectDeserializationException e) {
-                      throw new RuntimeException(e);
+                      throw new WebhookProcessingException(
+                          "Failed to deserialize Stripe event data object", e);
                     }
                   });
 
