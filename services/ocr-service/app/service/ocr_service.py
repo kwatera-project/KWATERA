@@ -15,11 +15,15 @@ logger = logging.getLogger(__name__)
 register_heif_opener()
 
 
-_detector = YOLODetector(model_path="models/digits.pt")
+_detector = None
 
 
 def process_meter_image(image_bytes: bytes) -> OcrResponse:
     """Decode, pre-process, and execute digit recognition on the meter image."""
+    global _detector
+
+    if _detector is None:
+        _detector = YOLODetector(model_path="models/digits.pt")
     try:
         pil_img = Image.open(io.BytesIO(image_bytes))
         pil_img = ImageOps.exif_transpose(pil_img)
