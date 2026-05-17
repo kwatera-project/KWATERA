@@ -20,10 +20,6 @@ _detector = None
 
 def process_meter_image(image_bytes: bytes) -> OcrResponse:
     """Decode, pre-process, and execute digit recognition on the meter image."""
-    global _detector
-
-    if _detector is None:
-        _detector = YOLODetector(model_path="models/digits.pt")
     try:
         pil_img = Image.open(io.BytesIO(image_bytes))
         pil_img = ImageOps.exif_transpose(pil_img)
@@ -39,6 +35,10 @@ def process_meter_image(image_bytes: bytes) -> OcrResponse:
     if scale < 1.0:
         image = cv2.resize(image, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
     image = cv2.convertScaleAbs(image, alpha=1.1, beta=10)
+    global _detector
+
+    if _detector is None:
+        _detector = YOLODetector(model_path="models/digits.pt")
 
     digits, confidence = _detector.read_digits_direct(image)
 
