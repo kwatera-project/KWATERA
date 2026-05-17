@@ -5,6 +5,7 @@ from app.service.ocr_service import process_meter_image
 
 router = APIRouter(prefix="/ocr", tags=["ocr"])
 
+
 @router.post("/read-meter")
 async def read_meter(file: UploadFile = File(...)) -> OcrResponse:
     image = await file.read()

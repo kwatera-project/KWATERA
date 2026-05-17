@@ -26,7 +26,6 @@ def process_meter_image(image_bytes: bytes) -> OcrResponse:
         logger.error(f"Błąd dekodowania: {e}")
         return OcrResponse(readingValue=None, confidence=0.0)
 
-
     h, w = image.shape[:2]
     scale = min(1600 / w, 1600 / h)
     if scale < 1.0:

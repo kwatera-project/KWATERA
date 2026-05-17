@@ -5,8 +5,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-CONF_THRESHOLD   = 0.10
-IOU_THRESHOLD    = 0.4
+CONF_THRESHOLD = 0.10
+IOU_THRESHOLD = 0.4
 RED_RATIO_THRESH = 0.04
 
 
