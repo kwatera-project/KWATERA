@@ -29,7 +29,10 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) {
 
-    http.csrf(csrf -> csrf.disable())
+    http.csrf(
+            csrf ->
+                csrf.disable()) // NOSONAR: CSRF is disabled because the API is stateless and uses
+        // JWT tokens
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
