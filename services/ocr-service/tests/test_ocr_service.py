@@ -1,6 +1,8 @@
 import io
 from unittest.mock import patch
+
 from PIL import Image
+
 from app.service.ocr_service import process_meter_image
 
 

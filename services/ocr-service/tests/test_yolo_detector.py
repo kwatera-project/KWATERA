@@ -1,6 +1,8 @@
+from unittest.mock import MagicMock, patch
+
 import numpy as np
-from unittest.mock import patch, MagicMock
-from app.service.yolo_detector import _has_red, YOLODetector
+
+from app.service.yolo_detector import YOLODetector, _has_red
 
 
 def make_frame(color):

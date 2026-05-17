@@ -2,15 +2,17 @@
 
 Python microservice skeleton for the KWATERA OCR module.
 
-This service currently provides only the technical baseline:
+The service provides water meter digit recognition using a YOLO-based OCR pipeline exposed through a FastAPI HTTP API.
 
-- FastAPI application skeleton,
-- health endpoint,
-- Ruff linting and formatting configuration,
-- pytest setup,
-- Docker image build support.
+Current features:
 
-Real OCR recognition logic is intentionally out of scope for now.
+- FastAPI OCR API,
+- water meter digit detection using YOLO,
+- image preprocessing and validation,
+- support for JPG, PNG and HEIC/HEIF images,
+- Docker and Docker Compose support.
+
+
 
 ## Local setup
 
@@ -66,6 +68,28 @@ Expected response:
   "service": "ocr-service"
 }
 ```
+
+Read Meter endpoint:
+
+```txt
+POST /ocr/read-meter
+```
+
+Example request: 
+
+curl -X POST "http://127.0.0.1:8085/ocr/read-meter" -F "file=@tests/test1.jpg"
+
+Expected response:
+
+```json
+{
+
+  "readingValue": "0836",
+  "confidence": 0.8400988936
+
+}
+```
+
 
 ## Docker
 

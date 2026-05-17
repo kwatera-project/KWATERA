@@ -1,12 +1,15 @@
-import cv2
-import numpy as np
+"""Service module handling the image processing and OCR workflow."""
+
 import io
 import logging
+
+import cv2
+import numpy as np
 from PIL import Image, ImageOps
 from pillow_heif import register_heif_opener
 
-from app.service.yolo_detector import YOLODetector
 from app.schemas.ocr import OcrResponse
+from app.service.yolo_detector import YOLODetector
 
 logger = logging.getLogger(__name__)
 register_heif_opener()
@@ -16,6 +19,7 @@ _detector = YOLODetector(model_path="models/digits.pt")
 
 
 def process_meter_image(image_bytes: bytes) -> OcrResponse:
+    """Decode, pre-process, and execute digit recognition on the meter image."""
     try:
         pil_img = Image.open(io.BytesIO(image_bytes))
         pil_img = ImageOps.exif_transpose(pil_img)
@@ -29,8 +33,7 @@ def process_meter_image(image_bytes: bytes) -> OcrResponse:
     h, w = image.shape[:2]
     scale = min(1600 / w, 1600 / h)
     if scale < 1.0:
-        image = cv2.resize(image, (int(w * scale), int(h * scale)),
-                           interpolation=cv2.INTER_AREA)
+        image = cv2.resize(image, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
     image = cv2.convertScaleAbs(image, alpha=1.1, beta=10)
 
     digits, confidence = _detector.read_digits_direct(image)

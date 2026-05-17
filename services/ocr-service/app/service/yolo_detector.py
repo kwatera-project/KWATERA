@@ -1,7 +1,10 @@
-from ultralytics import YOLO
-import numpy as np
-import cv2
+"""Module for water meter digit detection using YOLO models."""
+
 import logging
+
+import cv2
+import numpy as np
+from ultralytics import YOLO
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +13,8 @@ IOU_THRESHOLD = 0.4
 RED_RATIO_THRESH = 0.04
 
 
-def _has_red(frame, box_x, box_y, box_w, box_h) -> bool:
+def _has_red(frame: np.ndarray, box_x: float, box_y: float, box_w: float, box_h: float) -> bool:
+    """Check if the bounding box area contains a significant amount of red color."""
     fh, fw = frame.shape[:2]
     x1 = max(0, int(box_x - box_w / 2))
     y1 = max(0, int(box_y - box_h / 2))
@@ -20,19 +24,24 @@ def _has_red(frame, box_x, box_y, box_w, box_h) -> bool:
     if patch.size == 0:
         return False
     hsv = cv2.cvtColor(patch, cv2.COLOR_BGR2HSV)
-    mask1 = cv2.inRange(hsv, np.array([0,   50, 50]), np.array([10,  255, 255]))
+    mask1 = cv2.inRange(hsv, np.array([0, 50, 50]), np.array([10, 255, 255]))
     mask2 = cv2.inRange(hsv, np.array([160, 50, 50]), np.array([180, 255, 255]))
     total = patch.shape[0] * patch.shape[1]
     return (np.sum(mask1 > 0) + np.sum(mask2 > 0)) / total > RED_RATIO_THRESH
 
 
 class YOLODetector:
-    def __init__(self, model_path: str = "models/digits.pt"):
+    """Detector class responsible for running inference on water meter digits."""
+
+    def __init__(self, model_path: str = "models/digits.pt")-> None:
+        """Initialize the YOLO model with the given weights path."""
         self.model = YOLO(model_path)
 
-    def read_digits_direct(self, frame):
-        results = self.model(frame, conf=CONF_THRESHOLD, iou=IOU_THRESHOLD,
-                             agnostic_nms=True, verbose=False)
+    def read_digits_direct(self, frame: np.ndarray) -> tuple[str | None, float]:
+        """Perform direct digit recognition and filter out red components."""
+        results = self.model(
+            frame, conf=CONF_THRESHOLD, iou=IOU_THRESHOLD, agnostic_nms=True, verbose=False
+        )
         boxes = results[0].boxes
         if boxes is None or len(boxes) == 0:
             return None, 0.0
