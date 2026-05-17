@@ -1,4 +1,5 @@
 import '../App.css'
+import { GATEWAY_BASE_URL } from '../api/apiConfig'
 import {useState} from "react"
 import {useNavigate} from "react-router-dom";
 
@@ -18,7 +19,7 @@ export default function RegisterForm() {
         e.preventDefault()
 
         try {
-            const response = await fetch('http://localhost:8081/api/auth/register', {
+            const response = await fetch(`${GATEWAY_BASE_URL}/api/auth/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -27,7 +28,7 @@ export default function RegisterForm() {
             })
 
             if (response.ok) {
-                const loginRes = await fetch('http://localhost:8081/api/auth/login', {
+                const loginRes = await fetch(`${GATEWAY_BASE_URL}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

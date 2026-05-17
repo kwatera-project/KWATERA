@@ -2,6 +2,7 @@ package io.github.kwatera_project.kwatera.reservation_service.service;
 
 import io.github.kwatera_project.kwatera.reservation_service.dto.AvailabilityDto;
 import io.github.kwatera_project.kwatera.reservation_service.dto.CreateReservationRequest;
+import io.github.kwatera_project.kwatera.reservation_service.dto.GuestReservationDto;
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationDetailsDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
@@ -10,6 +11,7 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,15 +19,12 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
+@RequiredArgsConstructor
 public class ReservationService {
 
   private final ReservationRepository reservationRepository;
 
-  private final RestTemplate restTemplate = new RestTemplate();
-
-  public ReservationService(ReservationRepository reservationRepository) {
-    this.reservationRepository = reservationRepository;
-  }
+  private final RestTemplate restTemplate;
 
   public AvailabilityDto checkAvailability(UUID unitId, LocalDate from, LocalDate to) {
     if (from == null || to == null) {
@@ -102,8 +101,17 @@ public class ReservationService {
     return dto;
   }
 
+  public List<GuestReservationDto> getMyReservations(UUID userId) {
+    return reservationRepository.findByUserId(userId).stream()
+        .map(
+            r ->
+                new GuestReservationDto(
+                    r.getId(), r.getUnitId(), r.getStartDate(), r.getEndDate(), r.getStatus()))
+        .toList();
+  }
+
   private boolean ownerHasAccessToUnit(UUID ownerId, UUID unitId) {
-    String propertyServiceUrl = "http://property-service:8083/api/properties/units/ids/" + ownerId;
+    String propertyServiceUrl = "http://property-service/api/properties/units/ids/" + ownerId;
 
     try {
       UUID[] unitIdsArray = restTemplate.getForObject(propertyServiceUrl, UUID[].class);
