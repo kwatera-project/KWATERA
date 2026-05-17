@@ -33,7 +33,7 @@ def _has_red(frame: np.ndarray, box_x: float, box_y: float, box_w: float, box_h:
 class YOLODetector:
     """Detector class responsible for running inference on water meter digits."""
 
-    def __init__(self, model_path: str = "models/digits.pt")-> None:
+    def __init__(self, model_path: str = "models/digits.pt") -> None:
         """Initialize the YOLO model with the given weights path."""
         self.model = YOLO(model_path)
 
