@@ -1,6 +1,7 @@
 package io.github.kwatera_project.kwatera.reservation_service.dto;
 
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -15,4 +16,6 @@ public class ReservationDetailsDto {
   private LocalDate endDate;
   private ReservationStatus status;
   private Instant createdAt;
+  private BigDecimal pricePerNightSnapshot;
+  private BigDecimal totalPrice;
 }

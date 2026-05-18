@@ -145,7 +145,9 @@ public class AdminReservationService {
         unitName,
         reservation.getStartDate(),
         reservation.getEndDate(),
-        reservation.getStatus());
+        reservation.getStatus(),
+        reservation.getPricePerNightSnapshot(),
+        reservation.getTotalPrice());
   }
 
   private String splitUuid(UUID uuid) {

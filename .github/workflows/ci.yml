@@ -111,6 +111,9 @@ jobs:
           - service: db-migrations
             sonar_enabled: true
             sonar_project_key: kwatera-project_KWATERA_db-migrations
+          - service: billing-service
+            sonar_enabled: true
+            sonar_project_key: kwatera-project_KWATERA_billing-service
 
     defaults:
       run:

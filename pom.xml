@@ -38,6 +38,7 @@
         <module>services/reservation-service</module>
         <module>services/service-registry</module>
         <module>services/db-migrations</module>
+        <module>services/billing-service</module>
     </modules>
 
     <dependencyManagement>

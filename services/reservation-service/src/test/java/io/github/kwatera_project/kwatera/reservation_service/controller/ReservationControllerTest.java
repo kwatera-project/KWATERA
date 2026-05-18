@@ -1,7 +1,6 @@
 package io.github.kwatera_project.kwatera.reservation_service.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -60,18 +59,21 @@ class ReservationControllerTest {
             + UUID.randomUUID()
             + "\", \"startDate\":\"2026-10-10\", \"endDate\":\"2026-10-15\"}";
 
-    when(reservationService.createReservation(eq(userId), any(CreateReservationRequest.class)))
+    when(reservationService.createReservation(
+            eq(userId), any(CreateReservationRequest.class), anyString()))
         .thenReturn(new Reservation());
 
     mockMvc
         .perform(
             post("/api/v1/reservations")
+                .header("Authorization", "Bearer mock-token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json)
                 .with(authentication(buildAuth(userId, "ROLE_GUEST"))))
         .andExpect(status().isCreated());
 
-    verify(reservationService).createReservation(eq(userId), any(CreateReservationRequest.class));
+    verify(reservationService)
+        .createReservation(eq(userId), any(CreateReservationRequest.class), anyString());
   }
 
   @Test
