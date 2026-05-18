@@ -11,6 +11,7 @@ import HomePage from "./pages/HomePage";
 import ReservationDetailsPage from "./pages/ReservationDetailsPage";
 import MyReservationsPage from "./pages/MyReservationsPage";
 import PaymentCancelPage from "./pages/PaymentCancelPage";
+import OccupancyCalendarPage from "./pages/OccupancyCalendarPage";
 
 function App() {
     return (
@@ -25,6 +26,14 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
                             <AdminReservationList />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/admin/occupancy"
+                    element={
+                        <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
+                            <OccupancyCalendarPage />
                         </ProtectedRoute>
                     }
                 />

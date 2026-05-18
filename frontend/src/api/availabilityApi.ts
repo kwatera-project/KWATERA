@@ -8,3 +8,8 @@ export async function checkAvailability(unitId: string, from: string, to: string
     );
     return res.json();
 }
+
+export async function getOccupiedDates(unitId: string) {
+    const res = await fetch(`${API_URL}/availability/occupied-dates?unitId=${unitId}`);
+    return res.json();
+}

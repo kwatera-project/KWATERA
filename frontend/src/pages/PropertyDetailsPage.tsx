@@ -2,37 +2,41 @@ import { useEffect, useState } from "react";
 import { getProperty, getUnits, getPropertyImages } from "../api/propertyApi";
 import { useParams } from "react-router-dom";
 import type { Unit, Property } from "../types/property";
-import { checkAvailability } from "../api/availabilityApi";
+import { getOccupiedDates } from "../api/availabilityApi";
 import { createReservation } from "../api/reservationApi";
-import {GATEWAY_BASE_URL} from "../api/apiConfig"
+import { GATEWAY_BASE_URL } from "../api/apiConfig";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { format } from "date-fns";
 
 export default function PropertyDetailsPage() {
-
     const { id } = useParams();
     const [property, setProperty] = useState<Property | null>(null);
     const [units, setUnits] = useState<Unit[]>([]);
     const [images, setImages] = useState<string[]>([]);
     const [mainImage, setMainImage] = useState("");
-    const [from, setFrom] = useState("");
-    const [to, setTo] = useState("");
-
-    const [availabilityMap, setAvailabilityMap] = useState<
-        Record<string, { available: boolean; message: string }>
-    >({});
+    const [occupiedIntervals, setOccupiedIntervals] = useState<Record<string, { start: Date, end: Date }[]>>({});
+    const [selectedDates, setSelectedDates] = useState<Record<string, [Date | null, Date | null]>>({});
 
     const [bookingState, setBookingState] = useState<
         Record<string, { loading: boolean; success?: boolean; error?: string }>
     >({});
 
-    const [loading, setLoading] = useState(false);
-    const today = new Date().toISOString().split("T")[0];
-    const isInvalid = !from || !to || loading || new Date(from) >= new Date(to);
-
     useEffect(() => {
         if (!id) return;
-
         getProperty(id).then(setProperty);
-        getUnits(id).then(setUnits);
+        getUnits(id).then((fetchedUnits: Unit[]) => {
+            setUnits(fetchedUnits);
+            fetchedUnits.forEach((u: Unit) => {
+                getOccupiedDates(u.id).then((dates: { startDate: string, endDate: string }[]) => {
+                    const intervals = dates.map(d => ({
+                        start: new Date(d.startDate),
+                        end: new Date(d.endDate)
+                    }));
+                    setOccupiedIntervals(prev => ({ ...prev, [u.id]: intervals }));
+                });
+            });
+        });
 
         getPropertyImages(id).then((data) => {
             setImages(data);
@@ -42,22 +46,29 @@ export default function PropertyDetailsPage() {
         });
     }, [id]);
 
+    const handleDateChange = (unitId: string, dates: [Date | null, Date | null]) => {
+        setSelectedDates(prev => ({ ...prev, [unitId]: dates }));
+        setBookingState(prev => ({ ...prev, [unitId]: { loading: false, error: undefined } }));
+    };
+
     const handleBook = async (unitId: string) => {
-        if (!from || !to || new Date(from) >= new Date(to)) {
+        const dates = selectedDates[unitId];
+        if (!dates || !dates[0] || !dates[1]) {
             setBookingState(prev => ({
                 ...prev,
-                [unitId]: { loading: false, error: "Select a valid date range first" }
+                [unitId]: { loading: false, error: "Select a valid date range on the calendar" }
             }));
             return;
         }
+
+        const from = format(dates[0], 'yyyy-MM-dd');
+        const to = format(dates[1], 'yyyy-MM-dd');
 
         setBookingState(prev => ({ ...prev, [unitId]: { loading: true } }));
 
         try {
             const res = await createReservation(unitId, from, to);
-
             setBookingState(prev => ({ ...prev, [unitId]: { loading: false, success: true } }));
-
             const token = localStorage.getItem("token");
 
             const checkoutRes = await fetch(
@@ -79,7 +90,6 @@ export default function PropertyDetailsPage() {
 
             const checkoutUrl = await checkoutRes.text();
             window.location.assign(checkoutUrl);
-
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "An error occurred";
             setBookingState(prev => ({ ...prev, [unitId]: { loading: false, error: message } }));
@@ -110,134 +120,38 @@ export default function PropertyDetailsPage() {
             <h1 className="text-3xl font-bold mt-4">{property.title}</h1>
             <p className="text-details">{property.location}</p>
 
-            <div className="mb-6 flex gap-2 mt-4">
-
-                <input
-                    type="date"
-                    min={today}
-                    value={from}
-                    onChange={(e) => {
-                        setFrom(e.target.value);
-                        setAvailabilityMap({});
-                        setBookingState({});
-                    }}
-                    className="border p-2 rounded"
-                />
-
-                <input
-                    type="date"
-                    min={from || today}
-                    value={to}
-                    onChange={(e) => {
-                        setTo(e.target.value);
-                        setAvailabilityMap({});
-                        setBookingState({});
-                    }}
-                    className="border p-2 rounded"
-                />
-
-                <button
-                    disabled={isInvalid}
-                    onClick={async () => {
-
-                        if (!from || !to) return;
-                        if (new Date(from) >= new Date(to)) return;
-
-                        setLoading(true);
-
-                        try {
-                            const promises = units.map(u =>
-                                checkAvailability(u.id, from, to)
-                                    .then(res => ({
-                                        id: u.id,
-                                        available: res.available,
-                                        message: res.message
-                                    }))
-                                    .catch((err) => ({
-                                        id: u.id,
-                                        available: false,
-                                        message: err.message || "Error"
-                                    }))
-                            );
-
-                            const results = await Promise.all(promises);
-
-                            const resultMap: Record<string, { available: boolean; message: string }> = {};
-
-                            results.forEach(r => {
-                                resultMap[r.id] = {
-                                    available: r.available,
-                                    message: r.message
-                                };
-                            });
-
-                            setAvailabilityMap(resultMap);
-
-                        } finally {
-                            setLoading(false);
-                        }
-                    }}
-                    className={`px-4 py-2 rounded ${
-                        isInvalid
-                            ? "bg-gray-300 cursor-not-allowed"
-                            : "bg-blue-500 text-white"
-                    }`}
-                >
-                    {loading ? "Checking..." : "Check availability"}
-                </button>
-                {from && to && new Date(from) >= new Date(to) && (
-                    <p className="text-red-500 mt-2">
-                        End date must be after start date
-                    </p>
-                )}
-
-            </div>
-
-            {loading && (
-                <p className="text-gray-500 mt-2">Checking availability...</p>
-            )}
-
-            <h2 className="mt-6 text-xl font-bold">Units</h2>
+            <h2 className="mt-6 text-xl font-bold">Units & Availability</h2>
 
             {units.map((u) => (
-                <div
-                    key={u.id}
-                    className="bg-card rounded-xl mt-4 overflow-hidden p-4"
-                >
+                <div key={u.id} className="bg-card rounded-xl mt-4 overflow-hidden p-4 border flex flex-col md:flex-row gap-6">
+                    <div className="flex-1">
+                        {u.imageUrl && (
+                            <img src={u.imageUrl} className="w-full h-48 object-cover rounded mb-4" />
+                        )}
+                        <h3 className="font-bold text-lg">{u.name}</h3>
+                        <p className="text-details">{u.description}</p>
+                        <p className="mt-2 font-semibold text-blue-600">{u.pricePerNight} zł / night</p>
+                        <p className="text-sm text-gray-500">Capacity: {u.capacity} {u.capacity === 1 ? "person" : "people"}</p>
+                    </div>
 
-                    {u.imageUrl && (
-                        <img
-                            src={u.imageUrl}
-                            className="w-full aspect-[16/9] object-cover rounded"
+                    <div className="flex-1 flex flex-col items-center md:items-start">
+                        <p className="mb-2 font-semibold">Select dates to book:</p>
+                        <DatePicker
+                            selected={selectedDates[u.id]?.[0]}
+                            onChange={(dates) => handleDateChange(u.id, dates)}
+                            startDate={selectedDates[u.id]?.[0] || undefined}
+                            endDate={selectedDates[u.id]?.[1] || undefined}
+                            selectsRange
+                            inline
+                            minDate={new Date()}
+                            excludeDateIntervals={occupiedIntervals[u.id] || []}
                         />
-                    )}
 
-                    <h3 className="font-bold mt-2">{u.name}</h3>
-                    <p className="text-details">{u.description}</p>
-
-                    <p className="mt-2">{u.pricePerNight} zł</p>
-                    <p>
-                        {u.capacity} {u.capacity === 1 ? "person" : "people"}
-                    </p>
-
-                    {availabilityMap[u.id] && (
-                        <p
-                            className={
-                                availabilityMap[u.id].available
-                                    ? "text-green-600 mt-2"
-                                    : "text-red-600 mt-2"
-                            }
-                        >
-                            {availabilityMap[u.id].message}
-                        </p>
-                    )}
-
-                    {availabilityMap[u.id]?.available && (
-                        <div className="mt-4">
+                        <div className="mt-4 w-full text-center md:text-left">
                             <button
                                 onClick={() => handleBook(u.id)}
                                 disabled={bookingState[u.id]?.loading || bookingState[u.id]?.success}
-                                className={`px-4 py-2 font-bold rounded ${
+                                className={`px-6 py-2 font-bold rounded w-full md:w-auto ${
                                     bookingState[u.id]?.success
                                         ? "bg-green-500 text-white cursor-default"
                                         : bookingState[u.id]?.loading
@@ -246,19 +160,17 @@ export default function PropertyDetailsPage() {
                                 }`}
                             >
                                 {bookingState[u.id]?.loading ? "Processing..." :
-                                    bookingState[u.id]?.success ? "Booked successfully!" :
-                                        "Book this unit"}
+                                    bookingState[u.id]?.success ? "Redirecting to payment..." :
+                                        "Book these dates"}
                             </button>
 
                             {bookingState[u.id]?.error && (
-                                <p className="text-red-500 text-sm mt-1">{bookingState[u.id].error}</p>
+                                <p className="text-red-500 text-sm mt-2">{bookingState[u.id].error}</p>
                             )}
                         </div>
-                    )}
-
+                    </div>
                 </div>
             ))}
-
         </div>
     );
 }
