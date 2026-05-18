@@ -113,3 +113,29 @@ Then open:
 ```txt
 http://localhost:8085/health
 ```
+
+## YOLO model setup
+
+The OCR service requires the trained YOLO weights file:
+
+```txt
+digits.pt
+```
+
+Download the model from the GitHub release:
+
+```txt
+v1.0-ocr-yolo-model
+```
+
+Place the file in:
+
+```txt
+services/ocr-service/models/digits.pt
+```
+
+The Docker Compose configuration mounts this directory automatically into the container as:
+
+```txt
+/app/models
+```
