@@ -57,3 +57,4 @@ runs/
 *.pt
 !services/ocr-service/models/
 !services/ocr-service/models/.gitkeep
+*.jpg

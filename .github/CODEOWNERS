@@ -29,8 +29,11 @@
 # Reservation domain and owner/admin reservation flow.
 /services/reservation-service/ @alicjaswiers @lukaszjecek
 
+# Billing and settlement domain.
+/services/billing-service/ @sinadzeya @lukaszjecek
+
 # OCR service.
-/services/ocr-service/ @lukaszjecek
+/services/ocr-service/ @ZuzannaAdamczyk @lukaszjecek
 
 # Frontend.
 /frontend/ @ZuzannaAdamczyk @alicjaswiers @sinadzeya @lukaszjecek
@@ -46,7 +49,7 @@
 /frontend/src/api/propertyApi.ts @ZuzannaAdamczyk @lukaszjecek
 /frontend/src/types/property.ts @ZuzannaAdamczyk @lukaszjecek
 /frontend/src/pages/PropertiesPage.tsx @ZuzannaAdamczyk @lukaszjecek
-/frontend/src/pages/PropertyDetailsPage.tsx @ZuzannaAdamczyk @alicjaswiers @lukaszjecek
+/frontend/src/pages/PropertyDetailsPage.tsx @ZuzannaAdamczyk @alicjaswiers @sinadzeya @lukaszjecek
 /frontend/src/components/Slider.tsx @ZuzannaAdamczyk @lukaszjecek
 /frontend/src/pages/HomePage.tsx @ZuzannaAdamczyk @lukaszjecek
 
@@ -55,3 +58,5 @@
 /frontend/src/types/reservation.ts @alicjaswiers @lukaszjecek
 /frontend/src/pages/ReservationDetailsPage.tsx @alicjaswiers @lukaszjecek
 /frontend/src/components/AdminReservationList.tsx @alicjaswiers @lukaszjecek
+/frontend/src/pages/MyReservationsPage.tsx @alicjaswiers @lukaszjecek
+/frontend/src/pages/PaymentCancelPage.tsx @sinadzeya @lukaszjecek

@@ -134,7 +134,7 @@ Place the file in:
 services/ocr-service/models/digits.pt
 ```
 
-The Docker Compose configuration mounts this directory automatically into the container as:
+During Docker image build, the local `services/ocr-service/models` directory is copied into the container as:
 
 ```txt
 /app/models
