@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import type { Unit, Property } from "../types/property";
 import { checkAvailability } from "../api/availabilityApi";
 import { createReservation } from "../api/reservationApi";
+import {GATEWAY_BASE_URL} from "../api/apiConfig"
 
 export default function PropertyDetailsPage() {
 
@@ -60,7 +61,7 @@ export default function PropertyDetailsPage() {
             const token = localStorage.getItem("token");
 
             const checkoutRes = await fetch(
-                `http://localhost:8086/api/billing/checkout/${res.id}`,
+                `${GATEWAY_BASE_URL}/api/billing/checkout/${res.id}`,
                 {
                     method: "POST",
                     headers: {

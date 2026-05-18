@@ -22,7 +22,7 @@ public class StripeService {
   private final RestTemplate restTemplate;
 
   ReservationDto getReservation(UUID reservationId, String token) {
-    String url = "http://reservation-service:8080/api/v1/reservations/" + reservationId;
+    String url = "http://reservation-service/api/v1/reservations/" + reservationId;
 
     HttpHeaders headers = new HttpHeaders();
 
