@@ -5,6 +5,7 @@ import io.github.kwatera_project.kwatera.reservation_service.dto.GuestReservatio
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationDetailsDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.service.ReservationService;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -26,9 +27,13 @@ public class ReservationController {
   @ResponseStatus(HttpStatus.CREATED)
   public Reservation createReservation(
       @jakarta.validation.Valid @RequestBody CreateReservationRequest request,
-      Authentication authentication) {
+      Authentication authentication,
+      HttpServletRequest httpServletRequest) {
+
     UUID guestId = validateAndGetUserId(authentication);
-    return reservationService.createReservation(guestId, request);
+    String token = httpServletRequest.getHeader("Authorization");
+
+    return reservationService.createReservation(guestId, request, token);
   }
 
   @GetMapping("/my")

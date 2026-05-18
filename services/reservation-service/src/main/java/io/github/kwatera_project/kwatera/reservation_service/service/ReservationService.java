@@ -4,14 +4,17 @@ import io.github.kwatera_project.kwatera.reservation_service.dto.AvailabilityDto
 import io.github.kwatera_project.kwatera.reservation_service.dto.CreateReservationRequest;
 import io.github.kwatera_project.kwatera.reservation_service.dto.GuestReservationDto;
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationDetailsDto;
+import io.github.kwatera_project.kwatera.reservation_service.dto.UnitDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,26 +55,67 @@ public class ReservationService {
     return new AvailabilityDto(true, "Unit is available");
   }
 
+  private BigDecimal fetchUnitPrice(UUID unitId, String token) {
+    String url = "http://property-service/api/properties/units/{unitId}";
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("Authorization", token);
+
+    HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+    try {
+      ResponseEntity<UnitDto> response =
+          restTemplate.exchange(url, HttpMethod.GET, entity, UnitDto.class, unitId);
+
+      UnitDto unit = response.getBody();
+
+      if (unit == null) {
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found");
+      }
+      return unit.getPricePerNight();
+
+    } catch (Exception e) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_GATEWAY, "Cannot fetch unit price: " + e.getMessage());
+    }
+  }
+
   @Transactional
-  public Reservation createReservation(UUID userId, CreateReservationRequest request) {
+  public Reservation createReservation(
+      UUID userId, CreateReservationRequest request, String token) {
+
     if (userId == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User id is required");
     }
+
     if (request == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reservation request is required");
     }
+
     AvailabilityDto availability =
         checkAvailability(request.getUnitId(), request.getStartDate(), request.getEndDate());
     if (!availability.isAvailable()) {
       throw new ResponseStatusException(
           HttpStatus.CONFLICT, "The selected dates are no longer available");
     }
+
     Reservation reservation = new Reservation();
     reservation.setUserId(userId);
     reservation.setUnitId(request.getUnitId());
     reservation.setStartDate(request.getStartDate());
     reservation.setEndDate(request.getEndDate());
     reservation.setStatus(ReservationStatus.PENDING);
+
+    BigDecimal pricePerNight = fetchUnitPrice(request.getUnitId(), token);
+
+    long days =
+        java.time.temporal.ChronoUnit.DAYS.between(request.getStartDate(), request.getEndDate());
+
+    BigDecimal totalPrice = pricePerNight.multiply(BigDecimal.valueOf(days));
+
+    reservation.setPricePerNightSnapshot(pricePerNight);
+    reservation.setTotalPrice(totalPrice);
+
     return reservationRepository.save(reservation);
   }
 
@@ -98,6 +142,8 @@ public class ReservationService {
     dto.setEndDate(reservation.getEndDate());
     dto.setStatus(reservation.getStatus());
     dto.setCreatedAt(reservation.getCreatedAt());
+    dto.setPricePerNightSnapshot(reservation.getPricePerNightSnapshot());
+    dto.setTotalPrice(reservation.getTotalPrice());
     return dto;
   }
 
@@ -111,10 +157,10 @@ public class ReservationService {
   }
 
   private boolean ownerHasAccessToUnit(UUID ownerId, UUID unitId) {
-    String propertyServiceUrl = "http://property-service/api/properties/units/ids/" + ownerId;
+    String propertyServiceUrl = "http://property-service/api/properties/units/ids/{ownerId}";
 
     try {
-      UUID[] unitIdsArray = restTemplate.getForObject(propertyServiceUrl, UUID[].class);
+      UUID[] unitIdsArray = restTemplate.getForObject(propertyServiceUrl, UUID[].class, ownerId);
       if (unitIdsArray == null) {
         return false;
       }
