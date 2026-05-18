@@ -49,3 +49,12 @@ htmlcov/
 .ruff_cache/
 
 infra/compose/.env
+
+# OCR / YOLO
+datasets/
+training/
+runs/
+*.pt
+!services/ocr-service/models/
+!services/ocr-service/models/.gitkeep
+*.jpg
