@@ -17,6 +17,8 @@ export default function PropertyDetailsPage() {
     const [mainImage, setMainImage] = useState("");
     const [occupiedIntervals, setOccupiedIntervals] = useState<Record<string, { start: Date, end: Date }[]>>({});
     const [selectedDates, setSelectedDates] = useState<Record<string, [Date | null, Date | null]>>({});
+    const [globalDates, setGlobalDates] = useState<[Date | null, Date | null]>([null, null]);
+    const [showCalendar, setShowCalendar] = useState<Record<string, boolean>>({});
 
     const [bookingState, setBookingState] = useState<
         Record<string, { loading: boolean; success?: boolean; error?: string }>
@@ -46,39 +48,61 @@ export default function PropertyDetailsPage() {
         });
     }, [id]);
 
+    const handleGlobalDateChange = (dates: [Date | null, Date | null]) => {
+        setGlobalDates(dates);
+        const [start, end] = dates;
+        units.forEach((u) => {
+            if (start && end) {
+                let hasOverlap = false;
+                const startStr = format(start, 'yyyy-MM-dd');
+                const endStr = format(end, 'yyyy-MM-dd');
+                const intervals = occupiedIntervals[u.id] || [];
+                for (const interval of intervals) {
+                    const intStart = format(interval.start, 'yyyy-MM-dd');
+                    const intEnd = format(interval.end, 'yyyy-MM-dd');
+                    if (startStr < intEnd && endStr > intStart) {
+                        hasOverlap = true;
+                        break;
+                    }
+                }
+                if (!hasOverlap && start.getTime() !== end.getTime()) {
+                    setSelectedDates(prev => ({ ...prev, [u.id]: dates }));
+                    setBookingState(prev => ({ ...prev, [u.id]: { loading: false, error: undefined } }));
+                } else {
+                    setSelectedDates(prev => ({ ...prev, [u.id]: [null, null] }));
+                }
+            } else {
+                setSelectedDates(prev => ({ ...prev, [u.id]: dates }));
+            }
+        });
+    };
+
     const isDateBlocked = (date: Date, unitId: string) => {
         const intervals = occupiedIntervals[unitId] || [];
         const d = format(date, 'yyyy-MM-dd');
-
         let isCheckin = false;
         let isCheckout = false;
-
         for (const interval of intervals) {
             const startStr = format(interval.start, 'yyyy-MM-dd');
             const endStr = format(interval.end, 'yyyy-MM-dd');
-
             if (d > startStr && d < endStr) return true;
             if (d === startStr) isCheckin = true;
             if (d === endStr) isCheckout = true;
         }
-
         return isCheckin && isCheckout;
     };
 
     const getDayClass = (date: Date, unitId: string) => {
         const intervals = occupiedIntervals[unitId] || [];
         const d = format(date, 'yyyy-MM-dd');
-
         let isCheckin = false;
         let isCheckout = false;
-
         for (const interval of intervals) {
             const startStr = format(interval.start, 'yyyy-MM-dd');
             const endStr = format(interval.end, 'yyyy-MM-dd');
             if (d === startStr) isCheckin = true;
             if (d === endStr) isCheckout = true;
         }
-
         if (isCheckin && !isCheckout) return "checkin-day";
         if (isCheckout && !isCheckin) return "checkout-day";
         return "";
@@ -86,7 +110,6 @@ export default function PropertyDetailsPage() {
 
     const handleDateChange = (unitId: string, dates: [Date | null, Date | null]) => {
         const [start, end] = dates;
-
         if (start && end) {
             if (start.getTime() === end.getTime()) {
                 setSelectedDates(prev => ({ ...prev, [unitId]: [start, null] }));
@@ -96,22 +119,18 @@ export default function PropertyDetailsPage() {
                 }));
                 return;
             }
-
             const startStr = format(start, 'yyyy-MM-dd');
             const endStr = format(end, 'yyyy-MM-dd');
             const intervals = occupiedIntervals[unitId] || [];
-
             let hasOverlap = false;
             for (const interval of intervals) {
                 const intStart = format(interval.start, 'yyyy-MM-dd');
                 const intEnd = format(interval.end, 'yyyy-MM-dd');
-
                 if (startStr < intEnd && endStr > intStart) {
                     hasOverlap = true;
                     break;
                 }
             }
-
             if (hasOverlap) {
                 setSelectedDates(prev => ({ ...prev, [unitId]: [start, null] }));
                 setBookingState(prev => ({
@@ -121,7 +140,6 @@ export default function PropertyDetailsPage() {
                 return;
             }
         }
-
         setSelectedDates(prev => ({ ...prev, [unitId]: dates }));
         setBookingState(prev => ({ ...prev, [unitId]: { loading: false, error: undefined } }));
     };
@@ -135,17 +153,13 @@ export default function PropertyDetailsPage() {
             }));
             return;
         }
-
         const from = format(dates[0], 'yyyy-MM-dd');
         const to = format(dates[1], 'yyyy-MM-dd');
-
         setBookingState(prev => ({ ...prev, [unitId]: { loading: true } }));
-
         try {
             const res = await createReservation(unitId, from, to);
             setBookingState(prev => ({ ...prev, [unitId]: { loading: false, success: true } }));
             const token = localStorage.getItem("token");
-
             const checkoutRes = await fetch(
                 `${GATEWAY_BASE_URL}/api/billing/checkout/${res.id}`,
                 {
@@ -162,13 +176,21 @@ export default function PropertyDetailsPage() {
                     })
                 }
             );
-
             const checkoutUrl = await checkoutRes.text();
             window.location.assign(checkoutUrl);
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "An error occurred";
             setBookingState(prev => ({ ...prev, [unitId]: { loading: false, error: message } }));
         }
+    };
+
+    const calculateNights = (start: Date | null, end: Date | null) => {
+        if (!start || !end) return 0;
+        return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    };
+
+    const toggleCalendar = (unitId: string) => {
+        setShowCalendar(prev => ({ ...prev, [unitId]: !prev[unitId] }));
     };
 
     if (!property) {
@@ -195,88 +217,144 @@ export default function PropertyDetailsPage() {
             <h1 className="text-3xl font-bold mt-4 text-[#1A1A1A]">{property.title}</h1>
             <p className="text-[#7A7A7A]">{property.location}</p>
 
-            <h2 className="mt-6 text-xl font-bold text-[#1A1A1A]">Units & Availability</h2>
+            <div className="bg-[#F7F7F7] border border-[#DACDCA] rounded-xl p-6 mt-6 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="max-w-xs text-center md:text-left">
+                    <h3 className="font-bold text-xl">Select Stay Dates</h3>
+                    <p className="text-sm text-[#7A7A7A] mt-1">Choose your preferred check-in and check-out window to check general availability across all options.</p>
+                </div>
+                <div className="flex justify-center w-full md:w-auto">
+                    <DatePicker
+                        selected={globalDates[0]}
+                        onChange={handleGlobalDateChange}
+                        startDate={globalDates[0] || undefined}
+                        endDate={globalDates[1] || undefined}
+                        selectsRange
+                        inline
+                        minDate={new Date()}
+                        previousMonthButtonLabel={
+                            <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                        }
+                        nextMonthButtonLabel={
+                            <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                        }
+                    />
+                </div>
+            </div>
 
-            {units.map((u) => (
-                <div key={u.id} className="bg-[#F7F7F7] rounded-xl mt-4 overflow-hidden p-4 border border-[#DACDCA] flex flex-col md:flex-row gap-6">
-                    <div className="flex-1">
-                        {u.imageUrl && (
-                            <img src={u.imageUrl} className="w-full h-48 object-cover rounded mb-4" />
-                        )}
-                        <h3 className="font-bold text-lg text-[#1A1A1A]">{u.name}</h3>
-                        <p className="text-[#7A7A7A]">{u.description}</p>
-                        <p className="mt-2 font-semibold text-[#42211D]">{u.pricePerNight} zł / night</p>
-                        <p className="text-sm text-[#7A7A7A]">Capacity: {u.capacity} {u.capacity === 1 ? "person" : "people"}</p>
-                    </div>
+            <h2 className="mt-8 text-xl font-bold text-[#1A1A1A]">Units & Availability</h2>
 
-                    <div className="flex-1 flex flex-col items-center md:items-start">
-                        <p className="mb-2 font-semibold text-[#1A1A1A]">Select dates to book:</p>
+            {units.map((u) => {
+                const unitStart = selectedDates[u.id]?.[0];
+                const unitEnd = selectedDates[u.id]?.[1];
+                const nights = calculateNights(unitStart, unitEnd);
+                const totalPrice = nights * u.pricePerNight;
 
-                        <div className="relative">
-                            <DatePicker
-                                selected={selectedDates[u.id]?.[0]}
-                                onChange={(dates) => handleDateChange(u.id, dates)}
-                                startDate={selectedDates[u.id]?.[0] || undefined}
-                                endDate={selectedDates[u.id]?.[1] || undefined}
-                                selectsRange
-                                inline
-                                minDate={new Date()}
-                                filterDate={(date) => !isDateBlocked(date, u.id)}
-                                dayClassName={(date) => getDayClass(date, u.id)}
-                                previousMonthButtonLabel={
-                                    <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                                }
-                                nextMonthButtonLabel={
-                                    <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                                }
-                                renderDayContents={(dayOfMonth, date) => {
-                                    const cls = getDayClass(date, u.id);
-                                    let tooltipTitle = undefined;
-                                    if (cls === "checkin-day") tooltipTitle = "Available for check-in only";
-                                    if (cls === "checkout-day") tooltipTitle = "Available for check-out only";
-                                    return <span title={tooltipTitle} className="w-full h-full block align-middle pt-0.5">{dayOfMonth}</span>;
-                                }}
-                            />
-                            <div className="flex gap-4 items-center justify-center mt-4 text-xs text-[#7A7A7A] w-full mb-2">
-                                <div className="flex items-center gap-1.5">
-                                    <div className="w-3 h-3 bg-[#FFFFFF] border border-[#DACDCA] rounded-sm"></div>
-                                    <span>Available</span>
+                return (
+                    <div key={u.id} className="bg-[#F7F7F7] rounded-xl mt-4 overflow-hidden p-4 border border-[#DACDCA] flex flex-col md:flex-row gap-6">
+                        <div className="flex-1">
+                            {u.imageUrl && (
+                                <img src={u.imageUrl} className="w-full h-48 object-cover rounded mb-4" />
+                            )}
+                            <h3 className="font-bold text-lg text-[#1A1A1A]">{u.name}</h3>
+                            <p className="text-[#7A7A7A]">{u.description}</p>
+                            <p className="mt-2 font-semibold text-[#42211D]">{u.pricePerNight} zł / night</p>
+                            <p className="text-sm text-[#7A7A7A]">Capacity: {u.capacity} {u.capacity === 1 ? "person" : "people"}</p>
+                        </div>
+
+                        <div className="flex-1 flex flex-col items-center md:items-start justify-between">
+                            <div className="w-full flex flex-col items-center md:items-start">
+                                <button
+                                    onClick={() => toggleCalendar(u.id)}
+                                    className="text-sm font-semibold text-[#42211D] hover:underline mb-4 flex items-center gap-1 focus:outline-none"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 002-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                    {showCalendar[u.id] ? "Hide detailed occupancy calendar" : "Check detailed occupancy calendar"}
+                                </button>
+
+                                {showCalendar[u.id] && (
+                                    <div className="relative">
+                                        <DatePicker
+                                            selected={unitStart}
+                                            onChange={(dates) => handleDateChange(u.id, dates)}
+                                            startDate={unitStart || undefined}
+                                            endDate={unitEnd || undefined}
+                                            selectsRange
+                                            inline
+                                            minDate={new Date()}
+                                            filterDate={(date) => !isDateBlocked(date, u.id)}
+                                            dayClassName={(date) => getDayClass(date, u.id)}
+                                            previousMonthButtonLabel={
+                                                <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                                            }
+                                            nextMonthButtonLabel={
+                                                <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                                            }
+                                            renderDayContents={(dayOfMonth, date) => {
+                                                const cls = getDayClass(date, u.id);
+                                                let tooltipTitle = undefined;
+                                                if (cls === "checkin-day") tooltipTitle = "Available for check-out only";
+                                                if (cls === "checkout-day") tooltipTitle = "Available for check-in only";
+                                                return <span title={tooltipTitle} className="w-full h-full block align-middle pt-0.5">{dayOfMonth}</span>;
+                                            }}
+                                        />
+                                        <div className="flex gap-4 items-center justify-center mt-4 text-xs text-[#7A7A7A] w-full mb-2">
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="w-3 h-3 bg-[#FFFFFF] border border-[#DACDCA] rounded-sm"></div>
+                                                <span>Available</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="w-3 h-3 bg-[#e5e5e5] border border-[#DACDCA] rounded-sm"></div>
+                                                <span>Occupied</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="w-3 h-3 bg-[#DACDCA] border border-[#42211D] rounded-sm"></div>
+                                                <span>Selected</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {unitStart && unitEnd && nights > 0 && (
+                                <div className="w-full bg-white border border-[#DACDCA] rounded-xl p-4 mt-4 text-sm flex flex-col gap-1">
+                                    <p className="font-bold text-[#1A1A1A] border-b border-[#F7F7F7] pb-1 mb-1">Stay Details Summary</p>
+                                    <p><span className="text-[#7A7A7A]">Check-in:</span> <span className="font-medium">{format(unitStart, "EEEE, MMMM dd, yyyy")}</span></p>
+                                    <p><span className="text-[#7A7A7A]">Check-out:</span> <span className="font-medium">{format(unitEnd, "EEEE, MMMM dd, yyyy")}</span></p>
+                                    <p><span className="text-[#7A7A7A]">Duration:</span> <span className="font-medium">{nights} {nights === 1 ? "night" : "nights"}</span></p>
+                                    <p className="mt-1 pt-1 border-t border-[#F7F7F7] text-base font-bold text-[#42211D] flex justify-between">
+                                        <span>Total price:</span>
+                                        <span>{totalPrice} zł</span>
+                                    </p>
                                 </div>
-                                <div className="flex items-center gap-1.5">
-                                    <div className="w-3 h-3 bg-[#e5e5e5] border border-[#DACDCA] rounded-sm"></div>
-                                    <span>Occupied</span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                    <div className="w-3 h-3 bg-[#DACDCA] border border-[#42211D] rounded-sm"></div>
-                                    <span>Selected</span>
-                                </div>
+                            )}
+
+                            <div className="mt-4 w-full text-center md:text-left">
+                                <button
+                                    onClick={() => handleBook(u.id)}
+                                    disabled={bookingState[u.id]?.loading || bookingState[u.id]?.success || !unitStart || !unitEnd}
+                                    className={`px-6 py-2 font-bold rounded w-full md:w-auto transition-colors duration-200 ${
+                                        bookingState[u.id]?.success
+                                            ? "bg-green-600 text-white cursor-default"
+                                            : bookingState[u.id]?.loading
+                                                ? "bg-[#7A7A7A] text-white cursor-wait"
+                                                : (!unitStart || !unitEnd)
+                                                    ? "bg-[#DACDCA] text-[#7A7A7A] cursor-not-allowed"
+                                                    : "bg-[#42211D] text-[#FFFFFF] hover:bg-[#2a1412]"
+                                    }`}
+                                >
+                                    {bookingState[u.id]?.loading ? "Processing..." :
+                                        bookingState[u.id]?.success ? "Redirecting to payment..." :
+                                            (!unitStart || !unitEnd) ? "Select dates to book" : "Book these dates"}
+                                </button>
+
+                                {bookingState[u.id]?.error && (
+                                    <p className="text-red-500 text-sm mt-2">{bookingState[u.id].error}</p>
+                                )}
                             </div>
                         </div>
-
-                        <div className="mt-2 w-full text-center md:text-left">
-                            <button
-                                onClick={() => handleBook(u.id)}
-                                disabled={bookingState[u.id]?.loading || bookingState[u.id]?.success}
-                                className={`px-6 py-2 font-bold rounded w-full md:w-auto transition-colors duration-200 ${
-                                    bookingState[u.id]?.success
-                                        ? "bg-green-600 text-white cursor-default"
-                                        : bookingState[u.id]?.loading
-                                            ? "bg-[#7A7A7A] text-white cursor-wait"
-                                            : "bg-[#42211D] text-[#FFFFFF] hover:bg-[#2a1412]"
-                                }`}
-                            >
-                                {bookingState[u.id]?.loading ? "Processing..." :
-                                    bookingState[u.id]?.success ? "Redirecting to payment..." :
-                                        "Book these dates"}
-                            </button>
-
-                            {bookingState[u.id]?.error && (
-                                <p className="text-red-500 text-sm mt-2">{bookingState[u.id].error}</p>
-                            )}
-                        </div>
                     </div>
-                </div>
-            ))}
+                );
+            })}
         </div>
     );
 }
