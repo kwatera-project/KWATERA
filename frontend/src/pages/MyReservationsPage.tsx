@@ -58,9 +58,12 @@ export default function MyReservationsPage() {
 
                                 <div className="flex gap-4">
                                     {(res.status === 'CONFIRMED' || res.status === 'COMPLETED') && (
-                                        <button className="text-blue-600 hover:underline text-sm">
-                                            View Bill
-                                        </button>
+                                    <Link
+                                        to={`/settlements/${res.id}`}
+                                        className="text-blue-600 hover:underline text-sm"
+                                    >
+                                        View Bill
+                                    </Link>
                                     )}
                                     <Link
                                         to={`/reservations/${res.id}`}
