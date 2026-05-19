@@ -2,6 +2,7 @@ package io.github.kwatera_project.kwatera.billing_service.service;
 
 import com.stripe.exception.StripeException;
 import io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto;
+import io.github.kwatera_project.kwatera.billing_service.dto.SettlementItemDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto;
 import io.github.kwatera_project.kwatera.billing_service.model.Settlement;
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
@@ -59,5 +60,13 @@ public class PaymentService {
     stripeService.getReservation(reservationId, token);
 
     return settlementService.getSettlementWithItems(reservationId);
+  }
+
+  public SettlementItemDto getSettlementItemInfoByType(
+      UUID reservationId, SettlementItemType settlementItemType, String token) {
+
+    stripeService.getReservation(reservationId, token);
+
+    return settlementService.getSettlementItemInfoByType(reservationId, settlementItemType);
   }
 }

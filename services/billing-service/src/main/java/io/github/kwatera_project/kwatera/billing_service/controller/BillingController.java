@@ -2,7 +2,9 @@ package io.github.kwatera_project.kwatera.billing_service.controller;
 
 import com.stripe.exception.StripeException;
 import io.github.kwatera_project.kwatera.billing_service.dto.CheckoutRequest;
+import io.github.kwatera_project.kwatera.billing_service.dto.SettlementItemDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto;
+import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
 import io.github.kwatera_project.kwatera.billing_service.service.PaymentService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
@@ -44,6 +46,19 @@ public class BillingController {
     String token = request.getHeader("Authorization");
 
     SettlementResponseDto response = paymentService.getSettlementWithItems(reservationId, token);
+
+    return ResponseEntity.ok(response);
+  }
+
+  @GetMapping("settlements/{reservationId}/{settlementItemType}")
+  public ResponseEntity<SettlementItemDto> getSettlementItemInfoByType(
+      @PathVariable("reservationId") UUID reservationId,
+      @PathVariable("settlementItemType") SettlementItemType settlementItemType,
+      HttpServletRequest request) {
+    String token = request.getHeader("Authorization");
+
+    SettlementItemDto response =
+        paymentService.getSettlementItemInfoByType(reservationId, settlementItemType, token);
 
     return ResponseEntity.ok(response);
   }
