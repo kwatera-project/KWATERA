@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto;
+import io.github.kwatera_project.kwatera.billing_service.event.SettlementEventPublisher;
 import io.github.kwatera_project.kwatera.billing_service.model.Settlement;
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementItem;
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
@@ -29,6 +30,8 @@ class SettlementServiceTest {
   @Mock private SettlementRepository settlementRepository;
 
   @Mock private SettlementItemRepository settlementItemRepository;
+
+  @Mock private SettlementEventPublisher settlementEventPublisher;
 
   @InjectMocks private SettlementService settlementService;
 

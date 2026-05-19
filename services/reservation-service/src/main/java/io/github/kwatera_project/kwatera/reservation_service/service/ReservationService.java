@@ -7,6 +7,7 @@ import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationDeta
 import io.github.kwatera_project.kwatera.reservation_service.dto.UnitDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
+import io.github.kwatera_project.kwatera.reservation_service.model.SettlementStatus;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -171,4 +172,26 @@ public class ReservationService {
           HttpStatus.FORBIDDEN, "Unable to verify ownership: " + e.getMessage());
     }
   }
+
+    @Transactional
+    public void handleSettlementStatusUpdate(
+            UUID reservationId,
+            SettlementStatus settlementStatus
+    ) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Reservation not found"));
+
+        switch (settlementStatus) {
+
+            case PAID -> reservation.setStatus(ReservationStatus.COMPLETED);
+
+            case PARTIALLY_PAID -> reservation.setStatus(ReservationStatus.CONFIRMED);
+
+            case ISSUED -> {
+                return;
+            }
+        }
+
+        reservationRepository.save(reservation);
+    }
 }

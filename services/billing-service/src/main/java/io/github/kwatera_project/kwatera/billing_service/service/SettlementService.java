@@ -6,9 +6,12 @@ import static io.github.kwatera_project.kwatera.billing_service.model.Settlement
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementItemDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto;
+import io.github.kwatera_project.kwatera.billing_service.dto.SettlementStatusChangedEvent;
+import io.github.kwatera_project.kwatera.billing_service.event.SettlementEventPublisher;
 import io.github.kwatera_project.kwatera.billing_service.model.Settlement;
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementItem;
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
+import io.github.kwatera_project.kwatera.billing_service.model.SettlementStatus;
 import io.github.kwatera_project.kwatera.billing_service.repository.SettlementItemRepository;
 import io.github.kwatera_project.kwatera.billing_service.repository.SettlementRepository;
 import jakarta.transaction.Transactional;
@@ -27,6 +30,7 @@ public class SettlementService {
 
   private final SettlementRepository settlementRepository;
   private final SettlementItemRepository settlementItemRepository;
+  private final SettlementEventPublisher settlementEventPublisher;
 
   private static final String SETTLEMENT_NOT_FOUND = "Settlement not found";
 
@@ -83,6 +87,8 @@ public class SettlementService {
 
   private void recalculateSettlementStatus(Settlement settlement) {
 
+    SettlementStatus previousStatus = settlement.getStatus();
+
     BigDecimal balance = settlement.getTotalAmount().subtract(settlement.getAmountPaid());
 
     settlement.setBalanceDue(balance.max(BigDecimal.ZERO));
@@ -90,15 +96,19 @@ public class SettlementService {
     if (balance.compareTo(BigDecimal.ZERO) <= 0 && settlement.getFinalized()) {
       settlement.setStatus(PAID);
       settlement.setPaidAt(Instant.now());
-      return;
+    } else {
+      boolean hasAdditionalCharges =
+          settlementItemRepository.existsBySettlementIdAndTypeIn(
+              settlement.getId(), List.of(ELECTRICITY, WATER, CLEANING_FEE));
+
+      settlement.setStatus(hasAdditionalCharges ? ISSUED : PARTIALLY_PAID);
+      settlement.setPaidAt(null);
     }
 
-    boolean hasAdditionalCharges =
-        settlementItemRepository.existsBySettlementIdAndTypeIn(
-            settlement.getId(), List.of(ELECTRICITY, WATER, CLEANING_FEE));
-
-    settlement.setStatus(hasAdditionalCharges ? ISSUED : PARTIALLY_PAID);
-    settlement.setPaidAt(null);
+    if (previousStatus != settlement.getStatus()) {
+      settlementEventPublisher.publishSettlementStatusChanged(
+          new SettlementStatusChangedEvent(settlement.getReservationId(), settlement.getStatus()));
+    }
   }
 
   private SettlementItem createSettlementItem(
