@@ -70,11 +70,12 @@ class AdminOccupancyControllerTest {
     ReservationService service = mock(ReservationService.class);
     Authentication auth = buildAuth("ROLE_GUEST", UUID.randomUUID().toString());
     AdminOccupancyController controller = new AdminOccupancyController(service);
+    LocalDate start = LocalDate.now();
+    LocalDate end = start.plusDays(1);
 
     ResponseStatusException ex =
         assertThrows(
-            ResponseStatusException.class,
-            () -> controller.getOccupancy(LocalDate.now(), LocalDate.now().plusDays(1), auth));
+            ResponseStatusException.class, () -> controller.getOccupancy(start, end, auth));
 
     assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
   }
@@ -84,11 +85,12 @@ class AdminOccupancyControllerTest {
     ReservationService service = mock(ReservationService.class);
     Authentication auth = buildAuth("ROLE_ADMIN", "not-a-uuid");
     AdminOccupancyController controller = new AdminOccupancyController(service);
+    LocalDate start = LocalDate.now();
+    LocalDate end = start.plusDays(1);
 
     ResponseStatusException ex =
         assertThrows(
-            ResponseStatusException.class,
-            () -> controller.getOccupancy(LocalDate.now(), LocalDate.now().plusDays(1), auth));
+            ResponseStatusException.class, () -> controller.getOccupancy(start, end, auth));
 
     assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
   }
@@ -98,11 +100,12 @@ class AdminOccupancyControllerTest {
     ReservationService service = mock(ReservationService.class);
     Authentication auth = buildAuth("ROLE_ADMIN", "   ");
     AdminOccupancyController controller = new AdminOccupancyController(service);
+    LocalDate start = LocalDate.now();
+    LocalDate end = start.plusDays(1);
 
     ResponseStatusException ex =
         assertThrows(
-            ResponseStatusException.class,
-            () -> controller.getOccupancy(LocalDate.now(), LocalDate.now().plusDays(1), auth));
+            ResponseStatusException.class, () -> controller.getOccupancy(start, end, auth));
 
     assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
   }
@@ -117,11 +120,12 @@ class AdminOccupancyControllerTest {
     when(auth.getDetails()).thenReturn(12345); // not a String
 
     AdminOccupancyController controller = new AdminOccupancyController(service);
+    LocalDate start = LocalDate.now();
+    LocalDate end = start.plusDays(1);
 
     ResponseStatusException ex =
         assertThrows(
-            ResponseStatusException.class,
-            () -> controller.getOccupancy(LocalDate.now(), LocalDate.now().plusDays(1), auth));
+            ResponseStatusException.class, () -> controller.getOccupancy(start, end, auth));
 
     assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
   }
@@ -136,11 +140,12 @@ class AdminOccupancyControllerTest {
     when(auth.getDetails()).thenReturn(null);
 
     AdminOccupancyController controller = new AdminOccupancyController(service);
+    LocalDate start = LocalDate.now();
+    LocalDate end = start.plusDays(1);
 
     ResponseStatusException ex =
         assertThrows(
-            ResponseStatusException.class,
-            () -> controller.getOccupancy(LocalDate.now(), LocalDate.now().plusDays(1), auth));
+            ResponseStatusException.class, () -> controller.getOccupancy(start, end, auth));
 
     assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
   }
