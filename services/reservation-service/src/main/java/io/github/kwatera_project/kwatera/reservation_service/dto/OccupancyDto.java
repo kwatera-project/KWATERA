@@ -15,7 +15,12 @@ public class OccupancyDto {
   public OccupancyDto() {}
 
   public OccupancyDto(
-      UUID reservationId, UUID unitId, String unitName, LocalDate startDate, LocalDate endDate, String status) {
+      UUID reservationId,
+      UUID unitId,
+      String unitName,
+      LocalDate startDate,
+      LocalDate endDate,
+      String status) {
     this.reservationId = reservationId;
     this.unitId = unitId;
     this.unitName = unitName;

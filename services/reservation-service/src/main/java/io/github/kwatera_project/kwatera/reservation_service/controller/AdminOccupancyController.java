@@ -8,7 +8,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -42,10 +41,12 @@ public class AdminOccupancyController {
       try {
         ownerId = UUID.fromString(userIdString);
       } catch (IllegalArgumentException ex) {
-        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
+        throw new ResponseStatusException(
+            HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
       }
     } else {
-      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
+      throw new ResponseStatusException(
+          HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
     }
 
     return reservationService.getOccupancy(startDate, endDate, ownerId, isAdmin);

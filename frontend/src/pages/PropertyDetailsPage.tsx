@@ -68,11 +68,18 @@ export default function PropertyDetailsPage() {
                 if (!hasOverlap && start.getTime() !== end.getTime()) {
                     setSelectedDates(prev => ({ ...prev, [u.id]: dates }));
                     setBookingState(prev => ({ ...prev, [u.id]: { loading: false, error: undefined } }));
+                } else if (hasOverlap) {
+                    setSelectedDates(prev => ({ ...prev, [u.id]: [null, null] }));
+                    setBookingState(prev => ({
+                        ...prev,
+                        [u.id]: { loading: false, error: "Room not available for these dates. Check the detailed occupancy calendar above to find available slots." }
+                    }));
                 } else {
                     setSelectedDates(prev => ({ ...prev, [u.id]: [null, null] }));
                 }
             } else {
                 setSelectedDates(prev => ({ ...prev, [u.id]: dates }));
+                setBookingState(prev => ({ ...prev, [u.id]: { loading: false, error: undefined } }));
             }
         });
     };

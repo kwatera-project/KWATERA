@@ -59,7 +59,8 @@ public class ReservationService {
         .toList();
   }
 
-  public List<OccupancyDto> getOccupancy(LocalDate start, LocalDate end, UUID ownerId, boolean isAdmin) {
+  public List<OccupancyDto> getOccupancy(
+      LocalDate start, LocalDate end, UUID ownerId, boolean isAdmin) {
     List<Reservation> reservations;
     if (isAdmin) {
       reservations = reservationRepository.findAll();
@@ -84,23 +85,23 @@ public class ReservationService {
         .filter(r -> !r.getEndDate().isBefore(start) && !r.getStartDate().isAfter(end))
         .map(
             r -> {
-                String unitName = "Room " + r.getUnitId().toString().substring(0, 8);
-                try {
-                    String unitUrl = "http://property-service/api/properties/units/" + r.getUnitId();
-                    UnitDto unitDto = restTemplate.getForObject(unitUrl, UnitDto.class);
-                    if (unitDto != null && unitDto.getName() != null) {
-                        unitName = unitDto.getName();
-                    }
-                } catch (Exception e) {
-                    // ignore
+              String unitName = "Room " + r.getUnitId().toString().substring(0, 8);
+              try {
+                String unitUrl = "http://property-service/api/properties/units/" + r.getUnitId();
+                UnitDto unitDto = restTemplate.getForObject(unitUrl, UnitDto.class);
+                if (unitDto != null && unitDto.getName() != null) {
+                  unitName = unitDto.getName();
                 }
-                return new OccupancyDto(
-                    r.getId(),
-                    r.getUnitId(),
-                    unitName,
-                    r.getStartDate(),
-                    r.getEndDate(),
-                    r.getStatus().name());
+              } catch (Exception e) {
+                // ignore
+              }
+              return new OccupancyDto(
+                  r.getId(),
+                  r.getUnitId(),
+                  unitName,
+                  r.getStartDate(),
+                  r.getEndDate(),
+                  r.getStatus().name());
             })
         .toList();
   }
