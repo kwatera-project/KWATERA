@@ -93,7 +93,7 @@ public class ReservationService {
                   unitName = unitDto.getName();
                 }
               } catch (Exception e) {
-                // ignore
+                System.err.println("Failed to fetch unit name: " + e.getMessage());
               }
               return new OccupancyDto(
                   r.getId(),
