@@ -42,6 +42,11 @@ public class PropertyController {
     return propertyService.getUnitById(id);
   }
 
+  @GetMapping("/units/ids")
+  public List<UUID> getAllUnitIds() {
+    return propertyService.getAllUnitIds();
+  }
+
   @GetMapping("/units/ids/{ownerId}")
   public List<UUID> getUnitIdsByOwnerId(@PathVariable("ownerId") UUID ownerId) {
     return propertyService.getUnitIdsByOwnerId(ownerId);

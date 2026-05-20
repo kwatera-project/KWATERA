@@ -55,8 +55,8 @@ export default function ReservationDetailsPage() {
                 </div>
 
                 <div className="mt-8 pt-4 border-t">
-                    <Link to="/" className="text-blue-500 hover:text-blue-700 hover:underline">
-                        &larr; Return to properties
+                    <Link to="/admin/reservations" className="text-blue-500 hover:text-blue-700 hover:underline">
+                        &larr; Return to reservations
                     </Link>
                 </div>
             </div>

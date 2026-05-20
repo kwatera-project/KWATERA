@@ -38,6 +38,8 @@ public class SecurityConfig {
                     .hasAuthority("ROLE_GUEST")
                     .requestMatchers("/api/v1/admin/reservations", "/api/v1/admin/reservations/**")
                     .hasAnyAuthority("ROLE_ADMIN", "ROLE_OWNER")
+                    .requestMatchers("/api/v1/admin/occupancy", "/api/v1/admin/occupancy/**")
+                    .hasAnyAuthority("ROLE_ADMIN", "ROLE_OWNER")
                     .anyRequest()
                     .permitAll())
         .sessionManagement(

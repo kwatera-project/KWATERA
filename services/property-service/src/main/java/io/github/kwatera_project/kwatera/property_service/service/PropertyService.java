@@ -76,6 +76,10 @@ public class PropertyService {
     return unitRepository.findByPropertyIdIn(propertyIds).stream().map(Unit::getId).toList();
   }
 
+  public List<UUID> getAllUnitIds() {
+    return unitRepository.findAll().stream().map(Unit::getId).toList();
+  }
+
   public List<String> getPropertyImages(UUID propertyId) {
     return propertyImageRepository.findByPropertyId(propertyId).stream()
         .map(PropertyImage::getUrl)

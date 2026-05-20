@@ -28,4 +28,22 @@ class AvailabilityControllerTest {
     assertTrue(result.isAvailable());
     assertEquals("ok", result.getMessage());
   }
+
+  @Test
+  void shouldReturnOccupiedDates() {
+    ReservationService service = mock(ReservationService.class);
+    java.util.List<io.github.kwatera_project.kwatera.reservation_service.dto.DateRangeDto> dates =
+        java.util.List.of(
+            new io.github.kwatera_project.kwatera.reservation_service.dto.DateRangeDto(
+                LocalDate.now(), LocalDate.now().plusDays(2)));
+    when(service.getOccupiedDates(any())).thenReturn(dates);
+
+    AvailabilityController controller = new AvailabilityController(service);
+
+    java.util.List<io.github.kwatera_project.kwatera.reservation_service.dto.DateRangeDto> result =
+        controller.getOccupiedDates(UUID.randomUUID());
+
+    assertEquals(1, result.size());
+    assertEquals(dates.get(0).getStartDate(), result.get(0).getStartDate());
+  }
 }
