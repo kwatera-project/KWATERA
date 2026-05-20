@@ -24,6 +24,10 @@ public class AdminOccupancyController {
       @RequestParam("startDate") LocalDate startDate,
       @RequestParam("endDate") LocalDate endDate,
       Authentication authentication) {
+    if (authentication == null || !authentication.isAuthenticated()) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+    }
+
     boolean isAdmin =
         authentication.getAuthorities().stream()
             .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));

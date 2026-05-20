@@ -33,7 +33,7 @@ export default function OccupancyCalendarPage() {
         getOccupancy(startStr, endStr)
             .then(setOccupancies)
             .catch(console.error);
-    }, [startDate]);
+    }, [startDate, daysToShow]);
 
     const unitMap = new Map<string, string>();
     occupancies.forEach(o => {

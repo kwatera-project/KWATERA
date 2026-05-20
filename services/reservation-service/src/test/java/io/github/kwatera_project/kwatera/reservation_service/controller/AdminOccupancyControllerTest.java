@@ -22,6 +22,7 @@ class AdminOccupancyControllerTest {
     GrantedAuthority authority = () -> role;
     doReturn(List.of(authority)).when(auth).getAuthorities();
     when(auth.getDetails()).thenReturn(detailsValue);
+    when(auth.isAuthenticated()).thenReturn(true);
     return auth;
   }
 
@@ -118,6 +119,7 @@ class AdminOccupancyControllerTest {
     GrantedAuthority authority = () -> "ROLE_ADMIN";
     doReturn(List.of(authority)).when(auth).getAuthorities();
     when(auth.getDetails()).thenReturn(12345); // not a String
+    when(auth.isAuthenticated()).thenReturn(true);
 
     AdminOccupancyController controller = new AdminOccupancyController(service);
     LocalDate start = LocalDate.now();
@@ -138,6 +140,7 @@ class AdminOccupancyControllerTest {
     GrantedAuthority authority = () -> "ROLE_OWNER";
     doReturn(List.of(authority)).when(auth).getAuthorities();
     when(auth.getDetails()).thenReturn(null);
+    when(auth.isAuthenticated()).thenReturn(true);
 
     AdminOccupancyController controller = new AdminOccupancyController(service);
     LocalDate start = LocalDate.now();
@@ -164,6 +167,7 @@ class AdminOccupancyControllerTest {
         List.of((GrantedAuthority) () -> "ROLE_ADMIN", (GrantedAuthority) () -> "ROLE_OWNER");
     doReturn(authorities).when(auth).getAuthorities();
     when(auth.getDetails()).thenReturn(ownerId.toString());
+    when(auth.isAuthenticated()).thenReturn(true);
 
     AdminOccupancyController controller = new AdminOccupancyController(service);
     List<OccupancyDto> result = controller.getOccupancy(start, end, auth);

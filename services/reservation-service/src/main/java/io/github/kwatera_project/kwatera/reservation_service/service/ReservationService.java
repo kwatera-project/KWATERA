@@ -65,50 +65,76 @@ public class ReservationService {
 
   public List<OccupancyDto> getOccupancy(
       LocalDate start, LocalDate end, UUID ownerId, boolean isAdmin) {
-    List<Reservation> reservations;
-    if (isAdmin) {
-      reservations = reservationRepository.findAll();
-    } else {
-      String propertyServiceUrl = "http://property-service/api/properties/units/ids/" + ownerId;
-      try {
-        UUID[] unitIdsArray = restTemplate.getForObject(propertyServiceUrl, UUID[].class);
-        List<UUID> ownerUnitIds =
-            unitIdsArray != null ? Arrays.asList(unitIdsArray) : java.util.Collections.emptyList();
 
-        if (ownerUnitIds.isEmpty()) {
-          return java.util.Collections.emptyList();
+    List<UUID> allUnitIds = fetchAllRelevantUnitIds(ownerId, isAdmin);
+    if (allUnitIds.isEmpty()) {
+      return java.util.Collections.emptyList();
+    }
+
+    java.util.Map<UUID, String> unitNames = new java.util.HashMap<>();
+    for (UUID unitId : allUnitIds) {
+      String name = "Room " + unitId.toString().substring(0, 8);
+      try {
+        String unitUrl = "http://property-service/api/properties/units/" + unitId;
+        UnitDto unitDto = restTemplate.getForObject(unitUrl, UnitDto.class);
+        if (unitDto != null && unitDto.getName() != null) {
+          name = unitDto.getName();
         }
-        reservations = reservationRepository.findByUnitIdIn(ownerUnitIds);
       } catch (Exception e) {
-        log.warn("Error connecting to property-service: {}", e.getMessage());
-        return java.util.Collections.emptyList();
+        log.warn("Failed to fetch unit name for unit {}: {}", unitId, e.getMessage());
+      }
+      unitNames.put(unitId, name);
+    }
+
+    List<Reservation> reservations =
+        reservationRepository.findByUnitIdIn(allUnitIds).stream()
+            .filter(r -> !r.getEndDate().isBefore(start) && !r.getStartDate().isAfter(end))
+            .toList();
+
+    java.util.Set<UUID> unitsWithReservations = new java.util.HashSet<>();
+    List<OccupancyDto> result = new java.util.ArrayList<>();
+
+    for (Reservation r : reservations) {
+      unitsWithReservations.add(r.getUnitId());
+      result.add(
+          new OccupancyDto(
+              r.getId(),
+              r.getUnitId(),
+              unitNames.getOrDefault(
+                  r.getUnitId(), "Room " + r.getUnitId().toString().substring(0, 8)),
+              r.getStartDate(),
+              r.getEndDate(),
+              r.getStatus().name()));
+    }
+
+    for (UUID unitId : allUnitIds) {
+      if (!unitsWithReservations.contains(unitId)) {
+        result.add(
+            new OccupancyDto(
+                null,
+                unitId,
+                unitNames.getOrDefault(unitId, "Room " + unitId.toString().substring(0, 8)),
+                null,
+                null,
+                "FREE"));
       }
     }
 
-    return reservations.stream()
-        .filter(r -> !r.getEndDate().isBefore(start) && !r.getStartDate().isAfter(end))
-        .map(
-            r -> {
-              String unitName = "Room " + r.getUnitId().toString().substring(0, 8);
-              try {
-                String unitUrl = "http://property-service/api/properties/units/" + r.getUnitId();
-                UnitDto unitDto = restTemplate.getForObject(unitUrl, UnitDto.class);
-                if (unitDto != null && unitDto.getName() != null) {
-                  unitName = unitDto.getName();
-                }
-              } catch (Exception e) {
-                log.warn(
-                    "Failed to fetch unit name for unit {}: {}", r.getUnitId(), e.getMessage());
-              }
-              return new OccupancyDto(
-                  r.getId(),
-                  r.getUnitId(),
-                  unitName,
-                  r.getStartDate(),
-                  r.getEndDate(),
-                  r.getStatus().name());
-            })
-        .toList();
+    return result;
+  }
+
+  private List<UUID> fetchAllRelevantUnitIds(UUID ownerId, boolean isAdmin) {
+    try {
+      String url =
+          isAdmin
+              ? "http://property-service/api/properties/units/ids"
+              : "http://property-service/api/properties/units/ids/" + ownerId;
+      UUID[] unitIdsArray = restTemplate.getForObject(url, UUID[].class);
+      return unitIdsArray != null ? Arrays.asList(unitIdsArray) : java.util.Collections.emptyList();
+    } catch (Exception e) {
+      log.warn("Error fetching unit IDs from property-service: {}", e.getMessage());
+      return java.util.Collections.emptyList();
+    }
   }
 
   private BigDecimal fetchUnitPrice(UUID unitId, String token) {
