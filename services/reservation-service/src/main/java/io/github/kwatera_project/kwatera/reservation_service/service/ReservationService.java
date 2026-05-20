@@ -83,13 +83,25 @@ public class ReservationService {
     return reservations.stream()
         .filter(r -> !r.getEndDate().isBefore(start) && !r.getStartDate().isAfter(end))
         .map(
-            r ->
-                new OccupancyDto(
+            r -> {
+                String unitName = "Room " + r.getUnitId().toString().substring(0, 8);
+                try {
+                    String unitUrl = "http://property-service/api/properties/units/" + r.getUnitId();
+                    UnitDto unitDto = restTemplate.getForObject(unitUrl, UnitDto.class);
+                    if (unitDto != null && unitDto.getName() != null) {
+                        unitName = unitDto.getName();
+                    }
+                } catch (Exception e) {
+                    // ignore
+                }
+                return new OccupancyDto(
                     r.getId(),
                     r.getUnitId(),
+                    unitName,
                     r.getStartDate(),
                     r.getEndDate(),
-                    r.getStatus().name()))
+                    r.getStatus().name());
+            })
         .toList();
   }
 

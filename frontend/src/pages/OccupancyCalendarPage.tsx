@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getOccupancy } from "../api/adminApi";
-import { getProperties } from "../api/propertyApi";
+
 import { format, addDays, startOfToday } from "date-fns";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -9,6 +9,7 @@ import "react-datepicker/dist/react-datepicker.css";
 interface Occupancy {
     reservationId: string;
     unitId: string;
+    unitName?: string;
     startDate: string;
     endDate: string;
     status: string;
@@ -16,17 +17,12 @@ interface Occupancy {
     totalPrice?: number;
 }
 
-interface UnitDetails {
-    id: string;
-    name: string;
-    propertyName: string;
-}
+
 
 export default function OccupancyCalendarPage() {
     const [occupancies, setOccupancies] = useState<Occupancy[]>([]);
-    const [unitDetails, setUnitDetails] = useState<Record<string, UnitDetails>>({});
     const [startDate, setStartDate] = useState(startOfToday());
-    const daysToShow = 14;
+    const [daysToShow, setDaysToShow] = useState(7);
 
     const dates = Array.from({ length: daysToShow }).map((_, i) => addDays(startDate, i));
 
@@ -39,38 +35,26 @@ export default function OccupancyCalendarPage() {
             .catch(console.error);
     }, [startDate]);
 
-    useEffect(() => {
-        getProperties()
-            .then((data: any) => {
-                const mapping: Record<string, UnitDetails> = {};
-                data.forEach((prop: any) => {
-                    prop.units?.forEach((u: any) => {
-                        mapping[u.id] = {
-                            id: u.id,
-                            name: u.title || u.name || `Room ${u.id.substring(0, 4)}`,
-                            propertyName: prop.name || prop.title || 'Property'
-                        };
-                    });
-                });
-                setUnitDetails(mapping);
-            })
-            .catch(console.error);
-    }, []);
+    const unitMap = new Map<string, string>();
+    occupancies.forEach(o => {
+        if (!unitMap.has(o.unitId)) {
+            unitMap.set(o.unitId, o.unitName || o.unitId);
+        }
+    });
+    const unitIds = Array.from(unitMap.keys());
 
-    const unitIds = Array.from(new Set(occupancies.map(o => o.unitId)));
-
-    const renderRowCells = (unitId: string) => {
+    const renderRowCells = (unitId: string, chunkDates: Date[]) => {
         const cells = [];
         let i = 0;
 
-        while (i < dates.length) {
-            const d = dates[i];
+        while (i < chunkDates.length) {
+            const d = chunkDates[i];
             const dateStr = format(d, 'yyyy-MM-dd');
             const occ = occupancies.find(o => o.unitId === unitId && o.startDate <= dateStr && o.endDate >= dateStr);
 
             if (occ) {
-                const visibleEndIndex = dates.findIndex(date => format(date, 'yyyy-MM-dd') === occ.endDate);
-                const endIdx = visibleEndIndex !== -1 ? visibleEndIndex : dates.length - 1;
+                const visibleEndIndex = chunkDates.findIndex(date => format(date, 'yyyy-MM-dd') === occ.endDate);
+                const endIdx = visibleEndIndex !== -1 ? visibleEndIndex : chunkDates.length - 1;
                 const span = endIdx - i + 1;
 
                 let bgColor = "bg-gray-300 text-title";
@@ -109,8 +93,13 @@ export default function OccupancyCalendarPage() {
         return cells;
     };
 
+    const chunks: Date[][] = [];
+    for (let i = 0; i < dates.length; i += 7) {
+        chunks.push(dates.slice(i, i + 7));
+    }
+
     return (
-        <div className="p-8 max-w-7xl mx-auto overflow-x-auto">
+        <div className="p-8 max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-title">Occupancy</h1>
                 <div className="flex bg-main p-1 rounded-lg border border-pink-burgundy shadow-sm">
@@ -126,21 +115,29 @@ export default function OccupancyCalendarPage() {
                 </div>
             </div>
 
-            <div className="mb-6 flex gap-4 p-4 bg-card rounded-xl shadow items-center">
+            <div className="mb-6 flex gap-4 p-4 bg-card rounded-xl shadow items-center flex-wrap">
                 <label className="block text-sm font-medium text-title">Date Range:</label>
-                <div className="flex gap-3 items-center">
+                <div className="flex gap-3 items-center flex-wrap">
                     <button
-                        onClick={() => setStartDate(addDays(startDate, -7))}
+                        onClick={() => setStartDate(addDays(startDate, -daysToShow))}
                         className="px-4 py-2 bg-main hover:opacity-90 text-title text-sm font-medium rounded transition-colors"
                     >
-                        - 7 Days
+                        - {daysToShow} Days
                     </button>
-                    <DatePicker
-                        selected={startDate}
-                        onChange={(date: Date | null) => date && setStartDate(date)}
-                        className="px-4 py-2 bg-card border border-gray-300 rounded text-sm w-32 text-center cursor-pointer font-medium text-title outline-none focus:ring-2 focus:ring-button"
-                        dateFormat="yyyy-MM-dd"
-                    />
+                    <div className="relative z-[60]">
+                        <DatePicker
+                            selected={startDate}
+                            onChange={(date: Date | null) => date && setStartDate(date)}
+                            className="px-4 py-2 bg-card border border-gray-300 rounded text-sm w-32 text-center cursor-pointer font-medium text-title outline-none focus:ring-2 focus:ring-button"
+                            dateFormat="yyyy-MM-dd"
+                            previousMonthButtonLabel={
+                                <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                            }
+                            nextMonthButtonLabel={
+                                <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                            }
+                        />
+                    </div>
                     <button
                         onClick={() => setStartDate(startOfToday())}
                         className="px-4 py-2 bg-button text-white hover:bg-button-hover text-sm font-medium rounded transition-colors"
@@ -148,59 +145,73 @@ export default function OccupancyCalendarPage() {
                         Today
                     </button>
                     <button
-                        onClick={() => setStartDate(addDays(startDate, 7))}
+                        onClick={() => setStartDate(addDays(startDate, daysToShow))}
                         className="px-4 py-2 bg-main hover:opacity-90 text-title text-sm font-medium rounded transition-colors"
                     >
-                        + 7 Days
+                        + {daysToShow} Days
                     </button>
+                </div>
+                
+                <div className="h-6 border-l border-gray-300 mx-2 hidden md:block"></div>
+
+                <div className="flex gap-2 items-center">
+                    <label className="block text-sm font-medium text-title">View:</label>
+                    <select
+                        value={daysToShow}
+                        onChange={(e) => setDaysToShow(Number(e.target.value))}
+                        className="px-4 py-2 bg-card border border-gray-300 rounded text-sm font-medium text-title outline-none focus:ring-2 focus:ring-button cursor-pointer"
+                    >
+                        <option value={7}>7 Days</option>
+                        <option value={14}>14 Days</option>
+                        <option value={28}>28 Days</option>
+                    </select>
                 </div>
             </div>
 
-            <div className="bg-card rounded-xl shadow p-4 overflow-hidden">
-                <table className="w-full border-collapse min-w-max text-sm">
-                    <thead>
-                    <tr>
-                        <th className="border-b border-r border-gray-200 p-3 bg-card text-left font-semibold text-title sticky left-0 z-20 w-56 shadow-[1px_0_0_0_#e5e7eb]">
-                            Unit / Property
-                        </th>
-                        {dates.map(d => (
-                            <th key={d.toISOString()} className="border-b border-r border-gray-200 p-2 bg-card text-center text-title font-medium min-w-[80px]">
-                                <div className="flex flex-col">
-                                    <span>{format(d, 'MMM dd')}</span>
-                                </div>
-                            </th>
-                        ))}
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {unitIds.map(unitId => {
-                        const unitInfo = unitDetails[unitId];
-                        return (
-                            <tr key={unitId} className="hover:bg-gray-50/50">
-                                <td className="border-b border-r border-gray-200 p-3 bg-card sticky left-0 z-10 shadow-[1px_0_0_0_#e5e7eb]">
-                                    <div className="flex flex-col truncate max-w-[14rem]">
-                                        <span className="font-semibold text-title truncate" title={unitInfo?.name || unitId}>
-                                            {unitInfo?.name || unitId.substring(0, 8) + '...'}
-                                        </span>
-                                        <span className="text-xs text-details truncate" title={unitInfo?.propertyName}>
-                                            {unitInfo?.propertyName || 'Loading...'}
-                                        </span>
-                                    </div>
-                                </td>
-                                {renderRowCells(unitId)}
-                            </tr>
-                        );
-                    })}
-                    {unitIds.length === 0 && (
+            {chunks.map((chunkDates, chunkIdx) => (
+                <div key={chunkIdx} className="bg-card rounded-xl shadow p-4 overflow-visible mb-6">
+                    <table className="w-full border-collapse min-w-max text-sm">
+                        <thead>
                         <tr>
-                            <td colSpan={daysToShow + 1} className="p-8 text-center text-gray-500">
-                                No occupancies found in this range.
-                            </td>
+                            <th className="border-b border-r border-gray-200 p-3 bg-card text-left font-semibold text-title sticky left-0 z-20 w-56 shadow-[1px_0_0_0_#e5e7eb]">
+                                Unit / Property
+                            </th>
+                            {chunkDates.map(d => (
+                                <th key={d.toISOString()} className="border-b border-r border-gray-200 p-2 bg-card text-center text-title font-medium min-w-[80px]">
+                                    <div className="flex flex-col">
+                                        <span>{format(d, 'MMM dd')}</span>
+                                    </div>
+                                </th>
+                            ))}
                         </tr>
-                    )}
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                        {unitIds.map(unitId => {
+                            const name = unitMap.get(unitId) || unitId;
+                            return (
+                                <tr key={unitId} className="hover:bg-gray-50/50">
+                                    <td className="border-b border-r border-gray-200 p-3 bg-card sticky left-0 z-10 shadow-[1px_0_0_0_#e5e7eb]">
+                                        <div className="flex flex-col truncate max-w-[14rem]">
+                                            <span className="font-semibold text-title truncate" title={name}>
+                                                {name.length > 20 ? name.substring(0, 20) + '...' : name}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    {renderRowCells(unitId, chunkDates)}
+                                </tr>
+                            );
+                        })}
+                        {unitIds.length === 0 && (
+                            <tr>
+                                <td colSpan={chunkDates.length + 1} className="p-8 text-center text-gray-500">
+                                    No occupancies found in this range.
+                                </td>
+                            </tr>
+                        )}
+                        </tbody>
+                    </table>
+                </div>
+            ))}
         </div>
     );
 }
