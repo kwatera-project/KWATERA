@@ -1,18 +1,19 @@
-import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { getSettlementDetails } from "../api/settlementApi";
-import type { SettlementDetails } from "../types/settlement";
+import {useEffect, useState} from "react";
+import {useParams, Link} from "react-router-dom";
+import {getSettlementDetails} from "../api/settlementApi";
+import type {SettlementDetails} from "../types/settlement";
 import {getSettlementItemInfoByType} from "../api/settlementApi.ts";
 import {GATEWAY_BASE_URL} from "../api/apiConfig.ts";
+import {getReservationDetails} from "../api/reservationApi.ts";
 
 export default function SettlementDetailsPage() {
-    const { id } = useParams();
+    const {id} = useParams();
     const [settlement, setSettlement] = useState<SettlementDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
     const [settlementState, setSettlementState] = useState<
-        Record<string, { loading: boolean; success?: boolean, error?: string}>
+        Record<string, { loading: boolean; success?: boolean, error?: string }>
     >({});
 
     useEffect(() => {
@@ -24,15 +25,149 @@ export default function SettlementDetailsPage() {
             .finally(() => setLoading(false));
     }, [id]);
 
-    const handlePayment = async (reservationId: string, settlementType: string, settlementId: string) => {
+    useEffect(() => {
+        if (!settlement?.reservationId) return;
+
+        getUnitSettlementItemsType(settlement.reservationId)
+            .then((types) => {
+                if (!types) return;
+
+                loadPaymentButtons(settlement, types);
+            });
+
+    }, [settlement]);
+
+    type PaymentButton = {
+        type: string;
+        quantity: number;
+        unitPrice: number;
+    };
+
+    const [paymentButtons, setPaymentButtons] =
+        useState<PaymentButton[]>([]);
+
+    const loadPaymentButtons = async (
+        settlement: SettlementDetails,
+        settlementItemTypes: string[]
+    ) => {
+
+        const buttons: PaymentButton[] = [];
+
+        // DEPOSIT
+        if (settlementItemTypes.includes("DEPOSIT")) {
+            try {
+
+                await getSettlementItemInfoByType(
+                    settlement.reservationId,
+                    "DEPOSIT"
+                );
+
+            } catch {
+                // settlement item jeszcze nie istnieje
+                buttons.push({
+                    type: "DEPOSIT",
+                    quantity: 1,
+                    unitPrice: settlement.depositAmount
+                });
+            }
+        }
+
+        // ACCOMMODATION
+        try {
+
+            await getSettlementItemInfoByType(
+                settlement.reservationId,
+                "ACCOMMODATION"
+            );
+
+        } catch {
+            // settlement item jeszcze nie istnieje
+            buttons.push({
+                type: "ACCOMMODATION",
+                quantity: 1,
+                unitPrice: settlement.accommodationAmount
+            });
+        }
+
+
+        // utilities
+        const utilityTypes = [
+            "WATER",
+            "ELECTRICITY",
+            "CLEANING_FEE"
+        ];
+
+        for (const type of utilityTypes) {
+            if (!settlementItemTypes.includes(type)) {
+                continue;
+            }
+
+            try {
+                const res =
+                    await getSettlementItemInfoByType(
+                        settlement.reservationId,
+                        type
+                    );
+
+                if (res) {
+                    buttons.push({
+                        type,
+                        quantity: res.quantity,
+                        unitPrice: res.unitPrice
+                    });
+                }
+
+            } catch {
+                // settlement item jeszcze nie istnieje
+            }
+        }
+
+        setPaymentButtons(buttons);
+    };
+
+    const getUnitSettlementItemsType = async (reservationId: string) => {
+        try {
+            const res = await getReservationDetails(reservationId);
+
+            const unitId = res.unitId;
+
+            const unitSettlementItemsRes = await fetch(
+                `${GATEWAY_BASE_URL}/api/properties/units/${unitId}/settlement-items`,
+                {
+                    method: "GET",
+                }
+            )
+
+            if (!unitSettlementItemsRes.ok) {
+                throw new Error(`Fetch unit settlement item failed: ${unitSettlementItemsRes.status}`);
+            }
+
+            const data = await unitSettlementItemsRes.json();
+
+            return data.map(
+                (item: any) => item.settlementItemType
+            );
+
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "An error occurred";
+            console.error(message);
+        }
+    }
+
+    const handlePayment = async (reservationId: string,
+                                 settlementType: string,
+                                 settlementId: string,
+                                 quantity: number,
+                                 unitPrice: number) => {
+
+        const stateKey = `${settlementId}-${settlementType}`;
+
         setSettlementState(prev => ({
             ...prev,
-            [settlementId]: { loading: true }
+            [stateKey]: {loading: true}
         }));
 
         try {
-            const res = await getSettlementItemInfoByType(reservationId, settlementType);
-
             const token = localStorage.getItem("token");
 
             const name = settlementType[0] + settlementType.slice(1).toLowerCase();
@@ -46,10 +181,10 @@ export default function SettlementDetailsPage() {
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        type: `${name}`,
+                        type: `${settlementType}`,
                         description: `${name} fee`,
-                        quantity: res.quantity,
-                        unitPrice: res.unitPrice
+                        quantity: quantity,
+                        unitPrice: unitPrice
                     })
                 }
             );
@@ -70,7 +205,13 @@ export default function SettlementDetailsPage() {
 
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "An error occurred";
-            setSettlementState(prev => ({ ...prev, [settlementId]: { loading: false, error: message } }));
+            setSettlementState(prev => ({
+                ...prev,
+                [stateKey]: {
+                    loading: false,
+                    error: message
+                }
+            }));
         }
     };
 
@@ -131,30 +272,52 @@ export default function SettlementDetailsPage() {
                     </div>
                 </div>
 
-                <div className="mt-4">
-                    <button
-                        onClick={() => handlePayment(settlement.reservationId, "DEPOSIT", settlement.id)}
-                        disabled={settlementState[settlement.id]?.loading || settlementState[settlement.id]?.success}
-                        className={`px-4 py-2 font-bold rounded ${
-                            settlementState[settlement.id]?.success
-                                ? "bg-green-500 text-white cursor-default"
-                                : settlementState[settlement.id]?.loading
-                                    ? "bg-gray-400 text-white cursor-wait"
-                                    : "bg-blue-600 text-white hover:bg-blue-700"
-                        }`}
-                    >
-                        {settlementState[settlement.id]?.loading ? "Processing..." :
-                            settlementState[settlement.id]?.success ? "Redirecting to payment..." :
-                                "Pay for Deposit"}
-                    </button>
-                </div>
-
                 <div className="mt-8 pt-4 border-t">
                     <Link to="/" className="text-blue-500 hover:text-blue-700 hover:underline">
                         &larr; Return to properties
                     </Link>
                 </div>
             </div>
+            {settlement.status !== "PAID" && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                    {paymentButtons.map((button) => {
+
+                        const stateKey =
+                            `${settlement.id}-${button.type}`;
+
+                        const state = settlementState[stateKey];
+
+                        return (
+                            <button
+                                key={button.type}
+                                onClick={() =>
+                                    handlePayment(
+                                        settlement.reservationId,
+                                        button.type,
+                                        settlement.id,
+                                        button.quantity,
+                                        button.unitPrice
+                                    )
+                                }
+                                disabled={state?.loading || state?.success}
+                                className={`px-4 py-2 font-bold rounded ${
+                                    state?.success
+                                        ? "bg-green-500 text-white"
+                                        : state?.loading
+                                            ? "bg-gray-400 text-white"
+                                            : "bg-blue-600 text-white hover:bg-blue-700"
+                                }`}
+                            >
+                                {state?.loading
+                                    ? "Processing..."
+                                    : state?.success
+                                        ? "Redirecting..."
+                                        : `Pay ${button.type}`}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 }

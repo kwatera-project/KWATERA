@@ -5,10 +5,7 @@ import static org.mockito.Mockito.*;
 
 import io.github.kwatera_project.kwatera.property_service.model.Property;
 import io.github.kwatera_project.kwatera.property_service.model.Unit;
-import io.github.kwatera_project.kwatera.property_service.repository.PropertyImageRepository;
-import io.github.kwatera_project.kwatera.property_service.repository.PropertyRepository;
-import io.github.kwatera_project.kwatera.property_service.repository.UnitImageRepository;
-import io.github.kwatera_project.kwatera.property_service.repository.UnitRepository;
+import io.github.kwatera_project.kwatera.property_service.repository.*;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +21,7 @@ class PropertyServiceTest {
   private PropertyService propertyService;
   private PropertyImageRepository propertyImageRepository;
   private UnitImageRepository unitImageRepository;
+  private UnitSettlementItemRepository unitSettlementItemRepository;
 
   @BeforeEach
   void setUp() {
@@ -34,7 +32,11 @@ class PropertyServiceTest {
 
     propertyService =
         new PropertyService(
-            propertyRepository, unitRepository, propertyImageRepository, unitImageRepository);
+            propertyRepository,
+            unitRepository,
+            propertyImageRepository,
+            unitImageRepository,
+            unitSettlementItemRepository);
   }
 
   @Test

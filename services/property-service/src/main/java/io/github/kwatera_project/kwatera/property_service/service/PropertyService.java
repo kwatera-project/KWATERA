@@ -2,14 +2,9 @@ package io.github.kwatera_project.kwatera.property_service.service;
 
 import io.github.kwatera_project.kwatera.property_service.dto.PropertyDto;
 import io.github.kwatera_project.kwatera.property_service.dto.UnitDto;
-import io.github.kwatera_project.kwatera.property_service.model.Property;
-import io.github.kwatera_project.kwatera.property_service.model.PropertyImage;
-import io.github.kwatera_project.kwatera.property_service.model.Unit;
-import io.github.kwatera_project.kwatera.property_service.model.UnitImage;
-import io.github.kwatera_project.kwatera.property_service.repository.PropertyImageRepository;
-import io.github.kwatera_project.kwatera.property_service.repository.PropertyRepository;
-import io.github.kwatera_project.kwatera.property_service.repository.UnitImageRepository;
-import io.github.kwatera_project.kwatera.property_service.repository.UnitRepository;
+import io.github.kwatera_project.kwatera.property_service.dto.UnitSettlementItemDto;
+import io.github.kwatera_project.kwatera.property_service.model.*;
+import io.github.kwatera_project.kwatera.property_service.repository.*;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -23,16 +18,19 @@ public class PropertyService {
   private final UnitRepository unitRepository;
   private final PropertyImageRepository propertyImageRepository;
   private final UnitImageRepository unitImageRepository;
+  private final UnitSettlementItemRepository unitSettlementItemRepository;
 
   public PropertyService(
       PropertyRepository propertyRepository,
       UnitRepository unitRepository,
       PropertyImageRepository propertyImageRepository,
-      UnitImageRepository unitImageRepository) {
+      UnitImageRepository unitImageRepository,
+      UnitSettlementItemRepository unitSettlementItemRepository) {
     this.propertyRepository = propertyRepository;
     this.unitRepository = unitRepository;
     this.propertyImageRepository = propertyImageRepository;
     this.unitImageRepository = unitImageRepository;
+    this.unitSettlementItemRepository = unitSettlementItemRepository;
   }
 
   public List<UnitDto> getUnits(UUID propertyId) {
@@ -82,6 +80,13 @@ public class PropertyService {
         .toList();
   }
 
+  public List<UnitSettlementItemDto> getUnitSettlementItems(UUID unitId) {
+
+    List<UnitSettlementItem> items = unitSettlementItemRepository.findByUnitId(unitId);
+
+    return items.stream().map(this::mapToDto).toList();
+  }
+
   private PropertyDto mapToDto(Property property) {
     String imageUrl =
         propertyImageRepository
@@ -112,5 +117,15 @@ public class PropertyService {
         unit.getPricePerNight(),
         unit.getCapacity(),
         imageUrl);
+  }
+
+  private UnitSettlementItemDto mapToDto(UnitSettlementItem item) {
+    return new UnitSettlementItemDto(
+        item.getId(),
+        item.getUnitId(),
+        item.getSettlementItemType(),
+        item.getPricePerUnit(),
+        item.getMeasurementUnit(),
+        item.getBillingType());
   }
 }
