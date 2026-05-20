@@ -59,9 +59,28 @@ public class ReservationService {
         .toList();
   }
 
-  public List<OccupancyDto> getOccupancy(LocalDate start, LocalDate end) {
-    return reservationRepository.findAll().stream()
-        .filter(r -> r.getStatus() != ReservationStatus.CANCELLED)
+  public List<OccupancyDto> getOccupancy(LocalDate start, LocalDate end, UUID ownerId, boolean isAdmin) {
+    List<Reservation> reservations;
+    if (isAdmin) {
+      reservations = reservationRepository.findAll();
+    } else {
+      String propertyServiceUrl = "http://property-service/api/properties/units/ids/" + ownerId;
+      try {
+        UUID[] unitIdsArray = restTemplate.getForObject(propertyServiceUrl, UUID[].class);
+        List<UUID> ownerUnitIds =
+            unitIdsArray != null ? Arrays.asList(unitIdsArray) : java.util.Collections.emptyList();
+
+        if (ownerUnitIds.isEmpty()) {
+          return java.util.Collections.emptyList();
+        }
+        reservations = reservationRepository.findByUnitIdIn(ownerUnitIds);
+      } catch (Exception e) {
+        System.err.println("Error connection with property-service: " + e.getMessage());
+        return java.util.Collections.emptyList();
+      }
+    }
+
+    return reservations.stream()
         .filter(r -> !r.getEndDate().isBefore(start) && !r.getStartDate().isAfter(end))
         .map(
             r ->

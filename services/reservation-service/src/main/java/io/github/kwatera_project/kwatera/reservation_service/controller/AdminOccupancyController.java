@@ -4,6 +4,7 @@ import io.github.kwatera_project.kwatera.reservation_service.dto.OccupancyDto;
 import io.github.kwatera_project.kwatera.reservation_service.service.ReservationService;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -25,14 +26,28 @@ public class AdminOccupancyController {
       @RequestParam("endDate") LocalDate endDate,
       Authentication authentication) {
     boolean isAdmin =
-        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        authentication.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     boolean isOwner =
-        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_OWNER"));
+        authentication.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_OWNER"));
 
     if (!isAdmin && !isOwner) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
     }
 
-    return reservationService.getOccupancy(startDate, endDate);
+    Object details = authentication.getDetails();
+    UUID ownerId = null;
+    if (details instanceof String userIdString && !userIdString.isBlank()) {
+      try {
+        ownerId = UUID.fromString(userIdString);
+      } catch (IllegalArgumentException ex) {
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
+      }
+    } else {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
+    }
+
+    return reservationService.getOccupancy(startDate, endDate, ownerId, isAdmin);
   }
 }

@@ -78,13 +78,24 @@ export default function AdminReservationList() {
             });
     };
 
-    const filteredReservations = statusFilter
-        ? reservations.filter(r => r.status === statusFilter)
-        : reservations;
+    const filteredReservations = reservations;
 
     return (
         <div className="p-8 max-w-6xl mx-auto">
-            <h1 className="text-3xl font-bold mb-6 text-title">Reservation Overview</h1>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold text-title">Reservation Overview</h1>
+                <div className="flex bg-gray-100 p-1 rounded-lg border border-gray-200">
+                    <span className="px-4 py-2 text-sm font-medium rounded-md bg-white shadow text-gray-800 cursor-default">
+                        List View
+                    </span>
+                    <Link
+                        to="/admin/occupancy"
+                        className="px-4 py-2 text-sm font-medium rounded-md text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                        Calendar View
+                    </Link>
+                </div>
+            </div>
 
             {message && (
                 <div className={`mb-4 p-4 rounded-lg shadow-sm ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
@@ -113,21 +124,21 @@ export default function AdminReservationList() {
             <div className="overflow-x-auto bg-white shadow-md rounded-lg">
                 <table className="min-w-full table-auto">
                     <thead className="bg-gray-200">
-                        <tr>
-                            <th className="px-4 py-2 text-left">Guest</th>
-                            <th className="px-4 py-2 text-left">Unit/Property</th>
-                            <th className="px-4 py-2 text-left">Stay Dates</th>
-                            <th className="px-4 py-2 text-left">Status</th>
-                            <th className="px-4 py-2 text-center">Actions</th>
-                        </tr>
+                    <tr>
+                        <th className="px-4 py-2 text-left">Guest</th>
+                        <th className="px-4 py-2 text-left">Unit/Property</th>
+                        <th className="px-4 py-2 text-left">Stay Dates</th>
+                        <th className="px-4 py-2 text-left">Status</th>
+                        <th className="px-4 py-2 text-center">Actions</th>
+                    </tr>
                     </thead>
                     <tbody>
-                        {filteredReservations.map((res) => (
-                            <tr key={res.id} className="border-b hover:bg-gray-50">
-                                <td className="px-4 py-3">{res.guestName}</td>
-                                <td className="px-4 py-3">{res.unitName}</td>
-                                <td className="px-4 py-3">{res.startDate} to {res.endDate}</td>
-                                <td className="px-4 py-3">
+                    {filteredReservations.map((res) => (
+                        <tr key={res.id} className="border-b hover:bg-gray-50">
+                            <td className="px-4 py-3">{res.guestName}</td>
+                            <td className="px-4 py-3">{res.unitName}</td>
+                            <td className="px-4 py-3">{res.startDate} to {res.endDate}</td>
+                            <td className="px-4 py-3">
                                     <span
                                         className={`px-2 py-1 rounded text-sm font-bold ${res.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
                                             res.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
@@ -136,63 +147,70 @@ export default function AdminReservationList() {
                                         }`}>
                                         {res.status}
                                     </span>
-                                </td>
-                                <td className="px-4 py-3 text-center">
-                                    <div className="flex justify-center gap-4">
-                                        <Link
-                                            to={`/reservations/${res.id}`}
-                                            className="text-blue-600 hover:underline text-sm"
-                                        >
-                                            View Details
-                                        </Link>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                                <div className="flex justify-center items-center gap-4">
+                                    <Link
+                                        to={`/reservations/${res.id}`}
+                                        className="text-blue-600 hover:underline text-sm font-medium"
+                                    >
+                                        View Details
+                                    </Link>
 
-                                        {res.status === 'PENDING' && (
-                                            <>
-                                                <button
-                                                    onClick={() => handleStatusChange(res.id, 'CONFIRMED')}
-                                                    className="text-green-600 hover:underline text-sm"
-                                                >
-                                                    Confirm
-                                                </button>
-                                                <button
-                                                    onClick={() => handleStatusChange(res.id, 'CANCELLED')}
-                                                    className="text-red-600 hover:underline text-sm"
-                                                >
-                                                    Cancel
-                                                </button>
-                                            </>
-                                        )}
+                                    <Link
+                                        to={`/admin/occupancy`}
+                                        className="text-indigo-600 hover:underline text-sm font-medium"
+                                    >
+                                        View Calendar
+                                    </Link>
 
-                                        {res.status === 'CONFIRMED' && (
-                                            <>
-                                                <button
-                                                    onClick={() => handleStatusChange(res.id, 'COMPLETED')}
-                                                    className="text-blue-600 hover:underline text-sm"
-                                                >
-                                                    Complete
-                                                </button>
-                                                <button
-                                                    onClick={() => handleStatusChange(res.id, 'CANCELLED')}
-                                                    className="text-red-600 hover:underline text-sm"
-                                                >
-                                                    Cancel
-                                                </button>
-                                            </>
-                                        )}
+                                    {res.status === 'PENDING' && (
+                                        <>
+                                            <button
+                                                onClick={() => handleStatusChange(res.id, 'CONFIRMED')}
+                                                className="text-green-600 hover:underline text-sm font-medium"
+                                            >
+                                                Confirm
+                                            </button>
+                                            <button
+                                                onClick={() => handleStatusChange(res.id, 'CANCELLED')}
+                                                className="text-red-600 hover:underline text-sm font-medium"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </>
+                                    )}
 
-                                        {(res.status === 'COMPLETED' || res.status === 'CANCELLED') && (
-                                            <span className="text-gray-400 text-sm">None</span>
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                        {filteredReservations.length === 0 && (
-                            <tr>
-                                <td colSpan={5} className="px-4 py-6 text-center text-gray-500">No reservations found.
-                                </td>
-                            </tr>
-                        )}
+                                    {res.status === 'CONFIRMED' && (
+                                        <>
+                                            <button
+                                                onClick={() => handleStatusChange(res.id, 'COMPLETED')}
+                                                className="text-blue-600 hover:underline text-sm font-medium"
+                                            >
+                                                Complete
+                                            </button>
+                                            <button
+                                                onClick={() => handleStatusChange(res.id, 'CANCELLED')}
+                                                className="text-red-600 hover:underline text-sm font-medium"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </>
+                                    )}
+
+                                    {(res.status === 'COMPLETED' || res.status === 'CANCELLED') && (
+                                        <span className="text-gray-400 text-sm"></span>
+                                    )}
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                    {filteredReservations.length === 0 && (
+                        <tr>
+                            <td colSpan={5} className="px-4 py-6 text-center text-gray-500">No reservations found.
+                            </td>
+                        </tr>
+                    )}
                     </tbody>
                 </table>
             </div>
