@@ -10,6 +10,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,8 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 @RequiredArgsConstructor
 public class ReservationService {
+
+  private static final Logger log = LoggerFactory.getLogger(ReservationService.class);
 
   private final ReservationRepository reservationRepository;
   private final RestTemplate restTemplate;
@@ -76,7 +80,7 @@ public class ReservationService {
         }
         reservations = reservationRepository.findByUnitIdIn(ownerUnitIds);
       } catch (Exception e) {
-        System.err.println("Error connection with property-service: " + e.getMessage());
+        log.warn("Error connecting to property-service: {}", e.getMessage());
         return java.util.Collections.emptyList();
       }
     }
@@ -93,7 +97,8 @@ public class ReservationService {
                   unitName = unitDto.getName();
                 }
               } catch (Exception e) {
-                System.err.println("Failed to fetch unit name: " + e.getMessage());
+                log.warn(
+                    "Failed to fetch unit name for unit {}: {}", r.getUnitId(), e.getMessage());
               }
               return new OccupancyDto(
                   r.getId(),

@@ -1,7 +1,9 @@
 package io.github.kwatera_project.kwatera.reservation_service.service;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -526,5 +528,189 @@ class ReservationServiceTest {
     assertEquals(reservationId, result.get(0).id());
     assertEquals(unitId, result.get(0).unitId());
     assertEquals(ReservationStatus.CONFIRMED, result.get(0).status());
+  }
+
+  // --------------- getOccupancy tests ---------------
+
+  @Test
+  void getOccupancy_admin_returnsAllReservationsWithUnitName() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository, restTemplate);
+
+    UUID unitId = UUID.randomUUID();
+    LocalDate start = LocalDate.now().minusDays(1);
+    LocalDate end = LocalDate.now().plusDays(5);
+
+    Reservation r = new Reservation();
+    r.setId(UUID.randomUUID());
+    r.setUnitId(unitId);
+    r.setStartDate(LocalDate.now());
+    r.setEndDate(LocalDate.now().plusDays(3));
+    r.setStatus(ReservationStatus.CONFIRMED);
+
+    when(repository.findAll()).thenReturn(List.of(r));
+
+    UnitDto unitDto = new UnitDto();
+    unitDto.setName("Penthouse");
+    when(restTemplate.getForObject(anyString(), eq(UnitDto.class))).thenReturn(unitDto);
+
+    List<io.github.kwatera_project.kwatera.reservation_service.dto.OccupancyDto> result =
+        service.getOccupancy(start, end, UUID.randomUUID(), true);
+
+    assertEquals(1, result.size());
+    assertEquals("Penthouse", result.get(0).getUnitName());
+  }
+
+  @Test
+  void getOccupancy_admin_fallsBackToDefaultNameWhenUnitServiceFails() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository, restTemplate);
+
+    UUID unitId = UUID.randomUUID();
+    LocalDate start = LocalDate.now().minusDays(1);
+    LocalDate end = LocalDate.now().plusDays(5);
+
+    Reservation r = new Reservation();
+    r.setId(UUID.randomUUID());
+    r.setUnitId(unitId);
+    r.setStartDate(LocalDate.now());
+    r.setEndDate(LocalDate.now().plusDays(3));
+    r.setStatus(ReservationStatus.CONFIRMED);
+
+    when(repository.findAll()).thenReturn(List.of(r));
+    when(restTemplate.getForObject(anyString(), eq(UnitDto.class)))
+        .thenThrow(new RuntimeException("service down"));
+
+    List<io.github.kwatera_project.kwatera.reservation_service.dto.OccupancyDto> result =
+        service.getOccupancy(start, end, UUID.randomUUID(), true);
+
+    assertEquals(1, result.size());
+    assertTrue(result.get(0).getUnitName().startsWith("Room "));
+  }
+
+  @Test
+  void getOccupancy_owner_returnsOnlyOwnerReservations() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository, restTemplate);
+
+    UUID ownerId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    LocalDate start = LocalDate.now().minusDays(1);
+    LocalDate end = LocalDate.now().plusDays(5);
+
+    Reservation r = new Reservation();
+    r.setId(UUID.randomUUID());
+    r.setUnitId(unitId);
+    r.setStartDate(LocalDate.now());
+    r.setEndDate(LocalDate.now().plusDays(2));
+    r.setStatus(ReservationStatus.PENDING);
+
+    when(restTemplate.getForObject(contains("/units/ids/"), eq(UUID[].class)))
+        .thenReturn(new UUID[] {unitId});
+    when(repository.findByUnitIdIn(List.of(unitId))).thenReturn(List.of(r));
+
+    UnitDto unitDto = new UnitDto();
+    unitDto.setName("Studio A");
+    when(restTemplate.getForObject(contains("/units/" + unitId), eq(UnitDto.class)))
+        .thenReturn(unitDto);
+
+    List<io.github.kwatera_project.kwatera.reservation_service.dto.OccupancyDto> result =
+        service.getOccupancy(start, end, ownerId, false);
+
+    assertEquals(1, result.size());
+    assertEquals("Studio A", result.get(0).getUnitName());
+  }
+
+  @Test
+  void getOccupancy_owner_returnsEmptyWhenPropertyServiceFails() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository, restTemplate);
+
+    UUID ownerId = UUID.randomUUID();
+
+    when(restTemplate.getForObject(anyString(), eq(UUID[].class)))
+        .thenThrow(new RuntimeException("connection refused"));
+
+    List<io.github.kwatera_project.kwatera.reservation_service.dto.OccupancyDto> result =
+        service.getOccupancy(LocalDate.now(), LocalDate.now().plusDays(7), ownerId, false);
+
+    assertTrue(result.isEmpty());
+  }
+
+  @Test
+  void getOccupancy_owner_returnsEmptyWhenOwnerHasNoUnits() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository, restTemplate);
+
+    UUID ownerId = UUID.randomUUID();
+
+    when(restTemplate.getForObject(anyString(), eq(UUID[].class))).thenReturn(new UUID[] {});
+
+    List<io.github.kwatera_project.kwatera.reservation_service.dto.OccupancyDto> result =
+        service.getOccupancy(LocalDate.now(), LocalDate.now().plusDays(7), ownerId, false);
+
+    assertTrue(result.isEmpty());
+  }
+
+  @Test
+  void getOccupancy_filtersOutReservationsOutsideDateRange() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = new ReservationService(repository, restTemplate);
+
+    LocalDate start = LocalDate.now().plusDays(10);
+    LocalDate end = LocalDate.now().plusDays(20);
+
+    Reservation outside = new Reservation();
+    outside.setId(UUID.randomUUID());
+    outside.setUnitId(UUID.randomUUID());
+    outside.setStartDate(LocalDate.now());
+    outside.setEndDate(LocalDate.now().plusDays(3)); // ends before range
+    outside.setStatus(ReservationStatus.CONFIRMED);
+
+    when(repository.findAll()).thenReturn(List.of(outside));
+
+    List<io.github.kwatera_project.kwatera.reservation_service.dto.OccupancyDto> result =
+        service.getOccupancy(start, end, UUID.randomUUID(), true);
+
+    assertTrue(result.isEmpty());
+  }
+
+  // --------------- getOccupiedDates tests ---------------
+
+  @Test
+  void getOccupiedDates_excludesCancelledAndCompleted() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    ReservationService service = new ReservationService(repository, mock(RestTemplate.class));
+
+    UUID unitId = UUID.randomUUID();
+
+    Reservation confirmed = new Reservation();
+    confirmed.setStartDate(LocalDate.now().plusDays(1));
+    confirmed.setEndDate(LocalDate.now().plusDays(5));
+    confirmed.setStatus(ReservationStatus.CONFIRMED);
+
+    Reservation cancelled = new Reservation();
+    cancelled.setStartDate(LocalDate.now().plusDays(6));
+    cancelled.setEndDate(LocalDate.now().plusDays(8));
+    cancelled.setStatus(ReservationStatus.CANCELLED);
+
+    Reservation completed = new Reservation();
+    completed.setStartDate(LocalDate.now().plusDays(9));
+    completed.setEndDate(LocalDate.now().plusDays(10));
+    completed.setStatus(ReservationStatus.COMPLETED);
+
+    when(repository.findByUnitId(unitId)).thenReturn(List.of(confirmed, cancelled, completed));
+
+    List<io.github.kwatera_project.kwatera.reservation_service.dto.DateRangeDto> result =
+        service.getOccupiedDates(unitId);
+
+    assertEquals(1, result.size());
+    assertEquals(confirmed.getStartDate(), result.get(0).getStartDate());
   }
 }

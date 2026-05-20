@@ -40,7 +40,7 @@ public class AdminOccupancyController {
     if (details instanceof String userIdString && !userIdString.isBlank()) {
       try {
         ownerId = UUID.fromString(userIdString);
-      } catch (IllegalArgumentException ex) {
+      } catch (IllegalArgumentException _) {
         throw new ResponseStatusException(
             HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
       }
