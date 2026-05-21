@@ -1,7 +1,9 @@
 package io.github.kwatera_project.kwatera.billing_service.event;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementStatusChangedEvent;
+import io.github.kwatera_project.kwatera.billing_service.exception.KafkaEventSerializationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -18,8 +20,8 @@ public class SettlementEventPublisher {
 
       kafkaTemplate.send("payment-status-changed", payload);
 
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to serialize Kafka event", e);
+    } catch (JsonProcessingException e) {
+      throw new KafkaEventSerializationException("Failed to serialize Kafka event", e);
     }
   }
 }

@@ -247,10 +247,6 @@ public class SettlementService {
             .map(SettlementItem::getType)
             .collect(Collectors.toSet());
 
-    if (!existingTypes.containsAll(requiredTypes)) {
-      return false;
-    }
-
-    return true;
+    return existingTypes.containsAll(requiredTypes);
   }
 }

@@ -69,7 +69,7 @@ public record PaymentMetadataDto(
     try {
       return val != null ? new BigDecimal(val) : BigDecimal.ZERO;
 
-    } catch (NumberFormatException e) {
+    } catch (NumberFormatException _) {
       throw new WebhookProcessingException("Invalid decimal: " + val);
     }
   }

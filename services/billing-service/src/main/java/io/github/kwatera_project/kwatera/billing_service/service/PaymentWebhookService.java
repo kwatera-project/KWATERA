@@ -7,6 +7,7 @@ import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.checkout.Session;
 import io.github.kwatera_project.kwatera.billing_service.client.StripeClient;
+import io.github.kwatera_project.kwatera.billing_service.dto.FailedTransactionCommand;
 import io.github.kwatera_project.kwatera.billing_service.dto.PaymentMetadataDto;
 import io.github.kwatera_project.kwatera.billing_service.exception.WebhookProcessingException;
 import lombok.RequiredArgsConstructor;
@@ -107,15 +108,18 @@ public class PaymentWebhookService {
           sessionId);
     } catch (Exception e) {
 
-      paymentTransactionService.saveFailedTransaction(
-          metadata.settlementId(),
-          metadata.unitId(),
-          metadata.type(),
-          metadata.description(),
-          metadata.quantity(),
-          metadata.unitPrice(),
-          sessionId,
-          e.getMessage());
+      FailedTransactionCommand command =
+          new FailedTransactionCommand(
+              metadata.settlementId(),
+              metadata.unitId(),
+              metadata.type(),
+              metadata.description(),
+              metadata.quantity(),
+              metadata.unitPrice(),
+              sessionId,
+              e.getMessage());
+
+      paymentTransactionService.saveFailedTransaction(command);
 
       throw e;
     }
@@ -130,18 +134,21 @@ public class PaymentWebhookService {
     PaymentMetadataDto metadata = PaymentMetadataDto.from(session.getMetadata());
     String sessionId = session.getId();
 
-    paymentTransactionService.saveFailedTransaction(
-        metadata.settlementId(),
-        metadata.unitId(),
-        metadata.type(),
-        metadata.description(),
-        metadata.quantity(),
-        metadata.unitPrice(),
-        sessionId,
-        "Checkout session expired");
+    FailedTransactionCommand command =
+        new FailedTransactionCommand(
+            metadata.settlementId(),
+            metadata.unitId(),
+            metadata.type(),
+            metadata.description(),
+            metadata.quantity(),
+            metadata.unitPrice(),
+            sessionId,
+            "Checkout session expired");
+
+    paymentTransactionService.saveFailedTransaction(command);
   }
 
-  private void handlePaymentFailed(Event event) throws StripeException {
+  private void handlePaymentFailed(Event event) {
 
     PaymentIntent paymentIntent = deserializePaymentIntent(event);
 
@@ -153,14 +160,17 @@ public class PaymentWebhookService {
     PaymentMetadataDto metadata = PaymentMetadataDto.from(paymentIntent.getMetadata());
     String sessionId = paymentIntent.getId();
 
-    paymentTransactionService.saveFailedTransaction(
-        metadata.settlementId(),
-        metadata.unitId(),
-        metadata.type(),
-        metadata.description(),
-        metadata.quantity(),
-        metadata.unitPrice(),
-        sessionId,
-        reason);
+    FailedTransactionCommand command =
+        new FailedTransactionCommand(
+            metadata.settlementId(),
+            metadata.unitId(),
+            metadata.type(),
+            metadata.description(),
+            metadata.quantity(),
+            metadata.unitPrice(),
+            sessionId,
+            reason);
+
+    paymentTransactionService.saveFailedTransaction(command);
   }
 }

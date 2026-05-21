@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.github.kwatera_project.kwatera.billing_service.dto.FailedTransactionCommand;
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
 import io.github.kwatera_project.kwatera.billing_service.model.TransactionStatus;
 import io.github.kwatera_project.kwatera.billing_service.repository.PaymentTransactionRepository;
@@ -59,15 +60,18 @@ class PaymentTransactionServiceTest {
 
     when(repository.save(Mockito.any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-    service.saveFailedTransaction(
-        settlementId,
-        unitId,
-        SettlementItemType.DEPOSIT,
-        "desc",
-        BigDecimal.valueOf(3),
-        BigDecimal.valueOf(50),
-        "stripe-session-2",
-        "Card declined");
+    FailedTransactionCommand command =
+        new FailedTransactionCommand(
+            settlementId,
+            unitId,
+            SettlementItemType.DEPOSIT,
+            "desc",
+            BigDecimal.valueOf(3),
+            BigDecimal.valueOf(50),
+            "stripe-session-2",
+            "Card declined");
+
+    service.saveFailedTransaction(command);
 
     verify(repository)
         .save(

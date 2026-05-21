@@ -8,6 +8,7 @@ import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.checkout.Session;
 import io.github.kwatera_project.kwatera.billing_service.client.StripeClient;
+import io.github.kwatera_project.kwatera.billing_service.dto.FailedTransactionCommand;
 import io.github.kwatera_project.kwatera.billing_service.exception.WebhookProcessingException;
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
 import java.math.BigDecimal;
@@ -133,10 +134,13 @@ class PaymentWebhookServiceTest {
   @Test
   void shouldNotCreateSettlementItem_whenPaymentFailedEvent() throws Exception {
 
+    UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
     Map<String, String> metadata =
         Map.of(
-            "settlementId", UUID.randomUUID().toString(),
-            "unitId", UUID.randomUUID().toString(),
+            "settlementId", settlementId.toString(),
+            "unitId", unitId.toString(),
             "type", "DEPOSIT",
             "description", "Test payment",
             "quantity", "2",
@@ -158,15 +162,68 @@ class PaymentWebhookServiceTest {
 
     verifyNoInteractions(settlementService);
 
-    verify(paymentTransactionService)
-        .saveFailedTransaction(
-            any(UUID.class),
-            any(UUID.class),
-            eq(SettlementItemType.DEPOSIT),
-            eq("Test payment"),
-            eq(new BigDecimal("2")),
-            eq(new BigDecimal("10")),
-            eq("pi_123"),
-            eq("UNKNOWN_ERROR"));
+    FailedTransactionCommand command =
+        new FailedTransactionCommand(
+            settlementId,
+            unitId,
+            SettlementItemType.DEPOSIT,
+            "Test payment",
+            new BigDecimal("2"),
+            new BigDecimal("10"),
+            "pi_123",
+            "UNKNOWN_ERROR");
+
+    verify(paymentTransactionService).saveFailedTransaction(command);
+  }
+
+  @Test
+  void shouldSaveFailedTransaction_whenCheckoutSessionExpired() throws Exception {
+
+    // given
+    String payload = "payload";
+    String signature = "signature";
+
+    UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    Map<String, String> metadata =
+        Map.of(
+            "settlementId", settlementId.toString(),
+            "unitId", unitId.toString(),
+            "type", "DEPOSIT",
+            "description", "Test payment",
+            "quantity", "2",
+            "unitPrice", "10");
+
+    Session sessionFromEvent = new Session();
+    sessionFromEvent.setId("sess_123");
+
+    when(stripeClient.constructEvent(payload, signature, "test_secret")).thenReturn(event);
+
+    when(event.getType()).thenReturn("checkout.session.expired");
+    when(event.getDataObjectDeserializer()).thenReturn(deserializer);
+
+    when(deserializer.getObject()).thenReturn(java.util.Optional.of(sessionFromEvent));
+
+    when(stripeClient.retrieveSession("sess_123")).thenReturn(session);
+    when(session.getId()).thenReturn("sess_123");
+    when(session.getMetadata()).thenReturn(metadata);
+
+    // when
+    paymentWebhookService.processWebhook(payload, signature);
+
+    FailedTransactionCommand command =
+        new FailedTransactionCommand(
+            settlementId,
+            unitId,
+            SettlementItemType.DEPOSIT,
+            "Test payment",
+            new BigDecimal("2"),
+            new BigDecimal("10"),
+            "sess_123",
+            "Checkout session expired");
+
+    // then
+    verify(paymentTransactionService).saveFailedTransaction(command);
   }
 }
