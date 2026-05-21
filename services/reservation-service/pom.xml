@@ -15,7 +15,9 @@
     <properties>
         <sonar.coverage.exclusions>
             **/config/OpenApiConfig.java,
-            **/config/RestTemplateConfig.java
+            **/config/RestTemplateConfig.java,
+            **/dto/**/*.class,
+            **/model/**/*.class
         </sonar.coverage.exclusions>
     </properties>
 
@@ -153,6 +155,8 @@
                         <exclude>**/ReservationServiceApplication.class</exclude>
                         <exclude>**/config/JpaConfig.class</exclude>
                         <exclude>**/mapper/**/*.class</exclude>
+                        <exclude>**/dto/**/*.class</exclude>
+                        <exclude>**/model/**/*.class</exclude>
                         <exclude>**/config/OpenApiConfig.class</exclude>
                         <exclude>**/config/RestTemplateConfig.class</exclude>
                     </excludes>

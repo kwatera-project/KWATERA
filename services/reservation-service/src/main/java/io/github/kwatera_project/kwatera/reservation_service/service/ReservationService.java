@@ -255,9 +255,13 @@ public class ReservationService {
 
       case PARTIALLY_PAID -> reservation.setStatus(ReservationStatus.CONFIRMED);
 
-      case ISSUED -> {
+      case CANCELLED -> reservation.setStatus(ReservationStatus.CANCELLED);
+
+      case ISSUED, DRAFT -> {
         return;
       }
+
+      default -> throw new IllegalStateException("Unhandled settlementStatus: " + settlementStatus);
     }
 
     reservationRepository.save(reservation);

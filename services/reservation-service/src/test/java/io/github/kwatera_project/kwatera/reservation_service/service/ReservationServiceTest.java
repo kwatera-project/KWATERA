@@ -14,6 +14,7 @@ import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationDeta
 import io.github.kwatera_project.kwatera.reservation_service.dto.UnitDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
+import io.github.kwatera_project.kwatera.reservation_service.model.SettlementStatus;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -768,5 +769,65 @@ class ReservationServiceTest {
 
     assertEquals(1, result.size());
     assertEquals(confirmed.getStartDate(), result.get(0).getStartDate());
+  }
+
+  @Test
+  void shouldSetStatusToCompleted_whenSettlementPaid() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    ReservationService service = new ReservationService(repository, mock(RestTemplate.class));
+
+    UUID reservationId = UUID.randomUUID();
+
+    Reservation reservation = new Reservation();
+    reservation.setId(reservationId);
+    reservation.setStatus(ReservationStatus.PENDING);
+
+    when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
+
+    service.handleSettlementStatusUpdate(reservationId, SettlementStatus.PAID);
+
+    ArgumentCaptor<Reservation> captor = ArgumentCaptor.forClass(Reservation.class);
+    verify(repository).save(captor.capture());
+
+    assertEquals(ReservationStatus.COMPLETED, captor.getValue().getStatus());
+  }
+
+  @Test
+  void shouldSetStatusToConfirmed_whenSettlementPartiallyPaid() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    ReservationService service = new ReservationService(repository, mock(RestTemplate.class));
+
+    UUID reservationId = UUID.randomUUID();
+
+    Reservation reservation = new Reservation();
+    reservation.setId(reservationId);
+    reservation.setStatus(ReservationStatus.PENDING);
+
+    when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
+
+    service.handleSettlementStatusUpdate(reservationId, SettlementStatus.PARTIALLY_PAID);
+
+    ArgumentCaptor<Reservation> captor = ArgumentCaptor.forClass(Reservation.class);
+    verify(repository).save(captor.capture());
+
+    assertEquals(ReservationStatus.CONFIRMED, captor.getValue().getStatus());
+  }
+
+  @Test
+  void shouldNotSaveReservation_whenSettlementIssued() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    ReservationService service = new ReservationService(repository, mock(RestTemplate.class));
+
+    UUID reservationId = UUID.randomUUID();
+
+    Reservation reservation = new Reservation();
+    reservation.setId(reservationId);
+    reservation.setStatus(ReservationStatus.PENDING);
+
+    when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
+
+    service.handleSettlementStatusUpdate(reservationId, SettlementStatus.ISSUED);
+
+    verify(repository, never()).save(any());
   }
 }

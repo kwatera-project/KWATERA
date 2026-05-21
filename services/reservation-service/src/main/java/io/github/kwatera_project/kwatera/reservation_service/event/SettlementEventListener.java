@@ -2,7 +2,9 @@ package io.github.kwatera_project.kwatera.reservation_service.event;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.kwatera_project.kwatera.reservation_service.dto.SettlementStatusChangedEvent;
+import io.github.kwatera_project.kwatera.reservation_service.exception.KafkaDeserializationException;
 import io.github.kwatera_project.kwatera.reservation_service.service.ReservationService;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
@@ -23,8 +25,8 @@ public class SettlementEventListener {
       reservationService.handleSettlementStatusUpdate(
           event.reservationId(), event.settlementStatus());
 
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to deserialize Kafka event", e);
+    } catch (IOException e) {
+      throw new KafkaDeserializationException("Failed to deserialize Kafka event", e);
     }
   }
 }
