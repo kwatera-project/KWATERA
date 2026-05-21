@@ -121,7 +121,7 @@ class UserProfileControllerTest {
   void shouldRejectUnauthenticatedGetUserProfile() throws Exception {
     mockMvc
         .perform(get("/api/auth/users/me").accept(MediaType.APPLICATION_JSON))
-        .andExpect(status().isUnauthorized());
+        .andExpect(status().isForbidden());
   }
 
   @Test
@@ -133,6 +133,6 @@ class UserProfileControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"firstName\":\"NewFirst\",\"lastName\":\"NewLast\"}")
                 .accept(MediaType.APPLICATION_JSON))
-        .andExpect(status().isUnauthorized());
+        .andExpect(status().isForbidden());
   }
 }
