@@ -8,7 +8,9 @@ export default function RegisterForm() {
         username: '',
         email: '',
         password: '',
-        role: ''
+        role: '',
+        firstName: '',
+        lastName: ''
     })
 
     const navigate = useNavigate()
@@ -90,6 +92,23 @@ export default function RegisterForm() {
                             />
                             Guest
                         </label>
+
+                    </div>
+                    <div className="flex gap-4">
+                        <input
+                            type="text"
+                            placeholder="First Name"
+                            className="w-1/2 p-2 border rounded"
+                            onChange={e => setFormData({...formData, firstName: e.target.value})}
+                            required
+                        />
+                        <input
+                            type="text"
+                            placeholder="Last Name"
+                            className="w-1/2 p-2 border rounded"
+                            onChange={e => setFormData({...formData, lastName: e.target.value})}
+                            required
+                        />
                     </div>
                     <input
                         type="text"

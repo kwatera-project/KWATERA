@@ -25,7 +25,13 @@ public class UserService {
                     HttpStatus.NOT_FOUND, "The user account has been deleted or inactivated"));
   }
 
-  public void register(String username, String email, Role role, String password) {
+  public void register(
+      String username,
+      String email,
+      Role role,
+      String password,
+      String firstName,
+      String lastName) {
     if (userRepository.findByUsername(username).isPresent()) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "User already exists");
     }
@@ -34,6 +40,8 @@ public class UserService {
     user.setUsername(username);
     user.setEmail(email);
     user.setPassword(passwordEncoder.encode(password));
+    user.setFirstName(firstName);
+    user.setLastName(lastName);
 
     if (role == null) {
       user.setRole(Role.GUEST);
@@ -44,5 +52,12 @@ public class UserService {
     }
 
     userRepository.save(user);
+  }
+
+  public User updateProfile(String email, String firstName, String lastName) {
+    User user = getUserByEmail(email);
+    user.setFirstName(firstName);
+    user.setLastName(lastName);
+    return userRepository.save(user);
   }
 }

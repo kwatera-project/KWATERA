@@ -58,7 +58,7 @@ class UserServiceTest {
 
     when(passwordEncoder.encode("pass")).thenReturn("encoded-pass");
 
-    userService.register("john", "john@mail.com", Role.OWNER, "pass");
+    userService.register("john", "john@mail.com", Role.OWNER, "pass", "John", "Doe");
 
     ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
     verify(userRepository).save(captor.capture());
@@ -69,6 +69,8 @@ class UserServiceTest {
     assertThat(saved.getEmail()).isEqualTo("john@mail.com");
     assertThat(saved.getPassword()).isEqualTo("encoded-pass");
     assertThat(saved.getRole()).isEqualTo(Role.OWNER);
+    assertThat(saved.getFirstName()).isEqualTo("John");
+    assertThat(saved.getLastName()).isEqualTo("Doe");
   }
 
   @Test
@@ -77,19 +79,22 @@ class UserServiceTest {
 
     when(passwordEncoder.encode(any())).thenReturn("encoded");
 
-    userService.register("john", "john@mail.com", null, "pass");
+    userService.register("john", "john@mail.com", null, "pass", "John", "Doe");
 
     ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
     verify(userRepository).save(captor.capture());
 
     assertThat(captor.getValue().getRole()).isEqualTo(Role.GUEST);
+    assertThat(captor.getValue().getFirstName()).isEqualTo("John");
+    assertThat(captor.getValue().getLastName()).isEqualTo("Doe");
   }
 
   @Test
   void shouldThrow409WhenUsernameExists() {
     when(userRepository.findByUsername("john")).thenReturn(Optional.of(new User()));
 
-    assertThatThrownBy(() -> userService.register("john", "john@mail.com", Role.GUEST, "pass"))
+    assertThatThrownBy(
+            () -> userService.register("john", "john@mail.com", Role.GUEST, "pass", "John", "Doe"))
         .isInstanceOf(ResponseStatusException.class)
         .satisfies(
             ex -> {
@@ -104,7 +109,8 @@ class UserServiceTest {
   void shouldRejectAdminRole() {
     when(userRepository.findByUsername("john")).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> userService.register("john", "john@mail.com", Role.ADMIN, "pass"))
+    assertThatThrownBy(
+            () -> userService.register("john", "john@mail.com", Role.ADMIN, "pass", "John", "Doe"))
         .isInstanceOf(ResponseStatusException.class)
         .satisfies(
             ex -> {
@@ -113,5 +119,23 @@ class UserServiceTest {
             });
 
     verify(userRepository, never()).save(any());
+  }
+
+  @Test
+  void shouldUpdateUserProfileSuccessfully() {
+    User user = new User();
+    user.setEmail("john@mail.com");
+    user.setFirstName("OldFirst");
+    user.setLastName("OldLast");
+
+    when(userRepository.findByEmail("john@mail.com")).thenReturn(Optional.of(user));
+    when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    User updated = userService.updateProfile("john@mail.com", "NewFirst", "NewLast");
+
+    assertThat(updated.getFirstName()).isEqualTo("NewFirst");
+    assertThat(updated.getLastName()).isEqualTo("NewLast");
+    verify(userRepository).findByEmail("john@mail.com");
+    verify(userRepository).save(user);
   }
 }

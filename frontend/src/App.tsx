@@ -13,6 +13,7 @@ import MyReservationsPage from "./pages/MyReservationsPage";
 import PaymentCancelPage from "./pages/PaymentCancelPage";
 import SettlementDetailsPage from "./pages/SettlementDetailsPage";
 import OccupancyCalendarPage from "./pages/OccupancyCalendarPage";
+import ProfilePage from "./pages/ProfilePage";
 
 function App() {
     return (
@@ -51,6 +52,14 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={[]}>
                             <ReservationDetailsPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/profile"
+                    element={
+                        <ProtectedRoute>
+                            <ProfilePage />
                         </ProtectedRoute>
                     }
                 />
