@@ -52,7 +52,10 @@ public class PaymentService {
 
     Settlement settlement = getOrCreateByReservation(reservationId, token);
 
-    return stripeService.createCheckoutSession(settlement, type, description, quantity, unitPrice);
+    ReservationDto reservationDto = stripeService.getReservation(reservationId, token);
+
+    return stripeService.createCheckoutSession(
+        settlement, type, description, quantity, unitPrice, reservationDto.getUnitId());
   }
 
   public SettlementResponseDto getSettlementWithItems(UUID reservationId, String token) {

@@ -1,13 +1,16 @@
 package io.github.kwatera_project.kwatera.billing_service.service;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.checkout.Session;
 import io.github.kwatera_project.kwatera.billing_service.client.StripeClient;
+import io.github.kwatera_project.kwatera.billing_service.exception.WebhookProcessingException;
+import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
+import java.math.BigDecimal;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,50 +23,104 @@ import org.springframework.test.util.ReflectionTestUtils;
 @ExtendWith(MockitoExtension.class)
 class PaymentWebhookServiceTest {
 
-  @Mock SettlementService settlementService;
-  @Mock StripeClient stripeClient;
+  @Mock private SettlementService settlementService;
 
-  @InjectMocks PaymentWebhookService service;
+  @Mock private StripeClient stripeClient;
+
+  @InjectMocks private PaymentWebhookService paymentWebhookService;
+
+  @Mock private Event event;
+
+  @Mock private EventDataObjectDeserializer deserializer;
+
+  @Mock private Session session;
 
   @BeforeEach
   void setup() {
-    service = new PaymentWebhookService(settlementService, stripeClient);
-    ReflectionTestUtils.setField(service, "stripeWebhookSecret", "test_secret");
+    paymentWebhookService = new PaymentWebhookService(settlementService, stripeClient);
+    ReflectionTestUtils.setField(paymentWebhookService, "stripeWebhookSecret", "test_secret");
   }
 
   @Test
-  void shouldProcessWebhook() throws Exception {
+  void shouldRegisterPayment_whenCheckoutSessionCompleted() throws Exception {
 
+    // given
     String payload = "payload";
-    String sig = "sig";
-
-    Event event = mock(Event.class);
-    Session session = mock(Session.class);
-
-    when(stripeClient.constructEvent(payload, sig, "test_secret")).thenReturn(event);
-
-    when(event.getType()).thenReturn("checkout.session.completed");
-
-    EventDataObjectDeserializer deserializer = mock(EventDataObjectDeserializer.class);
-    when(event.getDataObjectDeserializer()).thenReturn(deserializer);
-
-    when(deserializer.getObject()).thenReturn(Optional.of(session));
-    when(session.getId()).thenReturn("sess_123");
-
-    when(stripeClient.retrieveSession("sess_123")).thenReturn(session);
+    String signature = "signature";
 
     Map<String, String> metadata =
         Map.of(
             "settlementId", UUID.randomUUID().toString(),
-            "type", "ACCOMMODATION",
-            "description", "test",
-            "quantity", "1",
-            "unitPrice", "100");
+            "unitId", UUID.randomUUID().toString(),
+            "type", "DEPOSIT",
+            "description", "Test payment",
+            "quantity", "2",
+            "unitPrice", "10");
 
+    Session sessionFromEvent = new Session();
+    sessionFromEvent.setId("sess_123");
+
+    // Stripe event
+    when(stripeClient.constructEvent(payload, signature, "test_secret")).thenReturn(event);
+
+    when(event.getType()).thenReturn("checkout.session.completed");
+    when(event.getDataObjectDeserializer()).thenReturn(deserializer);
+
+    when(deserializer.getObject()).thenReturn(java.util.Optional.of(sessionFromEvent));
+
+    when(stripeClient.retrieveSession("sess_123")).thenReturn(session);
     when(session.getMetadata()).thenReturn(metadata);
 
-    service.processWebhook(payload, sig);
+    // when
+    paymentWebhookService.processWebhook(payload, signature);
 
-    verify(settlementService).registerPayment(any(), any(), any(), any(), any());
+    // then
+    verify(settlementService, times(1))
+        .registerPayment(
+            any(UUID.class),
+            any(UUID.class),
+            eq(SettlementItemType.DEPOSIT),
+            eq("Test payment"),
+            eq(new BigDecimal("2")),
+            eq(new BigDecimal("10")));
+  }
+
+  @Test
+  void shouldNotRegisterPayment_whenMetadataIsNull() throws Exception {
+
+    String payload = "payload";
+    String signature = "signature";
+
+    Session sessionFromEvent = new Session();
+    sessionFromEvent.setId("sess_123");
+
+    when(stripeClient.constructEvent(payload, signature, "test_secret")).thenReturn(event);
+
+    when(event.getType()).thenReturn("checkout.session.completed");
+    when(event.getDataObjectDeserializer()).thenReturn(deserializer);
+
+    when(deserializer.getObject()).thenReturn(java.util.Optional.of(sessionFromEvent));
+
+    when(stripeClient.retrieveSession("sess_123")).thenReturn(session);
+    when(session.getMetadata()).thenReturn(null);
+
+    // when / then
+    assertThrows(
+        WebhookProcessingException.class,
+        () -> paymentWebhookService.processWebhook(payload, signature));
+
+    verifyNoInteractions(settlementService);
+  }
+
+  @Test
+  void shouldNotCreateSettlementItem_whenPaymentFailedEvent() throws Exception {
+
+    when(stripeClient.constructEvent(any(), any(), any())).thenReturn(event);
+
+    when(event.getType()).thenReturn("payment_intent.payment_failed");
+
+    paymentWebhookService.processWebhook("payload", "sig");
+
+    verifyNoInteractions(settlementService);
   }
 }

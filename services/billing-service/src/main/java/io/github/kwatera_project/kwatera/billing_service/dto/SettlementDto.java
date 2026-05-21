@@ -20,8 +20,7 @@ public record SettlementDto(
     Instant issuedAt,
     Instant paidAt,
     Instant createdAt,
-    Instant updatedAt,
-    Boolean finalized) {
+    Instant updatedAt) {
   public static SettlementDto from(Settlement s) {
     return new SettlementDto(
         s.getId(),
@@ -37,7 +36,6 @@ public record SettlementDto(
         s.getIssuedAt(),
         s.getPaidAt(),
         s.getCreatedAt(),
-        s.getUpdatedAt(),
-        s.getFinalized());
+        s.getUpdatedAt());
   }
 }

@@ -61,6 +61,7 @@ public class PaymentWebhookService {
         throw new WebhookProcessingException("Missing settlementId in metadata");
       }
 
+      UUID unitId = UUID.fromString(metadata.get("unitId"));
       UUID settlementId = UUID.fromString(settlementIdStr);
       SettlementItemType type = SettlementItemType.valueOf(session.getMetadata().get("type"));
       String description = session.getMetadata().get("description");
@@ -68,7 +69,8 @@ public class PaymentWebhookService {
       BigDecimal quantity = parseBigDecimal(metadata.get("quantity"));
       BigDecimal unitPrice = parseBigDecimal(metadata.get("unitPrice"));
 
-      settlementService.registerPayment(settlementId, type, description, quantity, unitPrice);
+      settlementService.registerPayment(
+          settlementId, unitId, type, description, quantity, unitPrice);
     }
   }
 
@@ -76,7 +78,7 @@ public class PaymentWebhookService {
     try {
       return (val != null) ? new BigDecimal(val) : BigDecimal.ZERO;
     } catch (NumberFormatException _) {
-      return BigDecimal.ZERO;
+      throw new WebhookProcessingException("Invalid decimal: " + val);
     }
   }
 }

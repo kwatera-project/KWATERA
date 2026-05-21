@@ -1,12 +1,11 @@
 package io.github.kwatera_project.kwatera.billing_service.service;
 
-import static io.github.kwatera_project.kwatera.billing_service.model.SettlementStatus.DRAFT;
-import static io.github.kwatera_project.kwatera.billing_service.model.SettlementStatus.PAID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.github.kwatera_project.kwatera.billing_service.client.PropertyClient;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto;
 import io.github.kwatera_project.kwatera.billing_service.event.SettlementEventPublisher;
 import io.github.kwatera_project.kwatera.billing_service.model.Settlement;
@@ -33,12 +32,13 @@ class SettlementServiceTest {
 
   @Mock private SettlementEventPublisher settlementEventPublisher;
 
+  @Mock private PropertyClient propertyClient;
+
   @InjectMocks private SettlementService settlementService;
 
   private Settlement baseSettlement(UUID id) {
     Settlement settlement = new Settlement();
     settlement.setId(id);
-    settlement.setFinalized(false);
     settlement.setAccommodationAmount(BigDecimal.valueOf(500));
     settlement.setUtilitiesAmount(BigDecimal.ZERO);
     settlement.setDepositAmount(BigDecimal.ZERO);
@@ -71,10 +71,10 @@ class SettlementServiceTest {
   @Test
   void shouldRegisterPayment() {
     UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
 
     Settlement settlement = new Settlement();
     settlement.setId(settlementId);
-    settlement.setFinalized(false);
     settlement.setAmountPaid(BigDecimal.ZERO);
     settlement.setAccommodationAmount(BigDecimal.valueOf(500));
     settlement.setUtilitiesAmount(BigDecimal.ZERO);
@@ -91,6 +91,7 @@ class SettlementServiceTest {
 
     settlementService.registerPayment(
         settlementId,
+        unitId,
         SettlementItemType.ACCOMMODATION,
         "Accommodation fee",
         BigDecimal.ONE,
@@ -103,10 +104,10 @@ class SettlementServiceTest {
   @Test
   void shouldThrowWhenPaymentExceedsTotal() {
     UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
 
     Settlement settlement = new Settlement();
     settlement.setId(settlementId);
-    settlement.setFinalized(false);
     settlement.setAmountPaid(BigDecimal.valueOf(450));
     settlement.setAccommodationAmount(BigDecimal.valueOf(500));
     settlement.setUtilitiesAmount(BigDecimal.ZERO);
@@ -124,42 +125,21 @@ class SettlementServiceTest {
         IllegalStateException.class,
         () ->
             settlementService.registerPayment(
-                settlementId, SettlementItemType.ACCOMMODATION, "fee", BigDecimal.ONE, amount));
-  }
-
-  @Test
-  void shouldFinalizeSettlement() {
-    UUID settlementId = UUID.randomUUID();
-
-    Settlement settlement = new Settlement();
-    settlement.setId(settlementId);
-    settlement.setFinalized(false);
-    settlement.setAmountPaid(BigDecimal.ZERO);
-    settlement.setAccommodationAmount(BigDecimal.valueOf(500));
-    settlement.setUtilitiesAmount(BigDecimal.ZERO);
-    settlement.setDepositAmount(BigDecimal.ZERO);
-    settlement.setDiscountAmount(BigDecimal.ZERO);
-    settlement.setTotalAmount(BigDecimal.valueOf(500));
-
-    when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
-
-    when(settlementItemRepository.existsBySettlementIdAndTypeIn(any(), any())).thenReturn(false);
-
-    settlementService.finalizeSettlement(settlementId);
-
-    assertTrue(settlement.getFinalized());
-    assertNotNull(settlement.getIssuedAt());
-
-    verify(settlementRepository).save(settlement);
+                settlementId,
+                unitId,
+                SettlementItemType.ACCOMMODATION,
+                "fee",
+                BigDecimal.ONE,
+                amount));
   }
 
   @Test
   void shouldApplyDiscount() {
     UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
 
     Settlement settlement = new Settlement();
     settlement.setId(settlementId);
-    settlement.setFinalized(false);
     settlement.setAccommodationAmount(BigDecimal.valueOf(500));
     settlement.setUtilitiesAmount(BigDecimal.ZERO);
     settlement.setDepositAmount(BigDecimal.ZERO);
@@ -170,7 +150,7 @@ class SettlementServiceTest {
 
     when(settlementItemRepository.existsBySettlementIdAndTypeIn(any(), any())).thenReturn(false);
 
-    settlementService.applyDiscount(settlementId, BigDecimal.valueOf(50));
+    settlementService.applyDiscount(settlementId, unitId, BigDecimal.valueOf(50));
 
     assertEquals(BigDecimal.valueOf(50), settlement.getDiscountAmount());
     assertEquals(BigDecimal.valueOf(450), settlement.getTotalAmount()); // 500 - 50 = 450
@@ -201,6 +181,7 @@ class SettlementServiceTest {
   @Test
   void shouldAddDepositAmountWhenPaymentTypeIsDeposit() {
     UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
 
     Settlement settlement = baseSettlement(settlementId);
 
@@ -212,6 +193,7 @@ class SettlementServiceTest {
 
     settlementService.registerPayment(
         settlementId,
+        unitId,
         SettlementItemType.DEPOSIT,
         "Deposit",
         BigDecimal.ONE,
@@ -223,6 +205,7 @@ class SettlementServiceTest {
   @Test
   void shouldAddUtilitiesAmountWhenPaymentTypeIsWater() {
     UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
 
     Settlement settlement = baseSettlement(settlementId);
 
@@ -233,7 +216,12 @@ class SettlementServiceTest {
     when(settlementItemRepository.existsBySettlementIdAndTypeIn(any(), any())).thenReturn(true);
 
     settlementService.registerPayment(
-        settlementId, SettlementItemType.WATER, "Water", BigDecimal.ONE, BigDecimal.valueOf(50));
+        settlementId,
+        unitId,
+        SettlementItemType.WATER,
+        "Water",
+        BigDecimal.ONE,
+        BigDecimal.valueOf(50));
 
     assertEquals(BigDecimal.valueOf(50), settlement.getUtilitiesAmount());
   }
@@ -241,6 +229,7 @@ class SettlementServiceTest {
   @Test
   void shouldNotModifyAmountsForAccommodationPayment() {
     UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
 
     Settlement settlement = baseSettlement(settlementId);
 
@@ -252,6 +241,7 @@ class SettlementServiceTest {
 
     settlementService.registerPayment(
         settlementId,
+        unitId,
         SettlementItemType.ACCOMMODATION,
         "Accommodation",
         BigDecimal.ONE,
@@ -259,28 +249,5 @@ class SettlementServiceTest {
 
     assertEquals(BigDecimal.ZERO, settlement.getDepositAmount());
     assertEquals(BigDecimal.ZERO, settlement.getUtilitiesAmount());
-  }
-
-  @Test
-  void shouldMarkSettlementAsPaidWhenBalanceZeroAndFinalized() {
-    UUID settlementId = UUID.randomUUID();
-
-    Settlement settlement = new Settlement();
-    settlement.setId(settlementId);
-    settlement.setTotalAmount(BigDecimal.valueOf(100));
-    settlement.setAmountPaid(BigDecimal.valueOf(100));
-    settlement.setFinalized(false);
-    settlement.setStatus(DRAFT);
-
-    when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
-
-    when(settlementRepository.save(any(Settlement.class)))
-        .thenAnswer(invocation -> invocation.getArgument(0));
-
-    settlementService.finalizeSettlement(settlementId);
-
-    assertEquals(PAID, settlement.getStatus());
-    assertNotNull(settlement.getPaidAt());
-    assertTrue(settlement.getFinalized());
   }
 }

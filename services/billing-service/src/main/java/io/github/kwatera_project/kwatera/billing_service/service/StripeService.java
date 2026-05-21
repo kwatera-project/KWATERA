@@ -53,7 +53,8 @@ public class StripeService {
       SettlementItemType type,
       String description,
       BigDecimal quantity,
-      BigDecimal unitPrice)
+      BigDecimal unitPrice,
+      UUID unitId)
       throws StripeException {
 
     UUID reservationId = settlement.getReservationId();
@@ -81,6 +82,7 @@ public class StripeService {
             .setSuccessUrl("http://localhost:5173/reservations/" + reservationId)
             .setCancelUrl("http://localhost:5173/payment-cancel")
             .putMetadata("reservationId", reservationId.toString())
+            .putMetadata("unitId", unitId.toString())
             .putMetadata("settlementId", settlement.getId().toString())
             .putMetadata("type", type.toString())
             .putMetadata("description", description)
