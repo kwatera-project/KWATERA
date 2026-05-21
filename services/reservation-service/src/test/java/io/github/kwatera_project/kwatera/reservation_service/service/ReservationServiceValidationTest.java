@@ -19,10 +19,11 @@ class ReservationServiceValidationTest {
 
   @Test
   void shouldThrow_whenDatesAreNull() {
+    UUID unitId = UUID.randomUUID();
+
     ResponseStatusException ex =
         assertThrows(
-            ResponseStatusException.class,
-            () -> service.checkAvailability(UUID.randomUUID(), null, null));
+            ResponseStatusException.class, () -> service.checkAvailability(unitId, null, null));
 
     assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
     assertEquals("Dates are required", ex.getReason());
@@ -33,10 +34,11 @@ class ReservationServiceValidationTest {
     LocalDate from = LocalDate.now().minusDays(1);
     LocalDate to = LocalDate.now().plusDays(2);
 
+    UUID unitId = UUID.randomUUID();
+
     ResponseStatusException ex =
         assertThrows(
-            ResponseStatusException.class,
-            () -> service.checkAvailability(UUID.randomUUID(), from, to));
+            ResponseStatusException.class, () -> service.checkAvailability(unitId, from, to));
 
     assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
     assertEquals("Date is in the past", ex.getReason());
@@ -47,10 +49,11 @@ class ReservationServiceValidationTest {
     LocalDate from = LocalDate.now().plusDays(5);
     LocalDate to = LocalDate.now().plusDays(5);
 
+    UUID unitId = UUID.randomUUID();
+
     ResponseStatusException ex =
         assertThrows(
-            ResponseStatusException.class,
-            () -> service.checkAvailability(UUID.randomUUID(), from, to));
+            ResponseStatusException.class, () -> service.checkAvailability(unitId, from, to));
 
     assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
     assertEquals("Invalid date range", ex.getReason());

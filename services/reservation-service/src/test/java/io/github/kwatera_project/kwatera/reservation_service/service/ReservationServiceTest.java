@@ -832,6 +832,25 @@ class ReservationServiceTest {
   }
 
   @Test
+  void shouldSetCancelledStatus_whenSettlementCancelled() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    ReservationService service = new ReservationService(repository, mock(RestTemplate.class));
+
+    UUID reservationId = UUID.randomUUID();
+
+    Reservation reservation = new Reservation();
+    reservation.setStatus(ReservationStatus.CONFIRMED);
+
+    when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
+
+    service.handleSettlementStatusUpdate(reservationId, SettlementStatus.CANCELLED);
+
+    assertEquals(ReservationStatus.CANCELLED, reservation.getStatus());
+
+    verify(repository).save(reservation);
+  }
+
+  @Test
   void shouldThrowNotFound_whenUnitServiceReturnsNullBody() {
     // given
     ReservationRepository repo = mock(ReservationRepository.class);
@@ -892,5 +911,35 @@ class ReservationServiceTest {
 
     assertEquals(HttpStatus.BAD_GATEWAY, ex.getStatusCode());
     assertTrue(ex.getReason().contains("Cannot fetch unit price"));
+  }
+
+  @Test
+  void shouldThrowBadRequest_whenUserIdIsNull() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    ReservationService service = new ReservationService(repository, mock(RestTemplate.class));
+
+    CreateReservationRequest request = new CreateReservationRequest();
+
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class, () -> service.createReservation(null, request, "token"));
+
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    assertEquals("User id is required", ex.getReason());
+  }
+
+  @Test
+  void shouldThrowBadRequest_whenRequestIsNull() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    ReservationService service = new ReservationService(repository, mock(RestTemplate.class));
+
+    UUID userId = UUID.randomUUID();
+
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class, () -> service.createReservation(userId, null, "token"));
+
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    assertEquals("Reservation request is required", ex.getReason());
   }
 }

@@ -149,13 +149,13 @@ public class ReservationService {
       ResponseEntity<UnitDto> response =
           restTemplate.exchange(url, HttpMethod.GET, entity, UnitDto.class, unitId);
 
-      if (response == null || response.getBody() == null) {
+      if (response.getBody() == null) {
         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found");
       }
 
       return response.getBody().getPricePerNight();
 
-    } catch (HttpClientErrorException.NotFound e) {
+    } catch (HttpClientErrorException.NotFound _) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found");
 
     } catch (ResponseStatusException e) {
