@@ -26,7 +26,10 @@ public class SecurityConfig {
   @Bean
   SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter)
       throws Exception {
-    return http.csrf(csrf -> csrf.disable())
+    return http.csrf(
+            csrf ->
+                csrf.disable()) // NOSONAR: CSRF is disabled because the API is stateless and uses
+        // JWT tokens
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             auth ->
