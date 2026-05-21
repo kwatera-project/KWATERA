@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -147,11 +148,19 @@ public class ReservationService {
     try {
       ResponseEntity<UnitDto> response =
           restTemplate.exchange(url, HttpMethod.GET, entity, UnitDto.class, unitId);
-      UnitDto unit = response.getBody();
-      if (unit == null) {
+
+      if (response == null || response.getBody() == null) {
         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found");
       }
-      return unit.getPricePerNight();
+
+      return response.getBody().getPricePerNight();
+
+    } catch (HttpClientErrorException.NotFound e) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found");
+
+    } catch (ResponseStatusException e) {
+      throw e;
+
     } catch (Exception e) {
       throw new ResponseStatusException(
           HttpStatus.BAD_GATEWAY, "Cannot fetch unit price: " + e.getMessage());

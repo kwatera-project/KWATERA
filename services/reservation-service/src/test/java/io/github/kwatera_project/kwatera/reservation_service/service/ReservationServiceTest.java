@@ -830,4 +830,67 @@ class ReservationServiceTest {
 
     verify(repository, never()).save(any());
   }
+
+  @Test
+  void shouldThrowNotFound_whenUnitServiceReturnsNullBody() {
+    // given
+    ReservationRepository repo = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+
+    ReservationService service = new ReservationService(repo, restTemplate);
+
+    UUID userId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    CreateReservationRequest request = new CreateReservationRequest();
+    request.setUnitId(unitId);
+    request.setStartDate(LocalDate.now().plusDays(1));
+    request.setEndDate(LocalDate.now().plusDays(3));
+
+    when(repo.findByUnitId(unitId)).thenReturn(List.of());
+
+    when(restTemplate.exchange(
+            anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(UnitDto.class), eq(unitId)))
+        .thenReturn(ResponseEntity.ok(null));
+
+    // when
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> service.createReservation(userId, request, "token"));
+
+    // then
+    assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+    assertEquals("Unit not found", ex.getReason());
+  }
+
+  @Test
+  void shouldThrowBadGateway_whenUnitServiceFails() {
+    ReservationRepository repo = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+
+    ReservationService service = new ReservationService(repo, restTemplate);
+
+    UUID userId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    CreateReservationRequest request = new CreateReservationRequest();
+    request.setUnitId(unitId);
+    request.setStartDate(LocalDate.now().plusDays(1));
+    request.setEndDate(LocalDate.now().plusDays(3));
+
+    when(repo.findByUnitId(unitId)).thenReturn(List.of());
+
+    when(restTemplate.exchange(
+            anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(UnitDto.class), eq(unitId)))
+        .thenThrow(new RuntimeException("service down"));
+
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> service.createReservation(userId, request, "token"));
+
+    assertEquals(HttpStatus.BAD_GATEWAY, ex.getStatusCode());
+    assertTrue(ex.getReason().contains("Cannot fetch unit price"));
+  }
 }
