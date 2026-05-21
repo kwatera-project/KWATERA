@@ -116,6 +116,42 @@ export default function ProfilePage() {
         }
     };
 
+    const getRoleColor = (role: string) => {
+        switch (role.toUpperCase()) {
+            case "ADMIN":
+                return "bg-blue-100 text-blue-700";
+            case "OWNER":
+                return "bg-amber-100 text-amber-700";
+            case "GUEST":
+            default:
+                return "bg-emerald-100 text-emerald-700";
+        }
+    };
+
+    const getRoleIcon = (role: string) => {
+        switch (role.toUpperCase()) {
+            case "ADMIN":
+                return (
+                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                );
+            case "OWNER":
+                return (
+                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    </svg>
+                );
+            case "GUEST":
+            default:
+                return (
+                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                );
+        }
+    };
+
     return (
         <div className="p-6 max-w-7xl mx-auto text-[#1A1A1A]">
             <div className="mb-8">
@@ -123,31 +159,29 @@ export default function ProfilePage() {
                 <p className="text-sm text-[#7A7A7A]">{getRoleDescription(userRole)}</p>
             </div>
 
-            <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm overflow-hidden">
-                <div className="bg-[#42211D] h-24 relative">
-                    <div className="absolute -bottom-10 left-8">
-                        <div className="w-20 h-20 bg-white border border-[#DACDCA] rounded-full flex items-center justify-center shadow-md">
-                            <span className="text-[#42211D] text-2xl font-extrabold select-none">
-                                {profile.firstName ? profile.firstName.substring(0, 1).toUpperCase() : profile.username.substring(0, 1).toUpperCase()}
-                            </span>
+            <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm">
+                <div className="p-8 border-b border-[#DACDCA] mb-6">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                        <div className="flex items-center gap-6">
+                            <div className={`w-20 h-20 rounded-full flex items-center justify-center shadow-md ${getRoleColor(userRole)}`}>
+                                {getRoleIcon(userRole)}
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-bold text-[#1A1A1A]">
+                                    {profile.firstName ? `${profile.firstName} ${profile.lastName}` : profile.username}
+                                </h2>
+                                <p className="text-[#7A7A7A] mt-1">Personal Account Details</p>
+                            </div>
                         </div>
-                    </div>
-                </div>
-
-                <div className="pt-14 pb-8 px-8">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-[#DACDCA] pb-6 mb-6">
-                        <div>
-                            <h2 className="text-xl font-bold text-[#1A1A1A]">
-                                {profile.firstName ? `${profile.firstName} ${profile.lastName}` : profile.username}
-                            </h2>
-                            <p className="text-sm text-[#7A7A7A] mt-1">Personal Account Details</p>
-                        </div>
-                        <div className="mt-4 md:mt-0 flex items-center gap-3">
+                        <div className="flex items-center gap-3">
                             <span className="bg-[#F7F7F7] border border-[#DACDCA] text-[#42211D] font-bold text-xs uppercase tracking-wider px-3 py-1.5 rounded-full shadow-sm">
                                 {userRole}
                             </span>
                         </div>
                     </div>
+                </div>
+
+                <div className="px-8 pb-8">
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="bg-[#F7F7F7] border border-[#DACDCA] rounded-xl p-6">
@@ -206,12 +240,6 @@ export default function ProfilePage() {
                                         </svg>
                                         Active for notifications
                                     </span>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold text-[#7A7A7A] mb-1">Account ID</label>
-                                    <p className="font-mono text-xs text-[#7A7A7A] bg-gray-100 p-2 rounded-lg border border-gray-200 overflow-x-auto select-all">
-                                        {profile.id}
-                                    </p>
                                 </div>
                             </div>
                         </div>

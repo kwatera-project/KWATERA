@@ -1,7 +1,6 @@
 import { GATEWAY_BASE_URL } from "./apiConfig";
 
 export interface UserProfile {
-    id: string;
     username: string;
     firstName: string;
     lastName: string;

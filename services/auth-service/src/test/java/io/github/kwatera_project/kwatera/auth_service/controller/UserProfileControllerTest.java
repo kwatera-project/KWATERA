@@ -53,7 +53,7 @@ class UserProfileControllerTest {
     user.setLastName("Last");
     user.setRole(Role.GUEST);
 
-    UserProfileDto dto = new UserProfileDto(id, username, "First", "Last", email, Role.GUEST);
+    UserProfileDto dto = new UserProfileDto(username, "First", "Last", email, Role.GUEST);
 
     when(userService.getUserByEmail(email)).thenReturn(user);
     when(userMapper.toUserProfileDto(user)).thenReturn(dto);
@@ -66,7 +66,6 @@ class UserProfileControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.id").value(id.toString()))
         .andExpect(jsonPath("$.username").value(username))
         .andExpect(jsonPath("$.firstName").value("First"))
         .andExpect(jsonPath("$.lastName").value("Last"))
@@ -92,7 +91,7 @@ class UserProfileControllerTest {
     updatedUser.setLastName("NewLast");
     updatedUser.setRole(Role.GUEST);
 
-    UserProfileDto dto = new UserProfileDto(id, username, "NewFirst", "NewLast", email, Role.GUEST);
+    UserProfileDto dto = new UserProfileDto(username, "NewFirst", "NewLast", email, Role.GUEST);
 
     when(userService.updateProfile(email, "NewFirst", "NewLast")).thenReturn(updatedUser);
     when(userMapper.toUserProfileDto(updatedUser)).thenReturn(dto);
@@ -108,7 +107,6 @@ class UserProfileControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.id").value(id.toString()))
         .andExpect(jsonPath("$.username").value(username))
         .andExpect(jsonPath("$.firstName").value("NewFirst"))
         .andExpect(jsonPath("$.lastName").value("NewLast"))
@@ -117,5 +115,24 @@ class UserProfileControllerTest {
 
     verify(userService).updateProfile(email, "NewFirst", "NewLast");
     verify(userMapper).toUserProfileDto(updatedUser);
+  }
+
+  @Test
+  void shouldRejectUnauthenticatedGetUserProfile() throws Exception {
+    mockMvc
+        .perform(get("/api/auth/users/me").accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void shouldRejectUnauthenticatedUpdateUserProfile() throws Exception {
+    mockMvc
+        .perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(
+                    "/api/auth/users/me")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"firstName\":\"NewFirst\",\"lastName\":\"NewLast\"}")
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isUnauthorized());
   }
 }

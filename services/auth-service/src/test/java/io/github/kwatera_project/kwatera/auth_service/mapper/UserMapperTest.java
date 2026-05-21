@@ -26,7 +26,6 @@ class UserMapperTest {
     UserProfileDto dto = userMapper.toUserProfileDto(user);
 
     assertThat(dto).isNotNull();
-    assertThat(dto.id()).isEqualTo(id);
     assertThat(dto.username()).isEqualTo("john");
     assertThat(dto.firstName()).isEqualTo("John");
     assertThat(dto.lastName()).isEqualTo("Doe");
