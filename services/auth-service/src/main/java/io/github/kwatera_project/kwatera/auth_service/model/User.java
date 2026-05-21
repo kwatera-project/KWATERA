@@ -15,21 +15,19 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-@Entity // Mapping to a table in the DB.
+@Entity
 @Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
-@EntityListeners(
-    AuditingEntityListener.class) // Enables auto-completion of createdAt, updatedAt fields.
+@EntityListeners(AuditingEntityListener.class)
 public class User implements UserDetails {
-  /// A class representing the user table in the database.
-  @Id // Master key.
-  @GeneratedValue(strategy = GenerationType.UUID) // Automatically generates UUID.
+  @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
   @Column(nullable = false)
-  @Enumerated(EnumType.STRING) // Saved in the database as text.
+  @Enumerated(EnumType.STRING)
   private Role role;
 
   @Column(nullable = false, unique = true)
@@ -38,16 +36,21 @@ public class User implements UserDetails {
   @Column(nullable = false, unique = true)
   private String email;
 
+  @Column(name = "first_name")
+  private String firstName;
+
+  @Column(name = "last_name")
+  private String lastName;
+
   @Column(nullable = false)
   private String password;
 
   @Column(name = "created_at", nullable = false, updatable = false)
-  @CreatedDate // The field is set automatically when the record is created and cannot be changed
-  // later.
+  @CreatedDate
   private Instant createdAt;
 
   @Column(name = "updated_at")
-  @LastModifiedDate // Field updated automatically whenever a record changes.
+  @LastModifiedDate
   private Instant updatedAt;
 
   @Override

@@ -59,6 +59,8 @@ class AuthControllerTest {
     request.setEmail("jan@test.com");
     request.setPassword("123");
     request.setRole(Role.GUEST);
+    request.setFirstName("Jan");
+    request.setLastName("Kowalski");
 
     mockMvc
         .perform(
@@ -68,7 +70,7 @@ class AuthControllerTest {
         .andExpect(status().isOk())
         .andExpect(content().string("User registered"));
 
-    verify(userService).register("jan", "jan@test.com", Role.GUEST, "123");
+    verify(userService).register("jan", "jan@test.com", Role.GUEST, "123", "Jan", "Kowalski");
   }
 
   @Test
@@ -78,10 +80,12 @@ class AuthControllerTest {
     request.setEmail("jan@test.com");
     request.setPassword("123");
     request.setRole(Role.GUEST);
+    request.setFirstName("Jan");
+    request.setLastName("Kowalski");
 
     doThrow(new ResponseStatusException(CONFLICT, "User already exists"))
         .when(userService)
-        .register("jan", "jan@test.com", Role.GUEST, "123");
+        .register("jan", "jan@test.com", Role.GUEST, "123", "Jan", "Kowalski");
 
     mockMvc
         .perform(
@@ -108,6 +112,8 @@ class AuthControllerTest {
     request.setEmail("test@test.com");
     request.setPassword("123456");
     request.setRole(Role.GUEST);
+    request.setFirstName("Jan");
+    request.setLastName("Kowalski");
 
     mockMvc
         .perform(
@@ -116,7 +122,7 @@ class AuthControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
         .andExpect(status().isBadRequest());
 
-    verify(userService, never()).register(any(), any(), any(), any());
+    verify(userService, never()).register(any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -126,6 +132,8 @@ class AuthControllerTest {
     request.setEmail("not-email");
     request.setPassword("123456");
     request.setRole(Role.GUEST);
+    request.setFirstName("Jan");
+    request.setLastName("Kowalski");
 
     mockMvc
         .perform(
@@ -142,6 +150,8 @@ class AuthControllerTest {
     request.setEmail("test@test.com");
     request.setPassword("123456");
     request.setRole(null);
+    request.setFirstName("Jan");
+    request.setLastName("Kowalski");
 
     mockMvc
         .perform(
