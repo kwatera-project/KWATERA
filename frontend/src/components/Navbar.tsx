@@ -47,6 +47,15 @@ export default function Navbar() {
                     Catalog
                 </Link>
 
+                {isLoggedIn && (
+                    <Link
+                        to="/profile"
+                        className="hover:text-[rgb(var(--color-burgundy))] transition"
+                    >
+                        Profile
+                    </Link>
+                )}
+
                 {isLoggedIn && userRoles.includes("ROLE_GUEST") && (
                     <Link
                         to="/my-reservations"

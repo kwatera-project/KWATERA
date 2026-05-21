@@ -26,14 +26,13 @@ public class SecurityConfig {
   @Bean
   SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter)
       throws Exception {
-    return http.csrf(
-            csrf ->
-                csrf.disable()) // NOSONAR: CSRF is disabled because the API is stateless and uses
-        // JWT tokens
+    return http.csrf(csrf -> csrf.disable())
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers("/api/auth/**")
+                auth.requestMatchers("/api/auth/users/me")
+                    .authenticated()
+                    .requestMatchers("/api/auth/**")
                     .permitAll()
                     .requestMatchers(
                         "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**")

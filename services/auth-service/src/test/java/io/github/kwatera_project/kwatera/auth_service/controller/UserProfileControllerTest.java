@@ -43,13 +43,17 @@ class UserProfileControllerTest {
     // Given
     String email = "test@mail.com";
     String username = "test";
+    java.util.UUID id = java.util.UUID.randomUUID();
 
     User user = new User();
+    user.setId(id);
     user.setUsername(username);
     user.setEmail(email);
+    user.setFirstName("First");
+    user.setLastName("Last");
     user.setRole(Role.GUEST);
 
-    UserProfileDto dto = new UserProfileDto(email, username);
+    UserProfileDto dto = new UserProfileDto(id, username, "First", "Last", email, Role.GUEST);
 
     when(userService.getUserByEmail(email)).thenReturn(user);
     when(userMapper.toUserProfileDto(user)).thenReturn(dto);
@@ -57,12 +61,60 @@ class UserProfileControllerTest {
     // When + Then
     mockMvc
         .perform(
-            get("/api/user/me").with(user(email).roles("GUEST")).accept(MediaType.APPLICATION_JSON))
+            get("/api/auth/users/me")
+                .with(user(email).roles("GUEST"))
+                .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        .andExpect(jsonPath("$.email").value(email));
+        .andExpect(jsonPath("$.id").value(id.toString()))
+        .andExpect(jsonPath("$.username").value(username))
+        .andExpect(jsonPath("$.firstName").value("First"))
+        .andExpect(jsonPath("$.lastName").value("Last"))
+        .andExpect(jsonPath("$.email").value(email))
+        .andExpect(jsonPath("$.role").value("GUEST"));
 
     verify(userService).getUserByEmail(email);
     verify(userMapper).toUserProfileDto(user);
+  }
+
+  @Test
+  void shouldUpdateUserProfile() throws Exception {
+    // Given
+    String email = "test@mail.com";
+    String username = "test";
+    java.util.UUID id = java.util.UUID.randomUUID();
+
+    User updatedUser = new User();
+    updatedUser.setId(id);
+    updatedUser.setUsername(username);
+    updatedUser.setEmail(email);
+    updatedUser.setFirstName("NewFirst");
+    updatedUser.setLastName("NewLast");
+    updatedUser.setRole(Role.GUEST);
+
+    UserProfileDto dto = new UserProfileDto(id, username, "NewFirst", "NewLast", email, Role.GUEST);
+
+    when(userService.updateProfile(email, "NewFirst", "NewLast")).thenReturn(updatedUser);
+    when(userMapper.toUserProfileDto(updatedUser)).thenReturn(dto);
+
+    // When + Then
+    mockMvc
+        .perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/auth/users/me")
+                .with(user(email).roles("GUEST"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"firstName\":\"NewFirst\",\"lastName\":\"NewLast\"}")
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.id").value(id.toString()))
+        .andExpect(jsonPath("$.username").value(username))
+        .andExpect(jsonPath("$.firstName").value("NewFirst"))
+        .andExpect(jsonPath("$.lastName").value("NewLast"))
+        .andExpect(jsonPath("$.email").value(email))
+        .andExpect(jsonPath("$.role").value("GUEST"));
+
+    verify(userService).updateProfile(email, "NewFirst", "NewLast");
+    verify(userMapper).toUserProfileDto(updatedUser);
   }
 }
