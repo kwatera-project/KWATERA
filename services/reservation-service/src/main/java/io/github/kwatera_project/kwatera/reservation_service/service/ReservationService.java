@@ -243,25 +243,23 @@ public class ReservationService {
     }
   }
 
-    @Transactional
-    public void handleSettlementStatusUpdate(
-            UUID reservationId,
-            SettlementStatus settlementStatus
-    ) {
-        Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new RuntimeException("Reservation not found"));
+  @Transactional
+  public void handleSettlementStatusUpdate(UUID reservationId, SettlementStatus settlementStatus) {
+    Reservation reservation =
+        reservationRepository
+            .findById(reservationId)
+            .orElseThrow(() -> new RuntimeException("Reservation not found"));
 
-        switch (settlementStatus) {
+    switch (settlementStatus) {
+      case PAID -> reservation.setStatus(ReservationStatus.COMPLETED);
 
-            case PAID -> reservation.setStatus(ReservationStatus.COMPLETED);
+      case PARTIALLY_PAID -> reservation.setStatus(ReservationStatus.CONFIRMED);
 
-            case PARTIALLY_PAID -> reservation.setStatus(ReservationStatus.CONFIRMED);
-
-            case ISSUED -> {
-                return;
-            }
-        }
-
-        reservationRepository.save(reservation);
+      case ISSUED -> {
+        return;
+      }
     }
+
+    reservationRepository.save(reservation);
+  }
 }

@@ -17,7 +17,8 @@
             **/BillingServiceApplication.java,
             **/config/JpaConfig.java,
             **/model/**,
-            **/dto/**
+            **/dto/**,
+            **/client/**/*.class
         </sonar.coverage.exclusions>
     </properties>
 
@@ -131,6 +132,7 @@
                         <exclude>**/config/JpaConfig.class</exclude>
                         <exclude>**/model/**/*.class</exclude>
                         <exclude>**/dto/**/*.class</exclude>
+                        <exclude>**/client/**/*.class</exclude>
                     </excludes>
                 </configuration>
             </plugin>

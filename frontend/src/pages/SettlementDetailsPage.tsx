@@ -25,18 +25,6 @@ export default function SettlementDetailsPage() {
             .finally(() => setLoading(false));
     }, [id]);
 
-    useEffect(() => {
-        if (!settlement?.reservationId) return;
-
-        getUnitSettlementItemsType(settlement.reservationId)
-            .then((types) => {
-                if (!types) return;
-
-                loadPaymentButtons(settlement, types);
-            });
-
-    }, [settlement]);
-
     type PaymentButton = {
         type: string;
         quantity: number;
@@ -153,6 +141,18 @@ export default function SettlementDetailsPage() {
             console.error(message);
         }
     }
+
+    useEffect(() => {
+        if (!settlement?.reservationId) return;
+
+        getUnitSettlementItemsType(settlement.reservationId)
+            .then((types) => {
+                if (!types) return;
+
+                loadPaymentButtons(settlement, types);
+            });
+
+    }, [settlement]);
 
     const handlePayment = async (reservationId: string,
                                  settlementType: string,

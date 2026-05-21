@@ -6,11 +6,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.github.kwatera_project.kwatera.billing_service.client.PropertyClient;
+import io.github.kwatera_project.kwatera.billing_service.dto.SettlementItemDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto;
+import io.github.kwatera_project.kwatera.billing_service.dto.UnitSettlementItemDto;
 import io.github.kwatera_project.kwatera.billing_service.event.SettlementEventPublisher;
-import io.github.kwatera_project.kwatera.billing_service.model.Settlement;
-import io.github.kwatera_project.kwatera.billing_service.model.SettlementItem;
-import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
+import io.github.kwatera_project.kwatera.billing_service.model.*;
 import io.github.kwatera_project.kwatera.billing_service.repository.SettlementItemRepository;
 import io.github.kwatera_project.kwatera.billing_service.repository.SettlementRepository;
 import java.math.BigDecimal;
@@ -22,6 +22,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
 class SettlementServiceTest {
@@ -249,5 +251,155 @@ class SettlementServiceTest {
 
     assertEquals(BigDecimal.ZERO, settlement.getDepositAmount());
     assertEquals(BigDecimal.ZERO, settlement.getUtilitiesAmount());
+  }
+
+  @Test
+  void shouldThrowWhenSettlementNotFound() {
+    UUID reservationId = UUID.randomUUID();
+
+    when(settlementRepository.findByReservationId(reservationId)).thenReturn(Optional.empty());
+
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () ->
+                settlementService.getSettlementItemInfoByType(
+                    reservationId, SettlementItemType.ACCOMMODATION));
+
+    assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+  }
+
+  @Test
+  void shouldThrowWhenSettlementItemNotFound() {
+    UUID reservationId = UUID.randomUUID();
+    UUID settlementId = UUID.randomUUID();
+
+    Settlement settlement = new Settlement();
+    settlement.setId(settlementId);
+
+    when(settlementRepository.findByReservationId(reservationId))
+        .thenReturn(Optional.of(settlement));
+
+    when(settlementItemRepository.findBySettlementIdAndType(
+            settlementId, SettlementItemType.ACCOMMODATION))
+        .thenReturn(Optional.empty());
+
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () ->
+                settlementService.getSettlementItemInfoByType(
+                    reservationId, SettlementItemType.ACCOMMODATION));
+
+    assertEquals("Settlement item not found", ex.getReason());
+  }
+
+  private boolean invokeHasAllRequiredItems(
+      SettlementService service, Settlement settlement, UUID unitId) {
+
+    try {
+      var method =
+          SettlementService.class.getDeclaredMethod(
+              "hasAllRequiredItems", Settlement.class, UUID.class);
+
+      method.setAccessible(true);
+
+      return (boolean) method.invoke(service, settlement, unitId);
+
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Test
+  void shouldReturnSettlementItemByType() {
+    UUID reservationId = UUID.randomUUID();
+    UUID settlementId = UUID.randomUUID();
+
+    Settlement settlement = new Settlement();
+    settlement.setId(settlementId);
+
+    SettlementItem item = new SettlementItem();
+    item.setId(UUID.randomUUID());
+    item.setSettlementId(settlementId);
+    item.setType(SettlementItemType.ACCOMMODATION);
+
+    when(settlementRepository.findByReservationId(reservationId))
+        .thenReturn(Optional.of(settlement));
+
+    when(settlementItemRepository.findBySettlementIdAndType(
+            settlementId, SettlementItemType.ACCOMMODATION))
+        .thenReturn(Optional.of(item));
+
+    SettlementItemDto result =
+        settlementService.getSettlementItemInfoByType(
+            reservationId, SettlementItemType.ACCOMMODATION);
+
+    assertNotNull(result);
+  }
+
+  @Test
+  void shouldReturnTrueWhenAllRequiredItemsExist() {
+    UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    Settlement settlement = new Settlement();
+    settlement.setId(settlementId);
+
+    when(propertyClient.getUnitSettlementItems(unitId))
+        .thenReturn(
+            List.of(
+                new UnitSettlementItemDto(
+                    UUID.randomUUID(),
+                    unitId,
+                    SettlementItemType.WATER,
+                    BigDecimal.valueOf(20),
+                    MeasurementUnit.M3,
+                    BillingType.PER_USAGE)));
+
+    SettlementItem item = new SettlementItem();
+    item.setType(SettlementItemType.WATER);
+
+    when(settlementItemRepository.findBySettlementId(settlementId)).thenReturn(List.of(item));
+
+    boolean result = invokeHasAllRequiredItems(settlementService, settlement, unitId);
+
+    assertTrue(result);
+  }
+
+  @Test
+  void shouldReturnFalseWhenMissingRequiredItems() {
+    UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    Settlement settlement = new Settlement();
+    settlement.setId(settlementId);
+
+    when(propertyClient.getUnitSettlementItems(unitId))
+        .thenReturn(
+            List.of(
+                new UnitSettlementItemDto(
+                    UUID.randomUUID(),
+                    unitId,
+                    SettlementItemType.WATER,
+                    BigDecimal.valueOf(20),
+                    MeasurementUnit.M3,
+                    BillingType.PER_USAGE),
+                new UnitSettlementItemDto(
+                    UUID.randomUUID(),
+                    unitId,
+                    SettlementItemType.DEPOSIT,
+                    BigDecimal.valueOf(50),
+                    null,
+                    BillingType.FIXED)));
+
+    SettlementItem item = new SettlementItem();
+    item.setType(SettlementItemType.WATER);
+
+    when(settlementItemRepository.findBySettlementId(settlementId)).thenReturn(List.of(item));
+
+    boolean result = invokeHasAllRequiredItems(settlementService, settlement, unitId);
+
+    assertFalse(result);
   }
 }

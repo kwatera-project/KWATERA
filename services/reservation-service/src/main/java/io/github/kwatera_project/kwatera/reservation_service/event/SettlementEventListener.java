@@ -10,27 +10,21 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class SettlementEventListener {
-    private final ReservationService reservationService;
-    private final ObjectMapper objectMapper;
+  private final ReservationService reservationService;
+  private final ObjectMapper objectMapper;
 
-    @KafkaListener(
-            topics = "payment-status-changed",
-            groupId = "reservation-group"
-    )
-    public void handleSettlementStatusChanged(byte[] message) {
-        try {
+  @KafkaListener(topics = "payment-status-changed", groupId = "reservation-group")
+  public void handleSettlementStatusChanged(byte[] message) {
+    try {
 
-            SettlementStatusChangedEvent event =
-                    objectMapper.readValue(message, SettlementStatusChangedEvent.class);
+      SettlementStatusChangedEvent event =
+          objectMapper.readValue(message, SettlementStatusChangedEvent.class);
 
-            reservationService.handleSettlementStatusUpdate(
-                    event.reservationId(),
-                    event.settlementStatus()
-            );
+      reservationService.handleSettlementStatusUpdate(
+          event.reservationId(), event.settlementStatus());
 
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to deserialize Kafka event", e);
-        }
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to deserialize Kafka event", e);
     }
-
+  }
 }

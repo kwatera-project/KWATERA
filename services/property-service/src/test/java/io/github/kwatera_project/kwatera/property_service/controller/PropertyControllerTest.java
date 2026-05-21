@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import io.github.kwatera_project.kwatera.property_service.dto.PropertyDto;
 import io.github.kwatera_project.kwatera.property_service.dto.UnitDto;
+import io.github.kwatera_project.kwatera.property_service.dto.UnitSettlementItemDto;
 import io.github.kwatera_project.kwatera.property_service.service.PropertyService;
 import java.math.BigDecimal;
 import java.util.List;
@@ -92,5 +93,21 @@ class PropertyControllerTest {
 
     assertEquals(2, result.size());
     assertEquals("img1.jpg", result.get(0));
+  }
+
+  @Test
+  void getUnitSettlementItems_shouldReturnItems() {
+    UUID unitId = UUID.randomUUID();
+
+    UnitSettlementItemDto item = mock(UnitSettlementItemDto.class);
+
+    when(service.getUnitSettlementItems(unitId)).thenReturn(List.of(item));
+
+    var result = controller.getUnitSettlementItems(unitId);
+
+    assertEquals(1, result.size());
+    assertSame(item, result.get(0));
+
+    verify(service, times(1)).getUnitSettlementItems(unitId);
   }
 }
