@@ -5,6 +5,7 @@ import type {SettlementDetails} from "../types/settlement";
 import {getSettlementItemInfoByType} from "../api/settlementApi.ts";
 import {GATEWAY_BASE_URL} from "../api/apiConfig.ts";
 import {getReservationDetails} from "../api/reservationApi.ts";
+import { useCallback } from "react";
 
 export default function SettlementDetailsPage() {
     const {id} = useParams();
@@ -31,10 +32,14 @@ export default function SettlementDetailsPage() {
         unitPrice: number;
     };
 
+    type SettlementItem = {
+        settlementItemType: string;
+    };
+
     const [paymentButtons, setPaymentButtons] =
         useState<PaymentButton[]>([]);
 
-    const loadPaymentButtons = async (
+    const loadPaymentButtons = useCallback (async (
         settlement: SettlementDetails,
         settlementItemTypes: string[]
     ) => {
@@ -111,7 +116,7 @@ export default function SettlementDetailsPage() {
         }
 
         setPaymentButtons(buttons);
-    };
+    }, []);
 
     const getUnitSettlementItemsType = async (reservationId: string) => {
         try {
@@ -133,7 +138,7 @@ export default function SettlementDetailsPage() {
             const data = await unitSettlementItemsRes.json();
 
             return data.map(
-                (item: any) => item.settlementItemType
+                (item: SettlementItem) => item.settlementItemType
             );
 
         } catch (err: unknown) {
