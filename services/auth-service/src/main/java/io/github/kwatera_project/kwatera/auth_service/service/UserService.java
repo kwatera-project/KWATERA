@@ -25,7 +25,13 @@ public class UserService {
                     HttpStatus.NOT_FOUND, "The user account has been deleted or inactivated"));
   }
 
-  public void register(String username, String email, Role role, String password, String firstName, String lastName) {
+  public void register(
+      String username,
+      String email,
+      Role role,
+      String password,
+      String firstName,
+      String lastName) {
     if (userRepository.findByUsername(username).isPresent()) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "User already exists");
     }

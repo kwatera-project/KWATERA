@@ -20,8 +20,9 @@ export default function ProfilePage() {
             })
             .catch((err) => {
                 console.error(err);
-                setError(err.message || "Failed to load profile details.");
-                loading && setLoading(false);
+                const errMsg = err instanceof Error ? err.message : String(err);
+                setError(errMsg || "Failed to load profile details.");
+                setLoading(false);
             });
     }, []);
 
@@ -50,9 +51,10 @@ export default function ProfilePage() {
             const updated = await updateUserProfile(editFirstName.trim(), editLastName.trim());
             setProfile(updated);
             setIsEditing(false);
-        } catch (err: any) {
+        } catch (err) {
             console.error(err);
-            setSaveError(err.message || "Failed to update profile details.");
+            const errMsg = err instanceof Error ? err.message : "Failed to update profile details.";
+            setSaveError(errMsg);
         } finally {
             setSaving(false);
         }

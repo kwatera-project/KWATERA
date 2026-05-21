@@ -30,8 +30,7 @@ public class UserProfileController {
 
   @PutMapping("/me")
   public ResponseEntity<UserProfileDto> updateUserProfile(
-      final Authentication authentication,
-      @Valid @RequestBody final UserProfileUpdateDto request) {
+      final Authentication authentication, @Valid @RequestBody final UserProfileUpdateDto request) {
     final var user =
         userService.updateProfile(
             authentication.getName(), request.firstName(), request.lastName());

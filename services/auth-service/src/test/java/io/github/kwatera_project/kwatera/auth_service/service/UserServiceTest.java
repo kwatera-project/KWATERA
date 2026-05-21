@@ -93,7 +93,8 @@ class UserServiceTest {
   void shouldThrow409WhenUsernameExists() {
     when(userRepository.findByUsername("john")).thenReturn(Optional.of(new User()));
 
-    assertThatThrownBy(() -> userService.register("john", "john@mail.com", Role.GUEST, "pass", "John", "Doe"))
+    assertThatThrownBy(
+            () -> userService.register("john", "john@mail.com", Role.GUEST, "pass", "John", "Doe"))
         .isInstanceOf(ResponseStatusException.class)
         .satisfies(
             ex -> {
@@ -108,7 +109,8 @@ class UserServiceTest {
   void shouldRejectAdminRole() {
     when(userRepository.findByUsername("john")).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> userService.register("john", "john@mail.com", Role.ADMIN, "pass", "John", "Doe"))
+    assertThatThrownBy(
+            () -> userService.register("john", "john@mail.com", Role.ADMIN, "pass", "John", "Doe"))
         .isInstanceOf(ResponseStatusException.class)
         .satisfies(
             ex -> {

@@ -100,7 +100,8 @@ class UserProfileControllerTest {
     // When + Then
     mockMvc
         .perform(
-            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/auth/users/me")
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(
+                    "/api/auth/users/me")
                 .with(user(email).roles("GUEST"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"firstName\":\"NewFirst\",\"lastName\":\"NewLast\"}")
