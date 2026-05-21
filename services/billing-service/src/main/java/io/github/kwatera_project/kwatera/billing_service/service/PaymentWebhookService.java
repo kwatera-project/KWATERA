@@ -4,13 +4,11 @@ import com.stripe.exception.EventDataObjectDeserializationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
+import com.stripe.model.PaymentIntent;
 import com.stripe.model.checkout.Session;
 import io.github.kwatera_project.kwatera.billing_service.client.StripeClient;
+import io.github.kwatera_project.kwatera.billing_service.dto.PaymentMetadataDto;
 import io.github.kwatera_project.kwatera.billing_service.exception.WebhookProcessingException;
-import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
-import java.math.BigDecimal;
-import java.util.Map;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -23,6 +21,8 @@ public class PaymentWebhookService {
 
   private final StripeClient stripeClient;
 
+  private final PaymentTransactionService paymentTransactionService;
+
   @Value("${stripe.webhook.secret}")
   private String stripeWebhookSecret;
 
@@ -30,55 +30,137 @@ public class PaymentWebhookService {
 
     Event event = stripeClient.constructEvent(payload, signature, stripeWebhookSecret);
 
-    if ("checkout.session.completed".equals(event.getType())) {
+    String eventType = event.getType();
 
-      EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
-      Session sessionData = null;
+    if ("checkout.session.completed".equals(eventType)) {
+      handleCheckoutCompleted(event);
+    }
 
-      sessionData =
-          dataObjectDeserializer
-              .getObject()
-              .map(Session.class::cast)
-              .orElseGet(
-                  () -> {
-                    try {
-                      return (Session) dataObjectDeserializer.deserializeUnsafe();
-                    } catch (EventDataObjectDeserializationException e) {
-                      throw new WebhookProcessingException(
-                          "Failed to deserialize Stripe event data object", e);
-                    }
-                  });
+    if ("checkout.session.expired".equals(eventType)) {
+      handleCheckoutExpired(event);
+    }
 
-      Session session = stripeClient.retrieveSession(sessionData.getId());
-
-      Map<String, String> metadata = session.getMetadata();
-      if (metadata == null) {
-        throw new WebhookProcessingException("Metadata is missing entirely");
-      }
-
-      String settlementIdStr = session.getMetadata().get("settlementId");
-      if (settlementIdStr == null || settlementIdStr.isEmpty()) {
-        throw new WebhookProcessingException("Missing settlementId in metadata");
-      }
-
-      UUID unitId = UUID.fromString(metadata.get("unitId"));
-      UUID settlementId = UUID.fromString(settlementIdStr);
-      SettlementItemType type = SettlementItemType.valueOf(session.getMetadata().get("type"));
-      String description = session.getMetadata().get("description");
-
-      BigDecimal quantity = parseBigDecimal(metadata.get("quantity"));
-      BigDecimal unitPrice = parseBigDecimal(metadata.get("unitPrice"));
-
-      settlementService.registerPayment(
-          settlementId, unitId, type, description, quantity, unitPrice);
+    if ("payment_intent.payment_failed".equals(eventType)) {
+      handlePaymentFailed(event);
     }
   }
 
-  private BigDecimal parseBigDecimal(String val) {
+  private Session deserializeSession(Event event) {
+
+    EventDataObjectDeserializer deserializer = event.getDataObjectDeserializer();
+
+    return deserializer
+        .getObject()
+        .map(Session.class::cast)
+        .orElseGet(
+            () -> {
+              try {
+                return (Session) deserializer.deserializeUnsafe();
+              } catch (EventDataObjectDeserializationException e) {
+                throw new WebhookProcessingException("Failed to deserialize session", e);
+              }
+            });
+  }
+
+  private PaymentIntent deserializePaymentIntent(Event event) {
+
+    EventDataObjectDeserializer deserializer = event.getDataObjectDeserializer();
+
+    return deserializer
+        .getObject()
+        .map(PaymentIntent.class::cast)
+        .orElseGet(
+            () -> {
+              try {
+                return (PaymentIntent) deserializer.deserializeUnsafe();
+              } catch (EventDataObjectDeserializationException e) {
+                throw new WebhookProcessingException("Failed to deserialize payment intent", e);
+              }
+            });
+  }
+
+  private void handleCheckoutCompleted(Event event) throws StripeException {
+
+    Session eventSession = deserializeSession(event);
+
+    Session session = stripeClient.retrieveSession(eventSession.getId());
+
+    PaymentMetadataDto metadata = PaymentMetadataDto.from(session.getMetadata());
+    String sessionId = session.getId();
+
     try {
-      return (val != null) ? new BigDecimal(val) : BigDecimal.ZERO;
-    } catch (NumberFormatException _) {
-      throw new WebhookProcessingException("Invalid decimal: " + val);
+      settlementService.registerPayment(
+          metadata.settlementId(),
+          metadata.unitId(),
+          metadata.type(),
+          metadata.description(),
+          metadata.quantity(),
+          metadata.unitPrice());
+
+      paymentTransactionService.saveSuccessTransaction(
+          metadata.settlementId(),
+          metadata.unitId(),
+          metadata.type(),
+          metadata.description(),
+          metadata.quantity(),
+          metadata.unitPrice(),
+          sessionId);
+    } catch (Exception e) {
+
+      paymentTransactionService.saveFailedTransaction(
+          metadata.settlementId(),
+          metadata.unitId(),
+          metadata.type(),
+          metadata.description(),
+          metadata.quantity(),
+          metadata.unitPrice(),
+          sessionId,
+          e.getMessage());
+
+      throw e;
     }
+  }
+
+  private void handleCheckoutExpired(Event event) throws StripeException {
+
+    Session eventSession = deserializeSession(event);
+
+    Session session = stripeClient.retrieveSession(eventSession.getId());
+
+    PaymentMetadataDto metadata = PaymentMetadataDto.from(session.getMetadata());
+    String sessionId = session.getId();
+
+    paymentTransactionService.saveFailedTransaction(
+        metadata.settlementId(),
+        metadata.unitId(),
+        metadata.type(),
+        metadata.description(),
+        metadata.quantity(),
+        metadata.unitPrice(),
+        sessionId,
+        "Checkout session expired");
+  }
+
+  private void handlePaymentFailed(Event event) throws StripeException {
+
+    PaymentIntent paymentIntent = deserializePaymentIntent(event);
+
+    String reason =
+        paymentIntent.getLastPaymentError() != null
+            ? paymentIntent.getLastPaymentError().getMessage()
+            : "UNKNOWN_ERROR";
+
+    PaymentMetadataDto metadata = PaymentMetadataDto.from(paymentIntent.getMetadata());
+    String sessionId = paymentIntent.getId();
+
+    paymentTransactionService.saveFailedTransaction(
+        metadata.settlementId(),
+        metadata.unitId(),
+        metadata.type(),
+        metadata.description(),
+        metadata.quantity(),
+        metadata.unitPrice(),
+        sessionId,
+        reason);
   }
 }
