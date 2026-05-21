@@ -29,4 +29,22 @@ class DtoTest {
     assertThat(dto.firstName()).isEqualTo("John");
     assertThat(dto.lastName()).isEqualTo("Doe");
   }
+
+  @Test
+  void testRegisterRequest() {
+    RegisterRequest request = new RegisterRequest();
+    request.setUsername("john");
+    request.setEmail("john@example.com");
+    request.setRole(Role.OWNER);
+    request.setPassword("pass");
+    request.setFirstName("John");
+    request.setLastName("Doe");
+
+    assertThat(request.getUsername()).isEqualTo("john");
+    assertThat(request.getEmail()).isEqualTo("john@example.com");
+    assertThat(request.getRole()).isEqualTo(Role.OWNER);
+    assertThat(request.getPassword()).isEqualTo("pass");
+    assertThat(request.getFirstName()).isEqualTo("John");
+    assertThat(request.getLastName()).isEqualTo("Doe");
+  }
 }
