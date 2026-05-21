@@ -181,4 +181,17 @@ class PropertyServiceTest {
     assertEquals(1, result.size());
     assertEquals("img1.jpg", result.get(0));
   }
+
+  @Test
+  void getAllUnitIds_shouldReturnUnitIds() {
+    Unit unit = new Unit();
+    unit.setId(UUID.randomUUID());
+
+    when(unitRepository.findAll()).thenReturn(List.of(unit));
+
+    var result = propertyService.getAllUnitIds();
+
+    assertEquals(1, result.size());
+    assertEquals(unit.getId(), result.get(0));
+  }
 }

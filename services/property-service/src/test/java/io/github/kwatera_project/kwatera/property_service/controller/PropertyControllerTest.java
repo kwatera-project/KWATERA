@@ -93,4 +93,16 @@ class PropertyControllerTest {
     assertEquals(2, result.size());
     assertEquals("img1.jpg", result.get(0));
   }
+
+  @Test
+  void getAllUnitIds_shouldReturnUnitIds() {
+    UUID unitId = UUID.randomUUID();
+
+    when(service.getAllUnitIds()).thenReturn(List.of(unitId));
+
+    var result = controller.getAllUnitIds();
+
+    assertEquals(1, result.size());
+    assertEquals(unitId, result.get(0));
+  }
 }
