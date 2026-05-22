@@ -184,9 +184,9 @@ class PropertyServiceTest {
     assertEquals(1, result.size());
     assertEquals("img1.jpg", result.get(0));
   }
-
+  
   @Test
-  void getAllUnitIds_shouldReturnIds() {
+  void getAllUnitIds_shouldReturnUnitIds() {
     Unit u1 = new Unit();
     u1.setId(UUID.randomUUID());
 
@@ -228,7 +228,7 @@ class PropertyServiceTest {
     assertNull(dto.measurementUnit());
     assertEquals(BillingType.FIXED, dto.billingType());
   }
-
+  
   @Test
   void getUnitSettlementItems_shouldReturnEmptyList() {
     UUID unitId = UUID.randomUUID();
