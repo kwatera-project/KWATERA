@@ -94,7 +94,7 @@ class PropertyControllerTest {
     assertEquals(2, result.size());
     assertEquals("img1.jpg", result.get(0));
   }
-  
+
   @Test
   void getUnitSettlementItems_shouldReturnItems() {
     UUID unitId = UUID.randomUUID();
