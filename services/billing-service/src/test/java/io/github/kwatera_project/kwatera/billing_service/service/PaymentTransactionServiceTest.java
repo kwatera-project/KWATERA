@@ -1,20 +1,20 @@
 package io.github.kwatera_project.kwatera.billing_service.service;
 
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import io.github.kwatera_project.kwatera.billing_service.dto.FailedTransactionCommand;
+import io.github.kwatera_project.kwatera.billing_service.model.PaymentTransaction;
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
 import io.github.kwatera_project.kwatera.billing_service.model.TransactionStatus;
 import io.github.kwatera_project.kwatera.billing_service.repository.PaymentTransactionRepository;
 import java.math.BigDecimal;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -25,64 +25,199 @@ class PaymentTransactionServiceTest {
   @InjectMocks private PaymentTransactionService service;
 
   @Test
-  void shouldSaveSuccessTransaction() {
-    UUID settlementId = UUID.randomUUID();
-    UUID unitId = UUID.randomUUID();
+  void shouldCreateProcessingTransactionWhenNotExists() {
 
-    when(repository.save(Mockito.any())).thenAnswer(invocation -> invocation.getArgument(0));
+    when(repository.findByStripeEventId("evt_1")).thenReturn(Optional.empty());
 
-    service.saveSuccessTransaction(
-        settlementId,
-        unitId,
-        SettlementItemType.ACCOMMODATION,
-        "desc",
-        BigDecimal.valueOf(2),
-        BigDecimal.valueOf(100),
-        "stripe-session-1");
+    boolean result =
+        service.createProcessingIfNotExists(
+            "evt_1",
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            SettlementItemType.ACCOMMODATION,
+            "desc",
+            BigDecimal.ONE,
+            BigDecimal.TEN,
+            "sess_1");
 
-    verify(repository)
-        .save(
-            argThat(
-                tx ->
-                    tx.getSettlementId().equals(settlementId)
-                        && tx.getUnitId().equals(unitId)
-                        && tx.getStatus() == TransactionStatus.SUCCESS
-                        && tx.getType() == SettlementItemType.ACCOMMODATION
-                        && tx.getAmount().equals(BigDecimal.valueOf(200))
-                        && tx.getStripeSessionId().equals("stripe-session-1")
-                        && tx.getFailureReason() == null));
+    assertTrue(result);
+    verify(repository, times(1)).save(any(PaymentTransaction.class));
   }
 
   @Test
-  void shouldSaveFailedTransaction() {
-    UUID settlementId = UUID.randomUUID();
-    UUID unitId = UUID.randomUUID();
+  void shouldNotCreateWhenEventAlreadyExists() {
 
-    when(repository.save(Mockito.any())).thenAnswer(invocation -> invocation.getArgument(0));
+    PaymentTransaction tx = new PaymentTransaction();
+    tx.setStripeEventId("evt_1");
+
+    when(repository.findByStripeEventId("evt_1")).thenReturn(Optional.of(tx));
+
+    boolean result =
+        service.createProcessingIfNotExists(
+            "evt_1",
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            SettlementItemType.ACCOMMODATION,
+            "desc",
+            BigDecimal.ONE,
+            BigDecimal.TEN,
+            "sess_1");
+
+    assertFalse(result);
+    verify(repository, never()).save(any());
+  }
+
+  @Test
+  void shouldNotOverrideSuccessStatus() {
+
+    PaymentTransaction tx = new PaymentTransaction();
+    tx.setStatus(TransactionStatus.SUCCESS);
+
+    when(repository.findByStripeEventId("evt_1")).thenReturn(Optional.of(tx));
+
+    service.markFailedIfAllowed("evt_1", "error");
+
+    assertEquals(TransactionStatus.SUCCESS, tx.getStatus());
+  }
+
+  @Test
+  void shouldMarkTransactionAsSuccess_whenProcessing() {
+
+    PaymentTransaction tx = new PaymentTransaction();
+    tx.setStripeEventId("evt_1");
+    tx.setStatus(TransactionStatus.PROCESSING);
+
+    when(repository.findByStripeEventId("evt_1")).thenReturn(Optional.of(tx));
+
+    service.markSuccessIfAllowed("evt_1");
+
+    assertEquals(TransactionStatus.SUCCESS, tx.getStatus());
+    verify(repository).save(tx);
+  }
+
+  @Test
+  void shouldNotChange_whenAlreadySuccess() {
+
+    PaymentTransaction tx = new PaymentTransaction();
+    tx.setStripeEventId("evt_1");
+    tx.setStatus(TransactionStatus.SUCCESS);
+
+    when(repository.findByStripeEventId("evt_1")).thenReturn(Optional.of(tx));
+
+    service.markSuccessIfAllowed("evt_1");
+
+    verify(repository, never()).save(any());
+    assertEquals(TransactionStatus.SUCCESS, tx.getStatus());
+  }
+
+  @Test
+  void shouldConvertFailedToSuccess() {
+
+    PaymentTransaction tx = new PaymentTransaction();
+    tx.setStripeEventId("evt_1");
+    tx.setStatus(TransactionStatus.FAILED);
+
+    when(repository.findByStripeEventId("evt_1")).thenReturn(Optional.of(tx));
+
+    service.markSuccessIfAllowed("evt_1");
+
+    assertEquals(TransactionStatus.SUCCESS, tx.getStatus());
+    verify(repository).save(tx);
+  }
+
+  @Test
+  void shouldThrowWhenNotFound() {
+
+    when(repository.findByStripeEventId("evt_1")).thenReturn(Optional.empty());
+
+    assertThrows(RuntimeException.class, () -> service.markSuccessIfAllowed("evt_1"));
+  }
+
+  @Test
+  void shouldCreateNewFailedTransaction_whenNotExists() {
 
     FailedTransactionCommand command =
         new FailedTransactionCommand(
-            settlementId,
-            unitId,
-            SettlementItemType.DEPOSIT,
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            SettlementItemType.ACCOMMODATION,
             "desc",
-            BigDecimal.valueOf(3),
-            BigDecimal.valueOf(50),
-            "stripe-session-2",
-            "Card declined");
+            BigDecimal.ONE,
+            BigDecimal.TEN,
+            "sess_1",
+            "payment failed");
 
-    service.saveFailedTransaction(command);
+    when(repository.findByStripeEventId("evt_1")).thenReturn(Optional.empty());
+
+    when(repository.save(any(PaymentTransaction.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    service.markFailed("evt_1", command);
 
     verify(repository)
         .save(
             argThat(
                 tx ->
-                    tx.getSettlementId().equals(settlementId)
-                        && tx.getUnitId().equals(unitId)
+                    tx.getStripeEventId().equals("evt_1")
                         && tx.getStatus() == TransactionStatus.FAILED
-                        && tx.getType() == SettlementItemType.DEPOSIT
-                        && tx.getAmount().equals(BigDecimal.valueOf(150))
-                        && tx.getStripeSessionId().equals("stripe-session-2")
-                        && tx.getFailureReason().equals("Card declined")));
+                        && tx.getFailureReason().equals("payment failed")));
+  }
+
+  @Test
+  void shouldUpdateExistingTransactionToFailed_whenNotSuccess() {
+
+    PaymentTransaction tx = new PaymentTransaction();
+    tx.setStripeEventId("evt_1");
+    tx.setStatus(TransactionStatus.PROCESSING);
+
+    when(repository.findByStripeEventId("evt_1")).thenReturn(Optional.of(tx));
+
+    when(repository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+    FailedTransactionCommand command =
+        new FailedTransactionCommand(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            SettlementItemType.ACCOMMODATION,
+            "desc",
+            BigDecimal.ONE,
+            BigDecimal.TEN,
+            "sess_1",
+            "error");
+
+    service.markFailed("evt_1", command);
+
+    verify(repository).save(tx);
+
+    assertEquals(TransactionStatus.FAILED, tx.getStatus());
+    assertEquals("error", tx.getFailureReason());
+  }
+
+  @Test
+  void shouldNotOverrideSuccessStatus_whenTransactionIsSuccess() {
+
+    PaymentTransaction tx = new PaymentTransaction();
+    tx.setStripeEventId("evt_1");
+    tx.setStatus(TransactionStatus.SUCCESS);
+
+    FailedTransactionCommand command =
+        new FailedTransactionCommand(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            SettlementItemType.ACCOMMODATION,
+            "desc",
+            BigDecimal.ONE,
+            BigDecimal.TEN,
+            "sess_1",
+            "ignored error");
+
+    when(repository.findByStripeEventId("evt_1")).thenReturn(Optional.of(tx));
+
+    service.markFailed("evt_1", command);
+
+    assertEquals(TransactionStatus.SUCCESS, tx.getStatus());
+    assertNull(tx.getFailureReason());
+
+    verify(repository, never()).save(tx);
   }
 }

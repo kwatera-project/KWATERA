@@ -402,4 +402,69 @@ class SettlementServiceTest {
 
     assertFalse(result);
   }
+
+  @Test
+  void shouldRegisterWaterPaymentWhenAccommodationAlreadyExists() {
+    UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    Settlement settlement = new Settlement();
+    settlement.setId(settlementId);
+
+    settlement.setAccommodationAmount(BigDecimal.valueOf(500));
+    settlement.setUtilitiesAmount(BigDecimal.ZERO);
+    settlement.setDepositAmount(BigDecimal.ZERO);
+    settlement.setDiscountAmount(BigDecimal.ZERO);
+
+    settlement.setAmountPaid(BigDecimal.valueOf(500));
+
+    settlement.setTotalAmount(BigDecimal.valueOf(500));
+    settlement.setBalanceDue(BigDecimal.ZERO);
+
+    when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
+
+    when(settlementItemRepository.save(any(SettlementItem.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    when(propertyClient.getUnitSettlementItems(unitId))
+        .thenReturn(
+            List.of(
+                new UnitSettlementItemDto(
+                    UUID.randomUUID(),
+                    unitId,
+                    SettlementItemType.WATER,
+                    BigDecimal.valueOf(20),
+                    MeasurementUnit.M3,
+                    BillingType.PER_USAGE)));
+
+    SettlementItem waterItem = new SettlementItem();
+    waterItem.setType(SettlementItemType.WATER);
+
+    when(settlementItemRepository.findBySettlementId(settlementId)).thenReturn(List.of(waterItem));
+
+    settlementService.registerPayment(
+        settlementId,
+        unitId,
+        SettlementItemType.WATER,
+        "Water usage",
+        BigDecimal.valueOf(5),
+        BigDecimal.valueOf(20));
+
+    // utilities updated: 20 * 5
+    assertEquals(BigDecimal.valueOf(100), settlement.getUtilitiesAmount());
+
+    // total recalculated: 500 + 100
+    assertEquals(BigDecimal.valueOf(600), settlement.getTotalAmount());
+
+    // paid recalculated: 500 + 100
+    assertEquals(BigDecimal.valueOf(600), settlement.getAmountPaid());
+
+    // fully paid again
+    assertEquals(BigDecimal.ZERO, settlement.getBalanceDue());
+
+    // all required items exist + fully paid
+    assertEquals(SettlementStatus.PAID, settlement.getStatus());
+
+    verify(settlementRepository).save(settlement);
+  }
 }

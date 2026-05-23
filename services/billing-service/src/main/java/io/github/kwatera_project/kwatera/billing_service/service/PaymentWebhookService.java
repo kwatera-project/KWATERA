@@ -10,6 +10,7 @@ import io.github.kwatera_project.kwatera.billing_service.client.StripeClient;
 import io.github.kwatera_project.kwatera.billing_service.dto.FailedTransactionCommand;
 import io.github.kwatera_project.kwatera.billing_service.dto.PaymentMetadataDto;
 import io.github.kwatera_project.kwatera.billing_service.exception.WebhookProcessingException;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -31,18 +32,21 @@ public class PaymentWebhookService {
 
     Event event = stripeClient.constructEvent(payload, signature, stripeWebhookSecret);
 
+    String eventId = event.getId();
     String eventType = event.getType();
 
-    if ("checkout.session.completed".equals(eventType)) {
-      handleCheckoutCompleted(event);
-    }
+    switch (eventType) {
+      case "checkout.session.completed" -> handleCheckoutCompleted(event, eventId);
 
-    if ("checkout.session.expired".equals(eventType)) {
-      handleCheckoutExpired(event);
-    }
+      case "checkout.session.expired" -> handleCheckoutExpired(event, eventId);
 
-    if ("payment_intent.payment_failed".equals(eventType)) {
-      handlePaymentFailed(event);
+      case "payment_intent.payment_failed" -> handlePaymentFailed(event, eventId);
+
+      case "checkout.session.async_payment_failed" -> handleCheckoutFailed(event, eventId);
+
+      default -> {
+        // ignore safely
+      }
     }
   }
 
@@ -80,61 +84,48 @@ public class PaymentWebhookService {
             });
   }
 
-  private void handleCheckoutCompleted(Event event) throws StripeException {
+  private void handleCheckoutCompleted(Event event, String eventId) throws StripeException {
 
     Session eventSession = deserializeSession(event);
-
     Session session = stripeClient.retrieveSession(eventSession.getId());
 
     PaymentMetadataDto metadata = PaymentMetadataDto.from(session.getMetadata());
-    String sessionId = session.getId();
 
-    try {
-      settlementService.registerPayment(
-          metadata.settlementId(),
-          metadata.unitId(),
-          metadata.type(),
-          metadata.description(),
-          metadata.quantity(),
-          metadata.unitPrice());
+    boolean created =
+        paymentTransactionService.createProcessingIfNotExists(
+            eventId,
+            metadata.settlementId(),
+            metadata.unitId(),
+            metadata.type(),
+            metadata.description(),
+            metadata.quantity(),
+            metadata.unitPrice(),
+            session.getId());
 
-      paymentTransactionService.saveSuccessTransaction(
-          metadata.settlementId(),
-          metadata.unitId(),
-          metadata.type(),
-          metadata.description(),
-          metadata.quantity(),
-          metadata.unitPrice(),
-          sessionId);
-    } catch (Exception e) {
-
-      FailedTransactionCommand command =
-          new FailedTransactionCommand(
-              metadata.settlementId(),
-              metadata.unitId(),
-              metadata.type(),
-              metadata.description(),
-              metadata.quantity(),
-              metadata.unitPrice(),
-              sessionId,
-              e.getMessage());
-
-      paymentTransactionService.saveFailedTransaction(command);
-
-      throw e;
+    if (!created) {
+      return; // already processed
     }
+
+    settlementService.registerPayment(
+        metadata.settlementId(),
+        metadata.unitId(),
+        metadata.type(),
+        metadata.description(),
+        metadata.quantity(),
+        metadata.unitPrice());
+
+    paymentTransactionService.markSuccessIfAllowed(eventId);
   }
 
-  private void handleCheckoutExpired(Event event) throws StripeException {
+  private void handleCheckoutExpired(Event event, String eventId) throws StripeException {
 
     Session eventSession = deserializeSession(event);
-
     Session session = stripeClient.retrieveSession(eventSession.getId());
 
     PaymentMetadataDto metadata = PaymentMetadataDto.from(session.getMetadata());
-    String sessionId = session.getId();
 
-    FailedTransactionCommand command =
+    paymentTransactionService.markFailed(
+        eventId,
         new FailedTransactionCommand(
             metadata.settlementId(),
             metadata.unitId(),
@@ -142,13 +133,30 @@ public class PaymentWebhookService {
             metadata.description(),
             metadata.quantity(),
             metadata.unitPrice(),
-            sessionId,
-            "Checkout session expired");
-
-    paymentTransactionService.saveFailedTransaction(command);
+            session.getId(),
+            "Checkout session expired"));
   }
 
-  private void handlePaymentFailed(Event event) {
+  private void handleCheckoutFailed(Event event, String eventId) {
+
+    Session session = deserializeSession(event);
+
+    PaymentMetadataDto metadata = PaymentMetadataDto.from(session.getMetadata());
+
+    paymentTransactionService.markFailed(
+        eventId,
+        new FailedTransactionCommand(
+            metadata.settlementId(),
+            metadata.unitId(),
+            metadata.type(),
+            metadata.description(),
+            metadata.quantity(),
+            metadata.unitPrice(),
+            session.getId(),
+            "Checkout payment failed"));
+  }
+
+  private void handlePaymentFailed(Event event, String eventId) {
 
     PaymentIntent paymentIntent = deserializePaymentIntent(event);
 
@@ -158,9 +166,13 @@ public class PaymentWebhookService {
             : "UNKNOWN_ERROR";
 
     PaymentMetadataDto metadata = PaymentMetadataDto.from(paymentIntent.getMetadata());
-    String sessionId = paymentIntent.getId();
+    String sessionId =
+        Optional.ofNullable(paymentIntent.getMetadata())
+            .map(m -> m.get("checkoutSessionId"))
+            .orElse(paymentIntent.getId());
 
-    FailedTransactionCommand command =
+    paymentTransactionService.markFailed(
+        eventId,
         new FailedTransactionCommand(
             metadata.settlementId(),
             metadata.unitId(),
@@ -169,8 +181,6 @@ public class PaymentWebhookService {
             metadata.quantity(),
             metadata.unitPrice(),
             sessionId,
-            reason);
-
-    paymentTransactionService.saveFailedTransaction(command);
+            reason));
   }
 }

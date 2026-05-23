@@ -1,6 +1,5 @@
 package io.github.kwatera_project.kwatera.billing_service.service;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 import com.stripe.model.Event;
@@ -8,11 +7,8 @@ import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.checkout.Session;
 import io.github.kwatera_project.kwatera.billing_service.client.StripeClient;
-import io.github.kwatera_project.kwatera.billing_service.dto.FailedTransactionCommand;
-import io.github.kwatera_project.kwatera.billing_service.exception.WebhookProcessingException;
-import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
-import java.math.BigDecimal;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,182 +44,143 @@ class PaymentWebhookServiceTest {
     ReflectionTestUtils.setField(paymentWebhookService, "stripeWebhookSecret", "test_secret");
   }
 
-  @Test
-  void shouldRegisterPayment_whenCheckoutSessionCompleted() throws Exception {
+  private Map<String, String> validMetadata() {
+    return Map.of(
+        "settlementId", UUID.randomUUID().toString(),
+        "unitId", UUID.randomUUID().toString(),
+        "type", "DEPOSIT",
+        "description", "desc",
+        "quantity", "1",
+        "unitPrice", "40");
+  }
 
-    // given
-    String payload = "payload";
-    String signature = "signature";
-
-    Map<String, String> metadata =
-        Map.of(
-            "settlementId", UUID.randomUUID().toString(),
-            "unitId", UUID.randomUUID().toString(),
-            "type", "DEPOSIT",
-            "description", "Test payment",
-            "quantity", "2",
-            "unitPrice", "10");
-
-    Session sessionFromEvent = new Session();
-    sessionFromEvent.setId("sess_123");
-
-    // Stripe event
-    when(stripeClient.constructEvent(payload, signature, "test_secret")).thenReturn(event);
-
-    when(event.getType()).thenReturn("checkout.session.completed");
+  private Event mockEvent(String id, String type) {
+    Event event = mock(Event.class);
+    when(event.getId()).thenReturn(id);
+    when(event.getType()).thenReturn(type);
     when(event.getDataObjectDeserializer()).thenReturn(deserializer);
-
-    when(deserializer.getObject()).thenReturn(java.util.Optional.of(sessionFromEvent));
-
-    when(stripeClient.retrieveSession("sess_123")).thenReturn(session);
-    when(session.getMetadata()).thenReturn(metadata);
-
-    when(session.getId()).thenReturn("sess_123");
-
-    // when
-    paymentWebhookService.processWebhook(payload, signature);
-
-    // then
-    verify(settlementService, times(1))
-        .registerPayment(
-            any(UUID.class),
-            any(UUID.class),
-            eq(SettlementItemType.DEPOSIT),
-            eq("Test payment"),
-            eq(new BigDecimal("2")),
-            eq(new BigDecimal("10")));
-
-    verify(paymentTransactionService)
-        .saveSuccessTransaction(
-            any(UUID.class),
-            any(UUID.class),
-            eq(SettlementItemType.DEPOSIT),
-            eq("Test payment"),
-            eq(new BigDecimal("2")),
-            eq(new BigDecimal("10")),
-            eq("sess_123"));
+    return event;
   }
 
   @Test
-  void shouldNotRegisterPayment_whenMetadataIsNull() throws Exception {
+  void shouldBeIdempotentAndNotProcessTwice() throws Exception {
 
-    String payload = "payload";
-    String signature = "signature";
+    Event event = mockEvent("evt_1", "checkout.session.completed");
 
-    Session sessionFromEvent = new Session();
-    sessionFromEvent.setId("sess_123");
+    Session session = mock(Session.class);
+    when(session.getId()).thenReturn("sess_1");
+    when(session.getMetadata()).thenReturn(validMetadata());
 
-    when(stripeClient.constructEvent(payload, signature, "test_secret")).thenReturn(event);
+    when(deserializer.getObject()).thenReturn(java.util.Optional.of(session));
+    when(stripeClient.constructEvent(anyString(), anyString(), anyString())).thenReturn(event);
+    when(stripeClient.retrieveSession("sess_1")).thenReturn(session);
 
-    when(event.getType()).thenReturn("checkout.session.completed");
-    when(event.getDataObjectDeserializer()).thenReturn(deserializer);
+    when(paymentTransactionService.createProcessingIfNotExists(
+            any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(false);
 
-    when(deserializer.getObject()).thenReturn(java.util.Optional.of(sessionFromEvent));
+    paymentWebhookService.processWebhook("payload", "sig");
+    paymentWebhookService.processWebhook("payload", "sig");
 
-    when(stripeClient.retrieveSession("sess_123")).thenReturn(session);
-    when(session.getMetadata()).thenReturn(null);
-
-    // when / then
-    assertThrows(
-        WebhookProcessingException.class,
-        () -> paymentWebhookService.processWebhook(payload, signature));
-
-    verifyNoInteractions(settlementService);
+    verify(settlementService, never()).registerPayment(any(), any(), any(), any(), any(), any());
   }
 
   @Test
-  void shouldNotCreateSettlementItem_whenPaymentFailedEvent() throws Exception {
+  void shouldProcessCheckoutCompleted() throws Exception {
 
-    UUID settlementId = UUID.randomUUID();
-    UUID unitId = UUID.randomUUID();
+    Event event = mockEvent("evt_1", "checkout.session.completed");
 
-    Map<String, String> metadata =
-        Map.of(
-            "settlementId", settlementId.toString(),
-            "unitId", unitId.toString(),
-            "type", "DEPOSIT",
-            "description", "Test payment",
-            "quantity", "2",
-            "unitPrice", "10");
+    Session session = mock(Session.class);
+    when(session.getId()).thenReturn("sess_1");
+    when(session.getMetadata()).thenReturn(validMetadata());
 
+    when(deserializer.getObject()).thenReturn(Optional.of(session));
     when(stripeClient.constructEvent(any(), any(), any())).thenReturn(event);
+    when(stripeClient.retrieveSession("sess_1")).thenReturn(session);
 
-    when(event.getType()).thenReturn("payment_intent.payment_failed");
+    when(paymentTransactionService.createProcessingIfNotExists(
+            any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(true);
 
-    when(event.getDataObjectDeserializer()).thenReturn(deserializer);
+    paymentWebhookService.processWebhook("payload", "sig");
 
-    when(deserializer.getObject()).thenReturn(java.util.Optional.of(paymentIntent));
+    verify(settlementService).registerPayment(any(), any(), any(), any(), any(), any());
+    verify(paymentTransactionService).markSuccessIfAllowed("evt_1");
+  }
 
-    when(paymentIntent.getMetadata()).thenReturn(metadata);
+  @Test
+  void shouldIgnoreDuplicateCheckoutCompleted() throws Exception {
 
-    when(paymentIntent.getId()).thenReturn("pi_123");
+    Event event = mockEvent("evt_1", "checkout.session.completed");
+
+    Session session = mock(Session.class);
+    when(session.getId()).thenReturn("sess_1");
+    when(session.getMetadata()).thenReturn(validMetadata());
+
+    when(deserializer.getObject()).thenReturn(Optional.of(session));
+    when(stripeClient.constructEvent(any(), any(), any())).thenReturn(event);
+    when(stripeClient.retrieveSession("sess_1")).thenReturn(session);
+
+    when(paymentTransactionService.createProcessingIfNotExists(
+            any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(false);
 
     paymentWebhookService.processWebhook("payload", "sig");
 
     verifyNoInteractions(settlementService);
-
-    FailedTransactionCommand command =
-        new FailedTransactionCommand(
-            settlementId,
-            unitId,
-            SettlementItemType.DEPOSIT,
-            "Test payment",
-            new BigDecimal("2"),
-            new BigDecimal("10"),
-            "pi_123",
-            "UNKNOWN_ERROR");
-
-    verify(paymentTransactionService).saveFailedTransaction(command);
   }
 
   @Test
-  void shouldSaveFailedTransaction_whenCheckoutSessionExpired() throws Exception {
+  void shouldHandleCheckoutExpired() throws Exception {
 
-    // given
-    String payload = "payload";
-    String signature = "signature";
+    Event event = mockEvent("evt_2", "checkout.session.expired");
 
-    UUID settlementId = UUID.randomUUID();
-    UUID unitId = UUID.randomUUID();
+    Session session = mock(Session.class);
+    when(session.getId()).thenReturn("sess_2");
+    when(session.getMetadata()).thenReturn(validMetadata());
 
-    Map<String, String> metadata =
-        Map.of(
-            "settlementId", settlementId.toString(),
-            "unitId", unitId.toString(),
-            "type", "DEPOSIT",
-            "description", "Test payment",
-            "quantity", "2",
-            "unitPrice", "10");
+    when(deserializer.getObject()).thenReturn(Optional.of(session));
+    when(stripeClient.constructEvent(any(), any(), any())).thenReturn(event);
+    when(stripeClient.retrieveSession("sess_2")).thenReturn(session);
 
-    Session sessionFromEvent = new Session();
-    sessionFromEvent.setId("sess_123");
+    paymentWebhookService.processWebhook("payload", "sig");
 
-    when(stripeClient.constructEvent(payload, signature, "test_secret")).thenReturn(event);
+    verify(paymentTransactionService).markFailed(eq("evt_2"), any());
+  }
 
-    when(event.getType()).thenReturn("checkout.session.expired");
-    when(event.getDataObjectDeserializer()).thenReturn(deserializer);
+  @Test
+  void shouldHandlePaymentFailed() throws Exception {
 
-    when(deserializer.getObject()).thenReturn(java.util.Optional.of(sessionFromEvent));
+    Event event = mockEvent("evt_3", "payment_intent.payment_failed");
 
-    when(stripeClient.retrieveSession("sess_123")).thenReturn(session);
-    when(session.getId()).thenReturn("sess_123");
-    when(session.getMetadata()).thenReturn(metadata);
+    PaymentIntent intent = mock(PaymentIntent.class);
+    when(intent.getId()).thenReturn("pi_1");
+    when(intent.getMetadata()).thenReturn(validMetadata());
+    when(intent.getLastPaymentError()).thenReturn(null);
 
-    // when
-    paymentWebhookService.processWebhook(payload, signature);
+    EventDataObjectDeserializer deser = mock(EventDataObjectDeserializer.class);
+    when(event.getDataObjectDeserializer()).thenReturn(deser);
+    when(deser.getObject()).thenReturn(Optional.of(intent));
 
-    FailedTransactionCommand command =
-        new FailedTransactionCommand(
-            settlementId,
-            unitId,
-            SettlementItemType.DEPOSIT,
-            "Test payment",
-            new BigDecimal("2"),
-            new BigDecimal("10"),
-            "sess_123",
-            "Checkout session expired");
+    when(stripeClient.constructEvent(any(), any(), any())).thenReturn(event);
 
-    // then
-    verify(paymentTransactionService).saveFailedTransaction(command);
+    paymentWebhookService.processWebhook("payload", "sig");
+
+    verify(paymentTransactionService).markFailed(eq("evt_3"), any());
+  }
+
+  @Test
+  void shouldIgnoreUnknownEventType() throws Exception {
+
+    Event event = mock(Event.class);
+    when(event.getId()).thenReturn("evt_99");
+    when(event.getType()).thenReturn("unknown.event");
+
+    when(stripeClient.constructEvent(any(), any(), any())).thenReturn(event);
+
+    paymentWebhookService.processWebhook("payload", "sig");
+
+    verifyNoInteractions(settlementService);
+    verifyNoInteractions(paymentTransactionService);
   }
 }

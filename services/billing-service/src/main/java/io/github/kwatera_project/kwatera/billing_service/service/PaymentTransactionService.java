@@ -5,7 +5,9 @@ import io.github.kwatera_project.kwatera.billing_service.model.PaymentTransactio
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
 import io.github.kwatera_project.kwatera.billing_service.model.TransactionStatus;
 import io.github.kwatera_project.kwatera.billing_service.repository.PaymentTransactionRepository;
+import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,7 +18,9 @@ public class PaymentTransactionService {
 
   private final PaymentTransactionRepository repository;
 
-  public void saveSuccessTransaction(
+  @Transactional
+  public boolean createProcessingIfNotExists(
+      String stripeEventId,
       UUID settlementId,
       UUID unitId,
       SettlementItemType type,
@@ -25,11 +29,16 @@ public class PaymentTransactionService {
       BigDecimal unitPrice,
       String stripeSessionId) {
 
+    if (repository.findByStripeEventId(stripeEventId).isPresent()) {
+      return false;
+    }
+
     PaymentTransaction tx = new PaymentTransaction();
 
+    tx.setStripeEventId(stripeEventId);
     tx.setSettlementId(settlementId);
     tx.setUnitId(unitId);
-    tx.setStatus(TransactionStatus.SUCCESS);
+    tx.setStatus(TransactionStatus.PROCESSING);
     tx.setType(type);
     tx.setDescription(description);
     tx.setQuantity(quantity);
@@ -39,23 +48,77 @@ public class PaymentTransactionService {
     tx.setFailureReason(null);
 
     repository.save(tx);
+    return true;
   }
 
-  public void saveFailedTransaction(FailedTransactionCommand cmd) {
+  @Transactional
+  public void markSuccessIfAllowed(String stripeEventId) {
 
-    PaymentTransaction tx = new PaymentTransaction();
+    PaymentTransaction tx =
+        repository
+            .findByStripeEventId(stripeEventId)
+            .orElseThrow(() -> new RuntimeException("Transaction not found"));
 
-    tx.setSettlementId(cmd.settlementId());
-    tx.setUnitId(cmd.unitId());
+    if (tx.getStatus() == TransactionStatus.SUCCESS) {
+      return; // idempotency guard
+    }
+
+    tx.setStatus(TransactionStatus.SUCCESS);
+    repository.save(tx);
+  }
+
+  @Transactional
+  public void markFailedIfAllowed(String stripeEventId, String reason) {
+
+    PaymentTransaction tx =
+        repository
+            .findByStripeEventId(stripeEventId)
+            .orElseThrow(() -> new RuntimeException("Transaction not found"));
+
+    if (tx.getStatus() == TransactionStatus.FAILED || tx.getStatus() == TransactionStatus.SUCCESS) {
+      return; // idempotency guard
+    }
+
     tx.setStatus(TransactionStatus.FAILED);
-    tx.setType(cmd.type());
-    tx.setDescription(cmd.description());
-    tx.setQuantity(cmd.quantity());
-    tx.setUnitPrice(cmd.unitPrice());
-    tx.setAmount(cmd.quantity().multiply(cmd.unitPrice()));
-    tx.setStripeSessionId(cmd.stripeSessionId());
-    tx.setFailureReason(cmd.failureReason());
+    tx.setFailureReason(reason);
 
     repository.save(tx);
+  }
+
+  @Transactional
+  public void markFailed(String stripeEventId, FailedTransactionCommand command) {
+
+    Optional<PaymentTransaction> existing = repository.findByStripeEventId(stripeEventId);
+
+    if (existing.isPresent()) {
+
+      PaymentTransaction tx = existing.get();
+
+      if (tx.getStatus() == TransactionStatus.SUCCESS) {
+        return;
+      }
+
+      tx.setStatus(TransactionStatus.FAILED);
+      tx.setFailureReason(command.failureReason());
+
+      repository.save(tx);
+      return;
+    }
+
+    PaymentTransaction newTx = new PaymentTransaction();
+
+    newTx.setStripeEventId(stripeEventId);
+    newTx.setSettlementId(command.settlementId());
+    newTx.setUnitId(command.unitId());
+    newTx.setType(command.type());
+    newTx.setDescription(command.description());
+    newTx.setQuantity(command.quantity());
+    newTx.setUnitPrice(command.unitPrice());
+    newTx.setAmount(command.quantity().multiply(command.unitPrice()));
+    newTx.setStripeSessionId(command.stripeSessionId());
+    newTx.setStatus(TransactionStatus.FAILED);
+    newTx.setFailureReason(command.failureReason());
+
+    repository.save(newTx);
   }
 }

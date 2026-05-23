@@ -55,14 +55,14 @@ public class SettlementService {
 
     BigDecimal newPaid = settlement.getAmountPaid().add(item.getAmount());
 
-    if (newPaid.compareTo(settlement.getTotalAmount()) > 0) {
-      throw new IllegalStateException("Payment exceeds settlement total");
-    }
-
     settlement.setAmountPaid(newPaid);
 
     recalculateTotals(settlement);
     recalculateSettlementStatus(settlement, unitId);
+
+    if (newPaid.compareTo(settlement.getTotalAmount()) > 0) {
+      throw new IllegalStateException("Payment exceeds settlement total");
+    }
 
     settlementRepository.save(settlement);
   }
