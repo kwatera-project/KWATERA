@@ -183,8 +183,21 @@ export default function PropertyDetailsPage() {
                     })
                 }
             );
+
+            if (!checkoutRes.ok) {
+                throw new Error(`Checkout failed: ${checkoutRes.status}`);
+            }
+
             const checkoutUrl = await checkoutRes.text();
+
+            try {
+                new URL(checkoutUrl);
+            } catch {
+                throw new Error("Invalid checkout URL received");
+            }
+
             window.location.assign(checkoutUrl);
+
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "An error occurred";
             setBookingState(prev => ({ ...prev, [unitId]: { loading: false, error: message } }));

@@ -17,7 +17,8 @@
             **/BillingServiceApplication.java,
             **/config/JpaConfig.java,
             **/model/**,
-            **/dto/**
+            **/dto/**,
+            **/client/**/*.class
         </sonar.coverage.exclusions>
     </properties>
 
@@ -109,6 +110,11 @@
             <version>${springdoc.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -126,6 +132,7 @@
                         <exclude>**/config/JpaConfig.class</exclude>
                         <exclude>**/model/**/*.class</exclude>
                         <exclude>**/dto/**/*.class</exclude>
+                        <exclude>**/client/**/*.class</exclude>
                     </excludes>
                 </configuration>
             </plugin>

@@ -3,18 +3,21 @@ package io.github.kwatera_project.kwatera.billing_service.service;
 import static io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType.*;
 import static io.github.kwatera_project.kwatera.billing_service.model.SettlementStatus.*;
 
-import io.github.kwatera_project.kwatera.billing_service.dto.SettlementDto;
-import io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto;
+import io.github.kwatera_project.kwatera.billing_service.client.PropertyClient;
+import io.github.kwatera_project.kwatera.billing_service.dto.*;
+import io.github.kwatera_project.kwatera.billing_service.event.SettlementEventPublisher;
 import io.github.kwatera_project.kwatera.billing_service.model.Settlement;
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementItem;
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
+import io.github.kwatera_project.kwatera.billing_service.model.SettlementStatus;
 import io.github.kwatera_project.kwatera.billing_service.repository.SettlementItemRepository;
 import io.github.kwatera_project.kwatera.billing_service.repository.SettlementRepository;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -26,12 +29,16 @@ public class SettlementService {
 
   private final SettlementRepository settlementRepository;
   private final SettlementItemRepository settlementItemRepository;
+  private final SettlementEventPublisher settlementEventPublisher;
+
+  private final PropertyClient propertyClient;
 
   private static final String SETTLEMENT_NOT_FOUND = "Settlement not found";
 
   @Transactional
   public void registerPayment(
       UUID settlementId,
+      UUID unitId,
       SettlementItemType type,
       String description,
       BigDecimal quantity,
@@ -48,23 +55,19 @@ public class SettlementService {
 
     BigDecimal newPaid = settlement.getAmountPaid().add(item.getAmount());
 
-    if (newPaid.compareTo(settlement.getTotalAmount()) > 0) {
-      throw new IllegalStateException("Payment exceeds settlement total");
-    }
-
     settlement.setAmountPaid(newPaid);
 
     recalculateTotals(settlement);
-    recalculateSettlementStatus(settlement);
+    recalculateSettlementStatus(settlement, unitId);
+
+    if (newPaid.compareTo(settlement.getTotalAmount()) > 0) {
+      throw new IllegalStateException("Payment exceeds settlement total");
+    }
 
     settlementRepository.save(settlement);
   }
 
   private void applyItemToSettlement(Settlement settlement, SettlementItem item) {
-
-    if (Boolean.TRUE.equals(settlement.getFinalized())) {
-      throw new IllegalStateException("Settlement is finalized and cannot be modified");
-    }
 
     BigDecimal amount = item.getAmount();
 
@@ -80,24 +83,45 @@ public class SettlementService {
     }
   }
 
-  private void recalculateSettlementStatus(Settlement settlement) {
+  private SettlementStatus calculateStatus(Settlement settlement, boolean hasRequiredItems) {
 
     BigDecimal balance = settlement.getTotalAmount().subtract(settlement.getAmountPaid());
 
-    settlement.setBalanceDue(balance.max(BigDecimal.ZERO));
-
-    if (balance.compareTo(BigDecimal.ZERO) <= 0 && settlement.getFinalized()) {
-      settlement.setStatus(PAID);
-      settlement.setPaidAt(Instant.now());
-      return;
+    if (balance.compareTo(BigDecimal.ZERO) <= 0 && hasRequiredItems) {
+      return PAID;
     }
 
     boolean hasAdditionalCharges =
         settlementItemRepository.existsBySettlementIdAndTypeIn(
             settlement.getId(), List.of(ELECTRICITY, WATER, CLEANING_FEE));
 
-    settlement.setStatus(hasAdditionalCharges ? ISSUED : PARTIALLY_PAID);
-    settlement.setPaidAt(null);
+    return hasAdditionalCharges ? ISSUED : PARTIALLY_PAID;
+  }
+
+  private void recalculateSettlementStatus(Settlement settlement, UUID unitId) {
+
+    BigDecimal balance = settlement.getTotalAmount().subtract(settlement.getAmountPaid());
+
+    settlement.setBalanceDue(balance.max(BigDecimal.ZERO));
+
+    boolean hasRequiredItems;
+
+    if (balance.compareTo(BigDecimal.ZERO) <= 0) {
+      hasRequiredItems = hasAllRequiredItems(settlement, unitId);
+    } else {
+      hasRequiredItems = false;
+    }
+
+    SettlementStatus previous = settlement.getStatus();
+
+    SettlementStatus newStatus = calculateStatus(settlement, hasRequiredItems);
+
+    settlement.setStatus(newStatus);
+
+    if (previous != newStatus) {
+      settlementEventPublisher.publishSettlementStatusChanged(
+          new SettlementStatusChangedEvent(settlement.getReservationId(), newStatus));
+    }
   }
 
   private SettlementItem createSettlementItem(
@@ -140,7 +164,6 @@ public class SettlementService {
     settlement.setAmountPaid(BigDecimal.ZERO);
 
     settlement.setStatus(DRAFT);
-    settlement.setFinalized(false);
 
     recalculateTotals(settlement);
 
@@ -155,10 +178,6 @@ public class SettlementService {
             .add(settlement.getDepositAmount())
             .subtract(settlement.getDiscountAmount());
 
-    if (Boolean.TRUE.equals(settlement.getFinalized())) {
-      throw new IllegalStateException("Settlement is finalized and cannot be modified");
-    }
-
     if (total.compareTo(BigDecimal.ZERO) < 0) {
       throw new IllegalStateException("Settlement total cannot be negative");
     }
@@ -170,7 +189,7 @@ public class SettlementService {
   }
 
   @Transactional
-  public void applyDiscount(UUID settlementId, BigDecimal discountAmount) {
+  public void applyDiscount(UUID settlementId, UUID unitId, BigDecimal discountAmount) {
     Settlement settlement =
         settlementRepository
             .findById(settlementId)
@@ -179,26 +198,7 @@ public class SettlementService {
     settlement.setDiscountAmount(discountAmount);
 
     recalculateTotals(settlement);
-    recalculateSettlementStatus(settlement);
-
-    settlementRepository.save(settlement);
-  }
-
-  @Transactional
-  public void finalizeSettlement(UUID settlementId) {
-    Settlement settlement =
-        settlementRepository
-            .findById(settlementId)
-            .orElseThrow(() -> new RuntimeException(SETTLEMENT_NOT_FOUND));
-
-    if (Boolean.TRUE.equals(settlement.getFinalized())) {
-      return;
-    }
-
-    settlement.setFinalized(true);
-    settlement.setIssuedAt(Instant.now());
-
-    recalculateSettlementStatus(settlement);
+    recalculateSettlementStatus(settlement, unitId);
 
     settlementRepository.save(settlement);
   }
@@ -214,5 +214,39 @@ public class SettlementService {
     List<SettlementItem> items = settlementItemRepository.findBySettlementId(settlement.getId());
 
     return new SettlementResponseDto(SettlementDto.from(settlement), items);
+  }
+
+  public SettlementItemDto getSettlementItemInfoByType(
+      UUID reservationId, SettlementItemType settlementItemType) {
+
+    Settlement settlement =
+        settlementRepository
+            .findByReservationId(reservationId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, SETTLEMENT_NOT_FOUND));
+
+    SettlementItem item =
+        settlementItemRepository
+            .findBySettlementIdAndType(settlement.getId(), settlementItemType)
+            .orElseThrow(
+                () ->
+                    new ResponseStatusException(HttpStatus.NOT_FOUND, "Settlement item not found"));
+
+    return SettlementItemDto.from(item);
+  }
+
+  private boolean hasAllRequiredItems(Settlement settlement, UUID unitId) {
+
+    Set<SettlementItemType> requiredTypes =
+        propertyClient.getUnitSettlementItems(unitId).stream()
+            .map(UnitSettlementItemDto::settlementItemType)
+            .collect(Collectors.toSet());
+
+    Set<SettlementItemType> existingTypes =
+        settlementItemRepository.findBySettlementId(settlement.getId()).stream()
+            .map(SettlementItem::getType)
+            .collect(Collectors.toSet());
+
+    return existingTypes.containsAll(requiredTypes);
   }
 }

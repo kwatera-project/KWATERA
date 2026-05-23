@@ -11,6 +11,16 @@ spring:
       server:
         native:
           search-locations: file:/config-repo
+  kafka:
+    bootstrap-servers: kafka:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+
+services:
+  property:
+    url: http://property-service/api/properties
+
 eureka:
   client:
     serviceUrl:

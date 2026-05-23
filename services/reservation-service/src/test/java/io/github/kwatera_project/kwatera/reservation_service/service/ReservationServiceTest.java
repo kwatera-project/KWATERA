@@ -14,6 +14,7 @@ import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationDeta
 import io.github.kwatera_project.kwatera.reservation_service.dto.UnitDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
+import io.github.kwatera_project.kwatera.reservation_service.model.SettlementStatus;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -768,5 +769,177 @@ class ReservationServiceTest {
 
     assertEquals(1, result.size());
     assertEquals(confirmed.getStartDate(), result.get(0).getStartDate());
+  }
+
+  @Test
+  void shouldSetStatusToCompleted_whenSettlementPaid() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    ReservationService service = new ReservationService(repository, mock(RestTemplate.class));
+
+    UUID reservationId = UUID.randomUUID();
+
+    Reservation reservation = new Reservation();
+    reservation.setId(reservationId);
+    reservation.setStatus(ReservationStatus.PENDING);
+
+    when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
+
+    service.handleSettlementStatusUpdate(reservationId, SettlementStatus.PAID);
+
+    ArgumentCaptor<Reservation> captor = ArgumentCaptor.forClass(Reservation.class);
+    verify(repository).save(captor.capture());
+
+    assertEquals(ReservationStatus.COMPLETED, captor.getValue().getStatus());
+  }
+
+  @Test
+  void shouldSetStatusToConfirmed_whenSettlementPartiallyPaid() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    ReservationService service = new ReservationService(repository, mock(RestTemplate.class));
+
+    UUID reservationId = UUID.randomUUID();
+
+    Reservation reservation = new Reservation();
+    reservation.setId(reservationId);
+    reservation.setStatus(ReservationStatus.PENDING);
+
+    when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
+
+    service.handleSettlementStatusUpdate(reservationId, SettlementStatus.PARTIALLY_PAID);
+
+    ArgumentCaptor<Reservation> captor = ArgumentCaptor.forClass(Reservation.class);
+    verify(repository).save(captor.capture());
+
+    assertEquals(ReservationStatus.CONFIRMED, captor.getValue().getStatus());
+  }
+
+  @Test
+  void shouldNotSaveReservation_whenSettlementIssued() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    ReservationService service = new ReservationService(repository, mock(RestTemplate.class));
+
+    UUID reservationId = UUID.randomUUID();
+
+    Reservation reservation = new Reservation();
+    reservation.setId(reservationId);
+    reservation.setStatus(ReservationStatus.PENDING);
+
+    when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
+
+    service.handleSettlementStatusUpdate(reservationId, SettlementStatus.ISSUED);
+
+    verify(repository, never()).save(any());
+  }
+
+  @Test
+  void shouldSetCancelledStatus_whenSettlementCancelled() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    ReservationService service = new ReservationService(repository, mock(RestTemplate.class));
+
+    UUID reservationId = UUID.randomUUID();
+
+    Reservation reservation = new Reservation();
+    reservation.setStatus(ReservationStatus.CONFIRMED);
+
+    when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
+
+    service.handleSettlementStatusUpdate(reservationId, SettlementStatus.CANCELLED);
+
+    assertEquals(ReservationStatus.CANCELLED, reservation.getStatus());
+
+    verify(repository).save(reservation);
+  }
+
+  @Test
+  void shouldThrowNotFound_whenUnitServiceReturnsNullBody() {
+    // given
+    ReservationRepository repo = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+
+    ReservationService service = new ReservationService(repo, restTemplate);
+
+    UUID userId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    CreateReservationRequest request = new CreateReservationRequest();
+    request.setUnitId(unitId);
+    request.setStartDate(LocalDate.now().plusDays(1));
+    request.setEndDate(LocalDate.now().plusDays(3));
+
+    when(repo.findByUnitId(unitId)).thenReturn(List.of());
+
+    when(restTemplate.exchange(
+            anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(UnitDto.class), eq(unitId)))
+        .thenReturn(ResponseEntity.ok(null));
+
+    // when
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> service.createReservation(userId, request, "token"));
+
+    // then
+    assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+    assertEquals("Unit not found", ex.getReason());
+  }
+
+  @Test
+  void shouldThrowBadGateway_whenUnitServiceFails() {
+    ReservationRepository repo = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+
+    ReservationService service = new ReservationService(repo, restTemplate);
+
+    UUID userId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    CreateReservationRequest request = new CreateReservationRequest();
+    request.setUnitId(unitId);
+    request.setStartDate(LocalDate.now().plusDays(1));
+    request.setEndDate(LocalDate.now().plusDays(3));
+
+    when(repo.findByUnitId(unitId)).thenReturn(List.of());
+
+    when(restTemplate.exchange(
+            anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(UnitDto.class), eq(unitId)))
+        .thenThrow(new RuntimeException("service down"));
+
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> service.createReservation(userId, request, "token"));
+
+    assertEquals(HttpStatus.BAD_GATEWAY, ex.getStatusCode());
+    assertTrue(ex.getReason().contains("Cannot fetch unit price"));
+  }
+
+  @Test
+  void shouldThrowBadRequest_whenUserIdIsNull() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    ReservationService service = new ReservationService(repository, mock(RestTemplate.class));
+
+    CreateReservationRequest request = new CreateReservationRequest();
+
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class, () -> service.createReservation(null, request, "token"));
+
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    assertEquals("User id is required", ex.getReason());
+  }
+
+  @Test
+  void shouldThrowBadRequest_whenRequestIsNull() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    ReservationService service = new ReservationService(repository, mock(RestTemplate.class));
+
+    UUID userId = UUID.randomUUID();
+
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class, () -> service.createReservation(userId, null, "token"));
+
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    assertEquals("Reservation request is required", ex.getReason());
   }
 }

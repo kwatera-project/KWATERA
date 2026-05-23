@@ -71,6 +71,7 @@ class StripeServiceTest {
     Settlement settlement = new Settlement();
     settlement.setId(UUID.randomUUID());
     settlement.setReservationId(UUID.randomUUID());
+    UUID unitId = UUID.randomUUID();
 
     Session mockedSession = mock(Session.class);
     when(mockedSession.getUrl()).thenReturn("https://checkout.stripe.com/test");
@@ -84,7 +85,8 @@ class StripeServiceTest {
               SettlementItemType.ACCOMMODATION,
               "Accommodation fee",
               BigDecimal.ONE,
-              BigDecimal.valueOf(100));
+              BigDecimal.valueOf(100),
+              unitId);
 
       assertEquals("https://checkout.stripe.com/test", url);
     }
@@ -94,6 +96,7 @@ class StripeServiceTest {
   void shouldThrowWhenQuantityIsNull() {
     Settlement settlement = new Settlement();
     settlement.setReservationId(UUID.randomUUID());
+    UUID unitId = UUID.randomUUID();
 
     ResponseStatusException ex =
         assertThrows(
@@ -104,7 +107,8 @@ class StripeServiceTest {
                     SettlementItemType.ACCOMMODATION,
                     "Accommodation fee",
                     null,
-                    BigDecimal.TEN));
+                    BigDecimal.TEN,
+                    unitId));
 
     assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
   }
@@ -113,6 +117,7 @@ class StripeServiceTest {
   void shouldThrowWhenTotalPriceIsNegative() {
     Settlement settlement = new Settlement();
     settlement.setReservationId(UUID.randomUUID());
+    UUID unitId = UUID.randomUUID();
 
     BigDecimal negativeAmount = BigDecimal.valueOf(-1);
 
@@ -125,7 +130,8 @@ class StripeServiceTest {
                     SettlementItemType.ACCOMMODATION,
                     "Accommodation fee",
                     negativeAmount,
-                    BigDecimal.TEN));
+                    BigDecimal.TEN,
+                    unitId));
 
     assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
   }

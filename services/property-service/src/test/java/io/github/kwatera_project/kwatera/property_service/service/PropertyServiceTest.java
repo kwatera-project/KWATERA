@@ -3,12 +3,9 @@ package io.github.kwatera_project.kwatera.property_service.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import io.github.kwatera_project.kwatera.property_service.model.Property;
-import io.github.kwatera_project.kwatera.property_service.model.Unit;
-import io.github.kwatera_project.kwatera.property_service.repository.PropertyImageRepository;
-import io.github.kwatera_project.kwatera.property_service.repository.PropertyRepository;
-import io.github.kwatera_project.kwatera.property_service.repository.UnitImageRepository;
-import io.github.kwatera_project.kwatera.property_service.repository.UnitRepository;
+import io.github.kwatera_project.kwatera.property_service.dto.UnitSettlementItemDto;
+import io.github.kwatera_project.kwatera.property_service.model.*;
+import io.github.kwatera_project.kwatera.property_service.repository.*;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +21,7 @@ class PropertyServiceTest {
   private PropertyService propertyService;
   private PropertyImageRepository propertyImageRepository;
   private UnitImageRepository unitImageRepository;
+  private UnitSettlementItemRepository unitSettlementItemRepository;
 
   @BeforeEach
   void setUp() {
@@ -31,10 +29,15 @@ class PropertyServiceTest {
     unitRepository = mock(UnitRepository.class);
     propertyImageRepository = mock(PropertyImageRepository.class);
     unitImageRepository = mock(UnitImageRepository.class);
+    unitSettlementItemRepository = mock(UnitSettlementItemRepository.class);
 
     propertyService =
         new PropertyService(
-            propertyRepository, unitRepository, propertyImageRepository, unitImageRepository);
+            propertyRepository,
+            unitRepository,
+            propertyImageRepository,
+            unitImageRepository,
+            unitSettlementItemRepository);
   }
 
   @Test
@@ -184,14 +187,56 @@ class PropertyServiceTest {
 
   @Test
   void getAllUnitIds_shouldReturnUnitIds() {
-    Unit unit = new Unit();
-    unit.setId(UUID.randomUUID());
+    Unit u1 = new Unit();
+    u1.setId(UUID.randomUUID());
 
-    when(unitRepository.findAll()).thenReturn(List.of(unit));
+    Unit u2 = new Unit();
+    u2.setId(UUID.randomUUID());
 
-    var result = propertyService.getAllUnitIds();
+    when(unitRepository.findAll()).thenReturn(List.of(u1, u2));
+
+    List<UUID> result = propertyService.getAllUnitIds();
+
+    assertEquals(2, result.size());
+    assertTrue(result.contains(u1.getId()));
+    assertTrue(result.contains(u2.getId()));
+  }
+
+  @Test
+  void getUnitSettlementItems_shouldReturnDtos() {
+    UUID unitId = UUID.randomUUID();
+
+    UnitSettlementItem item = new UnitSettlementItem();
+    item.setId(UUID.randomUUID());
+    item.setUnitId(unitId);
+    item.setSettlementItemType(SettlementItemType.DEPOSIT);
+    item.setPricePerUnit(BigDecimal.TEN);
+    item.setMeasurementUnit(null);
+    item.setBillingType(BillingType.FIXED);
+
+    when(unitSettlementItemRepository.findByUnitId(unitId)).thenReturn(List.of(item));
+
+    var result = propertyService.getUnitSettlementItems(unitId);
 
     assertEquals(1, result.size());
-    assertEquals(unit.getId(), result.get(0));
+
+    UnitSettlementItemDto dto = result.get(0);
+    assertEquals(item.getId(), dto.id());
+    assertEquals(unitId, dto.unitId());
+    assertEquals(SettlementItemType.DEPOSIT, dto.settlementItemType());
+    assertEquals(BigDecimal.TEN, dto.pricePerUnit());
+    assertNull(dto.measurementUnit());
+    assertEquals(BillingType.FIXED, dto.billingType());
+  }
+
+  @Test
+  void getUnitSettlementItems_shouldReturnEmptyList() {
+    UUID unitId = UUID.randomUUID();
+
+    when(unitSettlementItemRepository.findByUnitId(unitId)).thenReturn(List.of());
+
+    var result = propertyService.getUnitSettlementItems(unitId);
+
+    assertTrue(result.isEmpty());
   }
 }

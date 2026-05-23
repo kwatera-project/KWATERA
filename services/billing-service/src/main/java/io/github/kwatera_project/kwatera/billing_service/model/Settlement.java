@@ -63,7 +63,4 @@ public class Settlement {
   @Column(name = "updated_at", nullable = false)
   @LastModifiedDate
   private Instant updatedAt;
-
-  @Column(nullable = false)
-  private Boolean finalized;
 }

@@ -53,7 +53,8 @@ public class StripeService {
       SettlementItemType type,
       String description,
       BigDecimal quantity,
-      BigDecimal unitPrice)
+      BigDecimal unitPrice,
+      UUID unitId)
       throws StripeException {
 
     UUID reservationId = settlement.getReservationId();
@@ -80,12 +81,27 @@ public class StripeService {
             .setMode(SessionCreateParams.Mode.PAYMENT)
             .setSuccessUrl("http://localhost:5173/reservations/" + reservationId)
             .setCancelUrl("http://localhost:5173/payment-cancel")
+
+            // metadata checkout.session.*
             .putMetadata("reservationId", reservationId.toString())
+            .putMetadata("unitId", unitId.toString())
             .putMetadata("settlementId", settlement.getId().toString())
             .putMetadata("type", type.toString())
             .putMetadata("description", description)
             .putMetadata("quantity", quantity.toString())
             .putMetadata("unitPrice", unitPrice.toString())
+
+            // metadata payment_intent.*
+            .setPaymentIntentData(
+                SessionCreateParams.PaymentIntentData.builder()
+                    .putMetadata("reservationId", reservationId.toString())
+                    .putMetadata("unitId", unitId.toString())
+                    .putMetadata("settlementId", settlement.getId().toString())
+                    .putMetadata("type", type.toString())
+                    .putMetadata("description", description)
+                    .putMetadata("quantity", quantity.toString())
+                    .putMetadata("unitPrice", unitPrice.toString())
+                    .build())
             .addLineItem(
                 SessionCreateParams.LineItem.builder()
                     .setQuantity(1L)

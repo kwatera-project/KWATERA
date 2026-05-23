@@ -2,6 +2,7 @@ package io.github.kwatera_project.kwatera.property_service.controller;
 
 import io.github.kwatera_project.kwatera.property_service.dto.PropertyDto;
 import io.github.kwatera_project.kwatera.property_service.dto.UnitDto;
+import io.github.kwatera_project.kwatera.property_service.dto.UnitSettlementItemDto;
 import io.github.kwatera_project.kwatera.property_service.service.PropertyService;
 import java.util.List;
 import java.util.UUID;
@@ -55,5 +56,10 @@ public class PropertyController {
   @GetMapping("/{id}/images")
   public List<String> getPropertyImages(@PathVariable("id") UUID id) {
     return propertyService.getPropertyImages(id);
+  }
+
+  @GetMapping("/units/{id}/settlement-items")
+  public List<UnitSettlementItemDto> getUnitSettlementItems(@PathVariable("id") UUID id) {
+    return propertyService.getUnitSettlementItems(id);
   }
 }

@@ -13,6 +13,13 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
+  kafka:
+    bootstrap-servers: kafka:9092
+    consumer:
+      group-id: reservation-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
 
 eureka:
   client:

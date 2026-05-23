@@ -31,6 +31,8 @@ class PaymentServiceTest {
   @Test
   void shouldCreateCheckoutSession() throws Exception {
     UUID reservationId = UUID.randomUUID();
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setUnitId(UUID.randomUUID());
 
     Settlement settlement = new Settlement();
     settlement.setId(UUID.randomUUID());
@@ -39,7 +41,9 @@ class PaymentServiceTest {
     when(settlementRepository.findByReservationId(reservationId))
         .thenReturn(Optional.of(settlement));
 
-    when(stripeService.createCheckoutSession(any(), any(), any(), any(), any()))
+    when(stripeService.getReservation(reservationId, "token")).thenReturn(reservationDto);
+
+    when(stripeService.createCheckoutSession(any(), any(), any(), any(), any(), any()))
         .thenReturn("https://checkout.stripe.com/session");
 
     String url =
