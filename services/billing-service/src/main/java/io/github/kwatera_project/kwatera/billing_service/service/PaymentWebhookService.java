@@ -106,13 +106,30 @@ public class PaymentWebhookService {
       return; // already processed
     }
 
-    settlementService.registerPayment(
-        metadata.settlementId(),
-        metadata.unitId(),
-        metadata.type(),
-        metadata.description(),
-        metadata.quantity(),
-        metadata.unitPrice());
+    try {
+      settlementService.registerPayment(
+          metadata.settlementId(),
+          metadata.unitId(),
+          metadata.type(),
+          metadata.description(),
+          metadata.quantity(),
+          metadata.unitPrice());
+
+    } catch (RuntimeException e) {
+      paymentTransactionService.markFailed(
+          eventId,
+          new FailedTransactionCommand(
+              metadata.settlementId(),
+              metadata.unitId(),
+              metadata.type(),
+              metadata.description(),
+              metadata.quantity(),
+              metadata.unitPrice(),
+              session.getId(),
+              e.getMessage()));
+
+      throw e;
+    }
 
     paymentTransactionService.markSuccessIfAllowed(eventId);
   }

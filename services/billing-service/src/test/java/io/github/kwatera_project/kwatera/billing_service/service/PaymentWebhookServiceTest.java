@@ -131,6 +131,34 @@ class PaymentWebhookServiceTest {
   }
 
   @Test
+  void shouldMarkTransactionFailedWhenRegisterPaymentFails() throws Exception {
+
+    Event event = mockEvent("evt_4", "checkout.session.completed");
+
+    Session session = mock(Session.class);
+    when(session.getId()).thenReturn("sess_4");
+    when(session.getMetadata()).thenReturn(validMetadata());
+
+    when(deserializer.getObject()).thenReturn(Optional.of(session));
+    when(stripeClient.constructEvent(any(), any(), any())).thenReturn(event);
+    when(stripeClient.retrieveSession("sess_4")).thenReturn(session);
+
+    when(paymentTransactionService.createProcessingIfNotExists(
+            any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(true);
+
+    doThrow(new RuntimeException("Settlement update failed"))
+        .when(settlementService)
+        .registerPayment(any(), any(), any(), any(), any(), any());
+
+    org.junit.jupiter.api.Assertions.assertThrows(
+        RuntimeException.class, () -> paymentWebhookService.processWebhook("payload", "sig"));
+
+    verify(paymentTransactionService).markFailed(eq("evt_4"), any());
+    verify(paymentTransactionService, never()).markSuccessIfAllowed("evt_4");
+  }
+
+  @Test
   void shouldHandleCheckoutExpired() throws Exception {
 
     Event event = mockEvent("evt_2", "checkout.session.expired");
