@@ -229,6 +229,66 @@ class SettlementServiceTest {
   }
 
   @Test
+  void shouldAddUtilityChargeWithoutIncreasingAmountPaid() {
+    UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    Settlement settlement = baseSettlement(settlementId);
+    settlement.setReservationId(UUID.randomUUID());
+    settlement.setAmountPaid(BigDecimal.valueOf(500));
+    settlement.setBalanceDue(BigDecimal.ZERO);
+
+    when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
+    when(settlementItemRepository.save(any(SettlementItem.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    when(settlementItemRepository.existsBySettlementIdAndTypeIn(any(), any())).thenReturn(true);
+
+    settlementService.addUtilityCharge(
+        settlementId,
+        unitId,
+        SettlementItemType.WATER,
+        "Water usage",
+        BigDecimal.valueOf(5),
+        BigDecimal.valueOf(20));
+
+    assertEquals(BigDecimal.valueOf(100), settlement.getUtilitiesAmount());
+    assertEquals(BigDecimal.valueOf(600), settlement.getTotalAmount());
+    assertEquals(BigDecimal.valueOf(500), settlement.getAmountPaid());
+    assertEquals(BigDecimal.valueOf(100), settlement.getBalanceDue());
+    verify(settlementRepository).save(settlement);
+  }
+
+  @Test
+  void shouldRecalculateBalanceDueWhenUtilityChargeAdded() {
+    UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    Settlement settlement = baseSettlement(settlementId);
+    settlement.setReservationId(UUID.randomUUID());
+    settlement.setAmountPaid(BigDecimal.valueOf(200));
+    settlement.setBalanceDue(BigDecimal.valueOf(300));
+
+    when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
+    when(settlementItemRepository.save(any(SettlementItem.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    when(settlementItemRepository.existsBySettlementIdAndTypeIn(any(), any())).thenReturn(true);
+
+    settlementService.addUtilityCharge(
+        settlementId,
+        unitId,
+        SettlementItemType.ELECTRICITY,
+        "Electricity usage",
+        BigDecimal.valueOf(10),
+        BigDecimal.valueOf(10));
+
+    assertEquals(BigDecimal.valueOf(100), settlement.getUtilitiesAmount());
+    assertEquals(BigDecimal.valueOf(600), settlement.getTotalAmount());
+    assertEquals(BigDecimal.valueOf(200), settlement.getAmountPaid());
+    assertEquals(BigDecimal.valueOf(400), settlement.getBalanceDue());
+    verify(settlementRepository).save(settlement);
+  }
+
+  @Test
   void shouldNotModifyAmountsForAccommodationPayment() {
     UUID settlementId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();

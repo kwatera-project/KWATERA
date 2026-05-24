@@ -67,6 +67,36 @@ public class SettlementService {
     settlementRepository.save(settlement);
   }
 
+  @Transactional
+  public SettlementItem addUtilityCharge(
+      UUID settlementId,
+      UUID unitId,
+      SettlementItemType type,
+      String description,
+      BigDecimal quantity,
+      BigDecimal unitPrice) {
+    if (type != WATER && type != ELECTRICITY) {
+      throw new IllegalArgumentException(
+          "Only water and electricity utility charges are supported");
+    }
+
+    Settlement settlement =
+        settlementRepository
+            .findById(settlementId)
+            .orElseThrow(() -> new RuntimeException(SETTLEMENT_NOT_FOUND));
+
+    SettlementItem item =
+        createSettlementItem(settlementId, type, description, quantity, unitPrice);
+
+    applyItemToSettlement(settlement, item);
+    recalculateTotals(settlement);
+    recalculateSettlementStatus(settlement, unitId);
+
+    settlementRepository.save(settlement);
+
+    return item;
+  }
+
   private void applyItemToSettlement(Settlement settlement, SettlementItem item) {
 
     BigDecimal amount = item.getAmount();
