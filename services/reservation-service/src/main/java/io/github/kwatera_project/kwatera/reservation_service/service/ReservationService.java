@@ -1,11 +1,13 @@
 package io.github.kwatera_project.kwatera.reservation_service.service;
 
+import io.github.kwatera_project.kwatera.reservation_service.client.NbpExchangeRateClient;
 import io.github.kwatera_project.kwatera.reservation_service.dto.*;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
 import io.github.kwatera_project.kwatera.reservation_service.model.SettlementStatus;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -28,6 +30,7 @@ public class ReservationService {
 
   private final ReservationRepository reservationRepository;
   private final RestTemplate restTemplate;
+  private final NbpExchangeRateClient nbpExchangeRateClient;
 
   public AvailabilityDto checkAvailability(UUID unitId, LocalDate from, LocalDate to) {
     if (from == null || to == null) {
@@ -202,7 +205,7 @@ public class ReservationService {
   }
 
   public ReservationDetailsDto getReservationDetails(
-      UUID reservationId, UUID userId, boolean isAdmin, boolean isOwner) {
+      UUID reservationId, UUID userId, boolean isAdmin, boolean isOwner, String currency) {
     Reservation reservation =
         reservationRepository
             .findById(reservationId)
@@ -226,10 +229,35 @@ public class ReservationService {
     dto.setCreatedAt(reservation.getCreatedAt());
     dto.setPricePerNightSnapshot(reservation.getPricePerNightSnapshot());
     dto.setTotalPrice(reservation.getTotalPrice());
+
+    CurrencyMetadataDto currencyInfo =
+        new CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, LocalDate.now());
+    BigDecimal convertedTotalPrice = reservation.getTotalPrice();
+
+    if (currency != null && !"PLN".equalsIgnoreCase(currency)) {
+      try {
+        NbpResponseDto nbpResponse = nbpExchangeRateClient.getExchangeRate(currency);
+        if (nbpResponse != null && nbpResponse.rates() != null && !nbpResponse.rates().isEmpty()) {
+          NbpRateDto rateDto = nbpResponse.rates().get(0);
+          BigDecimal rate = rateDto.mid();
+          currencyInfo =
+              new CurrencyMetadataDto("PLN", currency.toUpperCase(), rate, rateDto.effectiveDate());
+          if (convertedTotalPrice != null) {
+            convertedTotalPrice = convertedTotalPrice.divide(rate, 2, RoundingMode.HALF_UP);
+          }
+        }
+      } catch (Exception e) {
+        log.warn("Failed to fetch exchange rate for currency {}: {}", currency, e.getMessage());
+      }
+    }
+
+    dto.setConvertedTotalPrice(convertedTotalPrice);
+    dto.setCurrencyInfo(currencyInfo);
+
     return dto;
   }
 
-  public List<GuestReservationDto> getMyReservations(UUID userId) {
+  public List<GuestReservationDto> getMyReservations(UUID userId, String currency) {
     return reservationRepository.findByUserId(userId).stream()
         .map(
             r ->

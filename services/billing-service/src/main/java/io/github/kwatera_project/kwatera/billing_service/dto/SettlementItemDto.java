@@ -7,18 +7,25 @@ import java.util.UUID;
 
 public record SettlementItemDto(
     UUID id,
+    UUID settlementId,
     SettlementItemType type,
     String description,
     BigDecimal quantity,
     BigDecimal unitPrice,
-    BigDecimal amount) {
-  public static SettlementItemDto from(SettlementItem s) {
+    BigDecimal amount,
+    BigDecimal convertedAmount,
+    CurrencyMetadataDto currencyInfo) {
+  public static SettlementItemDto from(
+      SettlementItem item, BigDecimal convertedAmount, CurrencyMetadataDto currencyInfo) {
     return new SettlementItemDto(
-        s.getId(),
-        s.getType(),
-        s.getDescription(),
-        s.getQuantity(),
-        s.getUnitPrice(),
-        s.getAmount());
+        item.getId(),
+        item.getSettlementId(),
+        item.getType(),
+        item.getDescription(),
+        item.getQuantity(),
+        item.getUnitPrice(),
+        item.getAmount(),
+        convertedAmount,
+        currencyInfo);
   }
 }

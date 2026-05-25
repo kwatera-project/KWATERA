@@ -37,7 +37,8 @@ public class ReservationController {
   }
 
   @GetMapping("/my")
-  public List<GuestReservationDto> getMyReservations(Authentication authentication) {
+  public List<GuestReservationDto> getMyReservations(
+      Authentication authentication, @RequestParam(defaultValue = "PLN") String currency) {
     UUID userId = validateAndGetUserId(authentication);
 
     boolean isGuest =
@@ -46,12 +47,14 @@ public class ReservationController {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
     }
 
-    return reservationService.getMyReservations(userId);
+    return reservationService.getMyReservations(userId, currency);
   }
 
   @GetMapping("/{reservationId}")
   public ReservationDetailsDto getReservationDetails(
-      @PathVariable("reservationId") UUID reservationId, Authentication authentication) {
+      @PathVariable("reservationId") UUID reservationId,
+      Authentication authentication,
+      @RequestParam(defaultValue = "PLN") String currency) {
     UUID userId = validateAndGetUserId(authentication);
 
     boolean isAdmin =
@@ -60,7 +63,8 @@ public class ReservationController {
     boolean isOwner =
         authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_OWNER"));
 
-    return reservationService.getReservationDetails(reservationId, userId, isAdmin, isOwner);
+    return reservationService.getReservationDetails(
+        reservationId, userId, isAdmin, isOwner, currency);
   }
 
   private UUID validateAndGetUserId(Authentication authentication) {

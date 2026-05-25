@@ -3,6 +3,7 @@ package io.github.kwatera_project.kwatera.billing_service.service;
 import static io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType.*;
 import static io.github.kwatera_project.kwatera.billing_service.model.SettlementStatus.*;
 
+import io.github.kwatera_project.kwatera.billing_service.client.NbpExchangeRateClient;
 import io.github.kwatera_project.kwatera.billing_service.client.PropertyClient;
 import io.github.kwatera_project.kwatera.billing_service.dto.*;
 import io.github.kwatera_project.kwatera.billing_service.event.SettlementEventPublisher;
@@ -14,11 +15,15 @@ import io.github.kwatera_project.kwatera.billing_service.repository.SettlementIt
 import io.github.kwatera_project.kwatera.billing_service.repository.SettlementRepository;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -27,11 +32,13 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class SettlementService {
 
+  private static final Logger log = LoggerFactory.getLogger(SettlementService.class);
+
   private final SettlementRepository settlementRepository;
   private final SettlementItemRepository settlementItemRepository;
   private final SettlementEventPublisher settlementEventPublisher;
-
   private final PropertyClient propertyClient;
+  private final NbpExchangeRateClient nbpExchangeRateClient;
 
   private static final String SETTLEMENT_NOT_FOUND = "Settlement not found";
 
@@ -203,7 +210,7 @@ public class SettlementService {
     settlementRepository.save(settlement);
   }
 
-  public SettlementResponseDto getSettlementWithItems(UUID reservationId) {
+  public SettlementResponseDto getSettlementWithItems(UUID reservationId, String currency) {
 
     Settlement settlement =
         settlementRepository
@@ -213,11 +220,45 @@ public class SettlementService {
 
     List<SettlementItem> items = settlementItemRepository.findBySettlementId(settlement.getId());
 
-    return new SettlementResponseDto(SettlementDto.from(settlement), items);
+    CurrencyMetadataDto currencyInfo =
+        new CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, LocalDate.now());
+    BigDecimal convertedTotalAmount = settlement.getTotalAmount();
+    BigDecimal convertedAmountPaid = settlement.getAmountPaid();
+    BigDecimal convertedBalanceDue = settlement.getBalanceDue();
+
+    if (currency != null && !"PLN".equalsIgnoreCase(currency)) {
+      try {
+        NbpResponseDto nbpResponse = nbpExchangeRateClient.getExchangeRate(currency);
+        if (nbpResponse != null && nbpResponse.rates() != null && !nbpResponse.rates().isEmpty()) {
+          NbpRateDto rateDto = nbpResponse.rates().get(0);
+          BigDecimal rate = rateDto.mid();
+          currencyInfo =
+              new CurrencyMetadataDto("PLN", currency.toUpperCase(), rate, rateDto.effectiveDate());
+
+          if (convertedTotalAmount != null)
+            convertedTotalAmount = convertedTotalAmount.divide(rate, 2, RoundingMode.HALF_UP);
+          if (convertedAmountPaid != null)
+            convertedAmountPaid = convertedAmountPaid.divide(rate, 2, RoundingMode.HALF_UP);
+          if (convertedBalanceDue != null)
+            convertedBalanceDue = convertedBalanceDue.divide(rate, 2, RoundingMode.HALF_UP);
+        }
+      } catch (Exception e) {
+        log.warn("Failed to fetch exchange rate for currency {}: {}", currency, e.getMessage());
+      }
+    }
+
+    SettlementDto dto =
+        SettlementDto.from(
+            settlement,
+            convertedTotalAmount,
+            convertedAmountPaid,
+            convertedBalanceDue,
+            currencyInfo);
+    return new SettlementResponseDto(dto, items);
   }
 
   public SettlementItemDto getSettlementItemInfoByType(
-      UUID reservationId, SettlementItemType settlementItemType) {
+      UUID reservationId, SettlementItemType settlementItemType, String currency) {
 
     Settlement settlement =
         settlementRepository
@@ -232,7 +273,29 @@ public class SettlementService {
                 () ->
                     new ResponseStatusException(HttpStatus.NOT_FOUND, "Settlement item not found"));
 
-    return SettlementItemDto.from(item);
+    CurrencyMetadataDto currencyInfo =
+        new CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, LocalDate.now());
+    BigDecimal convertedAmount = item.getAmount();
+
+    if (currency != null && !"PLN".equalsIgnoreCase(currency)) {
+      try {
+        NbpResponseDto nbpResponse = nbpExchangeRateClient.getExchangeRate(currency);
+        if (nbpResponse != null && nbpResponse.rates() != null && !nbpResponse.rates().isEmpty()) {
+          NbpRateDto rateDto = nbpResponse.rates().get(0);
+          BigDecimal rate = rateDto.mid();
+          currencyInfo =
+              new CurrencyMetadataDto("PLN", currency.toUpperCase(), rate, rateDto.effectiveDate());
+
+          if (convertedAmount != null) {
+            convertedAmount = convertedAmount.divide(rate, 2, RoundingMode.HALF_UP);
+          }
+        }
+      } catch (Exception e) {
+        log.warn("Failed to fetch exchange rate for currency {}: {}", currency, e.getMessage());
+      }
+    }
+
+    return SettlementItemDto.from(item, convertedAmount, currencyInfo);
   }
 
   private boolean hasAllRequiredItems(Settlement settlement, UUID unitId) {

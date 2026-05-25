@@ -17,11 +17,21 @@ public record SettlementDto(
     BigDecimal totalAmount,
     BigDecimal amountPaid,
     BigDecimal balanceDue,
+    BigDecimal convertedTotalAmount,
+    BigDecimal convertedAmountPaid,
+    BigDecimal convertedBalanceDue,
+    CurrencyMetadataDto currencyInfo,
     Instant issuedAt,
     Instant paidAt,
     Instant createdAt,
     Instant updatedAt) {
-  public static SettlementDto from(Settlement s) {
+
+  public static SettlementDto from(
+      Settlement s,
+      BigDecimal convertedTotalAmount,
+      BigDecimal convertedAmountPaid,
+      BigDecimal convertedBalanceDue,
+      CurrencyMetadataDto currencyInfo) {
     return new SettlementDto(
         s.getId(),
         s.getReservationId(),
@@ -33,6 +43,10 @@ public record SettlementDto(
         s.getTotalAmount(),
         s.getAmountPaid(),
         s.getBalanceDue(),
+        convertedTotalAmount,
+        convertedAmountPaid,
+        convertedBalanceDue,
+        currencyInfo,
         s.getIssuedAt(),
         s.getPaidAt(),
         s.getCreatedAt(),

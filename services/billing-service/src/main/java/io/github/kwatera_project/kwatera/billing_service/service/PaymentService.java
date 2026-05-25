@@ -58,18 +58,20 @@ public class PaymentService {
         settlement, type, description, quantity, unitPrice, reservationDto.getUnitId());
   }
 
-  public SettlementResponseDto getSettlementWithItems(UUID reservationId, String token) {
+  public SettlementResponseDto getSettlementWithItems(
+      UUID reservationId, String token, String currency) {
 
     stripeService.getReservation(reservationId, token);
 
-    return settlementService.getSettlementWithItems(reservationId);
+    return settlementService.getSettlementWithItems(reservationId, currency);
   }
 
   public SettlementItemDto getSettlementItemInfoByType(
-      UUID reservationId, SettlementItemType settlementItemType, String token) {
+      UUID reservationId, SettlementItemType settlementItemType, String token, String currency) {
 
     stripeService.getReservation(reservationId, token);
 
-    return settlementService.getSettlementItemInfoByType(reservationId, settlementItemType);
+    return settlementService.getSettlementItemInfoByType(
+        reservationId, settlementItemType, currency);
   }
 }

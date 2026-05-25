@@ -44,10 +44,13 @@ public class BillingController {
 
   @GetMapping("settlements/{reservationId}")
   public ResponseEntity<SettlementResponseDto> getSettlementAndSettlementItems(
-      @PathVariable("reservationId") UUID reservationId, HttpServletRequest request) {
+      @PathVariable("reservationId") UUID reservationId,
+      HttpServletRequest request,
+      @RequestParam(defaultValue = "PLN") String currency) {
     String token = request.getHeader(AUTHORIZATION_HEADER);
 
-    SettlementResponseDto response = paymentService.getSettlementWithItems(reservationId, token);
+    SettlementResponseDto response =
+        paymentService.getSettlementWithItems(reservationId, token, currency);
 
     return ResponseEntity.ok(response);
   }
@@ -56,11 +59,13 @@ public class BillingController {
   public ResponseEntity<SettlementItemDto> getSettlementItemInfoByType(
       @PathVariable("reservationId") UUID reservationId,
       @PathVariable("settlementItemType") SettlementItemType settlementItemType,
-      HttpServletRequest request) {
+      HttpServletRequest request,
+      @RequestParam(defaultValue = "PLN") String currency) {
     String token = request.getHeader(AUTHORIZATION_HEADER);
 
     SettlementItemDto response =
-        paymentService.getSettlementItemInfoByType(reservationId, settlementItemType, token);
+        paymentService.getSettlementItemInfoByType(
+            reservationId, settlementItemType, token, currency);
 
     return ResponseEntity.ok(response);
   }

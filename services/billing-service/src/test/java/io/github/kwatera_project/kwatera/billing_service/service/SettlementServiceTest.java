@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.github.kwatera_project.kwatera.billing_service.client.NbpExchangeRateClient;
 import io.github.kwatera_project.kwatera.billing_service.client.PropertyClient;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementItemDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto;
@@ -35,6 +36,8 @@ class SettlementServiceTest {
   @Mock private SettlementEventPublisher settlementEventPublisher;
 
   @Mock private PropertyClient propertyClient;
+
+  @Mock private NbpExchangeRateClient nbpExchangeRateClient;
 
   @InjectMocks private SettlementService settlementService;
 
@@ -166,6 +169,9 @@ class SettlementServiceTest {
     Settlement settlement = new Settlement();
     settlement.setId(settlementId);
     settlement.setReservationId(reservationId);
+    settlement.setTotalAmount(BigDecimal.valueOf(500));
+    settlement.setAmountPaid(BigDecimal.ZERO);
+    settlement.setBalanceDue(BigDecimal.valueOf(500));
 
     SettlementItem item = new SettlementItem();
     item.setSettlementId(settlementId);
@@ -175,7 +181,7 @@ class SettlementServiceTest {
 
     when(settlementItemRepository.findBySettlementId(settlementId)).thenReturn(List.of(item));
 
-    SettlementResponseDto result = settlementService.getSettlementWithItems(reservationId);
+    SettlementResponseDto result = settlementService.getSettlementWithItems(reservationId, "PLN");
 
     assertNotNull(result);
   }
@@ -264,7 +270,7 @@ class SettlementServiceTest {
             ResponseStatusException.class,
             () ->
                 settlementService.getSettlementItemInfoByType(
-                    reservationId, SettlementItemType.ACCOMMODATION));
+                    reservationId, SettlementItemType.ACCOMMODATION, "PLN"));
 
     assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
   }
@@ -289,7 +295,7 @@ class SettlementServiceTest {
             ResponseStatusException.class,
             () ->
                 settlementService.getSettlementItemInfoByType(
-                    reservationId, SettlementItemType.ACCOMMODATION));
+                    reservationId, SettlementItemType.ACCOMMODATION, "PLN"));
 
     assertEquals("Settlement item not found", ex.getReason());
   }
@@ -333,7 +339,7 @@ class SettlementServiceTest {
 
     SettlementItemDto result =
         settlementService.getSettlementItemInfoByType(
-            reservationId, SettlementItemType.ACCOMMODATION);
+            reservationId, SettlementItemType.ACCOMMODATION, "PLN");
 
     assertNotNull(result);
   }
