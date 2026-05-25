@@ -64,7 +64,7 @@ class BillingControllerTest {
 
     SettlementResponseDto dto = mock(SettlementResponseDto.class);
 
-    when(paymentService.getSettlementWithItems(reservationId, "Bearer token")).thenReturn(dto);
+    when(paymentService.getSettlementWithItems(reservationId, "Bearer token", "PLN")).thenReturn(dto);
 
     mockMvc
         .perform(
