@@ -30,14 +30,14 @@ export async function createReservation(unitId: string, from: string, to: string
     return res.json();
 }
 
-export async function getReservationDetails(id: string) {
+export async function getReservationDetails(id: string, currency: string = "PLN") {
     const token = localStorage.getItem("token");
 
     if (!token) {
         throw new Error("Log in to view this reservation");
     }
 
-    const res = await fetch(`${API_URL}/${id}`, {
+    const res = await fetch(`${API_URL}/${id}?currency=${currency}`, {
         headers: {
             "Authorization": `Bearer ${token}`
         }
@@ -51,14 +51,14 @@ export async function getReservationDetails(id: string) {
     return res.json();
 }
 
-export async function getMyReservations() {
+export async function getMyReservations(currency: string = "PLN") {
     const token = localStorage.getItem("token");
 
     if (!token) {
         throw new Error("Log in to view your reservations");
     }
 
-    const res = await fetch(`${API_URL}/my`, {
+    const res = await fetch(`${API_URL}/my?currency=${currency}`, {
         headers: {
             "Authorization": `Bearer ${token}`
         }

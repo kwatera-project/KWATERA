@@ -8,9 +8,17 @@ export interface Property {
 
 export interface Unit {
     id: string;
+    propertyId: string;
     name: string;
     description: string;
     pricePerNight: number;
     capacity: number;
-    imageUrl: string;
+    imageUrl?: string;
+    convertedPricePerNight?: number;
+    currencyInfo?: {
+        baseCurrency: string;
+        displayCurrency: string;
+        exchangeRate: number;
+        rateEffectiveDate: string;
+    };
 }

@@ -1,3 +1,10 @@
+export interface CurrencyMetadata {
+    baseCurrency: string;
+    displayCurrency: string;
+    exchangeRate: number;
+    rateEffectiveDate: string;
+}
+
 export interface ReservationOverview {
     id: string;
     guestName: string;
@@ -5,12 +12,16 @@ export interface ReservationOverview {
     startDate: string;
     endDate: string;
     status: string;
-    userId?: string; // Optional if needed for backwards compatibility
+    userId?: string;
 }
 
 export interface ReservationDetails extends ReservationOverview {
     unitId: string;
     createdAt: string;
+    pricePerNightSnapshot?: number;
+    totalPrice?: number;
+    convertedTotalPrice?: number;
+    currencyInfo?: CurrencyMetadata;
 }
 
 export interface GuestReservation {
@@ -19,4 +30,7 @@ export interface GuestReservation {
     startDate: string;
     endDate: string;
     status: string;
+    totalPrice?: number;
+    convertedTotalPrice?: number;
+    currencyInfo?: CurrencyMetadata;
 }

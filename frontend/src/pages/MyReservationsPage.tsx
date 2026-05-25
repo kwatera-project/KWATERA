@@ -2,14 +2,16 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getMyReservations } from '../api/reservationApi';
 import type {GuestReservation} from '../types/reservation';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 export default function MyReservationsPage() {
     const [reservations, setReservations] = useState<GuestReservation[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const { currency } = useCurrency();
 
     useEffect(() => {
-        getMyReservations()
+        getMyReservations(currency)
             .then(data => {
                 setReservations(data);
                 setLoading(false);
@@ -18,7 +20,7 @@ export default function MyReservationsPage() {
                 setError(err.message);
                 setLoading(false);
             });
-    }, []);
+    }, [currency]);
 
     if (loading) return <div className="p-8 text-center text-gray-500">Loading your reservations...</div>;
     if (error) return <div className="p-8 text-center text-red-600">Error: {error}</div>;
@@ -44,6 +46,11 @@ export default function MyReservationsPage() {
                                 <div className="text-sm text-gray-600">
                                     {res.startDate} to {res.endDate}
                                 </div>
+                                {res.convertedTotalPrice && res.currencyInfo && (
+                                    <div className="text-sm font-semibold mt-2">
+                                        Total Price: {res.convertedTotalPrice.toFixed(2)} {res.currencyInfo.displayCurrency}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="flex flex-col items-end gap-4 w-full md:w-auto">

@@ -260,9 +260,45 @@ public class ReservationService {
   public List<GuestReservationDto> getMyReservations(UUID userId, String currency) {
     return reservationRepository.findByUserId(userId).stream()
         .map(
-            r ->
-                new GuestReservationDto(
-                    r.getId(), r.getUnitId(), r.getStartDate(), r.getEndDate(), r.getStatus()))
+            r -> {
+              CurrencyMetadataDto currencyInfo =
+                  new CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, LocalDate.now());
+              BigDecimal convertedTotalPrice = r.getTotalPrice();
+
+              if (currency != null && !"PLN".equalsIgnoreCase(currency)) {
+                try {
+                  NbpResponseDto nbpResponse = nbpExchangeRateClient.getExchangeRate(currency);
+                  if (nbpResponse != null
+                      && nbpResponse.rates() != null
+                      && !nbpResponse.rates().isEmpty()) {
+                    NbpRateDto rateDto = nbpResponse.rates().get(0);
+                    BigDecimal rate = rateDto.mid();
+                    currencyInfo =
+                        new CurrencyMetadataDto(
+                            "PLN", currency.toUpperCase(), rate, rateDto.effectiveDate());
+                    if (convertedTotalPrice != null) {
+                      convertedTotalPrice =
+                          convertedTotalPrice.divide(rate, 2, RoundingMode.HALF_UP);
+                    }
+                  }
+                } catch (Exception e) {
+                  log.warn(
+                      "Failed to fetch exchange rate for currency {}: {}",
+                      currency,
+                      e.getMessage());
+                }
+              }
+
+              return new GuestReservationDto(
+                  r.getId(),
+                  r.getUnitId(),
+                  r.getStartDate(),
+                  r.getEndDate(),
+                  r.getStatus(),
+                  r.getTotalPrice(),
+                  convertedTotalPrice,
+                  currencyInfo);
+            })
         .toList();
   }
 

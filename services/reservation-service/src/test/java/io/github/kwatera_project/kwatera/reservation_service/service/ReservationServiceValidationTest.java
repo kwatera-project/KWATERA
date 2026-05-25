@@ -15,7 +15,12 @@ class ReservationServiceValidationTest {
 
   private final ReservationRepository repository = mock(ReservationRepository.class);
   private final ReservationService service =
-      new ReservationService(repository, mock(org.springframework.web.client.RestTemplate.class), mock(io.github.kwatera_project.kwatera.reservation_service.client.NbpExchangeRateClient.class));
+      new ReservationService(
+          repository,
+          mock(org.springframework.web.client.RestTemplate.class),
+          mock(
+              io.github.kwatera_project.kwatera.reservation_service.client.NbpExchangeRateClient
+                  .class));
 
   @Test
   void shouldThrow_whenDatesAreNull() {

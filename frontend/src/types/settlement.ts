@@ -1,3 +1,5 @@
+import type {CurrencyMetadata} from "./reservation";
+
 export interface SettlementDetails {
     id: string;
     reservationId: string;
@@ -10,6 +12,11 @@ export interface SettlementDetails {
     totalAmount: number;
     amountPaid: number;
     balanceDue: number;
+
+    convertedTotalAmount?: number;
+    convertedAmountPaid?: number;
+    convertedBalanceDue?: number;
+    currencyInfo?: CurrencyMetadata;
 
     issuedAt: string | null;
     paidAt: string | null;

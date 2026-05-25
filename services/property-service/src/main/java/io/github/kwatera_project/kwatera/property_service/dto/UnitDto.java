@@ -12,19 +12,26 @@ public class UnitDto {
   private Integer capacity;
   private String imageUrl;
 
+  private BigDecimal convertedPricePerNight;
+  private io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto currencyInfo;
+
   public UnitDto(
       UUID id,
       String name,
       String description,
       BigDecimal pricePerNight,
       Integer capacity,
-      String imageUrl) {
+      String imageUrl,
+      BigDecimal convertedPricePerNight,
+      io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto currencyInfo) {
     this.id = id;
     this.name = name;
     this.description = description;
     this.pricePerNight = pricePerNight;
     this.capacity = capacity;
     this.imageUrl = imageUrl;
+    this.convertedPricePerNight = convertedPricePerNight;
+    this.currencyInfo = currencyInfo;
   }
 
   public UUID getId() {
@@ -49,5 +56,13 @@ public class UnitDto {
 
   public String getImageUrl() {
     return imageUrl;
+  }
+
+  public BigDecimal getConvertedPricePerNight() {
+    return convertedPricePerNight;
+  }
+
+  public io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto getCurrencyInfo() {
+    return currencyInfo;
   }
 }

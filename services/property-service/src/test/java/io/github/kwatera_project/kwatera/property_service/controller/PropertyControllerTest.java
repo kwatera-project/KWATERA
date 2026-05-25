@@ -47,11 +47,11 @@ class PropertyControllerTest {
     UUID propertyId = UUID.randomUUID();
 
     UnitDto unit =
-        new UnitDto(UUID.randomUUID(), "Room", "Desc", BigDecimal.valueOf(200), 2, "img.jpg");
+        new UnitDto(UUID.randomUUID(), "Room", "Desc", BigDecimal.valueOf(200), 2, "img.jpg", BigDecimal.valueOf(200), new io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, java.time.LocalDate.now()));
 
-    when(service.getUnits(propertyId)).thenReturn(List.of(unit));
+    when(service.getUnits(propertyId, "PLN")).thenReturn(List.of(unit));
 
-    var result = controller.getUnits(propertyId);
+    var result = controller.getUnits(propertyId, "PLN");
 
     assertEquals(1, result.size());
     assertEquals("Room", result.get(0).getName());
@@ -61,11 +61,11 @@ class PropertyControllerTest {
   void getUnit_shouldReturnUnit() {
     UUID id = UUID.randomUUID();
 
-    UnitDto unit = new UnitDto(id, "Room", "Desc", BigDecimal.valueOf(200), 2, "img.jpg");
+    UnitDto unit = new UnitDto(id, "Room", "Desc", BigDecimal.valueOf(200), 2, "img.jpg", BigDecimal.valueOf(200), new io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, java.time.LocalDate.now()));
 
-    when(service.getUnitById(id)).thenReturn(unit);
+    when(service.getUnitById(id, "PLN")).thenReturn(unit);
 
-    var result = controller.getUnit(id);
+    var result = controller.getUnit(id, "PLN");
 
     assertEquals(id, result.getId());
   }

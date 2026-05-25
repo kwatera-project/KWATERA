@@ -1,17 +1,17 @@
-import {useEffect, useState} from "react";
+import {useEffect, useState, useCallback} from "react";
 import {useParams, Link} from "react-router-dom";
-import {getSettlementDetails} from "../api/settlementApi";
+import {getSettlementDetails, getSettlementItemInfoByType} from "../api/settlementApi";
 import type {SettlementDetails} from "../types/settlement";
-import {getSettlementItemInfoByType} from "../api/settlementApi.ts";
 import {GATEWAY_BASE_URL} from "../api/apiConfig.ts";
 import {getReservationDetails} from "../api/reservationApi.ts";
-import { useCallback } from "react";
+import { useCurrency } from "../contexts/CurrencyContext";
 
 export default function SettlementDetailsPage() {
     const {id} = useParams();
     const [settlement, setSettlement] = useState<SettlementDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const { currency } = useCurrency();
 
     const [settlementState, setSettlementState] = useState<
         Record<string, { loading: boolean; success?: boolean, error?: string }>
@@ -20,11 +20,12 @@ export default function SettlementDetailsPage() {
     useEffect(() => {
         if (!id) return;
 
-        getSettlementDetails(id)
+        setLoading(true);
+        getSettlementDetails(id, currency)
             .then(setSettlement)
             .catch((err) => setError(err.message))
             .finally(() => setLoading(false));
-    }, [id]);
+    }, [id, currency]);
 
     type PaymentButton = {
         type: string;
@@ -36,8 +37,7 @@ export default function SettlementDetailsPage() {
         settlementItemType: string;
     };
 
-    const [paymentButtons, setPaymentButtons] =
-        useState<PaymentButton[]>([]);
+    const [paymentButtons, setPaymentButtons] = useState<PaymentButton[]>([]);
 
     const loadPaymentButtons = useCallback (async (
         settlement: SettlementDetails,
@@ -46,17 +46,13 @@ export default function SettlementDetailsPage() {
 
         const buttons: PaymentButton[] = [];
 
-        // DEPOSIT
+        // Pobieramy itemy zawsze w PLN, ponieważ Stripe domyślnie procesuje bazową walutę dla tego projektu.
+        const baseCurrency = "PLN";
+
         if (settlementItemTypes.includes("DEPOSIT")) {
             try {
-
-                await getSettlementItemInfoByType(
-                    settlement.reservationId,
-                    "DEPOSIT"
-                );
-
+                await getSettlementItemInfoByType(settlement.reservationId, "DEPOSIT", baseCurrency);
             } catch {
-                // settlement item jeszcze nie istnieje
                 buttons.push({
                     type: "DEPOSIT",
                     quantity: 1,
@@ -65,16 +61,9 @@ export default function SettlementDetailsPage() {
             }
         }
 
-        // ACCOMMODATION
         try {
-
-            await getSettlementItemInfoByType(
-                settlement.reservationId,
-                "ACCOMMODATION"
-            );
-
+            await getSettlementItemInfoByType(settlement.reservationId, "ACCOMMODATION", baseCurrency);
         } catch {
-            // settlement item jeszcze nie istnieje
             buttons.push({
                 type: "ACCOMMODATION",
                 quantity: 1,
@@ -82,13 +71,7 @@ export default function SettlementDetailsPage() {
             });
         }
 
-
-        // utilities
-        const utilityTypes = [
-            "WATER",
-            "ELECTRICITY",
-            "CLEANING_FEE"
-        ];
+        const utilityTypes = ["WATER", "ELECTRICITY", "CLEANING_FEE"];
 
         for (const type of utilityTypes) {
             if (!settlementItemTypes.includes(type)) {
@@ -96,12 +79,7 @@ export default function SettlementDetailsPage() {
             }
 
             try {
-                const res =
-                    await getSettlementItemInfoByType(
-                        settlement.reservationId,
-                        type
-                    );
-
+                const res = await getSettlementItemInfoByType(settlement.reservationId, type, baseCurrency);
                 if (res) {
                     buttons.push({
                         type,
@@ -109,7 +87,6 @@ export default function SettlementDetailsPage() {
                         unitPrice: res.unitPrice
                     });
                 }
-
             } catch {
                 // settlement item jeszcze nie istnieje
             }
@@ -120,15 +97,12 @@ export default function SettlementDetailsPage() {
 
     const getUnitSettlementItemsType = async (reservationId: string) => {
         try {
-            const res = await getReservationDetails(reservationId);
-
+            const res = await getReservationDetails(reservationId, "PLN");
             const unitId = res.unitId;
 
             const unitSettlementItemsRes = await fetch(
                 `${GATEWAY_BASE_URL}/api/properties/units/${unitId}/settlement-items`,
-                {
-                    method: "GET",
-                }
+                { method: "GET" }
             )
 
             if (!unitSettlementItemsRes.ok) {
@@ -136,10 +110,7 @@ export default function SettlementDetailsPage() {
             }
 
             const data = await unitSettlementItemsRes.json();
-
-            return data.map(
-                (item: SettlementItem) => item.settlementItemType
-            );
+            return data.map((item: SettlementItem) => item.settlementItemType);
 
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "An error occurred";
@@ -153,11 +124,10 @@ export default function SettlementDetailsPage() {
         getUnitSettlementItemsType(settlement.reservationId)
             .then((types) => {
                 if (!types) return;
-
                 loadPaymentButtons(settlement, types);
             });
 
-    }, [settlement]);
+    }, [settlement, loadPaymentButtons]);
 
     const handlePayment = async (reservationId: string,
                                  settlementType: string,
@@ -167,14 +137,10 @@ export default function SettlementDetailsPage() {
 
         const stateKey = `${settlementId}-${settlementType}`;
 
-        setSettlementState(prev => ({
-            ...prev,
-            [stateKey]: {loading: true}
-        }));
+        setSettlementState(prev => ({ ...prev, [stateKey]: {loading: true} }));
 
         try {
             const token = localStorage.getItem("token");
-
             const name = settlementType[0] + settlementType.slice(1).toLowerCase();
 
             const checkoutRes = await fetch(
@@ -212,23 +178,34 @@ export default function SettlementDetailsPage() {
             const message = err instanceof Error ? err.message : "An error occurred";
             setSettlementState(prev => ({
                 ...prev,
-                [stateKey]: {
-                    loading: false,
-                    error: message
-                }
+                [stateKey]: { loading: false, error: message }
             }));
         }
     };
-
 
     if (loading) return <div className="p-6">Loading settlement details...</div>;
     if (error) return <div className="p-6 text-red-500">{error}</div>;
     if (!settlement) return <div className="p-6">Settlement not found.</div>;
 
+    const displayCurrency = settlement.currencyInfo?.displayCurrency || 'PLN';
+
+    const renderAmount = (convertedAmount?: number, originalAmount?: number) => {
+        if (displayCurrency !== 'PLN' && convertedAmount !== undefined) {
+            return (
+                <span>
+                    {convertedAmount} {displayCurrency}
+                </span>
+            );
+        }
+        return <span>{originalAmount} PLN</span>;
+    };
+
     return (
         <div className="max-w-3xl mx-auto p-6">
             <div className="bg-card rounded-xl p-6 shadow border">
-                <h1 className="text-2xl font-bold mb-6 border-b pb-2">Settlement Details</h1>
+                <div className="flex justify-between items-center mb-6 border-b pb-2">
+                    <h1 className="text-2xl font-bold">Settlement Details</h1>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -245,35 +222,48 @@ export default function SettlementDetailsPage() {
                     </div>
                     <div>
                         <p className="text-gray-500 text-sm">Balance Due</p>
-                        <p className="font-medium">{settlement.balanceDue}</p>
+                        <p className="font-bold text-red-600 text-lg">
+                            {renderAmount(settlement.convertedBalanceDue, settlement.balanceDue)}
+                        </p>
                     </div>
-                    <div>
-                        <p className="text-gray-500 text-sm">Accommodation Amount</p>
-                        <p className="font-medium">{settlement.accommodationAmount}</p>
+                    <div className="md:col-span-2 border-t mt-2 pt-4">
+                        <p className="font-semibold text-gray-700 mb-2">Price Breakdown</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-gray-500 text-sm">Accommodation Amount</p>
+                                <p className="font-medium">{settlement.accommodationAmount} PLN</p>
+                            </div>
+                            <div>
+                                <p className="text-gray-500 text-sm">Utilities Amount</p>
+                                <p className="font-medium">{settlement.utilitiesAmount} PLN</p>
+                            </div>
+                            <div>
+                                <p className="text-gray-500 text-sm">Deposit Amount</p>
+                                <p className="font-medium">{settlement.depositAmount} PLN</p>
+                            </div>
+                            <div>
+                                <p className="text-gray-500 text-sm">Total Amount</p>
+                                <p className="font-medium text-lg">
+                                    {renderAmount(settlement.convertedTotalAmount, settlement.totalAmount)}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-gray-500 text-sm">Amount Paid</p>
+                                <p className="font-medium text-green-600">
+                                    {renderAmount(settlement.convertedAmountPaid, settlement.amountPaid)}
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-gray-500 text-sm">Utilities Amount</p>
-                        <p className="font-medium">{settlement.utilitiesAmount}</p>
-                    </div>
-                    <div>
-                        <p className="text-gray-500 text-sm">Deposit Amount</p>
-                        <p className="font-medium">{settlement.depositAmount}</p>
-                    </div>
-                    <div>
-                        <p className="text-gray-500 text-sm">Total Amount</p>
-                        <p className="font-medium">{settlement.totalAmount}</p>
-                    </div>
-                    <div>
-                        <p className="text-gray-500 text-sm">Amount Paid</p>
-                        <p className="font-medium">{settlement.amountPaid}</p>
-                    </div>
-                    <div>
-                        <p className="text-gray-500 text-sm">Issued At</p>
-                        <p className="font-medium">{settlement.issuedAt}</p>
-                    </div>
-                    <div>
-                        <p className="text-gray-500 text-sm">Paid At</p>
-                        <p className="font-medium">{settlement.paidAt}</p>
+                    <div className="md:col-span-2 border-t mt-2 pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <p className="text-gray-500 text-sm">Issued At</p>
+                            <p className="font-medium">{settlement.issuedAt ? new Date(settlement.issuedAt).toLocaleString() : 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="text-gray-500 text-sm">Paid At</p>
+                            <p className="font-medium">{settlement.paidAt ? new Date(settlement.paidAt).toLocaleString() : 'N/A'}</p>
+                        </div>
                     </div>
                 </div>
 
@@ -287,9 +277,7 @@ export default function SettlementDetailsPage() {
                 <div className="mt-4 flex flex-wrap gap-2">
                     {paymentButtons.map((button) => {
 
-                        const stateKey =
-                            `${settlement.id}-${button.type}`;
-
+                        const stateKey = `${settlement.id}-${button.type}`;
                         const state = settlementState[stateKey];
 
                         return (
@@ -305,12 +293,12 @@ export default function SettlementDetailsPage() {
                                     )
                                 }
                                 disabled={state?.loading || state?.success}
-                                className={`px-4 py-2 font-bold rounded ${
+                                className={`px-4 py-2 font-bold rounded shadow ${
                                     state?.success
                                         ? "bg-green-500 text-white"
                                         : state?.loading
-                                            ? "bg-gray-400 text-white"
-                                            : "bg-blue-600 text-white hover:bg-blue-700"
+                                            ? "bg-gray-400 text-white cursor-not-allowed"
+                                            : "bg-blue-600 text-white hover:bg-blue-700 transition"
                                 }`}
                             >
                                 {state?.loading

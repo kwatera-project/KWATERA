@@ -22,6 +22,7 @@ class PropertyServiceTest {
   private PropertyImageRepository propertyImageRepository;
   private UnitImageRepository unitImageRepository;
   private UnitSettlementItemRepository unitSettlementItemRepository;
+  private io.github.kwatera_project.kwatera.property_service.client.NbpExchangeRateClient nbpExchangeRateClient;
 
   @BeforeEach
   void setUp() {
@@ -30,6 +31,7 @@ class PropertyServiceTest {
     propertyImageRepository = mock(PropertyImageRepository.class);
     unitImageRepository = mock(UnitImageRepository.class);
     unitSettlementItemRepository = mock(UnitSettlementItemRepository.class);
+    nbpExchangeRateClient = mock(io.github.kwatera_project.kwatera.property_service.client.NbpExchangeRateClient.class);
 
     propertyService =
         new PropertyService(
@@ -37,7 +39,8 @@ class PropertyServiceTest {
             unitRepository,
             propertyImageRepository,
             unitImageRepository,
-            unitSettlementItemRepository);
+            unitSettlementItemRepository,
+            nbpExchangeRateClient);
   }
 
   @Test
@@ -98,7 +101,7 @@ class PropertyServiceTest {
 
     when(unitRepository.findByPropertyId(propertyId)).thenReturn(List.of(unit));
 
-    var result = propertyService.getUnits(propertyId);
+    var result = propertyService.getUnits(propertyId, "PLN");
 
     assertEquals(1, result.size());
     assertEquals("Room", result.get(0).getName());
@@ -110,7 +113,7 @@ class PropertyServiceTest {
 
     when(propertyRepository.existsById(propertyId)).thenReturn(false);
 
-    assertThrows(ResponseStatusException.class, () -> propertyService.getUnits(propertyId));
+    assertThrows(ResponseStatusException.class, () -> propertyService.getUnits(propertyId, "PLN"));
   }
 
   @Test
@@ -126,7 +129,7 @@ class PropertyServiceTest {
 
     when(unitRepository.findById(id)).thenReturn(Optional.of(unit));
 
-    var result = propertyService.getUnitById(id);
+    var result = propertyService.getUnitById(id, "PLN");
 
     assertEquals(id, result.getId());
   }
@@ -137,7 +140,7 @@ class PropertyServiceTest {
 
     when(unitRepository.findById(id)).thenReturn(Optional.empty());
 
-    assertThrows(ResponseStatusException.class, () -> propertyService.getUnitById(id));
+    assertThrows(ResponseStatusException.class, () -> propertyService.getUnitById(id, "PLN"));
   }
 
   @Test

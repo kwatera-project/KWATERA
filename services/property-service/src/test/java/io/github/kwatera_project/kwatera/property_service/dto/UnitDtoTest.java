@@ -12,7 +12,7 @@ class UnitDtoTest {
   void unitDto_shouldReturnValues() {
     UUID id = UUID.randomUUID();
 
-    UnitDto dto = new UnitDto(id, "Room", "Nice room", BigDecimal.valueOf(100), 2, "img.jpg");
+    UnitDto dto = new UnitDto(id, "Room", "Nice room", BigDecimal.valueOf(100), 2, "img.jpg", BigDecimal.valueOf(100), new CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, java.time.LocalDate.now()));
 
     assertEquals(id, dto.getId());
     assertEquals("Room", dto.getName());

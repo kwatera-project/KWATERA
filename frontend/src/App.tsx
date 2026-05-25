@@ -14,10 +14,11 @@ import PaymentCancelPage from "./pages/PaymentCancelPage";
 import SettlementDetailsPage from "./pages/SettlementDetailsPage";
 import OccupancyCalendarPage from "./pages/OccupancyCalendarPage";
 import ProfilePage from "./pages/ProfilePage";
+import { CurrencyProvider } from "./contexts/CurrencyContext";
 
 function App() {
     return (
-        <>
+        <CurrencyProvider>
             <Navbar/>
             <Routes>
                 <Route path="/" element={<HomePage />} />
@@ -75,7 +76,7 @@ function App() {
                     }
                 />
             </Routes>
-        </>
+        </CurrencyProvider>
     )
 }
 

@@ -38,7 +38,8 @@ public class ReservationController {
 
   @GetMapping("/my")
   public List<GuestReservationDto> getMyReservations(
-      Authentication authentication, @RequestParam(defaultValue = "PLN") String currency) {
+      Authentication authentication,
+      @RequestParam(name = "currency", defaultValue = "PLN") String currency) {
     UUID userId = validateAndGetUserId(authentication);
 
     boolean isGuest =
@@ -54,7 +55,7 @@ public class ReservationController {
   public ReservationDetailsDto getReservationDetails(
       @PathVariable("reservationId") UUID reservationId,
       Authentication authentication,
-      @RequestParam(defaultValue = "PLN") String currency) {
+      @RequestParam(name = "currency", defaultValue = "PLN") String currency) {
     UUID userId = validateAndGetUserId(authentication);
 
     boolean isAdmin =
