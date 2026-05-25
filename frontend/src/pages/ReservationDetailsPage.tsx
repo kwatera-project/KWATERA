@@ -2,24 +2,22 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getReservationDetails } from "../api/reservationApi";
 import type { ReservationDetails } from "../types/reservation";
-import { useCurrency } from "../contexts/CurrencyContext";
 
 export default function ReservationDetailsPage() {
     const { id } = useParams();
     const [reservation, setReservation] = useState<ReservationDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const { currency } = useCurrency();
 
     useEffect(() => {
         if (!id) return;
 
         setLoading(true);
-        getReservationDetails(id, currency)
+        getReservationDetails(id)
             .then(setReservation)
             .catch((err) => setError(err.message))
             .finally(() => setLoading(false));
-    }, [id, currency]);
+    }, [id]);
 
     if (loading) return <div className="p-6">Loading reservation details...</div>;
     if (error) return <div className="p-6 text-red-500">{error}</div>;

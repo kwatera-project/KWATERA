@@ -55,4 +55,11 @@ public class Reservation {
   @Column(name = "total_price", nullable = false)
   @Positive
   private BigDecimal totalPrice;
+
+  @Column(name = "payment_currency", nullable = false)
+  private String paymentCurrency;
+
+  @Column(name = "payment_exchange_rate", nullable = false)
+  @Positive
+  private BigDecimal paymentExchangeRate;
 }

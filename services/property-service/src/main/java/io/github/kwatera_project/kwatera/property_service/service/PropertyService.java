@@ -19,7 +19,8 @@ public class PropertyService {
   private final PropertyImageRepository propertyImageRepository;
   private final UnitImageRepository unitImageRepository;
   private final UnitSettlementItemRepository unitSettlementItemRepository;
-  private final io.github.kwatera_project.kwatera.property_service.client.NbpExchangeRateClient nbpExchangeRateClient;
+  private final io.github.kwatera_project.kwatera.property_service.client.NbpExchangeRateClient
+      nbpExchangeRateClient;
 
   public PropertyService(
       PropertyRepository propertyRepository,
@@ -27,7 +28,8 @@ public class PropertyService {
       PropertyImageRepository propertyImageRepository,
       UnitImageRepository unitImageRepository,
       UnitSettlementItemRepository unitSettlementItemRepository,
-      io.github.kwatera_project.kwatera.property_service.client.NbpExchangeRateClient nbpExchangeRateClient) {
+      io.github.kwatera_project.kwatera.property_service.client.NbpExchangeRateClient
+          nbpExchangeRateClient) {
     this.propertyRepository = propertyRepository;
     this.unitRepository = unitRepository;
     this.propertyImageRepository = propertyImageRepository;
@@ -40,7 +42,9 @@ public class PropertyService {
     if (!propertyRepository.existsById(propertyId)) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found");
     }
-    return unitRepository.findByPropertyId(propertyId).stream().map(unit -> mapToDto(unit, currency)).toList();
+    return unitRepository.findByPropertyId(propertyId).stream()
+        .map(unit -> mapToDto(unit, currency))
+        .toList();
   }
 
   public List<PropertyDto> getAll() {
@@ -118,19 +122,24 @@ public class PropertyService {
             .orElse(null);
 
     io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto currencyInfo =
-        new io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto("PLN", "PLN", java.math.BigDecimal.ONE, java.time.LocalDate.now());
+        new io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto(
+            "PLN", "PLN", java.math.BigDecimal.ONE, java.time.LocalDate.now());
     java.math.BigDecimal convertedPricePerNight = unit.getPricePerNight();
 
     if (currency != null && !"PLN".equalsIgnoreCase(currency)) {
       try {
-        io.github.kwatera_project.kwatera.property_service.dto.NbpResponseDto nbpResponse = nbpExchangeRateClient.getExchangeRate(currency);
+        io.github.kwatera_project.kwatera.property_service.dto.NbpResponseDto nbpResponse =
+            nbpExchangeRateClient.getExchangeRate(currency);
         if (nbpResponse != null && nbpResponse.rates() != null && !nbpResponse.rates().isEmpty()) {
-          io.github.kwatera_project.kwatera.property_service.dto.NbpRateDto rateDto = nbpResponse.rates().get(0);
+          io.github.kwatera_project.kwatera.property_service.dto.NbpRateDto rateDto =
+              nbpResponse.rates().get(0);
           java.math.BigDecimal rate = rateDto.mid();
           currencyInfo =
-              new io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto("PLN", currency.toUpperCase(), rate, rateDto.effectiveDate());
+              new io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto(
+                  "PLN", currency.toUpperCase(), rate, rateDto.effectiveDate());
           if (convertedPricePerNight != null) {
-            convertedPricePerNight = convertedPricePerNight.divide(rate, 2, java.math.RoundingMode.HALF_UP);
+            convertedPricePerNight =
+                convertedPricePerNight.divide(rate, 2, java.math.RoundingMode.HALF_UP);
           }
         }
       } catch (Exception e) {

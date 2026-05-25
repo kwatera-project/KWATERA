@@ -181,7 +181,13 @@ class SettlementServiceTest {
 
     when(settlementItemRepository.findBySettlementId(settlementId)).thenReturn(List.of(item));
 
-    SettlementResponseDto result = settlementService.getSettlementWithItems(reservationId, "PLN");
+    io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto reservationDto =
+        new io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setPaymentCurrency("PLN");
+    reservationDto.setPaymentExchangeRate(BigDecimal.ONE);
+
+    SettlementResponseDto result = settlementService.getSettlementWithItems(reservationDto);
 
     assertNotNull(result);
   }
@@ -265,12 +271,18 @@ class SettlementServiceTest {
 
     when(settlementRepository.findByReservationId(reservationId)).thenReturn(Optional.empty());
 
+    io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto reservationDto =
+        new io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setPaymentCurrency("PLN");
+    reservationDto.setPaymentExchangeRate(BigDecimal.ONE);
+
     ResponseStatusException ex =
         assertThrows(
             ResponseStatusException.class,
             () ->
                 settlementService.getSettlementItemInfoByType(
-                    reservationId, SettlementItemType.ACCOMMODATION, "PLN"));
+                    reservationDto, SettlementItemType.ACCOMMODATION));
 
     assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
   }
@@ -290,12 +302,18 @@ class SettlementServiceTest {
             settlementId, SettlementItemType.ACCOMMODATION))
         .thenReturn(Optional.empty());
 
+    io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto reservationDto =
+        new io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setPaymentCurrency("PLN");
+    reservationDto.setPaymentExchangeRate(BigDecimal.ONE);
+
     ResponseStatusException ex =
         assertThrows(
             ResponseStatusException.class,
             () ->
                 settlementService.getSettlementItemInfoByType(
-                    reservationId, SettlementItemType.ACCOMMODATION, "PLN"));
+                    reservationDto, SettlementItemType.ACCOMMODATION));
 
     assertEquals("Settlement item not found", ex.getReason());
   }
@@ -337,9 +355,15 @@ class SettlementServiceTest {
             settlementId, SettlementItemType.ACCOMMODATION))
         .thenReturn(Optional.of(item));
 
+    io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto reservationDto =
+        new io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setPaymentCurrency("PLN");
+    reservationDto.setPaymentExchangeRate(BigDecimal.ONE);
+
     SettlementItemDto result =
         settlementService.getSettlementItemInfoByType(
-            reservationId, SettlementItemType.ACCOMMODATION, "PLN");
+            reservationDto, SettlementItemType.ACCOMMODATION);
 
     assertNotNull(result);
   }

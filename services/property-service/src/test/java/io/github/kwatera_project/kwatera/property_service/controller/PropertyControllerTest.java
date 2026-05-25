@@ -47,7 +47,16 @@ class PropertyControllerTest {
     UUID propertyId = UUID.randomUUID();
 
     UnitDto unit =
-        new UnitDto(UUID.randomUUID(), "Room", "Desc", BigDecimal.valueOf(200), 2, "img.jpg", BigDecimal.valueOf(200), new io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, java.time.LocalDate.now()));
+        new UnitDto(
+            UUID.randomUUID(),
+            "Room",
+            "Desc",
+            BigDecimal.valueOf(200),
+            2,
+            "img.jpg",
+            BigDecimal.valueOf(200),
+            new io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto(
+                "PLN", "PLN", BigDecimal.ONE, java.time.LocalDate.now()));
 
     when(service.getUnits(propertyId, "PLN")).thenReturn(List.of(unit));
 
@@ -61,7 +70,17 @@ class PropertyControllerTest {
   void getUnit_shouldReturnUnit() {
     UUID id = UUID.randomUUID();
 
-    UnitDto unit = new UnitDto(id, "Room", "Desc", BigDecimal.valueOf(200), 2, "img.jpg", BigDecimal.valueOf(200), new io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, java.time.LocalDate.now()));
+    UnitDto unit =
+        new UnitDto(
+            id,
+            "Room",
+            "Desc",
+            BigDecimal.valueOf(200),
+            2,
+            "img.jpg",
+            BigDecimal.valueOf(200),
+            new io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto(
+                "PLN", "PLN", BigDecimal.ONE, java.time.LocalDate.now()));
 
     when(service.getUnitById(id, "PLN")).thenReturn(unit);
 

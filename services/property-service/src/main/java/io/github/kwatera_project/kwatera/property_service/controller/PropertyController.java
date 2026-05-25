@@ -35,12 +35,16 @@ public class PropertyController {
   }
 
   @GetMapping("/{id}/units")
-  public List<UnitDto> getUnits(@PathVariable("id") UUID id, @RequestParam(name = "currency", defaultValue = "PLN") String currency) {
+  public List<UnitDto> getUnits(
+      @PathVariable("id") UUID id,
+      @RequestParam(name = "currency", defaultValue = "PLN") String currency) {
     return propertyService.getUnits(id, currency);
   }
 
   @GetMapping("/units/{id}")
-  public UnitDto getUnit(@PathVariable("id") UUID id, @RequestParam(name = "currency", defaultValue = "PLN") String currency) {
+  public UnitDto getUnit(
+      @PathVariable("id") UUID id,
+      @RequestParam(name = "currency", defaultValue = "PLN") String currency) {
     return propertyService.getUnitById(id, currency);
   }
 

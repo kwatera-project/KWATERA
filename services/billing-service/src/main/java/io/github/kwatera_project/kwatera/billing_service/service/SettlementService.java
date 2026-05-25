@@ -210,41 +210,37 @@ public class SettlementService {
     settlementRepository.save(settlement);
   }
 
-  public SettlementResponseDto getSettlementWithItems(UUID reservationId, String currency) {
+  public SettlementResponseDto getSettlementWithItems(ReservationDto reservation) {
 
     Settlement settlement =
         settlementRepository
-            .findByReservationId(reservationId)
+            .findByReservationId(reservation.getId())
             .orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, SETTLEMENT_NOT_FOUND));
 
     List<SettlementItem> items = settlementItemRepository.findBySettlementId(settlement.getId());
 
+    String rCurrency =
+        reservation.getPaymentCurrency() != null ? reservation.getPaymentCurrency() : "PLN";
+    BigDecimal rRate =
+        reservation.getPaymentExchangeRate() != null
+            ? reservation.getPaymentExchangeRate()
+            : BigDecimal.ONE;
+
     CurrencyMetadataDto currencyInfo =
-        new CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, LocalDate.now());
+        new CurrencyMetadataDto("PLN", rCurrency, rRate, LocalDate.now());
+
     BigDecimal convertedTotalAmount = settlement.getTotalAmount();
     BigDecimal convertedAmountPaid = settlement.getAmountPaid();
     BigDecimal convertedBalanceDue = settlement.getBalanceDue();
 
-    if (currency != null && !"PLN".equalsIgnoreCase(currency)) {
-      try {
-        NbpResponseDto nbpResponse = nbpExchangeRateClient.getExchangeRate(currency);
-        if (nbpResponse != null && nbpResponse.rates() != null && !nbpResponse.rates().isEmpty()) {
-          NbpRateDto rateDto = nbpResponse.rates().get(0);
-          BigDecimal rate = rateDto.mid();
-          currencyInfo =
-              new CurrencyMetadataDto("PLN", currency.toUpperCase(), rate, rateDto.effectiveDate());
-
-          if (convertedTotalAmount != null)
-            convertedTotalAmount = convertedTotalAmount.divide(rate, 2, RoundingMode.HALF_UP);
-          if (convertedAmountPaid != null)
-            convertedAmountPaid = convertedAmountPaid.divide(rate, 2, RoundingMode.HALF_UP);
-          if (convertedBalanceDue != null)
-            convertedBalanceDue = convertedBalanceDue.divide(rate, 2, RoundingMode.HALF_UP);
-        }
-      } catch (Exception e) {
-        log.warn("Failed to fetch exchange rate for currency {}: {}", currency, e.getMessage());
-      }
+    if (!"PLN".equalsIgnoreCase(rCurrency)) {
+      if (convertedTotalAmount != null)
+        convertedTotalAmount = convertedTotalAmount.divide(rRate, 2, RoundingMode.HALF_UP);
+      if (convertedAmountPaid != null)
+        convertedAmountPaid = convertedAmountPaid.divide(rRate, 2, RoundingMode.HALF_UP);
+      if (convertedBalanceDue != null)
+        convertedBalanceDue = convertedBalanceDue.divide(rRate, 2, RoundingMode.HALF_UP);
     }
 
     SettlementDto dto =
@@ -258,11 +254,11 @@ public class SettlementService {
   }
 
   public SettlementItemDto getSettlementItemInfoByType(
-      UUID reservationId, SettlementItemType settlementItemType, String currency) {
+      ReservationDto reservation, SettlementItemType settlementItemType) {
 
     Settlement settlement =
         settlementRepository
-            .findByReservationId(reservationId)
+            .findByReservationId(reservation.getId())
             .orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, SETTLEMENT_NOT_FOUND));
 
@@ -273,25 +269,20 @@ public class SettlementService {
                 () ->
                     new ResponseStatusException(HttpStatus.NOT_FOUND, "Settlement item not found"));
 
+    String rCurrency =
+        reservation.getPaymentCurrency() != null ? reservation.getPaymentCurrency() : "PLN";
+    BigDecimal rRate =
+        reservation.getPaymentExchangeRate() != null
+            ? reservation.getPaymentExchangeRate()
+            : BigDecimal.ONE;
+
     CurrencyMetadataDto currencyInfo =
-        new CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, LocalDate.now());
+        new CurrencyMetadataDto("PLN", rCurrency, rRate, LocalDate.now());
     BigDecimal convertedAmount = item.getAmount();
 
-    if (currency != null && !"PLN".equalsIgnoreCase(currency)) {
-      try {
-        NbpResponseDto nbpResponse = nbpExchangeRateClient.getExchangeRate(currency);
-        if (nbpResponse != null && nbpResponse.rates() != null && !nbpResponse.rates().isEmpty()) {
-          NbpRateDto rateDto = nbpResponse.rates().get(0);
-          BigDecimal rate = rateDto.mid();
-          currencyInfo =
-              new CurrencyMetadataDto("PLN", currency.toUpperCase(), rate, rateDto.effectiveDate());
-
-          if (convertedAmount != null) {
-            convertedAmount = convertedAmount.divide(rate, 2, RoundingMode.HALF_UP);
-          }
-        }
-      } catch (Exception e) {
-        log.warn("Failed to fetch exchange rate for currency {}: {}", currency, e.getMessage());
+    if (!"PLN".equalsIgnoreCase(rCurrency)) {
+      if (convertedAmount != null) {
+        convertedAmount = convertedAmount.divide(rRate, 2, RoundingMode.HALF_UP);
       }
     }
 

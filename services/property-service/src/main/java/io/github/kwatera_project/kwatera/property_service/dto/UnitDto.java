@@ -62,7 +62,8 @@ public class UnitDto {
     return convertedPricePerNight;
   }
 
-  public io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto getCurrencyInfo() {
+  public io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto
+      getCurrencyInfo() {
     return currencyInfo;
   }
 }

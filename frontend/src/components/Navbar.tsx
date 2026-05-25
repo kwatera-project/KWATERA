@@ -2,6 +2,7 @@ import '../App.css'
 import {Link} from "react-router-dom"
 import {useLogout} from "./Logout.tsx"
 import {getUserRoles} from "../utils/jwtUtils.ts"
+import {useState} from "react"
 import {useCurrency} from "../contexts/CurrencyContext"
 
 export default function Navbar() {
@@ -12,6 +13,7 @@ export default function Navbar() {
 
     const logout = useLogout()
     const { currency, setCurrency } = useCurrency();
+    const [isCurrencyDropdownOpen, setIsCurrencyDropdownOpen] = useState(false);
 
     return (
         <nav className="flex justify-between items-center p-4 bg-card shadow-md">
@@ -76,22 +78,32 @@ export default function Navbar() {
                     </Link>
                 )}
 
-                <div className="flex items-center ml-4">
-                    <select
-                        value={currency}
-                        onChange={(e) => setCurrency(e.target.value)}
-                        className="bg-card text-title font-medium border border-[#DACDCA] rounded-xl px-3 py-1 cursor-pointer hover:border-[rgb(var(--color-burgundy))] focus:outline-none focus:border-[rgb(var(--color-burgundy))] transition appearance-none pr-8"
-                        style={{
-                            backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
-                            backgroundRepeat: 'no-repeat',
-                            backgroundPosition: 'calc(100% - 8px) center',
-                            backgroundSize: '1em'
-                        }}
+                <div className="relative ml-4">
+                    <button
+                        onClick={() => setIsCurrencyDropdownOpen(!isCurrencyDropdownOpen)}
+                        className="bg-transparent border-none focus:outline-none cursor-pointer hover:text-[rgb(var(--color-burgundy))] transition"
                     >
-                        <option value="PLN" className="text-gray-800">PLN</option>
-                        <option value="EUR" className="text-gray-800">EUR</option>
-                        <option value="USD" className="text-gray-800">USD</option>
-                    </select>
+                        {currency}
+                    </button>
+                    {isCurrencyDropdownOpen && (
+                        <div className="absolute right-0 mt-2 w-24 bg-card border border-[#DACDCA] rounded-xl shadow-lg z-50 overflow-hidden">
+                            <ul className="flex flex-col text-sm">
+                                {['PLN', 'EUR', 'USD'].map((curr) => (
+                                    <li key={curr}>
+                                        <button
+                                            onClick={() => {
+                                                setCurrency(curr);
+                                                setIsCurrencyDropdownOpen(false);
+                                            }}
+                                            className={`w-full text-left px-4 py-2 hover:bg-[#F7F7F7] hover:text-[rgb(var(--color-burgundy))] transition ${currency === curr ? 'font-bold text-[rgb(var(--color-burgundy))] bg-[#F7F7F7]' : 'text-[#1A1A1A]'}`}
+                                        >
+                                            {curr}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </div>
             </div>
 

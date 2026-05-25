@@ -4,14 +4,12 @@ import {getSettlementDetails, getSettlementItemInfoByType} from "../api/settleme
 import type {SettlementDetails} from "../types/settlement";
 import {GATEWAY_BASE_URL} from "../api/apiConfig.ts";
 import {getReservationDetails} from "../api/reservationApi.ts";
-import { useCurrency } from "../contexts/CurrencyContext";
 
 export default function SettlementDetailsPage() {
     const {id} = useParams();
     const [settlement, setSettlement] = useState<SettlementDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const { currency } = useCurrency();
 
     const [settlementState, setSettlementState] = useState<
         Record<string, { loading: boolean; success?: boolean, error?: string }>
@@ -21,11 +19,11 @@ export default function SettlementDetailsPage() {
         if (!id) return;
 
         setLoading(true);
-        getSettlementDetails(id, currency)
+        getSettlementDetails(id)
             .then(setSettlement)
             .catch((err) => setError(err.message))
             .finally(() => setLoading(false));
-    }, [id, currency]);
+    }, [id]);
 
     type PaymentButton = {
         type: string;
@@ -46,12 +44,9 @@ export default function SettlementDetailsPage() {
 
         const buttons: PaymentButton[] = [];
 
-        // Pobieramy itemy zawsze w PLN, ponieważ Stripe domyślnie procesuje bazową walutę dla tego projektu.
-        const baseCurrency = "PLN";
-
         if (settlementItemTypes.includes("DEPOSIT")) {
             try {
-                await getSettlementItemInfoByType(settlement.reservationId, "DEPOSIT", baseCurrency);
+                await getSettlementItemInfoByType(settlement.reservationId, "DEPOSIT");
             } catch {
                 buttons.push({
                     type: "DEPOSIT",
@@ -62,7 +57,7 @@ export default function SettlementDetailsPage() {
         }
 
         try {
-            await getSettlementItemInfoByType(settlement.reservationId, "ACCOMMODATION", baseCurrency);
+            await getSettlementItemInfoByType(settlement.reservationId, "ACCOMMODATION");
         } catch {
             buttons.push({
                 type: "ACCOMMODATION",
@@ -79,7 +74,7 @@ export default function SettlementDetailsPage() {
             }
 
             try {
-                const res = await getSettlementItemInfoByType(settlement.reservationId, type, baseCurrency);
+                const res = await getSettlementItemInfoByType(settlement.reservationId, type);
                 if (res) {
                     buttons.push({
                         type,
@@ -97,7 +92,7 @@ export default function SettlementDetailsPage() {
 
     const getUnitSettlementItemsType = async (reservationId: string) => {
         try {
-            const res = await getReservationDetails(reservationId, "PLN");
+            const res = await getReservationDetails(reservationId);
             const unitId = res.unitId;
 
             const unitSettlementItemsRes = await fetch(

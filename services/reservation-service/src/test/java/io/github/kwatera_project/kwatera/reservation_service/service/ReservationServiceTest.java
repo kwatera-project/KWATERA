@@ -272,11 +272,13 @@ class ReservationServiceTest {
     reservation.setEndDate(LocalDate.now().plusDays(2));
     reservation.setStatus(ReservationStatus.PENDING);
     reservation.setCreatedAt(Instant.now());
+    reservation.setTotalPrice(BigDecimal.valueOf(100));
+    reservation.setPaymentCurrency("PLN");
+    reservation.setPaymentExchangeRate(BigDecimal.ONE);
 
     when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
 
-    ReservationDetailsDto dto =
-        service.getReservationDetails(reservationId, userId, false, false, "PLN");
+    ReservationDetailsDto dto = service.getReservationDetails(reservationId, userId, false, false);
 
     assertNotNull(dto);
     assertEquals(reservationId, dto.getId());
@@ -299,7 +301,7 @@ class ReservationServiceTest {
     ResponseStatusException exception =
         assertThrows(
             ResponseStatusException.class,
-            () -> service.getReservationDetails(reservationId, userId, false, false, "PLN"));
+            () -> service.getReservationDetails(reservationId, userId, false, false));
 
     assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
   }
@@ -324,8 +326,7 @@ class ReservationServiceTest {
     ResponseStatusException exception =
         assertThrows(
             ResponseStatusException.class,
-            () ->
-                service.getReservationDetails(reservationId, differentUserId, false, false, "PLN"));
+            () -> service.getReservationDetails(reservationId, differentUserId, false, false));
 
     assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
   }
@@ -344,11 +345,15 @@ class ReservationServiceTest {
     Reservation reservation = new Reservation();
     reservation.setId(reservationId);
     reservation.setUserId(ownerId);
+    reservation.setCreatedAt(Instant.now());
+    reservation.setTotalPrice(BigDecimal.valueOf(100));
+    reservation.setPaymentCurrency("PLN");
+    reservation.setPaymentExchangeRate(BigDecimal.ONE);
 
     when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
 
     ReservationDetailsDto dto =
-        service.getReservationDetails(reservationId, managerId, true, false, "PLN");
+        service.getReservationDetails(reservationId, managerId, true, false);
 
     assertNotNull(dto);
     assertEquals(reservationId, dto.getId());
@@ -467,13 +472,15 @@ class ReservationServiceTest {
     reservation.setEndDate(LocalDate.now().plusDays(2));
     reservation.setStatus(ReservationStatus.PENDING);
     reservation.setCreatedAt(Instant.now());
+    reservation.setTotalPrice(BigDecimal.valueOf(100));
+    reservation.setPaymentCurrency("PLN");
+    reservation.setPaymentExchangeRate(BigDecimal.ONE);
 
     when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
     when(restTemplate.getForObject(anyString(), eq(UUID[].class), any(UUID.class)))
         .thenReturn(new UUID[] {unitId});
 
-    ReservationDetailsDto dto =
-        service.getReservationDetails(reservationId, ownerId, false, true, "PLN");
+    ReservationDetailsDto dto = service.getReservationDetails(reservationId, ownerId, false, true);
 
     assertNotNull(dto);
     assertEquals(reservationId, dto.getId());
@@ -505,7 +512,7 @@ class ReservationServiceTest {
     ResponseStatusException exception =
         assertThrows(
             ResponseStatusException.class,
-            () -> service.getReservationDetails(reservationId, ownerId, false, true, "PLN"));
+            () -> service.getReservationDetails(reservationId, ownerId, false, true));
 
     assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
   }
@@ -533,7 +540,7 @@ class ReservationServiceTest {
     ResponseStatusException exception =
         assertThrows(
             ResponseStatusException.class,
-            () -> service.getReservationDetails(reservationId, ownerId, false, true, "PLN"));
+            () -> service.getReservationDetails(reservationId, ownerId, false, true));
 
     assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
     assertTrue(exception.getReason().contains("Unable to verify ownership"));
@@ -557,10 +564,14 @@ class ReservationServiceTest {
     reservation.setStartDate(LocalDate.now());
     reservation.setEndDate(LocalDate.now().plusDays(2));
     reservation.setStatus(ReservationStatus.CONFIRMED);
+    reservation.setCreatedAt(Instant.now());
+    reservation.setTotalPrice(BigDecimal.valueOf(100));
+    reservation.setPaymentCurrency("PLN");
+    reservation.setPaymentExchangeRate(BigDecimal.ONE);
 
     when(repository.findByUserId(userId)).thenReturn(List.of(reservation));
 
-    List<GuestReservationDto> result = service.getMyReservations(userId, "PLN");
+    List<GuestReservationDto> result = service.getMyReservations(userId);
 
     assertNotNull(result);
     assertEquals(1, result.size());

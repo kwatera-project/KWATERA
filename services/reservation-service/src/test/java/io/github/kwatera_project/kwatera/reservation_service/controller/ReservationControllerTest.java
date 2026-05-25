@@ -210,7 +210,7 @@ class ReservationControllerTest {
     dto.setUserId(guestId);
 
     when(reservationService.getReservationDetails(
-            eq(reservationId), eq(adminId), eq(true), eq(false), anyString()))
+            eq(reservationId), eq(adminId), eq(true), eq(false)))
         .thenReturn(dto);
 
     mockMvc
@@ -220,7 +220,7 @@ class ReservationControllerTest {
         .andExpect(status().isOk());
 
     verify(reservationService)
-        .getReservationDetails(eq(reservationId), eq(adminId), eq(true), eq(false), anyString());
+        .getReservationDetails(eq(reservationId), eq(adminId), eq(true), eq(false));
   }
 
   @Test
@@ -243,14 +243,14 @@ class ReservationControllerTest {
   void shouldGetMyReservations_whenUserIsGuest() throws Exception {
     UUID guestId = UUID.randomUUID();
 
-    when(reservationService.getMyReservations(eq(guestId), anyString())).thenReturn(List.of());
+    when(reservationService.getMyReservations(eq(guestId))).thenReturn(List.of());
 
     mockMvc
         .perform(
             get("/api/v1/reservations/my").with(authentication(buildAuth(guestId, "ROLE_GUEST"))))
         .andExpect(status().isOk());
 
-    verify(reservationService).getMyReservations(eq(guestId), anyString());
+    verify(reservationService).getMyReservations(eq(guestId));
   }
 
   @Test

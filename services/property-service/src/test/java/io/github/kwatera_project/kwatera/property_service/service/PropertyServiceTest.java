@@ -22,7 +22,8 @@ class PropertyServiceTest {
   private PropertyImageRepository propertyImageRepository;
   private UnitImageRepository unitImageRepository;
   private UnitSettlementItemRepository unitSettlementItemRepository;
-  private io.github.kwatera_project.kwatera.property_service.client.NbpExchangeRateClient nbpExchangeRateClient;
+  private io.github.kwatera_project.kwatera.property_service.client.NbpExchangeRateClient
+      nbpExchangeRateClient;
 
   @BeforeEach
   void setUp() {
@@ -31,7 +32,8 @@ class PropertyServiceTest {
     propertyImageRepository = mock(PropertyImageRepository.class);
     unitImageRepository = mock(UnitImageRepository.class);
     unitSettlementItemRepository = mock(UnitSettlementItemRepository.class);
-    nbpExchangeRateClient = mock(io.github.kwatera_project.kwatera.property_service.client.NbpExchangeRateClient.class);
+    nbpExchangeRateClient =
+        mock(io.github.kwatera_project.kwatera.property_service.client.NbpExchangeRateClient.class);
 
     propertyService =
         new PropertyService(

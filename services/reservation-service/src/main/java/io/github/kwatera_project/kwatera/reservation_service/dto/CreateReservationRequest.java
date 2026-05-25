@@ -16,4 +16,6 @@ public class CreateReservationRequest {
 
   @NotNull(message = "End date is required")
   private LocalDate endDate;
+
+  private String currency;
 }

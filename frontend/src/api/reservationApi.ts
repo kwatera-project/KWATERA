@@ -2,7 +2,7 @@ import { GATEWAY_BASE_URL } from "./apiConfig";
 
 const API_URL = `${GATEWAY_BASE_URL}/api/v1/reservations`;
 
-export async function createReservation(unitId: string, from: string, to: string) {
+export async function createReservation(unitId: string, from: string, to: string, currency: string) {
     const token = localStorage.getItem("token");
 
     if (!token) {
@@ -18,7 +18,8 @@ export async function createReservation(unitId: string, from: string, to: string
         body: JSON.stringify({
             unitId: unitId,
             startDate: from,
-            endDate: to
+            endDate: to,
+            currency: currency
         })
     });
 
@@ -30,14 +31,14 @@ export async function createReservation(unitId: string, from: string, to: string
     return res.json();
 }
 
-export async function getReservationDetails(id: string, currency: string = "PLN") {
+export async function getReservationDetails(id: string) {
     const token = localStorage.getItem("token");
 
     if (!token) {
         throw new Error("Log in to view this reservation");
     }
 
-    const res = await fetch(`${API_URL}/${id}?currency=${currency}`, {
+    const res = await fetch(`${API_URL}/${id}`, {
         headers: {
             "Authorization": `Bearer ${token}`
         }
@@ -51,14 +52,14 @@ export async function getReservationDetails(id: string, currency: string = "PLN"
     return res.json();
 }
 
-export async function getMyReservations(currency: string = "PLN") {
+export async function getMyReservations() {
     const token = localStorage.getItem("token");
 
     if (!token) {
         throw new Error("Log in to view your reservations");
     }
 
-    const res = await fetch(`${API_URL}/my?currency=${currency}`, {
+    const res = await fetch(`${API_URL}/my`, {
         headers: {
             "Authorization": `Bearer ${token}`
         }

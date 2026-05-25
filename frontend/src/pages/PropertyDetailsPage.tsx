@@ -166,7 +166,7 @@ export default function PropertyDetailsPage() {
         const to = format(dates[1], 'yyyy-MM-dd');
         setBookingState(prev => ({ ...prev, [unitId]: { loading: true } }));
         try {
-            const res = await createReservation(unitId, from, to);
+            const res = await createReservation(unitId, from, to, currency);
             setBookingState(prev => ({ ...prev, [unitId]: { loading: false, success: true } }));
             const token = localStorage.getItem("token");
             const checkoutRes = await fetch(

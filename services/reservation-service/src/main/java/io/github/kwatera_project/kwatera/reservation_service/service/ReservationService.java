@@ -201,11 +201,31 @@ public class ReservationService {
     reservation.setPricePerNightSnapshot(pricePerNight);
     reservation.setTotalPrice(totalPrice);
 
+    String paymentCurrency = "PLN";
+    BigDecimal paymentExchangeRate = BigDecimal.ONE;
+
+    if (request.getCurrency() != null && !"PLN".equalsIgnoreCase(request.getCurrency())) {
+      try {
+        NbpResponseDto nbpResponse = nbpExchangeRateClient.getExchangeRate(request.getCurrency());
+        if (nbpResponse != null && nbpResponse.rates() != null && !nbpResponse.rates().isEmpty()) {
+          paymentCurrency = request.getCurrency().toUpperCase();
+          paymentExchangeRate = nbpResponse.rates().get(0).mid();
+        }
+      } catch (Exception e) {
+        log.warn(
+            "Failed to fetch exchange rate for currency {}: {}",
+            request.getCurrency(),
+            e.getMessage());
+      }
+    }
+    reservation.setPaymentCurrency(paymentCurrency);
+    reservation.setPaymentExchangeRate(paymentExchangeRate);
+
     return reservationRepository.save(reservation);
   }
 
   public ReservationDetailsDto getReservationDetails(
-      UUID reservationId, UUID userId, boolean isAdmin, boolean isOwner, String currency) {
+      UUID reservationId, UUID userId, boolean isAdmin, boolean isOwner) {
     Reservation reservation =
         reservationRepository
             .findById(reservationId)
@@ -231,24 +251,16 @@ public class ReservationService {
     dto.setTotalPrice(reservation.getTotalPrice());
 
     CurrencyMetadataDto currencyInfo =
-        new CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, LocalDate.now());
+        new CurrencyMetadataDto(
+            "PLN",
+            reservation.getPaymentCurrency(),
+            reservation.getPaymentExchangeRate(),
+            reservation.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
     BigDecimal convertedTotalPrice = reservation.getTotalPrice();
 
-    if (currency != null && !"PLN".equalsIgnoreCase(currency)) {
-      try {
-        NbpResponseDto nbpResponse = nbpExchangeRateClient.getExchangeRate(currency);
-        if (nbpResponse != null && nbpResponse.rates() != null && !nbpResponse.rates().isEmpty()) {
-          NbpRateDto rateDto = nbpResponse.rates().get(0);
-          BigDecimal rate = rateDto.mid();
-          currencyInfo =
-              new CurrencyMetadataDto("PLN", currency.toUpperCase(), rate, rateDto.effectiveDate());
-          if (convertedTotalPrice != null) {
-            convertedTotalPrice = convertedTotalPrice.divide(rate, 2, RoundingMode.HALF_UP);
-          }
-        }
-      } catch (Exception e) {
-        log.warn("Failed to fetch exchange rate for currency {}: {}", currency, e.getMessage());
-      }
+    if (!"PLN".equalsIgnoreCase(reservation.getPaymentCurrency())) {
+      convertedTotalPrice =
+          convertedTotalPrice.divide(reservation.getPaymentExchangeRate(), 2, RoundingMode.HALF_UP);
     }
 
     dto.setConvertedTotalPrice(convertedTotalPrice);
@@ -257,36 +269,21 @@ public class ReservationService {
     return dto;
   }
 
-  public List<GuestReservationDto> getMyReservations(UUID userId, String currency) {
+  public List<GuestReservationDto> getMyReservations(UUID userId) {
     return reservationRepository.findByUserId(userId).stream()
         .map(
             r -> {
               CurrencyMetadataDto currencyInfo =
-                  new CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, LocalDate.now());
+                  new CurrencyMetadataDto(
+                      "PLN",
+                      r.getPaymentCurrency(),
+                      r.getPaymentExchangeRate(),
+                      r.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
               BigDecimal convertedTotalPrice = r.getTotalPrice();
 
-              if (currency != null && !"PLN".equalsIgnoreCase(currency)) {
-                try {
-                  NbpResponseDto nbpResponse = nbpExchangeRateClient.getExchangeRate(currency);
-                  if (nbpResponse != null
-                      && nbpResponse.rates() != null
-                      && !nbpResponse.rates().isEmpty()) {
-                    NbpRateDto rateDto = nbpResponse.rates().get(0);
-                    BigDecimal rate = rateDto.mid();
-                    currencyInfo =
-                        new CurrencyMetadataDto(
-                            "PLN", currency.toUpperCase(), rate, rateDto.effectiveDate());
-                    if (convertedTotalPrice != null) {
-                      convertedTotalPrice =
-                          convertedTotalPrice.divide(rate, 2, RoundingMode.HALF_UP);
-                    }
-                  }
-                } catch (Exception e) {
-                  log.warn(
-                      "Failed to fetch exchange rate for currency {}: {}",
-                      currency,
-                      e.getMessage());
-                }
+              if (!"PLN".equalsIgnoreCase(r.getPaymentCurrency())) {
+                convertedTotalPrice =
+                    convertedTotalPrice.divide(r.getPaymentExchangeRate(), 2, RoundingMode.HALF_UP);
               }
 
               return new GuestReservationDto(

@@ -23,4 +23,6 @@ public class ReservationDto {
   private Instant createdAt;
   private BigDecimal pricePerNightSnapshot;
   private BigDecimal totalPrice;
+  private String paymentCurrency;
+  private BigDecimal paymentExchangeRate;
 }
