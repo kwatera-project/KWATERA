@@ -27,8 +27,8 @@ export default function OccupancyCalendarPage() {
     const dates = Array.from({ length: daysToShow }).map((_, i) => addDays(startDate, i));
 
     useEffect(() => {
-        const startStr = format(dates[0], 'yyyy-MM-dd');
-        const endStr = format(dates[dates.length - 1], 'yyyy-MM-dd');
+        const startStr = format(startDate, 'yyyy-MM-dd');
+        const endStr = format(addDays(startDate, daysToShow - 1), 'yyyy-MM-dd');
 
         getOccupancy(startStr, endStr)
             .then(setOccupancies)

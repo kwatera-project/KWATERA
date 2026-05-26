@@ -12,7 +12,6 @@ export default function ReservationDetailsPage() {
     useEffect(() => {
         if (!id) return;
 
-        setLoading(true);
         getReservationDetails(id)
             .then(setReservation)
             .catch((err) => setError(err.message))

@@ -18,7 +18,6 @@ export default function SettlementDetailsPage() {
     useEffect(() => {
         if (!id) return;
 
-        setLoading(true);
         getSettlementDetails(id)
             .then(setSettlement)
             .catch((err) => setError(err.message))
@@ -83,14 +82,14 @@ export default function SettlementDetailsPage() {
                     });
                 }
             } catch {
-                // settlement item jeszcze nie istnieje
+                // ignore missing item
             }
         }
 
         setPaymentButtons(buttons);
     }, []);
 
-    const getUnitSettlementItemsType = async (reservationId: string) => {
+    const getUnitSettlementItemsType = useCallback(async (reservationId: string) => {
         try {
             const res = await getReservationDetails(reservationId);
             const unitId = res.unitId;
@@ -111,7 +110,7 @@ export default function SettlementDetailsPage() {
             const message = err instanceof Error ? err.message : "An error occurred";
             console.error(message);
         }
-    }
+    }, []);
 
     useEffect(() => {
         if (!settlement?.reservationId) return;
@@ -122,7 +121,7 @@ export default function SettlementDetailsPage() {
                 loadPaymentButtons(settlement, types);
             });
 
-    }, [settlement, loadPaymentButtons]);
+    }, [settlement, loadPaymentButtons, getUnitSettlementItemsType]);
 
     const handlePayment = async (reservationId: string,
                                  settlementType: string,
@@ -269,41 +268,46 @@ export default function SettlementDetailsPage() {
                 </div>
             </div>
             {settlement.status !== "PAID" && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                    {paymentButtons.map((button) => {
+                <div className="mt-4 bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <p className="text-xs text-gray-500 mb-3">
+                        * Note: Despite the selected display currency, the payment transaction on the Stripe gateway will be processed in the system's base currency (PLN). Any potential foreign exchange conversion fees depend on your bank.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                        {paymentButtons.map((button) => {
 
-                        const stateKey = `${settlement.id}-${button.type}`;
-                        const state = settlementState[stateKey];
+                            const stateKey = `${settlement.id}-${button.type}`;
+                            const state = settlementState[stateKey];
 
-                        return (
-                            <button
-                                key={button.type}
-                                onClick={() =>
-                                    handlePayment(
-                                        settlement.reservationId,
-                                        button.type,
-                                        settlement.id,
-                                        button.quantity,
-                                        button.unitPrice
-                                    )
-                                }
-                                disabled={state?.loading || state?.success}
-                                className={`px-4 py-2 font-bold rounded shadow ${
-                                    state?.success
-                                        ? "bg-green-500 text-white"
-                                        : state?.loading
-                                            ? "bg-gray-400 text-white cursor-not-allowed"
-                                            : "bg-blue-600 text-white hover:bg-blue-700 transition"
-                                }`}
-                            >
-                                {state?.loading
-                                    ? "Processing..."
-                                    : state?.success
-                                        ? "Redirecting..."
-                                        : `Pay ${button.type}`}
-                            </button>
-                        );
-                    })}
+                            return (
+                                <button
+                                    key={button.type}
+                                    onClick={() =>
+                                        handlePayment(
+                                            settlement.reservationId,
+                                            button.type,
+                                            settlement.id,
+                                            button.quantity,
+                                            button.unitPrice
+                                        )
+                                    }
+                                    disabled={state?.loading || state?.success}
+                                    className={`px-4 py-2 font-bold rounded shadow text-sm ${
+                                        state?.success
+                                            ? "bg-green-500 text-white"
+                                            : state?.loading
+                                                ? "bg-gray-400 text-white cursor-not-allowed"
+                                                : "bg-blue-600 text-white hover:bg-blue-700 transition"
+                                    }`}
+                                >
+                                    {state?.loading
+                                        ? "Processing..."
+                                        : state?.success
+                                            ? "Redirecting..."
+                                            : `Pay ${button.type}`}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
             )}
         </div>
