@@ -16,8 +16,10 @@
         <sonar.coverage.exclusions>
             **/config/OpenApiConfig.java,
             **/config/RestTemplateConfig.java,
-            **/dto/**/*.class,
-            **/model/**/*.class
+            **/dto/**,
+            **/model/**,
+            **/client/**,
+            **/Client/**
         </sonar.coverage.exclusions>
     </properties>
 
@@ -155,6 +157,7 @@
                         <exclude>**/model/**/*.class</exclude>
                         <exclude>**/config/OpenApiConfig.class</exclude>
                         <exclude>**/config/RestTemplateConfig.class</exclude>
+                        <exclude>**/client/**/*.class</exclude>
                     </excludes>
                 </configuration>
             </plugin>

@@ -244,4 +244,46 @@ class PropertyServiceTest {
 
     assertTrue(result.isEmpty());
   }
+
+  @Test
+  void getUnitById_shouldConvertCurrencyWhenProvided() {
+    UUID id = UUID.randomUUID();
+    Unit unit = new Unit();
+    unit.setId(id);
+    unit.setName("Room");
+    unit.setPricePerNight(BigDecimal.valueOf(200));
+
+    when(unitRepository.findById(id)).thenReturn(Optional.of(unit));
+
+    io.github.kwatera_project.kwatera.property_service.dto.NbpRateDto rateDto =
+        new io.github.kwatera_project.kwatera.property_service.dto.NbpRateDto(
+            "no", java.time.LocalDate.now(), BigDecimal.valueOf(4.0));
+    io.github.kwatera_project.kwatera.property_service.dto.NbpResponseDto responseDto =
+        new io.github.kwatera_project.kwatera.property_service.dto.NbpResponseDto(
+            "A", "EUR", "code", List.of(rateDto));
+
+    when(nbpExchangeRateClient.getExchangeRate("EUR")).thenReturn(responseDto);
+
+    var result = propertyService.getUnitById(id, "EUR");
+
+    assertEquals(BigDecimal.valueOf(50).setScale(2), result.getConvertedPricePerNight());
+    assertEquals("EUR", result.getCurrencyInfo().displayCurrency());
+  }
+
+  @Test
+  void getUnitById_shouldFallbackToPlnOnClientError() {
+    UUID id = UUID.randomUUID();
+    Unit unit = new Unit();
+    unit.setId(id);
+    unit.setName("Room");
+    unit.setPricePerNight(BigDecimal.valueOf(200));
+
+    when(unitRepository.findById(id)).thenReturn(Optional.of(unit));
+    when(nbpExchangeRateClient.getExchangeRate("EUR")).thenThrow(new RuntimeException("API error"));
+
+    var result = propertyService.getUnitById(id, "EUR");
+
+    assertEquals(BigDecimal.valueOf(200), result.getConvertedPricePerNight());
+    assertEquals("PLN", result.getCurrencyInfo().displayCurrency());
+  }
 }

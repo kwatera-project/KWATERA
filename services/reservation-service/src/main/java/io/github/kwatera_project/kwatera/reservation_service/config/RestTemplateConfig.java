@@ -13,6 +13,7 @@ public class RestTemplateConfig {
 
   @Bean
   @LoadBalanced
+  @SuppressWarnings("removal")
   public RestTemplate restTemplate(ObjectMapper objectMapper) {
     RestTemplate restTemplate = new RestTemplate();
     MappingJackson2HttpMessageConverter converter =

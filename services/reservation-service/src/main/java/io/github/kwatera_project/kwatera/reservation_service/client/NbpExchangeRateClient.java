@@ -12,6 +12,7 @@ public class NbpExchangeRateClient {
 
   private final RestTemplate restTemplate;
 
+  @SuppressWarnings("removal")
   public NbpExchangeRateClient(ObjectMapper objectMapper) {
     this.restTemplate = new RestTemplate();
     MappingJackson2HttpMessageConverter converter =

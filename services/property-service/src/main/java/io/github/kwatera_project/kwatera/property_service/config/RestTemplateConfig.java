@@ -10,6 +10,7 @@ import org.springframework.web.client.RestTemplate;
 public class RestTemplateConfig {
 
   @Bean
+  @SuppressWarnings("removal")
   public RestTemplate restTemplate(ObjectMapper objectMapper) {
     RestTemplate restTemplate = new RestTemplate();
     MappingJackson2HttpMessageConverter converter =

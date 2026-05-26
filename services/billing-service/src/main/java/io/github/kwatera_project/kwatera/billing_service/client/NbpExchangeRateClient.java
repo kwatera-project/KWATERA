@@ -10,13 +10,13 @@ public class NbpExchangeRateClient {
 
   private final RestTemplate restTemplate;
 
-  public NbpExchangeRateClient(RestTemplate restTemplate) {
-    this.restTemplate = restTemplate;
+  public NbpExchangeRateClient() {
+    this.restTemplate = new RestTemplate();
   }
 
   @Cacheable("exchangeRates")
   public NbpResponseDto getExchangeRate(String currencyCode) {
-    String url = "http://api.nbp.pl/api/exchangerates/rates/a/" + currencyCode + "/?format=json";
+    String url = "https://api.nbp.pl/api/exchangerates/rates/a/" + currencyCode + "/?format=json";
     return restTemplate.getForObject(url, NbpResponseDto.class);
   }
 }
