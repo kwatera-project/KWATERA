@@ -1090,4 +1090,33 @@ class ReservationServiceTest {
     assertEquals(new BigDecimal("100.00").setScale(2), dto.getConvertedTotalPrice());
     assertEquals("EUR", dto.getCurrencyInfo().displayCurrency());
   }
+
+  @Test
+  void getMyReservations_shouldConvertCurrency() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    ReservationService service =
+        new ReservationService(
+            repository, mock(RestTemplate.class), mock(NbpExchangeRateClient.class));
+
+    UUID userId = UUID.randomUUID();
+    Reservation reservation = new Reservation();
+    reservation.setId(UUID.randomUUID());
+    reservation.setUserId(userId);
+    reservation.setUnitId(UUID.randomUUID());
+    reservation.setStartDate(LocalDate.now());
+    reservation.setEndDate(LocalDate.now().plusDays(2));
+    reservation.setStatus(ReservationStatus.PENDING);
+    reservation.setCreatedAt(Instant.now());
+    reservation.setTotalPrice(new BigDecimal("400.00"));
+    reservation.setPaymentCurrency("EUR");
+    reservation.setPaymentExchangeRate(BigDecimal.valueOf(4.0));
+
+    when(repository.findByUserId(userId)).thenReturn(List.of(reservation));
+
+    List<GuestReservationDto> result = service.getMyReservations(userId);
+
+    assertEquals(1, result.size());
+    assertEquals(new BigDecimal("100.00").setScale(2), result.get(0).convertedTotalPrice());
+    assertEquals("EUR", result.get(0).currencyInfo().displayCurrency());
+  }
 }

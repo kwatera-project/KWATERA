@@ -18,7 +18,8 @@
             **/config/JpaConfig.java,
             **/model/**,
             **/dto/**,
-            **/client/**
+            **/client/**,
+            **/Client/**
         </sonar.coverage.exclusions>
     </properties>
 
