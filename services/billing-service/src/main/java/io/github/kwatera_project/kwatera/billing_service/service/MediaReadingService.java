@@ -78,17 +78,17 @@ public class MediaReadingService {
     mediaReadingRepository.save(reading);
 
     UtilityType utilityType = reading.getUtilityType();
-    BigDecimal unit_price = reading.getUnitPrice();
-    BigDecimal consumption_difference = reading.getConsumptionDifference();
+    BigDecimal unitPrice = reading.getUnitPrice();
+    BigDecimal consumptionDifference = finalReading.subtract(reading.getInitialReading());
 
-    // Tworzy się jeszcze nie opłacone SelletentItem -> dla klienta powinien się pojawić przycisk
+    // Tworzy się jeszcze nie opłacone SettlementItem -> dla klienta powinien się pojawić przycisk
     settlementService.addUtilitySettlementItem(
-        settlementId,
-        unitId,
-        mapUtilityType(utilityType),
-        descriptionFor(utilityType),
-        consumption_difference,
-        unit_price);
+            settlementId,
+            unitId,
+            mapUtilityType(utilityType),
+            descriptionFor(utilityType),
+            consumptionDifference,
+            unitPrice);
   }
 
   private SettlementItemType mapUtilityType(UtilityType utilityType) {

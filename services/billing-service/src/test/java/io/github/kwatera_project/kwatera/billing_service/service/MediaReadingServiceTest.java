@@ -174,4 +174,39 @@ class MediaReadingServiceTest {
 
     assertEquals(finalReading, electricityReading.getFinalReading());
   }
+
+  @Test
+  void shouldCalculateConsumptionDifferenceFromInitialAndFinalReadingWhenFinalReadingIsAdded() {
+    UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    BigDecimal initialReading = new BigDecimal("100.000000");
+    BigDecimal finalReading = new BigDecimal("108.000000");
+    BigDecimal expectedConsumptionDifference = new BigDecimal("8.000000");
+    BigDecimal unitPrice = new BigDecimal("5.00");
+
+    MediaReading existingReading = new MediaReading();
+    existingReading.setSettlementId(settlementId);
+    existingReading.setUtilityType(UtilityType.WATER);
+    existingReading.setInitialReading(initialReading);
+    existingReading.setUnitPrice(unitPrice);
+
+    when(mediaReadingRepository.findBySettlementId(settlementId))
+            .thenReturn(Optional.of(existingReading));
+
+    when(mediaReadingRepository.save(any(MediaReading.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+    mediaReadingService.addFinalMediaReading(
+            settlementId, unitId, finalReading, new BigDecimal("0.99"));
+
+    verify(settlementService)
+            .addUtilitySettlementItem(
+                    eq(settlementId),
+                    eq(unitId),
+                    eq(SettlementItemType.WATER),
+                    eq("Water usage"),
+                    eq(expectedConsumptionDifference),
+                    eq(unitPrice));
+  }
 }
