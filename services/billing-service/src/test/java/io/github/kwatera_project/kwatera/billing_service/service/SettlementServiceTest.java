@@ -553,4 +553,81 @@ class SettlementServiceTest {
     assertEquals(new BigDecimal("10.00").setScale(2), result.convertedAmount());
     assertEquals("EUR", result.currencyInfo().displayCurrency());
   }
+
+  @Test
+  void getSettlementWithItems_shouldNotConvertIfPLN() {
+    UUID reservationId = UUID.randomUUID();
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setPaymentCurrency("PLN");
+    reservationDto.setPaymentExchangeRate(BigDecimal.ONE);
+
+    Settlement settlement = new Settlement();
+    settlement.setId(UUID.randomUUID());
+    settlement.setTotalAmount(new BigDecimal("400.00"));
+    settlement.setAmountPaid(new BigDecimal("200.00"));
+    settlement.setBalanceDue(new BigDecimal("200.00"));
+
+    when(settlementRepository.findByReservationId(reservationId))
+        .thenReturn(Optional.of(settlement));
+    when(settlementItemRepository.findBySettlementId(settlement.getId())).thenReturn(List.of());
+
+    SettlementResponseDto result = settlementService.getSettlementWithItems(reservationDto);
+
+    assertEquals(new BigDecimal("400.00"), result.settlement().convertedTotalAmount());
+    assertEquals("PLN", result.settlement().currencyInfo().displayCurrency());
+  }
+
+  @Test
+  void getSettlementWithItems_shouldHandleNullCurrencyAndAmounts() {
+    UUID reservationId = UUID.randomUUID();
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setPaymentCurrency(null);
+    reservationDto.setPaymentExchangeRate(null);
+
+    Settlement settlement = new Settlement();
+    settlement.setId(UUID.randomUUID());
+    settlement.setTotalAmount(null);
+    settlement.setAmountPaid(null);
+    settlement.setBalanceDue(null);
+
+    when(settlementRepository.findByReservationId(reservationId))
+        .thenReturn(Optional.of(settlement));
+    when(settlementItemRepository.findBySettlementId(settlement.getId())).thenReturn(List.of());
+
+    SettlementResponseDto result = settlementService.getSettlementWithItems(reservationDto);
+
+    assertNull(result.settlement().convertedTotalAmount());
+    assertEquals("PLN", result.settlement().currencyInfo().displayCurrency());
+  }
+
+  @Test
+  void getSettlementItemInfoByType_shouldHandleNullCurrencyAndAmounts() {
+    UUID reservationId = UUID.randomUUID();
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setPaymentCurrency(null);
+    reservationDto.setPaymentExchangeRate(null);
+
+    Settlement settlement = new Settlement();
+    settlement.setId(UUID.randomUUID());
+
+    SettlementItem item = new SettlementItem();
+    item.setAmount(null);
+    item.setType(SettlementItemType.ELECTRICITY);
+
+    when(settlementRepository.findByReservationId(reservationId))
+        .thenReturn(Optional.of(settlement));
+    when(settlementItemRepository.findBySettlementIdAndType(
+            settlement.getId(), SettlementItemType.ELECTRICITY))
+        .thenReturn(Optional.of(item));
+
+    SettlementItemDto result =
+        settlementService.getSettlementItemInfoByType(
+            reservationDto, SettlementItemType.ELECTRICITY);
+
+    assertNull(result.convertedAmount());
+    assertEquals("PLN", result.currencyInfo().displayCurrency());
+  }
 }

@@ -80,4 +80,44 @@ class PaymentServiceTest {
 
     assertEquals(reservationId, result.getReservationId());
   }
+
+  @Test
+  void shouldGetSettlementWithItems() {
+    UUID reservationId = UUID.randomUUID();
+    ReservationDto dto = new ReservationDto();
+
+    when(stripeService.getReservation(reservationId, "token")).thenReturn(dto);
+
+    io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto response =
+        new io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto(
+            null, java.util.List.of());
+
+    when(settlementService.getSettlementWithItems(dto)).thenReturn(response);
+
+    io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto result =
+        paymentService.getSettlementWithItems(reservationId, "token");
+
+    assertEquals(response, result);
+  }
+
+  @Test
+  void shouldGetSettlementItemInfoByType() {
+    UUID reservationId = UUID.randomUUID();
+    ReservationDto dto = new ReservationDto();
+
+    when(stripeService.getReservation(reservationId, "token")).thenReturn(dto);
+
+    io.github.kwatera_project.kwatera.billing_service.dto.SettlementItemDto itemDto =
+        new io.github.kwatera_project.kwatera.billing_service.dto.SettlementItemDto(
+            null, null, null, null, null, null, null, null, null);
+
+    when(settlementService.getSettlementItemInfoByType(dto, SettlementItemType.ELECTRICITY))
+        .thenReturn(itemDto);
+
+    io.github.kwatera_project.kwatera.billing_service.dto.SettlementItemDto result =
+        paymentService.getSettlementItemInfoByType(
+            reservationId, SettlementItemType.ELECTRICITY, "token");
+
+    assertEquals(itemDto, result);
+  }
 }
