@@ -192,21 +192,21 @@ class MediaReadingServiceTest {
     existingReading.setUnitPrice(unitPrice);
 
     when(mediaReadingRepository.findBySettlementId(settlementId))
-            .thenReturn(Optional.of(existingReading));
+        .thenReturn(Optional.of(existingReading));
 
     when(mediaReadingRepository.save(any(MediaReading.class)))
-            .thenAnswer(invocation -> invocation.getArgument(0));
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
     mediaReadingService.addFinalMediaReading(
-            settlementId, unitId, finalReading, new BigDecimal("0.99"));
+        settlementId, unitId, finalReading, new BigDecimal("0.99"));
 
     verify(settlementService)
-            .addUtilitySettlementItem(
-                    eq(settlementId),
-                    eq(unitId),
-                    eq(SettlementItemType.WATER),
-                    eq("Water usage"),
-                    eq(expectedConsumptionDifference),
-                    eq(unitPrice));
+        .addUtilitySettlementItem(
+            eq(settlementId),
+            eq(unitId),
+            eq(SettlementItemType.WATER),
+            eq("Water usage"),
+            eq(expectedConsumptionDifference),
+            eq(unitPrice));
   }
 }

@@ -83,12 +83,12 @@ public class MediaReadingService {
 
     // Tworzy się jeszcze nie opłacone SettlementItem -> dla klienta powinien się pojawić przycisk
     settlementService.addUtilitySettlementItem(
-            settlementId,
-            unitId,
-            mapUtilityType(utilityType),
-            descriptionFor(utilityType),
-            consumptionDifference,
-            unitPrice);
+        settlementId,
+        unitId,
+        mapUtilityType(utilityType),
+        descriptionFor(utilityType),
+        consumptionDifference,
+        unitPrice);
   }
 
   private SettlementItemType mapUtilityType(UtilityType utilityType) {
