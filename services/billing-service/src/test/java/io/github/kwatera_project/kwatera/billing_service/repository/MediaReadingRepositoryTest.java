@@ -51,7 +51,7 @@ public class MediaReadingRepositoryTest {
   void shouldCalculateConsumptionDifferenceAndCost() {
     MediaReading reading = new MediaReading();
 
-    reading.setSettlementItemId(UUID.randomUUID());
+    reading.setSettlementId(UUID.randomUUID());
     reading.setUtilityType(UtilityType.WATER);
 
     reading.setInitialReading(new BigDecimal("100.000"));
@@ -78,7 +78,7 @@ public class MediaReadingRepositoryTest {
   void shouldReturnNullCalculatedFieldsWhenFinalReadingIsNull() {
     MediaReading reading = new MediaReading();
 
-    reading.setSettlementItemId(UUID.randomUUID());
+    reading.setSettlementId(UUID.randomUUID());
     reading.setUtilityType(UtilityType.WATER);
 
     reading.setInitialReading(new BigDecimal("200.000"));
@@ -101,7 +101,7 @@ public class MediaReadingRepositoryTest {
   void shouldFailWhenFinalReadingIsLowerThanInitial() {
     MediaReading reading = new MediaReading();
 
-    reading.setSettlementItemId(UUID.randomUUID());
+    reading.setSettlementId(UUID.randomUUID());
     reading.setUtilityType(UtilityType.ELECTRICITY);
 
     reading.setInitialReading(new BigDecimal("500"));

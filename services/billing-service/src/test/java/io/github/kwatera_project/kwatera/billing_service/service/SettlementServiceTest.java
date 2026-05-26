@@ -243,7 +243,7 @@ class SettlementServiceTest {
         .thenAnswer(invocation -> invocation.getArgument(0));
     when(settlementItemRepository.existsBySettlementIdAndTypeIn(any(), any())).thenReturn(true);
 
-    settlementService.addUtilityCharge(
+    settlementService.addUtilitySettlementItem(
         settlementId,
         unitId,
         SettlementItemType.WATER,
@@ -273,7 +273,7 @@ class SettlementServiceTest {
         .thenAnswer(invocation -> invocation.getArgument(0));
     when(settlementItemRepository.existsBySettlementIdAndTypeIn(any(), any())).thenReturn(true);
 
-    settlementService.addUtilityCharge(
+    settlementService.addUtilitySettlementItem(
         settlementId,
         unitId,
         SettlementItemType.ELECTRICITY,

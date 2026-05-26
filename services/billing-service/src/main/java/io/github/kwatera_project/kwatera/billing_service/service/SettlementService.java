@@ -68,13 +68,14 @@ public class SettlementService {
   }
 
   @Transactional
-  public SettlementItem addUtilityCharge(
+  public SettlementItem addUtilitySettlementItem(
       UUID settlementId,
       UUID unitId,
       SettlementItemType type,
       String description,
       BigDecimal quantity,
       BigDecimal unitPrice) {
+
     if (type != WATER && type != ELECTRICITY) {
       throw new IllegalArgumentException(
           "Only water and electricity utility charges are supported");

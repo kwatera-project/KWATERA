@@ -2,7 +2,7 @@ CREATE TABLE media_readings
 (
     id                       UUID PRIMARY KEY,
 
-    settlement_item_id       UUID           NOT NULL,
+    settlement_id       UUID           NOT NULL,
 
     utility_type             VARCHAR(50)    NOT NULL,
 
@@ -46,16 +46,16 @@ CREATE TABLE media_readings
         ),
 
     CONSTRAINT fk_media_readings_settlement_item
-        FOREIGN KEY (settlement_item_id)
-            REFERENCES settlement_items (id)
+        FOREIGN KEY (settlement_id)
+            REFERENCES settlements (id)
             ON DELETE CASCADE
 );
 
-CREATE INDEX idx_media_readings_settlement_item_id ON media_readings (settlement_item_id);
+CREATE INDEX idx_media_readings_settlement_id ON media_readings (settlement_id);
 CREATE INDEX idx_media_readings_reading_status ON media_readings (reading_status);
 
 INSERT INTO media_readings (id,
-                            settlement_item_id,
+                            settlement_id,
                             utility_type,
                             initial_reading,
                             initial_confidence_score,
@@ -65,12 +65,12 @@ INSERT INTO media_readings (id,
                             reading_source,
                             reading_status)
 VALUES (gen_random_uuid(),
-        'bbbbbbbb-bbbb-bbbb-bbbb-111111111112',
+        'aaaaaaaa-aaaa-aaaa-aaaa-111111111111',
         'WATER',
         100.000000,
         0.982145,
         108.000000,
         0.997531,
-        5.00,
+        18.50,
         'OCR',
         'AUTO_APPROVED');

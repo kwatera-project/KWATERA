@@ -26,8 +26,8 @@ public class MediaReading {
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
-  @Column(name = "settlement_item_id", nullable = false)
-  private UUID settlementItemId;
+  @Column(name = "settlement_id", nullable = false)
+  private UUID settlementId;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "utility_type", nullable = false, length = 50)

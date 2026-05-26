@@ -8,5 +8,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface MediaReadingRepository extends JpaRepository<MediaReading, UUID> {
-  Optional<MediaReading> findBySettlementItemId(UUID settlementItemId);
+  Optional<MediaReading> findBySettlementId(UUID settlementId);
 }

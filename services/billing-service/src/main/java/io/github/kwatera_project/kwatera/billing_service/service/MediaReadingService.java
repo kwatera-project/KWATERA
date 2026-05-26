@@ -1,12 +1,13 @@
 package io.github.kwatera_project.kwatera.billing_service.service;
 
+import static io.github.kwatera_project.kwatera.billing_service.model.ReadingStatus.PENDING;
+
 import io.github.kwatera_project.kwatera.billing_service.model.MediaReading;
 import io.github.kwatera_project.kwatera.billing_service.model.ReadingSource;
-import io.github.kwatera_project.kwatera.billing_service.model.ReadingStatus;
-import io.github.kwatera_project.kwatera.billing_service.model.SettlementItem;
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
 import io.github.kwatera_project.kwatera.billing_service.model.UtilityType;
 import io.github.kwatera_project.kwatera.billing_service.repository.MediaReadingRepository;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -21,43 +22,73 @@ public class MediaReadingService {
   private final SettlementService settlementService;
 
   @Transactional
-  public MediaReading createFinalizedMediaReadingCharge(
+  public void createMediaReadingWithInitialReading(
       UUID settlementId,
-      UUID unitId,
       UtilityType utilityType,
       BigDecimal initialReading,
       BigDecimal initialConfidenceScore,
-      BigDecimal finalReading,
-      BigDecimal finalConfidenceScore,
       BigDecimal unitPrice,
-      ReadingSource readingSource,
-      ReadingStatus readingStatus) {
+      ReadingSource readingSource) {
+
+    MediaReading reading = new MediaReading();
+    reading.setSettlementId(settlementId);
+    reading.setUtilityType(utilityType);
+    reading.setInitialReading(initialReading);
+    reading.setInitialConfidenceScore(initialConfidenceScore);
+    reading.setUnitPrice(unitPrice);
+    reading.setReadingSource(readingSource);
+
+    // Tu warto dodać sprawdzenie initialConfidenceScore i w zależności od tego ustawić
+    // setReadingStatus()
+
+    reading.setReadingStatus(PENDING);
+
+    mediaReadingRepository.save(reading);
+  }
+
+  @Transactional
+  public void addFinalMediaReading(
+      UUID settlementId, UUID unitId, BigDecimal finalReading, BigDecimal finalConfidenceScore) {
+
+    MediaReading reading = mediaReadingRepository.findBySettlementId(settlementId).orElse(null);
+
+    if (reading == null) {
+      throw new EntityNotFoundException(
+          "Media Reading not found for settlementId: " + settlementId);
+    }
+
     if (finalReading == null) {
       throw new IllegalArgumentException("Final reading is required");
     }
 
-    if (finalReading.compareTo(initialReading) < 0) {
+    if (finalReading.compareTo(reading.getInitialReading()) < 0) {
       throw new IllegalArgumentException("Final reading cannot be lower than initial reading");
     }
 
-    BigDecimal consumption = finalReading.subtract(initialReading);
-    SettlementItemType itemType = mapUtilityType(utilityType);
-    SettlementItem item =
-        settlementService.addUtilityCharge(
-            settlementId, unitId, itemType, descriptionFor(utilityType), consumption, unitPrice);
-
-    MediaReading reading = new MediaReading();
-    reading.setSettlementItemId(item.getId());
-    reading.setUtilityType(utilityType);
-    reading.setInitialReading(initialReading);
-    reading.setInitialConfidenceScore(initialConfidenceScore);
     reading.setFinalReading(finalReading);
     reading.setFinalConfidenceScore(finalConfidenceScore);
-    reading.setUnitPrice(unitPrice);
-    reading.setReadingSource(readingSource);
-    reading.setReadingStatus(readingStatus);
 
-    return mediaReadingRepository.save(reading);
+    // Wartości się przeliczają na poziomie bazy
+
+    // Tu warto dodać sprawdzenie finalConfidenceScore i w zależności od tego ustawić
+    // setReadingStatus()
+
+    reading.setReadingStatus(PENDING);
+
+    mediaReadingRepository.save(reading);
+
+    UtilityType utilityType = reading.getUtilityType();
+    BigDecimal unit_price = reading.getUnitPrice();
+    BigDecimal consumption_difference = reading.getConsumptionDifference();
+
+    // Tworzy się jeszcze nie opłacone SelletentItem -> dla klienta powinien się pojawić przycisk
+    settlementService.addUtilitySettlementItem(
+        settlementId,
+        unitId,
+        mapUtilityType(utilityType),
+        descriptionFor(utilityType),
+        consumption_difference,
+        unit_price);
   }
 
   private SettlementItemType mapUtilityType(UtilityType utilityType) {

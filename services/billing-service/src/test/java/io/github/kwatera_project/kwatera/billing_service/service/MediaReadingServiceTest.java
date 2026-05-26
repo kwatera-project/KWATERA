@@ -1,21 +1,13 @@
 package io.github.kwatera_project.kwatera.billing_service.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
-import io.github.kwatera_project.kwatera.billing_service.model.MediaReading;
-import io.github.kwatera_project.kwatera.billing_service.model.ReadingSource;
-import io.github.kwatera_project.kwatera.billing_service.model.ReadingStatus;
-import io.github.kwatera_project.kwatera.billing_service.model.SettlementItem;
-import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
-import io.github.kwatera_project.kwatera.billing_service.model.UtilityType;
+import io.github.kwatera_project.kwatera.billing_service.model.*;
 import io.github.kwatera_project.kwatera.billing_service.repository.MediaReadingRepository;
 import java.math.BigDecimal;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,143 +29,149 @@ class MediaReadingServiceTest {
   void shouldCreateSettlementItemFromFinalizedWaterReading() {
     UUID settlementId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
-    UUID settlementItemId = UUID.randomUUID();
-    SettlementItem item = new SettlementItem();
-    item.setId(settlementItemId);
+    BigDecimal initialValue = new BigDecimal("100.000000");
+    BigDecimal finalValue = new BigDecimal("108.000000");
+    BigDecimal diff = new BigDecimal("8.000000");
+    BigDecimal unitPrice = new BigDecimal("5.00");
 
-    when(settlementService.addUtilityCharge(
+    MediaReading existingReading = new MediaReading();
+    existingReading.setSettlementId(settlementId);
+    existingReading.setUtilityType(UtilityType.WATER);
+    existingReading.setInitialReading(initialValue);
+    existingReading.setUnitPrice(unitPrice);
+
+    // Ustawiamy ręcznie wynik różnicy, ponieważ Mockito nie uruchomi logiki DB/Entity
+    existingReading.setConsumptionDifference(diff);
+
+    UUID settlementItemId = UUID.randomUUID();
+    SettlementItem mockItem = new SettlementItem();
+    mockItem.setId(settlementItemId);
+
+    when(mediaReadingRepository.findBySettlementId(settlementId))
+        .thenReturn(Optional.of(existingReading));
+
+    when(settlementService.addUtilitySettlementItem(
             eq(settlementId),
             eq(unitId),
             eq(SettlementItemType.WATER),
             eq("Water usage"),
-            eq(new BigDecimal("8.000000")),
-            eq(new BigDecimal("5.00"))))
-        .thenReturn(item);
+            eq(diff),
+            eq(unitPrice)))
+        .thenReturn(mockItem);
+
     when(mediaReadingRepository.save(any(MediaReading.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
-    MediaReading reading =
-        mediaReadingService.createFinalizedMediaReadingCharge(
-            settlementId,
-            unitId,
-            UtilityType.WATER,
-            new BigDecimal("100.000000"),
-            new BigDecimal("0.982145"),
-            new BigDecimal("108.000000"),
-            new BigDecimal("0.997531"),
-            new BigDecimal("5.00"),
-            ReadingSource.OCR,
-            ReadingStatus.AUTO_APPROVED);
+    mediaReadingService.addFinalMediaReading(
+        settlementId, unitId, finalValue, new BigDecimal("0.99"));
 
-    assertEquals(settlementItemId, reading.getSettlementItemId());
-    assertEquals(UtilityType.WATER, reading.getUtilityType());
     verify(settlementService)
-        .addUtilityCharge(
-            settlementId,
-            unitId,
-            SettlementItemType.WATER,
-            "Water usage",
-            new BigDecimal("8.000000"),
-            new BigDecimal("5.00"));
+        .addUtilitySettlementItem(
+            eq(settlementId),
+            eq(unitId),
+            eq(SettlementItemType.WATER),
+            anyString(),
+            eq(diff),
+            eq(unitPrice));
+
+    assertEquals(finalValue, existingReading.getFinalReading());
+    assertEquals(settlementId, existingReading.getSettlementId());
   }
 
   @Test
-  void shouldSaveMediaReadingLinkedToCreatedSettlementItem() {
+  void shouldCreateAndSaveInitialMediaReading() {
+
     UUID settlementId = UUID.randomUUID();
-    UUID unitId = UUID.randomUUID();
-    UUID settlementItemId = UUID.randomUUID();
-    SettlementItem item = new SettlementItem();
-    item.setId(settlementItemId);
+    UtilityType utilityType = UtilityType.WATER;
+    BigDecimal initialReading = new BigDecimal("100.00");
+    BigDecimal confidenceScore = new BigDecimal("0.98");
+    BigDecimal unitPrice = new BigDecimal("5.50");
+    ReadingSource source = ReadingSource.OCR;
+
     ArgumentCaptor<MediaReading> readingCaptor = ArgumentCaptor.forClass(MediaReading.class);
 
-    when(settlementService.addUtilityCharge(any(), any(), any(), any(), any(), any()))
-        .thenReturn(item);
     when(mediaReadingRepository.save(any(MediaReading.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
-    mediaReadingService.createFinalizedMediaReadingCharge(
-        settlementId,
-        unitId,
-        UtilityType.WATER,
-        new BigDecimal("100.000000"),
-        new BigDecimal("0.982145"),
-        new BigDecimal("108.000000"),
-        new BigDecimal("0.997531"),
-        new BigDecimal("5.00"),
-        ReadingSource.OCR,
-        ReadingStatus.AUTO_APPROVED);
+    mediaReadingService.createMediaReadingWithInitialReading(
+        settlementId, utilityType, initialReading, confidenceScore, unitPrice, source);
 
-    verify(mediaReadingRepository).save(readingCaptor.capture());
+    verify(mediaReadingRepository, times(1)).save(readingCaptor.capture());
+
     MediaReading savedReading = readingCaptor.getValue();
 
-    assertEquals(settlementItemId, savedReading.getSettlementItemId());
-    assertEquals(new BigDecimal("100.000000"), savedReading.getInitialReading());
-    assertEquals(new BigDecimal("108.000000"), savedReading.getFinalReading());
-    assertEquals(new BigDecimal("5.00"), savedReading.getUnitPrice());
-    assertEquals(ReadingStatus.AUTO_APPROVED, savedReading.getReadingStatus());
+    assertEquals(settlementId, savedReading.getSettlementId());
+    assertEquals(utilityType, savedReading.getUtilityType());
+    assertEquals(initialReading, savedReading.getInitialReading());
+    assertEquals(confidenceScore, savedReading.getInitialConfidenceScore());
+    assertEquals(unitPrice, savedReading.getUnitPrice());
+    assertEquals(source, savedReading.getReadingSource());
+
+    assertEquals(ReadingStatus.PENDING, savedReading.getReadingStatus());
   }
 
   @Test
   void shouldRejectFinalReadingLowerThanInitial() {
+
     UUID settlementId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
+    BigDecimal initialReading = new BigDecimal("100.00");
+    BigDecimal invalidLowerFinalReading = new BigDecimal("90.00"); // Wartość mniejsza niż initial
 
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            mediaReadingService.createFinalizedMediaReadingCharge(
-                settlementId,
-                unitId,
-                UtilityType.WATER,
-                new BigDecimal("108.000000"),
-                new BigDecimal("0.982145"),
-                new BigDecimal("100.000000"),
-                new BigDecimal("0.997531"),
-                new BigDecimal("5.00"),
-                ReadingSource.OCR,
-                ReadingStatus.AUTO_APPROVED));
+    MediaReading existingReading = new MediaReading();
+    existingReading.setSettlementId(settlementId);
+    existingReading.setInitialReading(initialReading);
 
-    verify(settlementService, never()).addUtilityCharge(any(), any(), any(), any(), any(), any());
+    when(mediaReadingRepository.findBySettlementId(settlementId))
+        .thenReturn(Optional.of(existingReading));
+
+    IllegalArgumentException exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> {
+              mediaReadingService.addFinalMediaReading(
+                  settlementId, unitId, invalidLowerFinalReading, new BigDecimal("0.99"));
+            });
+
+    assertEquals("Final reading cannot be lower than initial reading", exception.getMessage());
+
     verify(mediaReadingRepository, never()).save(any());
+    verify(settlementService, never())
+        .addUtilitySettlementItem(any(), any(), any(), any(), any(), any());
   }
 
   @Test
   void shouldMapElectricityReadingToElectricitySettlementItem() {
+
     UUID settlementId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
-    SettlementItem item = new SettlementItem();
-    item.setId(UUID.randomUUID());
+    BigDecimal initialReading = new BigDecimal("1000.00");
+    BigDecimal finalReading = new BigDecimal("1250.00");
+    BigDecimal consumptionDiff = new BigDecimal("250.00");
+    BigDecimal unitPrice = new BigDecimal("0.90");
 
-    when(settlementService.addUtilityCharge(
+    MediaReading electricityReading = new MediaReading();
+    electricityReading.setSettlementId(settlementId);
+    electricityReading.setUtilityType(UtilityType.ELECTRICITY);
+    electricityReading.setInitialReading(initialReading);
+    electricityReading.setUnitPrice(unitPrice);
+    electricityReading.setConsumptionDifference(consumptionDiff);
+
+    when(mediaReadingRepository.findBySettlementId(settlementId))
+        .thenReturn(Optional.of(electricityReading));
+
+    mediaReadingService.addFinalMediaReading(
+        settlementId, unitId, finalReading, new BigDecimal("0.95"));
+
+    verify(settlementService)
+        .addUtilitySettlementItem(
             eq(settlementId),
             eq(unitId),
             eq(SettlementItemType.ELECTRICITY),
             eq("Electricity usage"),
-            eq(new BigDecimal("40.000000")),
-            eq(new BigDecimal("1.20"))))
-        .thenReturn(item);
-    when(mediaReadingRepository.save(any(MediaReading.class)))
-        .thenAnswer(invocation -> invocation.getArgument(0));
+            eq(consumptionDiff),
+            eq(unitPrice));
 
-    mediaReadingService.createFinalizedMediaReadingCharge(
-        settlementId,
-        unitId,
-        UtilityType.ELECTRICITY,
-        new BigDecimal("500.000000"),
-        new BigDecimal("0.982145"),
-        new BigDecimal("540.000000"),
-        new BigDecimal("0.997531"),
-        new BigDecimal("1.20"),
-        ReadingSource.OCR,
-        ReadingStatus.AUTO_APPROVED);
-
-    verify(settlementService)
-        .addUtilityCharge(
-            settlementId,
-            unitId,
-            SettlementItemType.ELECTRICITY,
-            "Electricity usage",
-            new BigDecimal("40.000000"),
-            new BigDecimal("1.20"));
+    assertEquals(finalReading, electricityReading.getFinalReading());
   }
 }
