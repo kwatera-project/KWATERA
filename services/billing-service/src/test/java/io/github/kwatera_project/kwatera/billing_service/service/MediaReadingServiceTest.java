@@ -33,10 +33,11 @@ class MediaReadingServiceTest {
     BigDecimal finalValue = new BigDecimal("108.000000");
     BigDecimal diff = new BigDecimal("8.000000");
     BigDecimal unitPrice = new BigDecimal("5.00");
+    UtilityType type = UtilityType.WATER;
 
     MediaReading existingReading = new MediaReading();
     existingReading.setSettlementId(settlementId);
-    existingReading.setUtilityType(UtilityType.WATER);
+    existingReading.setUtilityType(type);
     existingReading.setInitialReading(initialValue);
     existingReading.setUnitPrice(unitPrice);
 
@@ -47,7 +48,7 @@ class MediaReadingServiceTest {
     SettlementItem mockItem = new SettlementItem();
     mockItem.setId(settlementItemId);
 
-    when(mediaReadingRepository.findBySettlementId(settlementId))
+    when(mediaReadingRepository.findBySettlementIdAndUtilityType(settlementId, type))
         .thenReturn(Optional.of(existingReading));
 
     when(settlementService.addUtilitySettlementItem(
@@ -63,7 +64,7 @@ class MediaReadingServiceTest {
         .thenAnswer(invocation -> invocation.getArgument(0));
 
     mediaReadingService.addFinalMediaReading(
-        settlementId, unitId, finalValue, new BigDecimal("0.99"));
+        settlementId, unitId, type, finalValue, new BigDecimal("0.99"));
 
     verify(settlementService)
         .addUtilitySettlementItem(
@@ -117,12 +118,14 @@ class MediaReadingServiceTest {
     UUID unitId = UUID.randomUUID();
     BigDecimal initialReading = new BigDecimal("100.00");
     BigDecimal invalidLowerFinalReading = new BigDecimal("90.00"); // Wartość mniejsza niż initial
+    UtilityType type = UtilityType.WATER;
 
     MediaReading existingReading = new MediaReading();
     existingReading.setSettlementId(settlementId);
     existingReading.setInitialReading(initialReading);
+    existingReading.setUtilityType(type);
 
-    when(mediaReadingRepository.findBySettlementId(settlementId))
+    when(mediaReadingRepository.findBySettlementIdAndUtilityType(settlementId, type))
         .thenReturn(Optional.of(existingReading));
 
     IllegalArgumentException exception =
@@ -130,7 +133,7 @@ class MediaReadingServiceTest {
             IllegalArgumentException.class,
             () -> {
               mediaReadingService.addFinalMediaReading(
-                  settlementId, unitId, invalidLowerFinalReading, new BigDecimal("0.99"));
+                  settlementId, unitId, type, invalidLowerFinalReading, new BigDecimal("0.99"));
             });
 
     assertEquals("Final reading cannot be lower than initial reading", exception.getMessage());
@@ -149,19 +152,20 @@ class MediaReadingServiceTest {
     BigDecimal finalReading = new BigDecimal("1250.00");
     BigDecimal consumptionDiff = new BigDecimal("250.00");
     BigDecimal unitPrice = new BigDecimal("0.90");
+    UtilityType type = UtilityType.ELECTRICITY;
 
     MediaReading electricityReading = new MediaReading();
     electricityReading.setSettlementId(settlementId);
-    electricityReading.setUtilityType(UtilityType.ELECTRICITY);
+    electricityReading.setUtilityType(type);
     electricityReading.setInitialReading(initialReading);
     electricityReading.setUnitPrice(unitPrice);
     electricityReading.setConsumptionDifference(consumptionDiff);
 
-    when(mediaReadingRepository.findBySettlementId(settlementId))
+    when(mediaReadingRepository.findBySettlementIdAndUtilityType(settlementId, type))
         .thenReturn(Optional.of(electricityReading));
 
     mediaReadingService.addFinalMediaReading(
-        settlementId, unitId, finalReading, new BigDecimal("0.95"));
+        settlementId, unitId, type, finalReading, new BigDecimal("0.95"));
 
     verify(settlementService)
         .addUtilitySettlementItem(
@@ -184,21 +188,22 @@ class MediaReadingServiceTest {
     BigDecimal finalReading = new BigDecimal("108.000000");
     BigDecimal expectedConsumptionDifference = new BigDecimal("8.000000");
     BigDecimal unitPrice = new BigDecimal("5.00");
+    UtilityType type = UtilityType.WATER;
 
     MediaReading existingReading = new MediaReading();
     existingReading.setSettlementId(settlementId);
-    existingReading.setUtilityType(UtilityType.WATER);
+    existingReading.setUtilityType(type);
     existingReading.setInitialReading(initialReading);
     existingReading.setUnitPrice(unitPrice);
 
-    when(mediaReadingRepository.findBySettlementId(settlementId))
+    when(mediaReadingRepository.findBySettlementIdAndUtilityType(settlementId, type))
         .thenReturn(Optional.of(existingReading));
 
     when(mediaReadingRepository.save(any(MediaReading.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
     mediaReadingService.addFinalMediaReading(
-        settlementId, unitId, finalReading, new BigDecimal("0.99"));
+        settlementId, unitId, type, finalReading, new BigDecimal("0.99"));
 
     verify(settlementService)
         .addUtilitySettlementItem(
@@ -208,5 +213,63 @@ class MediaReadingServiceTest {
             eq("Water usage"),
             eq(expectedConsumptionDifference),
             eq(unitPrice));
+  }
+
+  @Test
+  void shouldFinalizeOnlyWaterReadingWithoutTouchingElectricityReading() {
+
+    UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    BigDecimal waterInitial = new BigDecimal("100.00");
+    BigDecimal waterFinal = new BigDecimal("120.00");
+    BigDecimal waterUnitPrice = new BigDecimal("5.00");
+
+    BigDecimal electricityInitial = new BigDecimal("1000.00");
+
+    MediaReading waterReading = new MediaReading();
+    waterReading.setSettlementId(settlementId);
+    waterReading.setUtilityType(UtilityType.WATER);
+    waterReading.setInitialReading(waterInitial);
+    waterReading.setUnitPrice(waterUnitPrice);
+
+    MediaReading electricityReading = new MediaReading();
+    electricityReading.setSettlementId(settlementId);
+    electricityReading.setUtilityType(UtilityType.ELECTRICITY);
+    electricityReading.setInitialReading(electricityInitial);
+
+    when(mediaReadingRepository.findBySettlementIdAndUtilityType(settlementId, UtilityType.WATER))
+        .thenReturn(Optional.of(waterReading));
+
+    when(mediaReadingRepository.save(any(MediaReading.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    mediaReadingService.addFinalMediaReading(
+        settlementId, unitId, UtilityType.WATER, waterFinal, new BigDecimal("0.99"));
+
+    // WATER został zakończony
+    assertEquals(waterFinal, waterReading.getFinalReading());
+
+    // ELECTRICITY pozostał nietknięty
+    assertNull(electricityReading.getFinalReading());
+
+    verify(settlementService)
+        .addUtilitySettlementItem(
+            eq(settlementId),
+            eq(unitId),
+            eq(SettlementItemType.WATER),
+            eq("Water usage"),
+            eq(new BigDecimal("20.00")),
+            eq(waterUnitPrice));
+
+    // Brak settlement item dla ELECTRICITY
+    verify(settlementService, never())
+        .addUtilitySettlementItem(
+            eq(settlementId),
+            eq(unitId),
+            eq(SettlementItemType.ELECTRICITY),
+            anyString(),
+            any(),
+            any());
   }
 }

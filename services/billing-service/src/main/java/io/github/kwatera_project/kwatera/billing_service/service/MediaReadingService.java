@@ -48,9 +48,16 @@ public class MediaReadingService {
 
   @Transactional
   public void addFinalMediaReading(
-      UUID settlementId, UUID unitId, BigDecimal finalReading, BigDecimal finalConfidenceScore) {
+      UUID settlementId,
+      UUID unitId,
+      UtilityType utilityType,
+      BigDecimal finalReading,
+      BigDecimal finalConfidenceScore) {
 
-    MediaReading reading = mediaReadingRepository.findBySettlementId(settlementId).orElse(null);
+    MediaReading reading =
+        mediaReadingRepository
+            .findBySettlementIdAndUtilityType(settlementId, utilityType)
+            .orElse(null);
 
     if (reading == null) {
       throw new EntityNotFoundException(
@@ -77,8 +84,8 @@ public class MediaReadingService {
 
     mediaReadingRepository.save(reading);
 
-    UtilityType utilityType = reading.getUtilityType();
     BigDecimal unitPrice = reading.getUnitPrice();
+
     BigDecimal consumptionDifference = finalReading.subtract(reading.getInitialReading());
 
     // Tworzy się jeszcze nie opłacone SettlementItem -> dla klienta powinien się pojawić przycisk
