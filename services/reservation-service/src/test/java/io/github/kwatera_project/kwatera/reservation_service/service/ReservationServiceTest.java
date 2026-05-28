@@ -1119,4 +1119,130 @@ class ReservationServiceTest {
     assertEquals(new BigDecimal("100.00").setScale(2), result.get(0).convertedTotalPrice());
     assertEquals("EUR", result.get(0).currencyInfo().displayCurrency());
   }
+
+  @Test
+  void createReservation_shouldConvertUsdCurrencyWhenProvided() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    NbpExchangeRateClient nbpClient = mock(NbpExchangeRateClient.class);
+    ReservationService service = new ReservationService(repository, restTemplate, nbpClient);
+
+    UUID userId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    LocalDate start = LocalDate.now().plusDays(10);
+    LocalDate end = LocalDate.now().plusDays(12);
+
+    CreateReservationRequest request = new CreateReservationRequest();
+    request.setUnitId(unitId);
+    request.setStartDate(start);
+    request.setEndDate(end);
+    request.setCurrency("USD");
+
+    UnitDto mockUnit = new UnitDto();
+    mockUnit.setPricePerNight(new BigDecimal("200.00"));
+
+    when(restTemplate.exchange(
+            anyString(),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(UnitDto.class),
+            any(UUID.class)))
+        .thenReturn(ResponseEntity.ok(mockUnit));
+    when(repository.findByUnitId(unitId)).thenReturn(List.of());
+    when(repository.save(any(Reservation.class))).thenAnswer(i -> i.getArgument(0));
+
+    io.github.kwatera_project.kwatera.reservation_service.dto.NbpRateDto rateDto =
+        new io.github.kwatera_project.kwatera.reservation_service.dto.NbpRateDto(
+            "no", java.time.LocalDate.now(), BigDecimal.valueOf(4.0));
+    io.github.kwatera_project.kwatera.reservation_service.dto.NbpResponseDto responseDto =
+        new io.github.kwatera_project.kwatera.reservation_service.dto.NbpResponseDto(
+            "A", "USD", "code", List.of(rateDto));
+
+    when(nbpClient.getUsdExchangeRate()).thenReturn(responseDto);
+
+    Reservation created = service.createReservation(userId, request, "token");
+
+    assertEquals("USD", created.getPaymentCurrency());
+    assertEquals(BigDecimal.valueOf(4.0), created.getPaymentExchangeRate());
+    assertEquals(new BigDecimal("400.00"), created.getTotalPrice());
+  }
+
+  @Test
+  void createReservation_shouldFallbackToPlnWhenNbpClientFails() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    NbpExchangeRateClient nbpClient = mock(NbpExchangeRateClient.class);
+    ReservationService service = new ReservationService(repository, restTemplate, nbpClient);
+
+    UUID userId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    LocalDate start = LocalDate.now().plusDays(10);
+    LocalDate end = LocalDate.now().plusDays(12);
+
+    CreateReservationRequest request = new CreateReservationRequest();
+    request.setUnitId(unitId);
+    request.setStartDate(start);
+    request.setEndDate(end);
+    request.setCurrency("USD");
+
+    UnitDto mockUnit = new UnitDto();
+    mockUnit.setPricePerNight(new BigDecimal("200.00"));
+
+    when(restTemplate.exchange(
+            anyString(),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(UnitDto.class),
+            any(UUID.class)))
+        .thenReturn(ResponseEntity.ok(mockUnit));
+    when(repository.findByUnitId(unitId)).thenReturn(List.of());
+    when(repository.save(any(Reservation.class))).thenAnswer(i -> i.getArgument(0));
+    when(nbpClient.getUsdExchangeRate()).thenThrow(new RuntimeException("NBP unavailable"));
+
+    Reservation created = service.createReservation(userId, request, "token");
+
+    assertEquals("PLN", created.getPaymentCurrency());
+    assertEquals(BigDecimal.ONE, created.getPaymentExchangeRate());
+    assertEquals(new BigDecimal("400.00"), created.getTotalPrice());
+  }
+
+  @Test
+  void createReservation_shouldThrowBadRequestForUnsupportedCurrency() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    NbpExchangeRateClient nbpClient = mock(NbpExchangeRateClient.class);
+    ReservationService service = new ReservationService(repository, restTemplate, nbpClient);
+
+    UUID userId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    LocalDate start = LocalDate.now().plusDays(10);
+    LocalDate end = LocalDate.now().plusDays(12);
+
+    CreateReservationRequest request = new CreateReservationRequest();
+    request.setUnitId(unitId);
+    request.setStartDate(start);
+    request.setEndDate(end);
+    request.setCurrency("GBP");
+
+    UnitDto mockUnit = new UnitDto();
+    mockUnit.setPricePerNight(new BigDecimal("200.00"));
+
+    when(restTemplate.exchange(
+            anyString(),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(UnitDto.class),
+            any(UUID.class)))
+        .thenReturn(ResponseEntity.ok(mockUnit));
+    when(repository.findByUnitId(unitId)).thenReturn(List.of());
+
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> service.createReservation(userId, request, "token"));
+
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    assertEquals("Unsupported currency", ex.getReason());
+    verify(repository, never()).save(any());
+  }
 }
