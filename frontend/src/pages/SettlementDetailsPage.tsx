@@ -225,15 +225,21 @@ export default function SettlementDetailsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <p className="text-gray-500 text-sm">Accommodation Amount</p>
-                                <p className="font-medium">{settlement.accommodationAmount} PLN</p>
+                                <p className="font-medium">
+                                    {renderAmount(settlement.convertedAccommodationAmount, settlement.accommodationAmount)}
+                                </p>
                             </div>
                             <div>
                                 <p className="text-gray-500 text-sm">Utilities Amount</p>
-                                <p className="font-medium">{settlement.utilitiesAmount} PLN</p>
+                                <p className="font-medium">
+                                    {renderAmount(settlement.convertedUtilitiesAmount, settlement.utilitiesAmount)}
+                                </p>
                             </div>
                             <div>
                                 <p className="text-gray-500 text-sm">Deposit Amount</p>
-                                <p className="font-medium">{settlement.depositAmount} PLN</p>
+                                <p className="font-medium">
+                                    {renderAmount(settlement.convertedDepositAmount, settlement.depositAmount)}
+                                </p>
                             </div>
                             <div>
                                 <p className="text-gray-500 text-sm">Total Amount</p>
@@ -271,6 +277,7 @@ export default function SettlementDetailsPage() {
                 <div className="mt-4 bg-gray-50 rounded-xl p-4 border border-gray-200">
                     <p className="text-xs text-gray-500 mb-3">
                         * Note: Despite the selected display currency, the payment transaction on the Stripe gateway will be processed in the system's base currency (PLN). Any potential foreign exchange conversion fees depend on your bank.
+                        Exchange rate applied: {settlement.currencyInfo?.exchangeRate} {settlement.currencyInfo?.displayCurrency}/PLN.
                     </p>
                     <div className="flex flex-wrap gap-2">
                         {paymentButtons.map((button) => {

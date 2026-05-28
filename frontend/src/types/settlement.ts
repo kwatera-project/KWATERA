@@ -16,6 +16,9 @@ export interface SettlementDetails {
     convertedTotalAmount?: number;
     convertedAmountPaid?: number;
     convertedBalanceDue?: number;
+    convertedAccommodationAmount?: number;
+    convertedUtilitiesAmount?: number;
+    convertedDepositAmount?: number;
     currencyInfo?: CurrencyMetadata;
 
     issuedAt: string | null;

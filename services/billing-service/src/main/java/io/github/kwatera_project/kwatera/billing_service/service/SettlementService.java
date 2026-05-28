@@ -268,6 +268,9 @@ public class SettlementService {
     BigDecimal convertedTotalAmount = settlement.getTotalAmount();
     BigDecimal convertedAmountPaid = settlement.getAmountPaid();
     BigDecimal convertedBalanceDue = settlement.getBalanceDue();
+    BigDecimal convertedAccommodationAmount = settlement.getAccommodationAmount();
+    BigDecimal convertedUtilitiesAmount = settlement.getUtilitiesAmount();
+    BigDecimal convertedDepositAmount = settlement.getDepositAmount();
 
     if (!"PLN".equalsIgnoreCase(rCurrency)) {
       if (convertedTotalAmount != null)
@@ -276,6 +279,13 @@ public class SettlementService {
         convertedAmountPaid = convertedAmountPaid.divide(rRate, 2, RoundingMode.HALF_UP);
       if (convertedBalanceDue != null)
         convertedBalanceDue = convertedBalanceDue.divide(rRate, 2, RoundingMode.HALF_UP);
+      if (convertedAccommodationAmount != null)
+        convertedAccommodationAmount =
+            convertedAccommodationAmount.divide(rRate, 2, RoundingMode.HALF_UP);
+      if (convertedUtilitiesAmount != null)
+        convertedUtilitiesAmount = convertedUtilitiesAmount.divide(rRate, 2, RoundingMode.HALF_UP);
+      if (convertedDepositAmount != null)
+        convertedDepositAmount = convertedDepositAmount.divide(rRate, 2, RoundingMode.HALF_UP);
     }
 
     SettlementDto dto =
@@ -284,6 +294,9 @@ public class SettlementService {
             convertedTotalAmount,
             convertedAmountPaid,
             convertedBalanceDue,
+            convertedAccommodationAmount,
+            convertedUtilitiesAmount,
+            convertedDepositAmount,
             currencyInfo);
     return new SettlementResponseDto(dto, items);
   }
