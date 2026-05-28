@@ -64,6 +64,7 @@ class PaymentServiceTest {
 
     ReservationDto dto = new ReservationDto();
     dto.setTotalPrice(BigDecimal.valueOf(100));
+    dto.setGuestEmail("guest@example.com");
 
     when(stripeService.getReservation(eq(reservationId), anyString())).thenReturn(dto);
 
@@ -73,7 +74,8 @@ class PaymentServiceTest {
     settlement.setReservationId(reservationId);
     settlement.setAccommodationAmount(BigDecimal.valueOf(100));
 
-    when(settlementService.createSettlement(reservationId, BigDecimal.valueOf(100)))
+    when(settlementService.createSettlement(
+            reservationId, BigDecimal.valueOf(100), "guest@example.com"))
         .thenReturn(settlement);
 
     Settlement result = paymentService.getOrCreateByReservation(reservationId, "token");

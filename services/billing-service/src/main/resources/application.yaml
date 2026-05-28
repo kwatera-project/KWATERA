@@ -16,6 +16,11 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.ByteArraySerializer
+  mail:
+    host: ${SPRING_MAIL_HOST:localhost}
+    port: ${SPRING_MAIL_PORT:1025}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
 
 services:
   property:
@@ -39,3 +44,8 @@ stripe:
 
 jwt:
   secret: ${JWT_SECRET}
+
+kwatera:
+  mail:
+    from: ${KWATERA_MAIL_FROM:no-reply@kwatera.local}
+    test-recipient: ${KWATERA_MAIL_TEST_RECIPIENT:guest@kwatera.local}

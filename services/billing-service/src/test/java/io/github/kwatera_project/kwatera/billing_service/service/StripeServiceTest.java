@@ -34,6 +34,7 @@ class StripeServiceTest {
       UUID unitId, String currency, BigDecimal exchangeRate) {
     ReservationDto dto = new ReservationDto();
     dto.setUnitId(unitId);
+    dto.setGuestEmail("guest@example.com");
     dto.setCurrencyInfo(
         new io.github.kwatera_project.kwatera.billing_service.dto.CurrencyMetadataDto(
             "PLN", currency, exchangeRate, java.time.LocalDate.now()));
@@ -87,7 +88,17 @@ class StripeServiceTest {
     when(mockedSession.getUrl()).thenReturn("https://checkout.stripe.com/test");
 
     try (MockedStatic<Session> mocked = mockStatic(Session.class)) {
-      mocked.when(() -> Session.create(any(SessionCreateParams.class))).thenReturn(mockedSession);
+      mocked
+          .when(() -> Session.create(any(SessionCreateParams.class)))
+          .thenAnswer(
+              invocation -> {
+                SessionCreateParams params = invocation.getArgument(0);
+                assertEquals("guest@example.com", params.getMetadata().get("recipientEmail"));
+                assertEquals(
+                    "guest@example.com",
+                    params.getPaymentIntentData().getMetadata().get("recipientEmail"));
+                return mockedSession;
+              });
 
       String url =
           stripeService.createCheckoutSession(

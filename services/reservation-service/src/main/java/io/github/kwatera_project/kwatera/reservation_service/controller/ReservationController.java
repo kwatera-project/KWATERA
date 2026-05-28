@@ -31,9 +31,10 @@ public class ReservationController {
       HttpServletRequest httpServletRequest) {
 
     UUID guestId = validateAndGetUserId(authentication);
+    String guestEmail = authentication.getName();
     String token = httpServletRequest.getHeader("Authorization");
 
-    return reservationService.createReservation(guestId, request, token);
+    return reservationService.createReservation(guestId, guestEmail, request, token);
   }
 
   @GetMapping("/my")

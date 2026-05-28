@@ -115,6 +115,28 @@ JaCoCo coverage reports are generated locally during `verify` and can be opened 
 #### Frontend
 - Vite dev server for React [http://localhost:5173](http://localhost:5173)
 
+#### Local email testing
+- Mailpit UI: [http://localhost:8025](http://localhost:8025)
+- Mailpit SMTP: `localhost:1025`
+
+Reservation and billing services send development email notifications through Mailpit. Docker Compose
+sets `SPRING_MAIL_HOST=mailpit`, `SPRING_MAIL_PORT=1025`, empty SMTP credentials, and
+`KWATERA_MAIL_FROM=no-reply@kwatera.local`.
+
+To verify emails locally:
+
+```bash
+docker compose -f infra/compose/docker-compose.yml up --build
+```
+
+Open [http://localhost:8025](http://localhost:8025), then trigger a reservation creation,
+reservation status change, settlement creation, or payment/settlement status change. The generated
+email is sent to the event recipient, such as the authenticated guest email stored with the
+reservation, and should appear in the Mailpit inbox. `KWATERA_MAIL_TEST_RECIPIENT`
+(`guest@kwatera.local` by default) is only a development fallback for flows where no recipient email
+is available; fallback usage is logged as a warning. Do not configure Gmail, real SMTP credentials,
+or production secrets in the repository.
+
 #### Auth / local testing
 
 Current authentication endpoints:

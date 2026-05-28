@@ -20,6 +20,11 @@ spring:
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+  mail:
+    host: ${SPRING_MAIL_HOST:localhost}
+    port: ${SPRING_MAIL_PORT:1025}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
 
 eureka:
   client:
@@ -34,3 +39,8 @@ management:
     web:
       exposure:
         include: health,info
+
+kwatera:
+  mail:
+    from: ${KWATERA_MAIL_FROM:no-reply@kwatera.local}
+    test-recipient: ${KWATERA_MAIL_TEST_RECIPIENT:guest@kwatera.local}

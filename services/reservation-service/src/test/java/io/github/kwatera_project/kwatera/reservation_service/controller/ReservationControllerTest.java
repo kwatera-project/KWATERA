@@ -60,7 +60,7 @@ class ReservationControllerTest {
             + "\", \"startDate\":\"2026-10-10\", \"endDate\":\"2026-10-15\"}";
 
     when(reservationService.createReservation(
-            eq(userId), any(CreateReservationRequest.class), anyString()))
+            eq(userId), eq("user@test.com"), any(CreateReservationRequest.class), anyString()))
         .thenReturn(new Reservation());
 
     mockMvc
@@ -73,7 +73,8 @@ class ReservationControllerTest {
         .andExpect(status().isCreated());
 
     verify(reservationService)
-        .createReservation(eq(userId), any(CreateReservationRequest.class), anyString());
+        .createReservation(
+            eq(userId), eq("user@test.com"), any(CreateReservationRequest.class), anyString());
   }
 
   @Test

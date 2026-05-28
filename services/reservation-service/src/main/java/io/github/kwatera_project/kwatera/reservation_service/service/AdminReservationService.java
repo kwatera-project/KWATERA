@@ -11,14 +11,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
-@RequiredArgsConstructor
 public class AdminReservationService {
 
   private final ReservationRepository reservationRepository;
@@ -28,6 +27,30 @@ public class AdminReservationService {
   private final ReservationStatusValidator statusValidator;
 
   private final RestTemplate restTemplate;
+
+  private final EmailNotificationService emailNotificationService;
+
+  public AdminReservationService(
+      ReservationRepository reservationRepository,
+      ReservationStatusHistoryRepository statusHistoryRepository,
+      ReservationStatusValidator statusValidator,
+      RestTemplate restTemplate) {
+    this(reservationRepository, statusHistoryRepository, statusValidator, restTemplate, null);
+  }
+
+  @Autowired
+  public AdminReservationService(
+      ReservationRepository reservationRepository,
+      ReservationStatusHistoryRepository statusHistoryRepository,
+      ReservationStatusValidator statusValidator,
+      RestTemplate restTemplate,
+      EmailNotificationService emailNotificationService) {
+    this.reservationRepository = reservationRepository;
+    this.statusHistoryRepository = statusHistoryRepository;
+    this.statusValidator = statusValidator;
+    this.restTemplate = restTemplate;
+    this.emailNotificationService = emailNotificationService;
+  }
 
   public List<ReservationOverviewDto> getReservationsOverview(
       UUID ownerId, ReservationStatus status, boolean isAdmin) {
@@ -100,6 +123,11 @@ public class AdminReservationService {
     history.setChangedBy(userId);
     history.setChangedAt(LocalDateTime.now());
     statusHistoryRepository.save(history);
+
+    if (emailNotificationService != null) {
+      emailNotificationService.sendReservationStatusChanged(
+          reservation, oldStatus, newStatus, reservation.getGuestEmail());
+    }
 
     return mapToOverviewDto(reservation);
   }

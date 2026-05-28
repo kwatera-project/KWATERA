@@ -33,7 +33,7 @@ public class PaymentService {
             () -> {
               try {
                 return settlementService.createSettlement(
-                    reservationId, reservation.getTotalPrice());
+                    reservationId, reservation.getTotalPrice(), reservation.getGuestEmail());
               } catch (DataIntegrityViolationException _) {
                 return settlementRepository.findByReservationId(reservationId).orElseThrow();
               }

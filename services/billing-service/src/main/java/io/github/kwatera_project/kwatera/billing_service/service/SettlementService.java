@@ -20,15 +20,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
-@RequiredArgsConstructor
 public class SettlementService {
 
   private static final Logger log = LoggerFactory.getLogger(SettlementService.class);
@@ -37,8 +36,36 @@ public class SettlementService {
   private final SettlementItemRepository settlementItemRepository;
   private final SettlementEventPublisher settlementEventPublisher;
   private final PropertyClient propertyClient;
+  private final EmailNotificationService emailNotificationService;
 
   private static final String SETTLEMENT_NOT_FOUND = "Settlement not found";
+
+  public SettlementService(
+      SettlementRepository settlementRepository,
+      SettlementItemRepository settlementItemRepository,
+      SettlementEventPublisher settlementEventPublisher,
+      PropertyClient propertyClient) {
+    this(
+        settlementRepository,
+        settlementItemRepository,
+        settlementEventPublisher,
+        propertyClient,
+        null);
+  }
+
+  @Autowired
+  public SettlementService(
+      SettlementRepository settlementRepository,
+      SettlementItemRepository settlementItemRepository,
+      SettlementEventPublisher settlementEventPublisher,
+      PropertyClient propertyClient,
+      EmailNotificationService emailNotificationService) {
+    this.settlementRepository = settlementRepository;
+    this.settlementItemRepository = settlementItemRepository;
+    this.settlementEventPublisher = settlementEventPublisher;
+    this.propertyClient = propertyClient;
+    this.emailNotificationService = emailNotificationService;
+  }
 
   @Transactional
   public void registerPayment(
@@ -48,6 +75,18 @@ public class SettlementService {
       String description,
       BigDecimal quantity,
       BigDecimal unitPrice) {
+    registerPayment(settlementId, unitId, type, description, quantity, unitPrice, null);
+  }
+
+  @Transactional
+  public void registerPayment(
+      UUID settlementId,
+      UUID unitId,
+      SettlementItemType type,
+      String description,
+      BigDecimal quantity,
+      BigDecimal unitPrice,
+      String recipientEmail) {
     Settlement settlement =
         settlementRepository
             .findById(settlementId)
@@ -63,7 +102,7 @@ public class SettlementService {
     settlement.setAmountPaid(newPaid);
 
     recalculateTotals(settlement);
-    recalculateSettlementStatus(settlement, unitId);
+    recalculateSettlementStatus(settlement, unitId, recipientEmail);
 
     if (newPaid.compareTo(settlement.getTotalAmount()) > 0) {
       throw new IllegalStateException("Payment exceeds settlement total");
@@ -96,7 +135,7 @@ public class SettlementService {
 
     applyItemToSettlement(settlement, item);
     recalculateTotals(settlement);
-    recalculateSettlementStatus(settlement, unitId);
+    recalculateSettlementStatus(settlement, unitId, null);
 
     settlementRepository.save(settlement);
 
@@ -135,6 +174,11 @@ public class SettlementService {
   }
 
   private void recalculateSettlementStatus(Settlement settlement, UUID unitId) {
+    recalculateSettlementStatus(settlement, unitId, null);
+  }
+
+  private void recalculateSettlementStatus(
+      Settlement settlement, UUID unitId, String recipientEmail) {
 
     BigDecimal balance = settlement.getTotalAmount().subtract(settlement.getAmountPaid());
 
@@ -157,6 +201,10 @@ public class SettlementService {
     if (previous != newStatus) {
       settlementEventPublisher.publishSettlementStatusChanged(
           new SettlementStatusChangedEvent(settlement.getReservationId(), newStatus));
+      if (emailNotificationService != null) {
+        emailNotificationService.sendPaymentStatusChanged(
+            settlement, previous, newStatus, recipientEmail);
+      }
     }
   }
 
@@ -182,12 +230,27 @@ public class SettlementService {
 
   @Transactional
   public Settlement createSettlement(UUID reservationId, BigDecimal accommodationAmount) {
-    return createSettlement(reservationId, accommodationAmount, BigDecimal.ZERO);
+    return createSettlement(reservationId, accommodationAmount, BigDecimal.ZERO, null);
+  }
+
+  @Transactional
+  public Settlement createSettlement(
+      UUID reservationId, BigDecimal accommodationAmount, String recipientEmail) {
+    return createSettlement(reservationId, accommodationAmount, BigDecimal.ZERO, recipientEmail);
   }
 
   @Transactional
   public Settlement createSettlement(
       UUID reservationId, BigDecimal accommodationAmount, BigDecimal depositAmount) {
+    return createSettlement(reservationId, accommodationAmount, depositAmount, null);
+  }
+
+  @Transactional
+  public Settlement createSettlement(
+      UUID reservationId,
+      BigDecimal accommodationAmount,
+      BigDecimal depositAmount,
+      String recipientEmail) {
     Settlement settlement = new Settlement();
 
     settlement.setReservationId(reservationId);
@@ -203,7 +266,11 @@ public class SettlementService {
 
     recalculateTotals(settlement);
 
-    return settlementRepository.save(settlement);
+    Settlement saved = settlementRepository.save(settlement);
+    if (emailNotificationService != null) {
+      emailNotificationService.sendSettlementCreated(saved, recipientEmail);
+    }
+    return saved;
   }
 
   private void recalculateTotals(Settlement settlement) {
@@ -234,7 +301,7 @@ public class SettlementService {
     settlement.setDiscountAmount(discountAmount);
 
     recalculateTotals(settlement);
-    recalculateSettlementStatus(settlement, unitId);
+    recalculateSettlementStatus(settlement, unitId, null);
 
     settlementRepository.save(settlement);
   }

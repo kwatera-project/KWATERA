@@ -12,9 +12,9 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +23,6 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
-@RequiredArgsConstructor
 public class ReservationService {
 
   private static final Logger log = LoggerFactory.getLogger(ReservationService.class);
@@ -31,6 +30,26 @@ public class ReservationService {
   private final ReservationRepository reservationRepository;
   private final RestTemplate restTemplate;
   private final NbpExchangeRateClient nbpExchangeRateClient;
+  private final EmailNotificationService emailNotificationService;
+
+  public ReservationService(
+      ReservationRepository reservationRepository,
+      RestTemplate restTemplate,
+      NbpExchangeRateClient nbpExchangeRateClient) {
+    this(reservationRepository, restTemplate, nbpExchangeRateClient, null);
+  }
+
+  @Autowired
+  public ReservationService(
+      ReservationRepository reservationRepository,
+      RestTemplate restTemplate,
+      NbpExchangeRateClient nbpExchangeRateClient,
+      EmailNotificationService emailNotificationService) {
+    this.reservationRepository = reservationRepository;
+    this.restTemplate = restTemplate;
+    this.nbpExchangeRateClient = nbpExchangeRateClient;
+    this.emailNotificationService = emailNotificationService;
+  }
 
   public AvailabilityDto checkAvailability(UUID unitId, LocalDate from, LocalDate to) {
     if (from == null || to == null) {
@@ -173,6 +192,12 @@ public class ReservationService {
   @Transactional
   public Reservation createReservation(
       UUID userId, CreateReservationRequest request, String token) {
+    return createReservation(userId, null, request, token);
+  }
+
+  @Transactional
+  public Reservation createReservation(
+      UUID userId, String guestEmail, CreateReservationRequest request, String token) {
     if (userId == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User id is required");
     }
@@ -188,6 +213,7 @@ public class ReservationService {
 
     Reservation reservation = new Reservation();
     reservation.setUserId(userId);
+    reservation.setGuestEmail(guestEmail);
     reservation.setUnitId(request.getUnitId());
     reservation.setStartDate(request.getStartDate());
     reservation.setEndDate(request.getEndDate());
@@ -221,7 +247,11 @@ public class ReservationService {
     reservation.setPaymentCurrency(paymentCurrency);
     reservation.setPaymentExchangeRate(paymentExchangeRate);
 
-    return reservationRepository.save(reservation);
+    Reservation saved = reservationRepository.save(reservation);
+    if (emailNotificationService != null) {
+      emailNotificationService.sendReservationCreated(saved, saved.getGuestEmail());
+    }
+    return saved;
   }
 
   public ReservationDetailsDto getReservationDetails(
@@ -242,6 +272,7 @@ public class ReservationService {
     ReservationDetailsDto dto = new ReservationDetailsDto();
     dto.setId(reservation.getId());
     dto.setUserId(reservation.getUserId());
+    dto.setGuestEmail(reservation.getGuestEmail());
     dto.setUnitId(reservation.getUnitId());
     dto.setStartDate(reservation.getStartDate());
     dto.setEndDate(reservation.getEndDate());
@@ -319,6 +350,7 @@ public class ReservationService {
         reservationRepository
             .findById(reservationId)
             .orElseThrow(() -> new RuntimeException("Reservation not found"));
+    ReservationStatus oldStatus = reservation.getStatus();
 
     switch (settlementStatus) {
       case PAID -> reservation.setStatus(ReservationStatus.COMPLETED);
@@ -335,5 +367,9 @@ public class ReservationService {
     }
 
     reservationRepository.save(reservation);
+    if (emailNotificationService != null) {
+      emailNotificationService.sendReservationStatusChanged(
+          reservation, oldStatus, reservation.getStatus(), reservation.getGuestEmail());
+    }
   }
 }
