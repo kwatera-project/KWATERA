@@ -139,12 +139,9 @@ public class PropertyService {
 
       try {
         io.github.kwatera_project.kwatera.property_service.dto.NbpResponseDto nbpResponse =
-            switch (requestedCurrency) {
-              case "EUR" -> nbpExchangeRateClient.getEurExchangeRate();
-              case "USD" -> nbpExchangeRateClient.getUsdExchangeRate();
-              default ->
-                  throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported currency");
-            };
+            "EUR".equals(requestedCurrency)
+                ? nbpExchangeRateClient.getEurExchangeRate()
+                : nbpExchangeRateClient.getUsdExchangeRate();
 
         if (nbpResponse != null && nbpResponse.rates() != null && !nbpResponse.rates().isEmpty()) {
           io.github.kwatera_project.kwatera.property_service.dto.NbpRateDto rateDto =
@@ -160,8 +157,6 @@ public class PropertyService {
                 convertedPricePerNight.divide(rate, 2, java.math.RoundingMode.HALF_UP);
           }
         }
-      } catch (ResponseStatusException e) {
-        throw e;
       } catch (Exception e) {
         // Ignore exception, fallback to PLN
       }

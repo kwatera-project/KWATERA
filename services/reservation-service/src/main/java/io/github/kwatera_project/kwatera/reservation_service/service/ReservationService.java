@@ -223,8 +223,7 @@ public class ReservationService {
       } catch (ResponseStatusException e) {
         throw e;
       } catch (Exception e) {
-        log.warn(
-            "Failed to fetch exchange rate for currency {}: {}", requestedCurrency, e.getMessage());
+        log.warn("Failed to fetch exchange rate from NBP; falling back to PLN");
       }
     }
     reservation.setPaymentCurrency(paymentCurrency);
