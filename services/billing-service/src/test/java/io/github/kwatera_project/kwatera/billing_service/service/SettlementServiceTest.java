@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.github.kwatera_project.kwatera.billing_service.client.NbpExchangeRateClient;
 import io.github.kwatera_project.kwatera.billing_service.client.PropertyClient;
 import io.github.kwatera_project.kwatera.billing_service.dto.CurrencyMetadataDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto;
@@ -38,8 +37,6 @@ class SettlementServiceTest {
   @Mock private SettlementEventPublisher settlementEventPublisher;
 
   @Mock private PropertyClient propertyClient;
-
-  @Mock private NbpExchangeRateClient nbpExchangeRateClient;
 
   @InjectMocks private SettlementService settlementService;
 

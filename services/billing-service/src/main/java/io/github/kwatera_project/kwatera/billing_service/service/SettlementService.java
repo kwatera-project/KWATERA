@@ -3,7 +3,6 @@ package io.github.kwatera_project.kwatera.billing_service.service;
 import static io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType.*;
 import static io.github.kwatera_project.kwatera.billing_service.model.SettlementStatus.*;
 
-import io.github.kwatera_project.kwatera.billing_service.client.NbpExchangeRateClient;
 import io.github.kwatera_project.kwatera.billing_service.client.PropertyClient;
 import io.github.kwatera_project.kwatera.billing_service.dto.*;
 import io.github.kwatera_project.kwatera.billing_service.event.SettlementEventPublisher;
@@ -38,7 +37,6 @@ public class SettlementService {
   private final SettlementItemRepository settlementItemRepository;
   private final SettlementEventPublisher settlementEventPublisher;
   private final PropertyClient propertyClient;
-  private final NbpExchangeRateClient nbpExchangeRateClient;
 
   private static final String SETTLEMENT_NOT_FOUND = "Settlement not found";
 

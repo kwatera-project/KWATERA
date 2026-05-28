@@ -87,9 +87,48 @@ class StripeServiceTest {
               BigDecimal.ONE,
               BigDecimal.valueOf(100),
               unitId,
-              "pln");
+              "pln",
+              BigDecimal.ONE);
 
       assertEquals("https://checkout.stripe.com/test", url);
+    }
+  }
+
+  @Test
+  void shouldCreateCheckoutSessionWithNonPlnCurrencyAndConvertedAmount() throws Exception {
+    Settlement settlement = new Settlement();
+    settlement.setId(UUID.randomUUID());
+    settlement.setReservationId(UUID.randomUUID());
+    UUID unitId = UUID.randomUUID();
+
+    Session mockedSession = mock(Session.class);
+    when(mockedSession.getUrl()).thenReturn("https://checkout.stripe.com/test-eur");
+
+    try (MockedStatic<Session> mocked = mockStatic(Session.class)) {
+      mocked
+          .when(() -> Session.create(any(SessionCreateParams.class)))
+          .thenAnswer(
+              invocation -> {
+                SessionCreateParams params = invocation.getArgument(0);
+                SessionCreateParams.LineItem lineItem = params.getLineItems().get(0);
+                assertEquals("eur", lineItem.getPriceData().getCurrency());
+                // 100 PLN / 4.0 = 25 EUR => 2500 minor units
+                assertEquals(2500L, lineItem.getPriceData().getUnitAmount());
+                return mockedSession;
+              });
+
+      String url =
+          stripeService.createCheckoutSession(
+              settlement,
+              SettlementItemType.ACCOMMODATION,
+              "Accommodation fee",
+              BigDecimal.ONE,
+              BigDecimal.valueOf(100),
+              unitId,
+              "EUR",
+              BigDecimal.valueOf(4.0));
+
+      assertEquals("https://checkout.stripe.com/test-eur", url);
     }
   }
 
@@ -110,7 +149,8 @@ class StripeServiceTest {
                     null,
                     BigDecimal.TEN,
                     unitId,
-                    "pln"));
+                    "pln",
+                    BigDecimal.ONE));
 
     assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
   }
@@ -134,7 +174,8 @@ class StripeServiceTest {
                     negativeAmount,
                     BigDecimal.TEN,
                     unitId,
-                    "pln"));
+                    "pln",
+                    BigDecimal.ONE));
 
     assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
   }

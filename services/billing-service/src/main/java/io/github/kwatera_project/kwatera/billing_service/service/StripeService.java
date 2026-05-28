@@ -55,7 +55,8 @@ public class StripeService {
       BigDecimal quantity,
       BigDecimal unitPrice,
       UUID unitId,
-      String currency)
+      String currency,
+      BigDecimal exchangeRate)
       throws StripeException {
 
     UUID reservationId = settlement.getReservationId();
@@ -71,8 +72,15 @@ public class StripeService {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid reservation price");
     }
 
+    BigDecimal convertedPrice = totalPrice;
+    if (!"pln".equalsIgnoreCase(currency)
+        && exchangeRate != null
+        && exchangeRate.compareTo(BigDecimal.ZERO) > 0) {
+      convertedPrice = totalPrice.divide(exchangeRate, 2, RoundingMode.HALF_UP);
+    }
+
     long amount =
-        totalPrice
+        convertedPrice
             .multiply(BigDecimal.valueOf(100))
             .setScale(0, RoundingMode.HALF_UP)
             .longValueExact();

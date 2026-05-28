@@ -60,8 +60,21 @@ public class PaymentService {
             ? reservationDto.getCurrencyInfo().displayCurrency()
             : "pln";
 
+    BigDecimal exchangeRate =
+        (reservationDto.getCurrencyInfo() != null
+                && reservationDto.getCurrencyInfo().exchangeRate() != null)
+            ? reservationDto.getCurrencyInfo().exchangeRate()
+            : BigDecimal.ONE;
+
     return stripeService.createCheckoutSession(
-        settlement, type, description, quantity, unitPrice, reservationDto.getUnitId(), currency);
+        settlement,
+        type,
+        description,
+        quantity,
+        unitPrice,
+        reservationDto.getUnitId(),
+        currency,
+        exchangeRate);
   }
 
   public SettlementResponseDto getSettlementWithItems(UUID reservationId, String token) {
