@@ -252,10 +252,14 @@ public class SettlementService {
     List<SettlementItem> items = settlementItemRepository.findBySettlementId(settlement.getId());
 
     String rCurrency =
-        reservation.getPaymentCurrency() != null ? reservation.getPaymentCurrency() : "PLN";
+        (reservation.getCurrencyInfo() != null
+                && reservation.getCurrencyInfo().displayCurrency() != null)
+            ? reservation.getCurrencyInfo().displayCurrency()
+            : "PLN";
     BigDecimal rRate =
-        reservation.getPaymentExchangeRate() != null
-            ? reservation.getPaymentExchangeRate()
+        (reservation.getCurrencyInfo() != null
+                && reservation.getCurrencyInfo().exchangeRate() != null)
+            ? reservation.getCurrencyInfo().exchangeRate()
             : BigDecimal.ONE;
 
     CurrencyMetadataDto currencyInfo =
@@ -301,10 +305,14 @@ public class SettlementService {
                     new ResponseStatusException(HttpStatus.NOT_FOUND, "Settlement item not found"));
 
     String rCurrency =
-        reservation.getPaymentCurrency() != null ? reservation.getPaymentCurrency() : "PLN";
+        (reservation.getCurrencyInfo() != null
+                && reservation.getCurrencyInfo().displayCurrency() != null)
+            ? reservation.getCurrencyInfo().displayCurrency()
+            : "PLN";
     BigDecimal rRate =
-        reservation.getPaymentExchangeRate() != null
-            ? reservation.getPaymentExchangeRate()
+        (reservation.getCurrencyInfo() != null
+                && reservation.getCurrencyInfo().exchangeRate() != null)
+            ? reservation.getCurrencyInfo().exchangeRate()
             : BigDecimal.ONE;
 
     CurrencyMetadataDto currencyInfo =

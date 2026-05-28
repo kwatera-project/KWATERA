@@ -86,7 +86,8 @@ class StripeServiceTest {
               "Accommodation fee",
               BigDecimal.ONE,
               BigDecimal.valueOf(100),
-              unitId);
+              unitId,
+              "pln");
 
       assertEquals("https://checkout.stripe.com/test", url);
     }
@@ -108,7 +109,8 @@ class StripeServiceTest {
                     "Accommodation fee",
                     null,
                     BigDecimal.TEN,
-                    unitId));
+                    unitId,
+                    "pln"));
 
     assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
   }
@@ -131,7 +133,8 @@ class StripeServiceTest {
                     "Accommodation fee",
                     negativeAmount,
                     BigDecimal.TEN,
-                    unitId));
+                    unitId,
+                    "pln"));
 
     assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
   }

@@ -54,8 +54,14 @@ public class PaymentService {
 
     ReservationDto reservationDto = stripeService.getReservation(reservationId, token);
 
+    String currency =
+        (reservationDto.getCurrencyInfo() != null
+                && reservationDto.getCurrencyInfo().displayCurrency() != null)
+            ? reservationDto.getCurrencyInfo().displayCurrency()
+            : "pln";
+
     return stripeService.createCheckoutSession(
-        settlement, type, description, quantity, unitPrice, reservationDto.getUnitId());
+        settlement, type, description, quantity, unitPrice, reservationDto.getUnitId(), currency);
   }
 
   public SettlementResponseDto getSettlementWithItems(UUID reservationId, String token) {

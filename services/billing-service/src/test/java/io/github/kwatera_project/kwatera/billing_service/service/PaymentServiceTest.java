@@ -43,7 +43,7 @@ class PaymentServiceTest {
 
     when(stripeService.getReservation(reservationId, "token")).thenReturn(reservationDto);
 
-    when(stripeService.createCheckoutSession(any(), any(), any(), any(), any(), any()))
+    when(stripeService.createCheckoutSession(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn("https://checkout.stripe.com/session");
 
     String url =

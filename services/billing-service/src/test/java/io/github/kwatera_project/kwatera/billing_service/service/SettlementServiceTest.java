@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import io.github.kwatera_project.kwatera.billing_service.client.NbpExchangeRateClient;
 import io.github.kwatera_project.kwatera.billing_service.client.PropertyClient;
+import io.github.kwatera_project.kwatera.billing_service.dto.CurrencyMetadataDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementItemDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto;
@@ -185,8 +186,7 @@ class SettlementServiceTest {
     io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto reservationDto =
         new io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto();
     reservationDto.setId(reservationId);
-    reservationDto.setPaymentCurrency("PLN");
-    reservationDto.setPaymentExchangeRate(BigDecimal.ONE);
+    reservationDto.setCurrencyInfo(new CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, null));
 
     SettlementResponseDto result = settlementService.getSettlementWithItems(reservationDto);
 
@@ -335,8 +335,7 @@ class SettlementServiceTest {
     io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto reservationDto =
         new io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto();
     reservationDto.setId(reservationId);
-    reservationDto.setPaymentCurrency("PLN");
-    reservationDto.setPaymentExchangeRate(BigDecimal.ONE);
+    reservationDto.setCurrencyInfo(new CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, null));
 
     ResponseStatusException ex =
         assertThrows(
@@ -366,8 +365,7 @@ class SettlementServiceTest {
     io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto reservationDto =
         new io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto();
     reservationDto.setId(reservationId);
-    reservationDto.setPaymentCurrency("PLN");
-    reservationDto.setPaymentExchangeRate(BigDecimal.ONE);
+    reservationDto.setCurrencyInfo(new CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, null));
 
     ResponseStatusException ex =
         assertThrows(
@@ -419,8 +417,7 @@ class SettlementServiceTest {
     io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto reservationDto =
         new io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto();
     reservationDto.setId(reservationId);
-    reservationDto.setPaymentCurrency("PLN");
-    reservationDto.setPaymentExchangeRate(BigDecimal.ONE);
+    reservationDto.setCurrencyInfo(new CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, null));
 
     SettlementItemDto result =
         settlementService.getSettlementItemInfoByType(
@@ -564,8 +561,8 @@ class SettlementServiceTest {
     UUID reservationId = UUID.randomUUID();
     ReservationDto reservationDto = new ReservationDto();
     reservationDto.setId(reservationId);
-    reservationDto.setPaymentCurrency("EUR");
-    reservationDto.setPaymentExchangeRate(BigDecimal.valueOf(4.0));
+    reservationDto.setCurrencyInfo(
+        new CurrencyMetadataDto("PLN", "EUR", BigDecimal.valueOf(4.0), null));
 
     Settlement settlement = new Settlement();
     settlement.setId(UUID.randomUUID());
@@ -590,8 +587,8 @@ class SettlementServiceTest {
     UUID reservationId = UUID.randomUUID();
     ReservationDto reservationDto = new ReservationDto();
     reservationDto.setId(reservationId);
-    reservationDto.setPaymentCurrency("EUR");
-    reservationDto.setPaymentExchangeRate(BigDecimal.valueOf(4.0));
+    reservationDto.setCurrencyInfo(
+        new CurrencyMetadataDto("PLN", "EUR", BigDecimal.valueOf(4.0), null));
 
     Settlement settlement = new Settlement();
     settlement.setId(UUID.randomUUID());
@@ -619,8 +616,7 @@ class SettlementServiceTest {
     UUID reservationId = UUID.randomUUID();
     ReservationDto reservationDto = new ReservationDto();
     reservationDto.setId(reservationId);
-    reservationDto.setPaymentCurrency("PLN");
-    reservationDto.setPaymentExchangeRate(BigDecimal.ONE);
+    reservationDto.setCurrencyInfo(new CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, null));
 
     Settlement settlement = new Settlement();
     settlement.setId(UUID.randomUUID());
@@ -643,8 +639,7 @@ class SettlementServiceTest {
     UUID reservationId = UUID.randomUUID();
     ReservationDto reservationDto = new ReservationDto();
     reservationDto.setId(reservationId);
-    reservationDto.setPaymentCurrency(null);
-    reservationDto.setPaymentExchangeRate(null);
+    reservationDto.setCurrencyInfo(null);
 
     Settlement settlement = new Settlement();
     settlement.setId(UUID.randomUUID());
@@ -667,8 +662,7 @@ class SettlementServiceTest {
     UUID reservationId = UUID.randomUUID();
     ReservationDto reservationDto = new ReservationDto();
     reservationDto.setId(reservationId);
-    reservationDto.setPaymentCurrency(null);
-    reservationDto.setPaymentExchangeRate(null);
+    reservationDto.setCurrencyInfo(null);
 
     Settlement settlement = new Settlement();
     settlement.setId(UUID.randomUUID());

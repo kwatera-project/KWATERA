@@ -54,7 +54,8 @@ public class StripeService {
       String description,
       BigDecimal quantity,
       BigDecimal unitPrice,
-      UUID unitId)
+      UUID unitId,
+      String currency)
       throws StripeException {
 
     UUID reservationId = settlement.getReservationId();
@@ -107,7 +108,7 @@ public class StripeService {
                     .setQuantity(1L)
                     .setPriceData(
                         SessionCreateParams.LineItem.PriceData.builder()
-                            .setCurrency("pln")
+                            .setCurrency(currency.toLowerCase())
                             .setUnitAmount(amount)
                             .setProductData(
                                 SessionCreateParams.LineItem.PriceData.ProductData.builder()
