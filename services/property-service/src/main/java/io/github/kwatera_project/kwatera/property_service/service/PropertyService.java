@@ -42,6 +42,7 @@ public class PropertyService {
     if (!propertyRepository.existsById(propertyId)) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found");
     }
+    validateCurrency(currency);
     return unitRepository.findByPropertyId(propertyId).stream()
         .map(unit -> mapToDto(unit, currency))
         .toList();
@@ -67,7 +68,14 @@ public class PropertyService {
             .findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found"));
 
+    validateCurrency(currency);
     return mapToDto(unit, currency);
+  }
+
+  private void validateCurrency(String currency) {
+    if (currency != null && !List.of("PLN", "EUR", "USD").contains(currency.toUpperCase())) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported currency");
+    }
   }
 
   public List<UUID> getUnitIdsByOwnerId(UUID ownerId) {

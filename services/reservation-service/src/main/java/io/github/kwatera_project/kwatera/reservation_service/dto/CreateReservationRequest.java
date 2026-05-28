@@ -17,5 +17,8 @@ public class CreateReservationRequest {
   @NotNull(message = "End date is required")
   private LocalDate endDate;
 
+  @jakarta.validation.constraints.Pattern(
+      regexp = "^(?i)(PLN|EUR|USD)$",
+      message = "Unsupported currency")
   private String currency;
 }

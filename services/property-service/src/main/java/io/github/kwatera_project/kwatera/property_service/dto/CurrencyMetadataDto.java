@@ -7,4 +7,4 @@ public record CurrencyMetadataDto(
     String baseCurrency,
     String displayCurrency,
     BigDecimal exchangeRate,
-    LocalDate rateEffectiveDate) {}
+    LocalDate calculationDate) {}
