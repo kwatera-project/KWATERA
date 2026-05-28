@@ -16,7 +16,7 @@ class PropertyDtoTest {
     assertEquals(id, dto.getId());
     assertEquals("Title", dto.getTitle());
     assertEquals("Desc", dto.getDescription());
-    assertEquals("Location", dto.getLocation());
+    assertEquals("Location", dto.getCity());
     assertEquals("img.jpg", dto.getImageUrl());
   }
 }

@@ -48,4 +48,14 @@ public class Unit {
   @LastModifiedDate
   @Column(name = "updated_at")
   private Instant updatedAt;
+
+  @Column(name = "unit_type", nullable = false)
+  @Enumerated(EnumType.STRING)
+  private UnitType unitType;
+
+  @Column(name = "unit_number", nullable = false)
+  private String unitNumber;
+
+  @Column(nullable = false)
+  private Integer floor;
 }

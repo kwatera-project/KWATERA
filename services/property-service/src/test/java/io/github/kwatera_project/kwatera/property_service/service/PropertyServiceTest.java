@@ -45,7 +45,7 @@ class PropertyServiceTest {
     Property property = new Property();
     property.setId(UUID.randomUUID());
     property.setTitle("Test");
-    property.setLocation("Warsaw");
+    property.setCity("Warsaw");
     property.setDescription("Desc");
 
     when(propertyRepository.findAll()).thenReturn(List.of(property));
@@ -63,7 +63,7 @@ class PropertyServiceTest {
     Property property = new Property();
     property.setId(id);
     property.setTitle("Test");
-    property.setLocation("Warsaw");
+    property.setCity("Warsaw");
     property.setDescription("Desc");
 
     when(propertyRepository.findById(id)).thenReturn(Optional.of(property));

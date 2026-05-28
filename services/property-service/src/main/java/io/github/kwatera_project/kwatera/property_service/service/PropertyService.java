@@ -102,7 +102,7 @@ public class PropertyService {
         property.getId(),
         property.getTitle(),
         property.getDescription(),
-        property.getLocation(),
+        property.getCity(),
         imageUrl);
   }
 

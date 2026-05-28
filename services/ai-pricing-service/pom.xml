@@ -84,6 +84,25 @@
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>${springdoc.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>ai.catboost</groupId>
+            <artifactId>catboost-prediction</artifactId>
+            <version>1.2.7</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
