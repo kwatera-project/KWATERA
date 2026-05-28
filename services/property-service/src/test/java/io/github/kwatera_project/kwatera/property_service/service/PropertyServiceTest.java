@@ -22,6 +22,8 @@ class PropertyServiceTest {
   private PropertyImageRepository propertyImageRepository;
   private UnitImageRepository unitImageRepository;
   private UnitSettlementItemRepository unitSettlementItemRepository;
+  private io.github.kwatera_project.kwatera.property_service.client.NbpExchangeRateClient
+      nbpExchangeRateClient;
 
   @BeforeEach
   void setUp() {
@@ -30,6 +32,8 @@ class PropertyServiceTest {
     propertyImageRepository = mock(PropertyImageRepository.class);
     unitImageRepository = mock(UnitImageRepository.class);
     unitSettlementItemRepository = mock(UnitSettlementItemRepository.class);
+    nbpExchangeRateClient =
+        mock(io.github.kwatera_project.kwatera.property_service.client.NbpExchangeRateClient.class);
 
     propertyService =
         new PropertyService(
@@ -37,7 +41,8 @@ class PropertyServiceTest {
             unitRepository,
             propertyImageRepository,
             unitImageRepository,
-            unitSettlementItemRepository);
+            unitSettlementItemRepository,
+            nbpExchangeRateClient);
   }
 
   @Test
@@ -98,7 +103,7 @@ class PropertyServiceTest {
 
     when(unitRepository.findByPropertyId(propertyId)).thenReturn(List.of(unit));
 
-    var result = propertyService.getUnits(propertyId);
+    var result = propertyService.getUnits(propertyId, "PLN");
 
     assertEquals(1, result.size());
     assertEquals("Room", result.get(0).getName());
@@ -110,7 +115,7 @@ class PropertyServiceTest {
 
     when(propertyRepository.existsById(propertyId)).thenReturn(false);
 
-    assertThrows(ResponseStatusException.class, () -> propertyService.getUnits(propertyId));
+    assertThrows(ResponseStatusException.class, () -> propertyService.getUnits(propertyId, "PLN"));
   }
 
   @Test
@@ -126,7 +131,7 @@ class PropertyServiceTest {
 
     when(unitRepository.findById(id)).thenReturn(Optional.of(unit));
 
-    var result = propertyService.getUnitById(id);
+    var result = propertyService.getUnitById(id, "PLN");
 
     assertEquals(id, result.getId());
   }
@@ -137,7 +142,7 @@ class PropertyServiceTest {
 
     when(unitRepository.findById(id)).thenReturn(Optional.empty());
 
-    assertThrows(ResponseStatusException.class, () -> propertyService.getUnitById(id));
+    assertThrows(ResponseStatusException.class, () -> propertyService.getUnitById(id, "PLN"));
   }
 
   @Test
@@ -238,5 +243,47 @@ class PropertyServiceTest {
     var result = propertyService.getUnitSettlementItems(unitId);
 
     assertTrue(result.isEmpty());
+  }
+
+  @Test
+  void getUnitById_shouldConvertCurrencyWhenProvided() {
+    UUID id = UUID.randomUUID();
+    Unit unit = new Unit();
+    unit.setId(id);
+    unit.setName("Room");
+    unit.setPricePerNight(BigDecimal.valueOf(200));
+
+    when(unitRepository.findById(id)).thenReturn(Optional.of(unit));
+
+    io.github.kwatera_project.kwatera.property_service.dto.NbpRateDto rateDto =
+        new io.github.kwatera_project.kwatera.property_service.dto.NbpRateDto(
+            "no", java.time.LocalDate.now(), BigDecimal.valueOf(4.0));
+    io.github.kwatera_project.kwatera.property_service.dto.NbpResponseDto responseDto =
+        new io.github.kwatera_project.kwatera.property_service.dto.NbpResponseDto(
+            "A", "EUR", "code", List.of(rateDto));
+
+    when(nbpExchangeRateClient.getExchangeRate("EUR")).thenReturn(responseDto);
+
+    var result = propertyService.getUnitById(id, "EUR");
+
+    assertEquals(BigDecimal.valueOf(50).setScale(2), result.getConvertedPricePerNight());
+    assertEquals("EUR", result.getCurrencyInfo().displayCurrency());
+  }
+
+  @Test
+  void getUnitById_shouldFallbackToPlnOnClientError() {
+    UUID id = UUID.randomUUID();
+    Unit unit = new Unit();
+    unit.setId(id);
+    unit.setName("Room");
+    unit.setPricePerNight(BigDecimal.valueOf(200));
+
+    when(unitRepository.findById(id)).thenReturn(Optional.of(unit));
+    when(nbpExchangeRateClient.getExchangeRate("EUR")).thenThrow(new RuntimeException("API error"));
+
+    var result = propertyService.getUnitById(id, "EUR");
+
+    assertEquals(BigDecimal.valueOf(200), result.getConvertedPricePerNight());
+    assertEquals("PLN", result.getCurrencyInfo().displayCurrency());
   }
 }

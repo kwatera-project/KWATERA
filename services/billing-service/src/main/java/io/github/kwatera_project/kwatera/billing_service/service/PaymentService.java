@@ -55,21 +55,21 @@ public class PaymentService {
     ReservationDto reservationDto = stripeService.getReservation(reservationId, token);
 
     return stripeService.createCheckoutSession(
-        settlement, type, description, quantity, unitPrice, reservationDto.getUnitId());
+        settlement, type, description, quantity, unitPrice, reservationDto);
   }
 
   public SettlementResponseDto getSettlementWithItems(UUID reservationId, String token) {
 
-    stripeService.getReservation(reservationId, token);
+    ReservationDto reservation = stripeService.getReservation(reservationId, token);
 
-    return settlementService.getSettlementWithItems(reservationId);
+    return settlementService.getSettlementWithItems(reservation);
   }
 
   public SettlementItemDto getSettlementItemInfoByType(
       UUID reservationId, SettlementItemType settlementItemType, String token) {
 
-    stripeService.getReservation(reservationId, token);
+    ReservationDto reservation = stripeService.getReservation(reservationId, token);
 
-    return settlementService.getSettlementItemInfoByType(reservationId, settlementItemType);
+    return settlementService.getSettlementItemInfoByType(reservation, settlementItemType);
   }
 }

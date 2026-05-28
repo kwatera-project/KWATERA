@@ -8,6 +8,7 @@ import { GATEWAY_BASE_URL } from "../api/apiConfig";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format } from "date-fns";
+import { useCurrency } from "../contexts/CurrencyContext";
 
 export default function PropertyDetailsPage() {
     const { id } = useParams();
@@ -23,11 +24,12 @@ export default function PropertyDetailsPage() {
     const [bookingState, setBookingState] = useState<
         Record<string, { loading: boolean; success?: boolean; error?: string }>
     >({});
+    const { currency } = useCurrency();
 
     useEffect(() => {
         if (!id) return;
         getProperty(id).then(setProperty);
-        getUnits(id).then((fetchedUnits: Unit[]) => {
+        getUnits(id, currency).then((fetchedUnits: Unit[]) => {
             setUnits(fetchedUnits);
             fetchedUnits.forEach((u: Unit) => {
                 getOccupiedDates(u.id).then((dates: { startDate: string, endDate: string }[]) => {
@@ -46,7 +48,7 @@ export default function PropertyDetailsPage() {
                 setMainImage(data[0]);
             }
         });
-    }, [id]);
+    }, [id, currency]);
 
     const handleGlobalDateChange = (dates: [Date | null, Date | null]) => {
         setGlobalDates(dates);
@@ -164,7 +166,7 @@ export default function PropertyDetailsPage() {
         const to = format(dates[1], 'yyyy-MM-dd');
         setBookingState(prev => ({ ...prev, [unitId]: { loading: true } }));
         try {
-            const res = await createReservation(unitId, from, to);
+            const res = await createReservation(unitId, from, to, currency);
             setBookingState(prev => ({ ...prev, [unitId]: { loading: false, success: true } }));
             const token = localStorage.getItem("token");
             const checkoutRes = await fetch(
@@ -277,7 +279,11 @@ export default function PropertyDetailsPage() {
                             )}
                             <h3 className="font-bold text-lg text-[#1A1A1A]">{u.name}</h3>
                             <p className="text-[#7A7A7A]">{u.description}</p>
-                            <p className="mt-2 font-semibold text-[#42211D]">{u.pricePerNight} zł / night</p>
+                            <p className="mt-2 font-semibold text-[#42211D]">
+                                {u.convertedPricePerNight && u.currencyInfo && u.currencyInfo.displayCurrency !== 'PLN' 
+                                    ? `${u.convertedPricePerNight.toFixed(2)} ${u.currencyInfo.displayCurrency} / night` 
+                                    : `${u.pricePerNight} zł / night`}
+                            </p>
                             <p className="text-sm text-[#7A7A7A]">Capacity: {u.capacity} {u.capacity === 1 ? "person" : "people"}</p>
                         </div>
 
@@ -341,10 +347,16 @@ export default function PropertyDetailsPage() {
                                     <p><span className="text-[#7A7A7A]">Check-in:</span> <span className="font-medium">{format(unitStart, "EEEE, MMMM dd, yyyy")}</span></p>
                                     <p><span className="text-[#7A7A7A]">Check-out:</span> <span className="font-medium">{format(unitEnd, "EEEE, MMMM dd, yyyy")}</span></p>
                                     <p><span className="text-[#7A7A7A]">Duration:</span> <span className="font-medium">{nights} {nights === 1 ? "night" : "nights"}</span></p>
-                                    <p className="mt-1 pt-1 border-t border-[#F7F7F7] text-base font-bold text-[#42211D] flex justify-between">
+                                    <div className="mt-1 pt-1 border-t border-[#F7F7F7] text-base font-bold text-[#42211D] flex justify-between items-center">
                                         <span>Total price:</span>
-                                        <span>{totalPrice} zł</span>
-                                    </p>
+                                        <div className="text-right">
+                                            {u.convertedPricePerNight && u.currencyInfo && u.currencyInfo.displayCurrency !== 'PLN' ? (
+                                                <div>{(nights * u.convertedPricePerNight).toFixed(2)} {u.currencyInfo.displayCurrency}</div>
+                                            ) : (
+                                                <span>{totalPrice} zł</span>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 

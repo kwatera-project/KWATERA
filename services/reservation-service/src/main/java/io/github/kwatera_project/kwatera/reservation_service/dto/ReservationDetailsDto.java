@@ -18,4 +18,6 @@ public class ReservationDetailsDto {
   private Instant createdAt;
   private BigDecimal pricePerNightSnapshot;
   private BigDecimal totalPrice;
+  private BigDecimal convertedTotalPrice;
+  private CurrencyMetadataDto currencyInfo;
 }

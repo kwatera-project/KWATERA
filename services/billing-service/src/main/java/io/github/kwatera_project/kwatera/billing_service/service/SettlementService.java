@@ -14,11 +14,15 @@ import io.github.kwatera_project.kwatera.billing_service.repository.SettlementIt
 import io.github.kwatera_project.kwatera.billing_service.repository.SettlementRepository;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -27,10 +31,11 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class SettlementService {
 
+  private static final Logger log = LoggerFactory.getLogger(SettlementService.class);
+
   private final SettlementRepository settlementRepository;
   private final SettlementItemRepository settlementItemRepository;
   private final SettlementEventPublisher settlementEventPublisher;
-
   private final PropertyClient propertyClient;
 
   private static final String SETTLEMENT_NOT_FOUND = "Settlement not found";
@@ -234,25 +239,78 @@ public class SettlementService {
     settlementRepository.save(settlement);
   }
 
-  public SettlementResponseDto getSettlementWithItems(UUID reservationId) {
+  public SettlementResponseDto getSettlementWithItems(ReservationDto reservation) {
 
     Settlement settlement =
         settlementRepository
-            .findByReservationId(reservationId)
+            .findByReservationId(reservation.getId())
             .orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, SETTLEMENT_NOT_FOUND));
 
     List<SettlementItem> items = settlementItemRepository.findBySettlementId(settlement.getId());
 
-    return new SettlementResponseDto(SettlementDto.from(settlement), items);
+    String rCurrency =
+        (reservation.getCurrencyInfo() != null
+                && reservation.getCurrencyInfo().displayCurrency() != null)
+            ? reservation.getCurrencyInfo().displayCurrency()
+            : "PLN";
+    BigDecimal rRate =
+        (reservation.getCurrencyInfo() != null
+                && reservation.getCurrencyInfo().exchangeRate() != null)
+            ? reservation.getCurrencyInfo().exchangeRate()
+            : BigDecimal.ONE;
+
+    CurrencyMetadataDto currencyInfo =
+        new CurrencyMetadataDto("PLN", rCurrency, rRate, LocalDate.now());
+
+    BigDecimal convertedTotalAmount = settlement.getTotalAmount();
+    BigDecimal convertedAmountPaid = settlement.getAmountPaid();
+    BigDecimal convertedBalanceDue = settlement.getBalanceDue();
+    BigDecimal convertedAccommodationAmount = settlement.getAccommodationAmount();
+    BigDecimal convertedUtilitiesAmount = settlement.getUtilitiesAmount();
+    BigDecimal convertedDepositAmount = settlement.getDepositAmount();
+
+    if (!"PLN".equalsIgnoreCase(rCurrency)) {
+      if (convertedTotalAmount != null) {
+        convertedTotalAmount = convertedTotalAmount.divide(rRate, 2, RoundingMode.HALF_UP);
+      }
+      if (convertedAmountPaid != null) {
+        convertedAmountPaid = convertedAmountPaid.divide(rRate, 2, RoundingMode.HALF_UP);
+      }
+      if (convertedBalanceDue != null) {
+        convertedBalanceDue = convertedBalanceDue.divide(rRate, 2, RoundingMode.HALF_UP);
+      }
+      if (convertedAccommodationAmount != null) {
+        convertedAccommodationAmount =
+            convertedAccommodationAmount.divide(rRate, 2, RoundingMode.HALF_UP);
+      }
+      if (convertedUtilitiesAmount != null) {
+        convertedUtilitiesAmount = convertedUtilitiesAmount.divide(rRate, 2, RoundingMode.HALF_UP);
+      }
+      if (convertedDepositAmount != null) {
+        convertedDepositAmount = convertedDepositAmount.divide(rRate, 2, RoundingMode.HALF_UP);
+      }
+    }
+
+    SettlementDto dto =
+        SettlementDto.from(
+            settlement,
+            convertedTotalAmount,
+            convertedAmountPaid,
+            convertedBalanceDue,
+            convertedAccommodationAmount,
+            convertedUtilitiesAmount,
+            convertedDepositAmount,
+            currencyInfo);
+    return new SettlementResponseDto(dto, items);
   }
 
   public SettlementItemDto getSettlementItemInfoByType(
-      UUID reservationId, SettlementItemType settlementItemType) {
+      ReservationDto reservation, SettlementItemType settlementItemType) {
 
     Settlement settlement =
         settlementRepository
-            .findByReservationId(reservationId)
+            .findByReservationId(reservation.getId())
             .orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, SETTLEMENT_NOT_FOUND));
 
@@ -263,7 +321,28 @@ public class SettlementService {
                 () ->
                     new ResponseStatusException(HttpStatus.NOT_FOUND, "Settlement item not found"));
 
-    return SettlementItemDto.from(item);
+    String rCurrency =
+        (reservation.getCurrencyInfo() != null
+                && reservation.getCurrencyInfo().displayCurrency() != null)
+            ? reservation.getCurrencyInfo().displayCurrency()
+            : "PLN";
+    BigDecimal rRate =
+        (reservation.getCurrencyInfo() != null
+                && reservation.getCurrencyInfo().exchangeRate() != null)
+            ? reservation.getCurrencyInfo().exchangeRate()
+            : BigDecimal.ONE;
+
+    CurrencyMetadataDto currencyInfo =
+        new CurrencyMetadataDto("PLN", rCurrency, rRate, LocalDate.now());
+    BigDecimal convertedAmount = item.getAmount();
+
+    if (!"PLN".equalsIgnoreCase(rCurrency)) {
+      if (convertedAmount != null) {
+        convertedAmount = convertedAmount.divide(rRate, 2, RoundingMode.HALF_UP);
+      }
+    }
+
+    return SettlementItemDto.from(item, convertedAmount, currencyInfo);
   }
 
   private boolean hasAllRequiredItems(Settlement settlement, UUID unitId) {

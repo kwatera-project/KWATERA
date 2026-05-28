@@ -1,11 +1,13 @@
 package io.github.kwatera_project.kwatera.reservation_service.service;
 
+import io.github.kwatera_project.kwatera.reservation_service.client.NbpExchangeRateClient;
 import io.github.kwatera_project.kwatera.reservation_service.dto.*;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
 import io.github.kwatera_project.kwatera.reservation_service.model.SettlementStatus;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -28,6 +30,7 @@ public class ReservationService {
 
   private final ReservationRepository reservationRepository;
   private final RestTemplate restTemplate;
+  private final NbpExchangeRateClient nbpExchangeRateClient;
 
   public AvailabilityDto checkAvailability(UUID unitId, LocalDate from, LocalDate to) {
     if (from == null || to == null) {
@@ -198,6 +201,26 @@ public class ReservationService {
     reservation.setPricePerNightSnapshot(pricePerNight);
     reservation.setTotalPrice(totalPrice);
 
+    String paymentCurrency = "PLN";
+    BigDecimal paymentExchangeRate = BigDecimal.ONE;
+
+    if (request.getCurrency() != null && !"PLN".equalsIgnoreCase(request.getCurrency())) {
+      try {
+        NbpResponseDto nbpResponse = nbpExchangeRateClient.getExchangeRate(request.getCurrency());
+        if (nbpResponse != null && nbpResponse.rates() != null && !nbpResponse.rates().isEmpty()) {
+          paymentCurrency = request.getCurrency().toUpperCase();
+          paymentExchangeRate = nbpResponse.rates().get(0).mid();
+        }
+      } catch (Exception e) {
+        log.warn(
+            "Failed to fetch exchange rate for currency {}: {}",
+            request.getCurrency(),
+            e.getMessage());
+      }
+    }
+    reservation.setPaymentCurrency(paymentCurrency);
+    reservation.setPaymentExchangeRate(paymentExchangeRate);
+
     return reservationRepository.save(reservation);
   }
 
@@ -226,15 +249,53 @@ public class ReservationService {
     dto.setCreatedAt(reservation.getCreatedAt());
     dto.setPricePerNightSnapshot(reservation.getPricePerNightSnapshot());
     dto.setTotalPrice(reservation.getTotalPrice());
+
+    CurrencyMetadataDto currencyInfo =
+        new CurrencyMetadataDto(
+            "PLN",
+            reservation.getPaymentCurrency(),
+            reservation.getPaymentExchangeRate(),
+            reservation.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
+    BigDecimal convertedTotalPrice = reservation.getTotalPrice();
+
+    if (!"PLN".equalsIgnoreCase(reservation.getPaymentCurrency())) {
+      convertedTotalPrice =
+          convertedTotalPrice.divide(reservation.getPaymentExchangeRate(), 2, RoundingMode.HALF_UP);
+    }
+
+    dto.setConvertedTotalPrice(convertedTotalPrice);
+    dto.setCurrencyInfo(currencyInfo);
+
     return dto;
   }
 
   public List<GuestReservationDto> getMyReservations(UUID userId) {
     return reservationRepository.findByUserId(userId).stream()
         .map(
-            r ->
-                new GuestReservationDto(
-                    r.getId(), r.getUnitId(), r.getStartDate(), r.getEndDate(), r.getStatus()))
+            r -> {
+              CurrencyMetadataDto currencyInfo =
+                  new CurrencyMetadataDto(
+                      "PLN",
+                      r.getPaymentCurrency(),
+                      r.getPaymentExchangeRate(),
+                      r.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
+              BigDecimal convertedTotalPrice = r.getTotalPrice();
+
+              if (!"PLN".equalsIgnoreCase(r.getPaymentCurrency())) {
+                convertedTotalPrice =
+                    convertedTotalPrice.divide(r.getPaymentExchangeRate(), 2, RoundingMode.HALF_UP);
+              }
+
+              return new GuestReservationDto(
+                  r.getId(),
+                  r.getUnitId(),
+                  r.getStartDate(),
+                  r.getEndDate(),
+                  r.getStatus(),
+                  r.getTotalPrice(),
+                  convertedTotalPrice,
+                  currencyInfo);
+            })
         .toList();
   }
 

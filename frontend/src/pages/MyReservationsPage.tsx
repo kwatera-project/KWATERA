@@ -44,6 +44,11 @@ export default function MyReservationsPage() {
                                 <div className="text-sm text-gray-600">
                                     {res.startDate} to {res.endDate}
                                 </div>
+                                {res.convertedTotalPrice && res.currencyInfo && (
+                                    <div className="text-sm font-semibold mt-2">
+                                        Total Price: {res.convertedTotalPrice.toFixed(2)} {res.currencyInfo.displayCurrency}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="flex flex-col items-end gap-4 w-full md:w-auto">

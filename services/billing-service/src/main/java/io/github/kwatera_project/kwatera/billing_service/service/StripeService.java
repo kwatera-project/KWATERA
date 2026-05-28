@@ -54,10 +54,23 @@ public class StripeService {
       String description,
       BigDecimal quantity,
       BigDecimal unitPrice,
-      UUID unitId)
+      ReservationDto reservationDto)
       throws StripeException {
 
     UUID reservationId = settlement.getReservationId();
+    UUID unitId = reservationDto.getUnitId();
+
+    String currency =
+        (reservationDto.getCurrencyInfo() != null
+                && reservationDto.getCurrencyInfo().displayCurrency() != null)
+            ? reservationDto.getCurrencyInfo().displayCurrency()
+            : "pln";
+
+    BigDecimal exchangeRate =
+        (reservationDto.getCurrencyInfo() != null
+                && reservationDto.getCurrencyInfo().exchangeRate() != null)
+            ? reservationDto.getCurrencyInfo().exchangeRate()
+            : BigDecimal.ONE;
 
     if (unitPrice == null || quantity == null) {
       throw new ResponseStatusException(
@@ -70,8 +83,15 @@ public class StripeService {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid reservation price");
     }
 
+    BigDecimal convertedPrice = totalPrice;
+    if (!"pln".equalsIgnoreCase(currency)
+        && exchangeRate != null
+        && exchangeRate.compareTo(BigDecimal.ZERO) > 0) {
+      convertedPrice = totalPrice.divide(exchangeRate, 2, RoundingMode.HALF_UP);
+    }
+
     long amount =
-        totalPrice
+        convertedPrice
             .multiply(BigDecimal.valueOf(100))
             .setScale(0, RoundingMode.HALF_UP)
             .longValueExact();
@@ -107,7 +127,7 @@ public class StripeService {
                     .setQuantity(1L)
                     .setPriceData(
                         SessionCreateParams.LineItem.PriceData.builder()
-                            .setCurrency("pln")
+                            .setCurrency(currency.toLowerCase())
                             .setUnitAmount(amount)
                             .setProductData(
                                 SessionCreateParams.LineItem.PriceData.ProductData.builder()

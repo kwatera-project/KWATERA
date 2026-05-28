@@ -47,7 +47,13 @@ class Stage2ReservationFlowTest {
 
   @BeforeEach
   void setUp() {
-    reservationService = new ReservationService(reservationRepository, restTemplate);
+    reservationService =
+        new ReservationService(
+            reservationRepository,
+            restTemplate,
+            mock(
+                io.github.kwatera_project.kwatera.reservation_service.client.NbpExchangeRateClient
+                    .class));
     adminReservationService =
         new AdminReservationService(
             reservationRepository, statusHistoryRepository, statusValidator, restTemplate);
