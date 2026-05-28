@@ -1052,7 +1052,7 @@ class ReservationServiceTest {
     io.github.kwatera_project.kwatera.reservation_service.dto.NbpResponseDto responseDto =
         new io.github.kwatera_project.kwatera.reservation_service.dto.NbpResponseDto(
             "A", "EUR", "code", List.of(rateDto));
-    when(nbpClient.getExchangeRate("EUR")).thenReturn(responseDto);
+    when(nbpClient.getEurExchangeRate()).thenReturn(responseDto);
 
     Reservation created = service.createReservation(userId, request, "token");
 

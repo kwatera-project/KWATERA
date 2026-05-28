@@ -205,17 +205,26 @@ public class ReservationService {
     BigDecimal paymentExchangeRate = BigDecimal.ONE;
 
     if (request.getCurrency() != null && !"PLN".equalsIgnoreCase(request.getCurrency())) {
+      String requestedCurrency = request.getCurrency().toUpperCase(java.util.Locale.ROOT);
+
       try {
-        NbpResponseDto nbpResponse = nbpExchangeRateClient.getExchangeRate(request.getCurrency());
+        NbpResponseDto nbpResponse =
+            switch (requestedCurrency) {
+              case "EUR" -> nbpExchangeRateClient.getEurExchangeRate();
+              case "USD" -> nbpExchangeRateClient.getUsdExchangeRate();
+              default ->
+                  throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported currency");
+            };
+
         if (nbpResponse != null && nbpResponse.rates() != null && !nbpResponse.rates().isEmpty()) {
-          paymentCurrency = request.getCurrency().toUpperCase();
+          paymentCurrency = requestedCurrency;
           paymentExchangeRate = nbpResponse.rates().get(0).mid();
         }
+      } catch (ResponseStatusException e) {
+        throw e;
       } catch (Exception e) {
         log.warn(
-            "Failed to fetch exchange rate for currency {}: {}",
-            request.getCurrency(),
-            e.getMessage());
+            "Failed to fetch exchange rate for currency {}: {}", requestedCurrency, e.getMessage());
       }
     }
     reservation.setPaymentCurrency(paymentCurrency);

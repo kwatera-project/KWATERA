@@ -262,7 +262,7 @@ class PropertyServiceTest {
         new io.github.kwatera_project.kwatera.property_service.dto.NbpResponseDto(
             "A", "EUR", "code", List.of(rateDto));
 
-    when(nbpExchangeRateClient.getExchangeRate("EUR")).thenReturn(responseDto);
+    when(nbpExchangeRateClient.getEurExchangeRate()).thenReturn(responseDto);
 
     var result = propertyService.getUnitById(id, "EUR");
 
@@ -279,7 +279,7 @@ class PropertyServiceTest {
     unit.setPricePerNight(BigDecimal.valueOf(200));
 
     when(unitRepository.findById(id)).thenReturn(Optional.of(unit));
-    when(nbpExchangeRateClient.getExchangeRate("EUR")).thenThrow(new RuntimeException("API error"));
+    when(nbpExchangeRateClient.getEurExchangeRate()).thenThrow(new RuntimeException("API error"));
 
     var result = propertyService.getUnitById(id, "EUR");
 
