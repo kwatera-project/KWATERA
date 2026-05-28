@@ -147,10 +147,6 @@ public class SettlementService {
     return hasAdditionalCharges ? ISSUED : PARTIALLY_PAID;
   }
 
-  private void recalculateSettlementStatus(Settlement settlement, UUID unitId) {
-    recalculateSettlementStatus(settlement, unitId, null);
-  }
-
   private void recalculateSettlementStatus(
       Settlement settlement, UUID unitId, String recipientEmail) {
 
