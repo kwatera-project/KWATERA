@@ -20,14 +20,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
+@RequiredArgsConstructor
 public class SettlementService {
 
   private static final Logger log = LoggerFactory.getLogger(SettlementService.class);
@@ -39,33 +40,6 @@ public class SettlementService {
   private final EmailNotificationService emailNotificationService;
 
   private static final String SETTLEMENT_NOT_FOUND = "Settlement not found";
-
-  public SettlementService(
-      SettlementRepository settlementRepository,
-      SettlementItemRepository settlementItemRepository,
-      SettlementEventPublisher settlementEventPublisher,
-      PropertyClient propertyClient) {
-    this(
-        settlementRepository,
-        settlementItemRepository,
-        settlementEventPublisher,
-        propertyClient,
-        null);
-  }
-
-  @Autowired
-  public SettlementService(
-      SettlementRepository settlementRepository,
-      SettlementItemRepository settlementItemRepository,
-      SettlementEventPublisher settlementEventPublisher,
-      PropertyClient propertyClient,
-      EmailNotificationService emailNotificationService) {
-    this.settlementRepository = settlementRepository;
-    this.settlementItemRepository = settlementItemRepository;
-    this.settlementEventPublisher = settlementEventPublisher;
-    this.propertyClient = propertyClient;
-    this.emailNotificationService = emailNotificationService;
-  }
 
   @Transactional
   public void registerPayment(
@@ -201,10 +175,8 @@ public class SettlementService {
     if (previous != newStatus) {
       settlementEventPublisher.publishSettlementStatusChanged(
           new SettlementStatusChangedEvent(settlement.getReservationId(), newStatus));
-      if (emailNotificationService != null) {
-        emailNotificationService.sendPaymentStatusChanged(
-            settlement, previous, newStatus, recipientEmail);
-      }
+      emailNotificationService.sendPaymentStatusChanged(
+          settlement, previous, newStatus, recipientEmail);
     }
   }
 
@@ -267,9 +239,7 @@ public class SettlementService {
     recalculateTotals(settlement);
 
     Settlement saved = settlementRepository.save(settlement);
-    if (emailNotificationService != null) {
-      emailNotificationService.sendSettlementCreated(saved, recipientEmail);
-    }
+    emailNotificationService.sendSettlementCreated(saved, recipientEmail);
     return saved;
   }
 

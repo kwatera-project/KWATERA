@@ -2,8 +2,8 @@ spring:
   jpa:
     defer-datasource-initialization: false
     hibernate:
-      ddl-auto: create-drop
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
+      ddl-auto: none
+    database-platform: org.hibernate.dialect.H2Dialect
 
   flyway:
-    enabled: true
+    enabled: false

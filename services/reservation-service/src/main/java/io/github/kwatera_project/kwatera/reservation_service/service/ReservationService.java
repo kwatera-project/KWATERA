@@ -12,9 +12,9 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +23,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
+@RequiredArgsConstructor
 public class ReservationService {
 
   private static final Logger log = LoggerFactory.getLogger(ReservationService.class);
@@ -31,25 +32,6 @@ public class ReservationService {
   private final RestTemplate restTemplate;
   private final NbpExchangeRateClient nbpExchangeRateClient;
   private final EmailNotificationService emailNotificationService;
-
-  public ReservationService(
-      ReservationRepository reservationRepository,
-      RestTemplate restTemplate,
-      NbpExchangeRateClient nbpExchangeRateClient) {
-    this(reservationRepository, restTemplate, nbpExchangeRateClient, null);
-  }
-
-  @Autowired
-  public ReservationService(
-      ReservationRepository reservationRepository,
-      RestTemplate restTemplate,
-      NbpExchangeRateClient nbpExchangeRateClient,
-      EmailNotificationService emailNotificationService) {
-    this.reservationRepository = reservationRepository;
-    this.restTemplate = restTemplate;
-    this.nbpExchangeRateClient = nbpExchangeRateClient;
-    this.emailNotificationService = emailNotificationService;
-  }
 
   public AvailabilityDto checkAvailability(UUID unitId, LocalDate from, LocalDate to) {
     if (from == null || to == null) {
@@ -248,9 +230,7 @@ public class ReservationService {
     reservation.setPaymentExchangeRate(paymentExchangeRate);
 
     Reservation saved = reservationRepository.save(reservation);
-    if (emailNotificationService != null) {
-      emailNotificationService.sendReservationCreated(saved, saved.getGuestEmail());
-    }
+    emailNotificationService.sendReservationCreated(saved, saved.getGuestEmail());
     return saved;
   }
 
@@ -367,9 +347,7 @@ public class ReservationService {
     }
 
     reservationRepository.save(reservation);
-    if (emailNotificationService != null) {
-      emailNotificationService.sendReservationStatusChanged(
-          reservation, oldStatus, reservation.getStatus(), reservation.getGuestEmail());
-    }
+    emailNotificationService.sendReservationStatusChanged(
+        reservation, oldStatus, reservation.getStatus(), reservation.getGuestEmail());
   }
 }

@@ -9,6 +9,12 @@ spring:
   datasource:
     url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
     driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+  mail:
+    host: localhost
+    port: 1025
   flyway:
     enabled: false
 
@@ -27,3 +33,8 @@ stripe:
 services:
   property:
     url: http://localhost:8080
+
+kwatera:
+  mail:
+    from: no-reply@kwatera.local
+    test-recipient: guest@kwatera.local
