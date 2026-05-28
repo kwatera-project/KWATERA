@@ -30,6 +30,16 @@ class StripeServiceTest {
 
   @InjectMocks private StripeService stripeService;
 
+  private ReservationDto createReservationDto(
+      UUID unitId, String currency, BigDecimal exchangeRate) {
+    ReservationDto dto = new ReservationDto();
+    dto.setUnitId(unitId);
+    dto.setCurrencyInfo(
+        new io.github.kwatera_project.kwatera.billing_service.dto.CurrencyMetadataDto(
+            "PLN", currency, exchangeRate, java.time.LocalDate.now()));
+    return dto;
+  }
+
   @Test
   void shouldReturnReservationWhenReservationExists() {
     UUID reservationId = UUID.randomUUID();
@@ -86,9 +96,7 @@ class StripeServiceTest {
               "Accommodation fee",
               BigDecimal.ONE,
               BigDecimal.valueOf(100),
-              unitId,
-              "pln",
-              BigDecimal.ONE);
+              createReservationDto(unitId, "pln", BigDecimal.ONE));
 
       assertEquals("https://checkout.stripe.com/test", url);
     }
@@ -124,9 +132,7 @@ class StripeServiceTest {
               "Accommodation fee",
               BigDecimal.ONE,
               BigDecimal.valueOf(100),
-              unitId,
-              "EUR",
-              BigDecimal.valueOf(4.0));
+              createReservationDto(unitId, "EUR", BigDecimal.valueOf(4.0)));
 
       assertEquals("https://checkout.stripe.com/test-eur", url);
     }
@@ -148,9 +154,7 @@ class StripeServiceTest {
                     "Accommodation fee",
                     null,
                     BigDecimal.TEN,
-                    unitId,
-                    "pln",
-                    BigDecimal.ONE));
+                    createReservationDto(unitId, "pln", BigDecimal.ONE)));
 
     assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
   }
@@ -173,10 +177,66 @@ class StripeServiceTest {
                     "Accommodation fee",
                     negativeAmount,
                     BigDecimal.TEN,
-                    unitId,
-                    "pln",
-                    BigDecimal.ONE));
+                    createReservationDto(unitId, "pln", BigDecimal.ONE)));
 
     assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+  }
+
+  @Test
+  void shouldCreateCheckoutSessionWithNullDisplayCurrencyAndExchangeRate() throws Exception {
+    Settlement settlement = new Settlement();
+    settlement.setId(UUID.randomUUID());
+    settlement.setReservationId(UUID.randomUUID());
+    UUID unitId = UUID.randomUUID();
+
+    Session mockedSession = mock(Session.class);
+    when(mockedSession.getUrl()).thenReturn("https://checkout.stripe.com/test");
+
+    try (MockedStatic<Session> mocked = mockStatic(Session.class)) {
+      mocked.when(() -> Session.create(any(SessionCreateParams.class))).thenReturn(mockedSession);
+
+      ReservationDto dto = new ReservationDto();
+      dto.setUnitId(unitId);
+      dto.setCurrencyInfo(
+          new io.github.kwatera_project.kwatera.billing_service.dto.CurrencyMetadataDto(
+              "PLN", null, null, java.time.LocalDate.now()));
+
+      String url =
+          stripeService.createCheckoutSession(
+              settlement,
+              SettlementItemType.ACCOMMODATION,
+              "Accommodation fee",
+              BigDecimal.ONE,
+              BigDecimal.valueOf(100),
+              dto);
+
+      assertEquals("https://checkout.stripe.com/test", url);
+    }
+  }
+
+  @Test
+  void shouldCreateCheckoutSessionWithZeroExchangeRate() throws Exception {
+    Settlement settlement = new Settlement();
+    settlement.setId(UUID.randomUUID());
+    settlement.setReservationId(UUID.randomUUID());
+    UUID unitId = UUID.randomUUID();
+
+    Session mockedSession = mock(Session.class);
+    when(mockedSession.getUrl()).thenReturn("https://checkout.stripe.com/test");
+
+    try (MockedStatic<Session> mocked = mockStatic(Session.class)) {
+      mocked.when(() -> Session.create(any(SessionCreateParams.class))).thenReturn(mockedSession);
+
+      String url =
+          stripeService.createCheckoutSession(
+              settlement,
+              SettlementItemType.ACCOMMODATION,
+              "Accommodation fee",
+              BigDecimal.ONE,
+              BigDecimal.valueOf(100),
+              createReservationDto(unitId, "EUR", BigDecimal.ZERO));
+
+      assertEquals("https://checkout.stripe.com/test", url);
+    }
   }
 }

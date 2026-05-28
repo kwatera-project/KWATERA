@@ -54,12 +54,23 @@ public class StripeService {
       String description,
       BigDecimal quantity,
       BigDecimal unitPrice,
-      UUID unitId,
-      String currency,
-      BigDecimal exchangeRate)
+      ReservationDto reservationDto)
       throws StripeException {
 
     UUID reservationId = settlement.getReservationId();
+    UUID unitId = reservationDto.getUnitId();
+
+    String currency =
+        (reservationDto.getCurrencyInfo() != null
+                && reservationDto.getCurrencyInfo().displayCurrency() != null)
+            ? reservationDto.getCurrencyInfo().displayCurrency()
+            : "pln";
+
+    BigDecimal exchangeRate =
+        (reservationDto.getCurrencyInfo() != null
+                && reservationDto.getCurrencyInfo().exchangeRate() != null)
+            ? reservationDto.getCurrencyInfo().exchangeRate()
+            : BigDecimal.ONE;
 
     if (unitPrice == null || quantity == null) {
       throw new ResponseStatusException(

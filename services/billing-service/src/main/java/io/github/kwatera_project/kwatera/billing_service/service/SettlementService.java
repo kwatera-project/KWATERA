@@ -271,19 +271,25 @@ public class SettlementService {
     BigDecimal convertedDepositAmount = settlement.getDepositAmount();
 
     if (!"PLN".equalsIgnoreCase(rCurrency)) {
-      if (convertedTotalAmount != null)
+      if (convertedTotalAmount != null) {
         convertedTotalAmount = convertedTotalAmount.divide(rRate, 2, RoundingMode.HALF_UP);
-      if (convertedAmountPaid != null)
+      }
+      if (convertedAmountPaid != null) {
         convertedAmountPaid = convertedAmountPaid.divide(rRate, 2, RoundingMode.HALF_UP);
-      if (convertedBalanceDue != null)
+      }
+      if (convertedBalanceDue != null) {
         convertedBalanceDue = convertedBalanceDue.divide(rRate, 2, RoundingMode.HALF_UP);
-      if (convertedAccommodationAmount != null)
+      }
+      if (convertedAccommodationAmount != null) {
         convertedAccommodationAmount =
             convertedAccommodationAmount.divide(rRate, 2, RoundingMode.HALF_UP);
-      if (convertedUtilitiesAmount != null)
+      }
+      if (convertedUtilitiesAmount != null) {
         convertedUtilitiesAmount = convertedUtilitiesAmount.divide(rRate, 2, RoundingMode.HALF_UP);
-      if (convertedDepositAmount != null)
+      }
+      if (convertedDepositAmount != null) {
         convertedDepositAmount = convertedDepositAmount.divide(rRate, 2, RoundingMode.HALF_UP);
+      }
     }
 
     SettlementDto dto =

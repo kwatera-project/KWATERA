@@ -54,27 +54,8 @@ public class PaymentService {
 
     ReservationDto reservationDto = stripeService.getReservation(reservationId, token);
 
-    String currency =
-        (reservationDto.getCurrencyInfo() != null
-                && reservationDto.getCurrencyInfo().displayCurrency() != null)
-            ? reservationDto.getCurrencyInfo().displayCurrency()
-            : "pln";
-
-    BigDecimal exchangeRate =
-        (reservationDto.getCurrencyInfo() != null
-                && reservationDto.getCurrencyInfo().exchangeRate() != null)
-            ? reservationDto.getCurrencyInfo().exchangeRate()
-            : BigDecimal.ONE;
-
     return stripeService.createCheckoutSession(
-        settlement,
-        type,
-        description,
-        quantity,
-        unitPrice,
-        reservationDto.getUnitId(),
-        currency,
-        exchangeRate);
+        settlement, type, description, quantity, unitPrice, reservationDto);
   }
 
   public SettlementResponseDto getSettlementWithItems(UUID reservationId, String token) {
