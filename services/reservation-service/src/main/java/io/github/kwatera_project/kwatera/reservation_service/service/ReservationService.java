@@ -377,7 +377,7 @@ public class ReservationService {
 
     long totalDaysInRange = java.time.temporal.ChronoUnit.DAYS.between(start, end);
     if (totalDaysInRange <= 0) {
-      totalDaysInRange = 1; // Safeguard if start date is equal to end date
+      totalDaysInRange = 1;
     }
 
     long totalAvailableNights = allUnitIds.size() * totalDaysInRange;
@@ -398,7 +398,6 @@ public class ReservationService {
       occupancyRate = Math.round(occupancyRate * 100.0) / 100.0;
     }
 
-    // Limit occupancyRate to 100.0% max
     if (occupancyRate > 100.0) {
       occupancyRate = 100.0;
     }

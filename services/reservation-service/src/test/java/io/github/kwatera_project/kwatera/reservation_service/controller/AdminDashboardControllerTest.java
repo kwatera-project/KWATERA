@@ -107,4 +107,40 @@ class AdminDashboardControllerTest {
         .perform(get("/api/v1/admin/dashboard/reservations"))
         .andExpect(status().isUnauthorized());
   }
+
+  @Test
+  void shouldFail_whenInvalidUuidTokenProvided() throws Exception {
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(
+            "admin@test.com", null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+    auth.setDetails("invalid-uuid-string");
+
+    mockMvc
+        .perform(get("/api/v1/admin/dashboard/reservations").with(authentication(auth)))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void shouldFail_whenEmptyTokenDetailsProvided() throws Exception {
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(
+            "admin@test.com", null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+    auth.setDetails("   ");
+
+    mockMvc
+        .perform(get("/api/v1/admin/dashboard/reservations").with(authentication(auth)))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void shouldFail_whenNonStringDetailsProvided() throws Exception {
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(
+            "admin@test.com", null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+    auth.setDetails(12345); // Integer instead of String
+
+    mockMvc
+        .perform(get("/api/v1/admin/dashboard/reservations").with(authentication(auth)))
+        .andExpect(status().isUnauthorized());
+  }
 }
