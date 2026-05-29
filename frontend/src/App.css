@@ -51,7 +51,7 @@
 }
 
 .react-datepicker__header {
-    background-color: #F7F7F7 !important;
+    background-color: #FFFFFF !important;
     border-bottom: 1px solid #DACDCA !important;
     padding-top: 12px !important;
     position: relative;
@@ -82,7 +82,7 @@
 }
 
 .react-datepicker__day--disabled {
-    background-color: #F7F7F7 !important;
+    background-color: #DACDCA !important;
     color: #DACDCA !important;
     text-decoration: none !important;
     border-radius: 0px !important;

@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { format } from "date-fns";
 import { getDashboardReservationMetrics, getDashboardBillingMetrics } from "../api/adminApi";
+import SharedDatePicker from "../components/SharedDatePicker";
 
 interface ReservationMetrics {
   totalReservations: number;
@@ -20,24 +22,19 @@ export default function DashboardPage() {
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-    const formatDate = (date: Date) => {
-      const yyyy = date.getFullYear();
-      const mm = String(date.getMonth() + 1).padStart(2, '0');
-      const dd = String(date.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
-    };
-
     return {
-      start: formatDate(firstDay),
-      end: formatDate(lastDay),
+      start: firstDay,
+      end: lastDay,
     };
   };
 
   const initialDates = getInitialDates();
-  const [startDate, setStartDate] = useState(initialDates.start);
-  const [endDate, setEndDate] = useState(initialDates.end);
+  const [startDate, setStartDate] = useState<Date | null>(initialDates.start);
+  const [endDate, setEndDate] = useState<Date | null>(initialDates.end);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const hasFetched = useRef(false);
 
   const [resMetrics, setResMetrics] = useState<ReservationMetrics>({
     totalReservations: 0,
@@ -52,74 +49,143 @@ export default function DashboardPage() {
     unpaidSettlementsCount: 0,
   });
 
-  const fetchData = async (start: string, end: string) => {
+  const fetchData = useCallback(async (start: Date | null, end: Date | null) => {
+    if (!start || !end) return;
     setLoading(true);
     setError(null);
     try {
+      const startStr = format(start, "yyyy-MM-dd");
+      const endStr = format(end, "yyyy-MM-dd");
       const [resData, billData] = await Promise.all([
-        getDashboardReservationMetrics(start, end),
-        getDashboardBillingMetrics(start, end),
+        getDashboardReservationMetrics(startStr, endStr),
+        getDashboardBillingMetrics(startStr, endStr),
       ]);
       setResMetrics(resData);
       setBillMetrics(billData);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err?.message || "Failed to retrieve dashboard metrics.");
+      const errMsg = err instanceof Error ? err.message : "Failed to retrieve dashboard metrics.";
+      setError(errMsg);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchData(startDate, endDate);
-  }, []);
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
+    const initFetch = async () => {
+      await Promise.resolve();
+      fetchData(startDate, endDate);
+    };
+    initFetch();
+  }, [startDate, endDate, fetchData]);
 
   const handleFilterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     fetchData(startDate, endDate);
   };
 
+  const handleDownloadReport = () => {
+    if (!startDate || !endDate) return;
+    const startStr = format(startDate, "yyyy-MM-dd");
+    const endStr = format(endDate, "yyyy-MM-dd");
+
+    const csvRows = [
+      ["KWATERA PROPERTY MANAGEMENT - ADMIN/OWNER DASHBOARD REPORT"],
+      [`Generated on: ${new Date().toLocaleString()}`],
+      [`Period: ${startStr} to ${endStr}`],
+      [],
+      ["RESERVATION METRICS"],
+      ["Metric", "Value"],
+      ["Total Reservations", String(resMetrics.totalReservations)],
+      ["Occupancy Rate", `${resMetrics.occupancyRate}%`],
+      ["Occupied Days", String(resMetrics.occupiedDays)],
+      [],
+      ["BILLING METRICS"],
+      ["Metric", "Value (PLN)"],
+      ["Total Revenue (Paid Settlements)", String(billMetrics.revenueFromSettlements)],
+      ["Unpaid Balance (Receivables)", String(billMetrics.unpaidBalance)],
+      ["Paid Settlements Count", String(billMetrics.paidSettlementsCount)],
+      ["Unpaid Settlements Count", String(billMetrics.unpaidSettlementsCount)]
+    ];
+
+    const csvContent = csvRows
+      .map(row => row.map(val => val.includes(",") ? `"${val}"` : val).join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `kwatera-dashboard-report-${startStr}-to-${endStr}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const totalSettlements = billMetrics.paidSettlementsCount + billMetrics.unpaidSettlementsCount;
   const paidPct = totalSettlements > 0 ? (billMetrics.paidSettlementsCount / totalSettlements) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-[#FDFBFB] p-6 lg:p-10 font-sans text-gray-800">
+    <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A]">
       <div className="max-w-7xl mx-auto space-y-8">
         
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-[#DACDCA]/30 pb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-[#DACDCA] pb-6">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-[rgb(var(--color-burgundy))]">
-              Dashboard
-            </h1>
-            <p className="text-gray-500 mt-1 text-sm md:text-base">
+            <h1 className="text-3xl font-bold text-[#1A1A1A]">Dashboard</h1>
+            <p className="text-sm text-[#7A7A7A] mt-1">
               Monitor reservation occupancy, settlements, and revenue summaries.
             </p>
           </div>
 
-          <form onSubmit={handleFilterSubmit} className="flex flex-wrap items-center gap-3 bg-white p-3 rounded-2xl shadow-sm border border-[#DACDCA]/40">
+          <form onSubmit={handleFilterSubmit} className="flex flex-wrap items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-[#DACDCA]">
             <div className="flex items-center gap-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">From</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-burgundy))] focus:border-transparent transition"
-              />
+              <label className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">From</label>
+              <div className="flex items-center bg-[#F7F7F7] border border-[#DACDCA] rounded-lg px-3 py-1.5 shadow-sm focus-within:ring-1 focus-within:ring-[#42211D] gap-2">
+                <SharedDatePicker
+                  selected={startDate}
+                  onChange={(date) => setStartDate(date)}
+                  selectsStart
+                  startDate={startDate}
+                  endDate={endDate}
+                  placeholderText="Start"
+                  className="bg-transparent text-sm font-bold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center"
+                />
+              </div>
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">To</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-burgundy))] focus:border-transparent transition"
-              />
+              <label className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">To</label>
+              <div className="flex items-center bg-[#F7F7F7] border border-[#DACDCA] rounded-lg px-3 py-1.5 shadow-sm focus-within:ring-1 focus-within:ring-[#42211D] gap-2">
+                <SharedDatePicker
+                  selected={endDate}
+                  onChange={(date) => setEndDate(date)}
+                  selectsEnd
+                  startDate={startDate}
+                  endDate={endDate}
+                  minDate={startDate}
+                  placeholderText="End"
+                  className="bg-transparent text-sm font-bold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center"
+                />
+              </div>
             </div>
             <button
               type="submit"
-              className="px-4 py-1.5 text-sm font-medium text-white bg-[rgb(var(--color-burgundy))] hover:bg-[rgb(var(--color-burgundy-hover))] rounded-lg transition-all duration-200 shadow-sm cursor-pointer"
+              className="px-6 py-2 bg-[#42211D] text-white font-bold hover:bg-[#2a1412] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm cursor-pointer"
             >
               Filter
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadReport}
+              className="px-4 py-2 text-sm font-bold text-[#42211D] bg-[#F7F7F7] border border-[#DACDCA] hover:bg-gray-100 rounded-lg transition-colors shadow-sm cursor-pointer flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+              Export CSV
             </button>
           </form>
         </div>
@@ -137,17 +203,17 @@ export default function DashboardPage() {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="bg-white p-6 rounded-3xl border border-[#DACDCA]/20 shadow-sm animate-pulse space-y-4">
-                  <div className="h-4 w-1/3 bg-gray-200 rounded"></div>
-                  <div className="h-8 w-2/3 bg-gray-200 rounded"></div>
-                  <div className="h-3 w-1/2 bg-gray-200 rounded"></div>
+                <div key={i} className="bg-white p-6 rounded-xl border border-[#DACDCA] shadow-sm animate-pulse space-y-4">
+                  <div className="h-4 w-1/3 bg-[#F7F7F7] rounded"></div>
+                  <div className="h-8 w-2/3 bg-[#F7F7F7] rounded"></div>
+                  <div className="h-3 w-1/2 bg-[#F7F7F7] rounded"></div>
                 </div>
               ))}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {[...Array(2)].map((_, i) => (
-                <div key={i} className="bg-white p-8 rounded-3xl border border-[#DACDCA]/20 shadow-sm animate-pulse h-96"></div>
+                <div key={i} className="bg-white p-8 rounded-xl border border-[#DACDCA] shadow-sm animate-pulse h-96"></div>
               ))}
             </div>
           </>
@@ -155,35 +221,35 @@ export default function DashboardPage() {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               
-              <div className="group bg-white p-6 rounded-3xl border border-[#DACDCA]/30 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-[rgb(var(--color-burgundy))]/5 rounded-bl-full pointer-events-none transition-all duration-300 group-hover:scale-110"></div>
+              <div className="group bg-white p-6 rounded-xl border border-[#DACDCA] shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-[#42211D]/5 rounded-bl-full pointer-events-none transition-all duration-300 group-hover:scale-110"></div>
                 <div className="flex flex-col justify-between h-full space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                    <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
                       Reservations
                     </span>
-                    <span className="p-2 bg-[rgb(var(--color-burgundy))]/10 text-[rgb(var(--color-burgundy))] rounded-xl">
+                    <span className="p-2 bg-[#42211D]/10 text-[#42211D] rounded-xl">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                       </svg>
                     </span>
                   </div>
                   <div>
-                    <h2 className="text-3xl font-black text-gray-900 tracking-tight">
+                    <h2 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">
                       {resMetrics.totalReservations}
                     </h2>
-                    <p className="text-xs text-gray-400 mt-2 font-medium">
+                    <p className="text-xs text-[#7A7A7A] mt-2 font-medium">
                       Active reservations within range
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="group bg-white p-6 rounded-3xl border border-[#DACDCA]/30 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden">
+              <div className="group bg-white p-6 rounded-xl border border-[#DACDCA] shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none transition-all duration-300 group-hover:scale-110"></div>
                 <div className="flex flex-col justify-between h-full space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                    <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
                       Occupancy Rate
                     </span>
                     <span className="p-2 bg-emerald-100 text-emerald-700 rounded-xl">
@@ -193,27 +259,27 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   <div>
-                    <h2 className="text-3xl font-black text-gray-900 tracking-tight flex items-baseline gap-1">
+                    <h2 className="text-3xl font-bold text-[#1A1A1A] tracking-tight flex items-baseline gap-1">
                       {resMetrics.occupancyRate}%
                     </h2>
-                    <div className="w-full bg-gray-100 h-1.5 rounded-full mt-3 overflow-hidden">
+                    <div className="w-full bg-[#F7F7F7] border border-[#DACDCA] h-2 rounded-full mt-3 overflow-hidden">
                       <div 
-                        className="bg-emerald-500 h-full rounded-full transition-all duration-1000" 
+                        className="bg-emerald-600 h-full rounded-full transition-all duration-1000" 
                         style={{ width: `${resMetrics.occupancyRate}%` }}
                       ></div>
                     </div>
-                    <p className="text-[10px] text-gray-400 mt-2 font-medium">
+                    <p className="text-[10px] text-[#7A7A7A] mt-2 font-medium">
                       {resMetrics.occupiedDays} total occupied nights
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="group bg-white p-6 rounded-3xl border border-[#DACDCA]/30 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden">
+              <div className="group bg-white p-6 rounded-xl border border-[#DACDCA] shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full pointer-events-none transition-all duration-300 group-hover:scale-110"></div>
                 <div className="flex flex-col justify-between h-full space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                    <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
                       Total Revenue
                     </span>
                     <span className="p-2 bg-blue-100 text-blue-700 rounded-xl">
@@ -223,21 +289,21 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   <div>
-                    <h2 className="text-3xl font-black text-gray-900 tracking-tight">
+                    <h2 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">
                       {billMetrics.revenueFromSettlements.toLocaleString('pl-PL', { style: 'currency', currency: 'PLN' })}
                     </h2>
-                    <p className="text-xs text-gray-400 mt-2 font-medium">
+                    <p className="text-xs text-[#7A7A7A] mt-2 font-medium">
                       Received settlements payments
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="group bg-white p-6 rounded-3xl border border-[#DACDCA]/30 shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden">
+              <div className="group bg-white p-6 rounded-xl border border-[#DACDCA] shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full pointer-events-none transition-all duration-300 group-hover:scale-110"></div>
                 <div className="flex flex-col justify-between h-full space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                    <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
                       Unpaid Balance
                     </span>
                     <span className="p-2 bg-amber-100 text-amber-700 rounded-xl">
@@ -247,10 +313,10 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   <div>
-                    <h2 className="text-3xl font-black text-gray-900 tracking-tight">
+                    <h2 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">
                       {billMetrics.unpaidBalance.toLocaleString('pl-PL', { style: 'currency', currency: 'PLN' })}
                     </h2>
-                    <p className="text-xs text-gray-400 mt-2 font-medium">
+                    <p className="text-xs text-[#7A7A7A] mt-2 font-medium">
                       Outstanding invoice receivables
                     </p>
                   </div>
@@ -261,12 +327,12 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               
-              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#DACDCA]/30 shadow-sm flex flex-col justify-between h-96">
+              <div className="bg-white p-6 sm:p-8 rounded-xl border border-[#DACDCA] shadow-sm flex flex-col justify-between h-96">
                 <div>
-                  <h3 className="text-lg font-bold text-[rgb(var(--color-burgundy))]">
+                  <h3 className="text-lg font-bold text-[#1A1A1A]">
                     Settlements Payment Status
                   </h3>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-[#7A7A7A] mt-1">
                     Proportion of paid versus unpaid settlements within date range.
                   </p>
                 </div>
@@ -281,7 +347,7 @@ export default function DashboardPage() {
                             cy="18"
                             r="15.915"
                             fill="none"
-                            stroke="#F3F4F6"
+                            stroke="#F7F7F7"
                             strokeWidth="3.2"
                           />
                           <circle
@@ -289,7 +355,7 @@ export default function DashboardPage() {
                             cy="18"
                             r="15.915"
                             fill="none"
-                            stroke="rgb(var(--color-burgundy))"
+                            stroke="#42211D"
                             strokeWidth="3.2"
                             strokeDasharray={`${paidPct} ${100 - paidPct}`}
                             strokeDashoffset="0"
@@ -308,17 +374,17 @@ export default function DashboardPage() {
                           />
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-2xl font-black text-gray-800">{totalSettlements}</span>
-                          <span className="text-[10px] uppercase font-bold tracking-widest text-gray-400">Total</span>
+                          <span className="text-2xl font-black text-[#1A1A1A]">{totalSettlements}</span>
+                          <span className="text-[10px] uppercase font-bold tracking-widest text-[#7A7A7A]">Total</span>
                         </div>
                       </div>
 
                       <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-3">
-                          <span className="w-3.5 h-3.5 rounded-full bg-[rgb(var(--color-burgundy))] flex-shrink-0"></span>
+                          <span className="w-3.5 h-3.5 rounded-full bg-[#42211D] flex-shrink-0"></span>
                           <div className="flex flex-col">
                             <span className="text-sm font-semibold text-gray-700">Paid Invoices</span>
-                            <span className="text-xs font-medium text-gray-400">
+                            <span className="text-xs font-medium text-[#7A7A7A]">
                               {billMetrics.paidSettlementsCount} settlements ({Math.round(paidPct)}%)
                             </span>
                           </div>
@@ -327,7 +393,7 @@ export default function DashboardPage() {
                           <span className="w-3.5 h-3.5 rounded-full bg-amber-500 flex-shrink-0"></span>
                           <div className="flex flex-col">
                             <span className="text-sm font-semibold text-gray-700">Unpaid/Issued</span>
-                            <span className="text-xs font-medium text-gray-400">
+                            <span className="text-xs font-medium text-[#7A7A7A]">
                               {billMetrics.unpaidSettlementsCount} settlements ({Math.round(100 - paidPct)}%)
                             </span>
                           </div>
@@ -341,18 +407,18 @@ export default function DashboardPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                         </svg>
                       </div>
-                      <p className="text-sm font-semibold text-gray-400">No Settlement Data Available</p>
+                      <p className="text-sm font-semibold text-[#7A7A7A]">No Settlement Data Available</p>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#DACDCA]/30 shadow-sm flex flex-col justify-between h-96">
+              <div className="bg-white p-6 sm:p-8 rounded-xl border border-[#DACDCA] shadow-sm flex flex-col justify-between h-96">
                 <div>
-                  <h3 className="text-lg font-bold text-[rgb(var(--color-burgundy))]">
+                  <h3 className="text-lg font-bold text-[#1A1A1A]">
                     Financial Volume Summary
                   </h3>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-[#7A7A7A] mt-1">
                     Comparison between collected revenue and outstanding receivables.
                   </p>
                 </div>
@@ -371,9 +437,9 @@ export default function DashboardPage() {
                             {billMetrics.revenueFromSettlements.toLocaleString('pl-PL', { style: 'currency', currency: 'PLN' })}
                           </span>
                         </div>
-                        <div className="w-full bg-gray-100 h-6 rounded-xl overflow-hidden relative shadow-inner">
+                        <div className="w-full bg-[#F7F7F7] border border-[#DACDCA] h-6 rounded-lg overflow-hidden relative shadow-inner">
                           <div 
-                            className="bg-emerald-500 h-full rounded-xl transition-all duration-1000 ease-out shadow-sm"
+                            className="bg-emerald-500 h-full rounded-lg transition-all duration-1000 ease-out shadow-sm"
                             style={{ 
                               width: `${
                                 billMetrics.revenueFromSettlements + billMetrics.unpaidBalance > 0
@@ -395,9 +461,9 @@ export default function DashboardPage() {
                             {billMetrics.unpaidBalance.toLocaleString('pl-PL', { style: 'currency', currency: 'PLN' })}
                           </span>
                         </div>
-                        <div className="w-full bg-gray-100 h-6 rounded-xl overflow-hidden relative shadow-inner">
+                        <div className="w-full bg-[#F7F7F7] border border-[#DACDCA] h-6 rounded-lg overflow-hidden relative shadow-inner">
                           <div 
-                            className="bg-amber-500 h-full rounded-xl transition-all duration-1000 ease-out shadow-sm"
+                            className="bg-amber-500 h-full rounded-lg transition-all duration-1000 ease-out shadow-sm"
                             style={{ 
                               width: `${
                                 billMetrics.revenueFromSettlements + billMetrics.unpaidBalance > 0
@@ -409,7 +475,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
-                      <div className="border-t border-gray-100 pt-4 flex justify-between text-xs text-gray-400 font-medium">
+                      <div className="border-t border-gray-100 pt-4 flex justify-between text-xs text-[#7A7A7A] font-bold">
                         <span>Total Settlements Volume:</span>
                         <span>
                           {(billMetrics.revenueFromSettlements + billMetrics.unpaidBalance).toLocaleString('pl-PL', { style: 'currency', currency: 'PLN' })}
@@ -424,7 +490,7 @@ export default function DashboardPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                         </svg>
                       </div>
-                      <p className="text-sm font-semibold text-gray-400">No Revenue Data Available</p>
+                      <p className="text-sm font-semibold text-[#7A7A7A]">No Revenue Data Available</p>
                     </div>
                   )}
                 </div>
