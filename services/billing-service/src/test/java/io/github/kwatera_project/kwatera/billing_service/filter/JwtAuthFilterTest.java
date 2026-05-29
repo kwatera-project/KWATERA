@@ -74,10 +74,12 @@ class JwtAuthFilterTest {
   @Test
   void shouldAuthenticateUser_whenValidTokenWithRolesProvided() throws Exception {
     String userId = UUID.randomUUID().toString();
+    String username = "admin@example.com";
     Key key = Keys.hmacShaKeyFor(TEST_SECRET.getBytes(StandardCharsets.UTF_8));
     String token =
         Jwts.builder()
-            .setSubject(userId)
+            .setSubject(username)
+            .claim("userId", userId)
             .claim("role", List.of("ROLE_ADMIN", "ROLE_OWNER"))
             .signWith(key)
             .compact();
@@ -88,7 +90,8 @@ class JwtAuthFilterTest {
 
     verify(filterChain).doFilter(request, response);
     assertNotNull(SecurityContextHolder.getContext().getAuthentication());
-    assertEquals(userId, SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+    assertEquals(username, SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+    assertEquals(userId, SecurityContextHolder.getContext().getAuthentication().getDetails());
     assertTrue(
         SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
             .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")));
@@ -97,8 +100,10 @@ class JwtAuthFilterTest {
   @Test
   void shouldAuthenticateUserWithoutRoles_whenTokenHasNoRole() throws Exception {
     String userId = UUID.randomUUID().toString();
+    String username = "guest@example.com";
     Key key = Keys.hmacShaKeyFor(TEST_SECRET.getBytes(StandardCharsets.UTF_8));
-    String token = Jwts.builder().setSubject(userId).signWith(key).compact();
+    String token =
+        Jwts.builder().setSubject(username).claim("userId", userId).signWith(key).compact();
 
     when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
 
@@ -106,7 +111,8 @@ class JwtAuthFilterTest {
 
     verify(filterChain).doFilter(request, response);
     assertNotNull(SecurityContextHolder.getContext().getAuthentication());
-    assertEquals(userId, SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+    assertEquals(username, SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+    assertEquals(userId, SecurityContextHolder.getContext().getAuthentication().getDetails());
     assertTrue(SecurityContextHolder.getContext().getAuthentication().getAuthorities().isEmpty());
   }
 }
