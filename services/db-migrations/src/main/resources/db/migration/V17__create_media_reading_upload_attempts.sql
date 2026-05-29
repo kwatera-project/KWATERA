@@ -19,6 +19,37 @@ ALTER TABLE media_readings
     ADD COLUMN initial_reading_source VARCHAR(50),
     ADD COLUMN final_reading_source VARCHAR(50);
 
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'media_readings'
+          AND column_name = 'reading_status'
+    ) THEN
+        UPDATE media_readings
+        SET initial_reading_status = reading_status,
+            final_reading_status = CASE
+                WHEN final_reading IS NOT NULL THEN reading_status
+                ELSE final_reading_status
+            END;
+    END IF;
+
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'media_readings'
+          AND column_name = 'reading_source'
+    ) THEN
+        UPDATE media_readings
+        SET initial_reading_source = reading_source,
+            final_reading_source = CASE
+                WHEN final_reading IS NOT NULL THEN reading_source
+                ELSE final_reading_source
+            END;
+    END IF;
+END $$;
+
 ALTER TABLE media_readings
 DROP COLUMN IF EXISTS reading_status,
     DROP COLUMN IF EXISTS reading_source;

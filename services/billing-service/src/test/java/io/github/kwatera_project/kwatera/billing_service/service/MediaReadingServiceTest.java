@@ -4,12 +4,15 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import io.github.kwatera_project.kwatera.billing_service.client.OcrClient;
+import io.github.kwatera_project.kwatera.billing_service.client.PropertyClient;
 import io.github.kwatera_project.kwatera.billing_service.dto.OcrResponseDto;
+import io.github.kwatera_project.kwatera.billing_service.dto.UnitSettlementItemDto;
 import io.github.kwatera_project.kwatera.billing_service.model.*;
 import io.github.kwatera_project.kwatera.billing_service.repository.MediaReadingRepository;
 import io.github.kwatera_project.kwatera.billing_service.repository.MediaReadingUploadAttemptRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +31,7 @@ class MediaReadingServiceTest {
   @Mock private SettlementService settlementService;
   @Mock private OcrClient ocrClient;
   @Mock private MediaReadingUploadAttemptRepository uploadAttemptRepository;
+  @Mock private PropertyClient propertyClient;
   @Mock private MultipartFile multipartFile;
 
   @InjectMocks private MediaReadingService mediaReadingService;
@@ -38,13 +42,10 @@ class MediaReadingServiceTest {
         mediaReadingService, "ocrConfidenceThreshold", new BigDecimal("0.90"));
   }
 
-  @Test
-  void shouldCreateMediaReading() {
-    UUID settlementId = UUID.randomUUID();
-
-    mediaReadingService.createMediaReading(settlementId, UtilityType.WATER, new BigDecimal("5.00"));
-
-    verify(mediaReadingRepository).save(any(MediaReading.class));
+  private UnitSettlementItemDto tariff(
+      UUID unitId, SettlementItemType type, BigDecimal pricePerUnit) {
+    return new UnitSettlementItemDto(
+        UUID.randomUUID(), unitId, type, pricePerUnit, MeasurementUnit.M3, BillingType.PER_USAGE);
   }
 
   @Test
@@ -62,11 +63,7 @@ class MediaReadingServiceTest {
 
     ReadingStatus status =
         mediaReadingService.processInitialReadingUpload(
-            settlementId,
-            UUID.randomUUID(),
-            UtilityType.WATER,
-            new BigDecimal("5.00"),
-            multipartFile);
+            settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile);
     assertEquals(ReadingStatus.AUTO_APPROVED, status);
     assertEquals(new BigDecimal("120.50"), reading.getInitialReading());
     assertEquals(ReadingSource.OCR, reading.getInitialReadingSource());
@@ -87,11 +84,7 @@ class MediaReadingServiceTest {
 
     ReadingStatus status =
         mediaReadingService.processInitialReadingUpload(
-            settlementId,
-            UUID.randomUUID(),
-            UtilityType.WATER,
-            new BigDecimal("5.00"),
-            multipartFile);
+            settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile);
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, status);
     assertNull(reading.getInitialReading());
   }
@@ -112,11 +105,7 @@ class MediaReadingServiceTest {
 
     ReadingStatus status =
         mediaReadingService.processInitialReadingUpload(
-            settlementId,
-            UUID.randomUUID(),
-            UtilityType.WATER,
-            new BigDecimal("5.00"),
-            multipartFile);
+            settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile);
 
     assertEquals(ReadingStatus.REQUEST_MANUAL_REVIEW, status);
     assertNull(reading.getInitialReading());
@@ -135,11 +124,7 @@ class MediaReadingServiceTest {
         IllegalStateException.class,
         () ->
             mediaReadingService.processInitialReadingUpload(
-                settlementId,
-                UUID.randomUUID(),
-                UtilityType.WATER,
-                new BigDecimal("5.00"),
-                multipartFile));
+                settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile));
 
     verifyNoInteractions(ocrClient);
   }
@@ -147,9 +132,12 @@ class MediaReadingServiceTest {
   @Test
   void shouldCreateNewReadingIfNotExistsOnInitialUpload() throws Exception {
     UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
 
     when(mediaReadingRepository.findBySettlementIdAndUtilityType(settlementId, UtilityType.WATER))
         .thenReturn(Optional.empty());
+    when(propertyClient.getUnitSettlementItems(unitId))
+        .thenReturn(List.of(tariff(unitId, SettlementItemType.WATER, new BigDecimal("18.50"))));
     when(mediaReadingRepository.save(any())).thenAnswer(i -> i.getArgument(0));
     when(ocrClient.readMeter(multipartFile))
         .thenReturn(new OcrResponseDto("100.00", new BigDecimal("0.95")));
@@ -157,13 +145,57 @@ class MediaReadingServiceTest {
 
     ReadingStatus status =
         mediaReadingService.processInitialReadingUpload(
-            settlementId,
-            UUID.randomUUID(),
-            UtilityType.WATER,
-            new BigDecimal("5.00"),
-            multipartFile);
+            settlementId, unitId, UtilityType.WATER, multipartFile);
 
     assertEquals(ReadingStatus.AUTO_APPROVED, status);
+  }
+
+  @Test
+  void shouldSnapshotUnitPriceFromPropertyServiceTariffOnInitialUpload() throws Exception {
+    UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    when(mediaReadingRepository.findBySettlementIdAndUtilityType(settlementId, UtilityType.WATER))
+        .thenReturn(Optional.empty());
+    when(propertyClient.getUnitSettlementItems(unitId))
+        .thenReturn(List.of(tariff(unitId, SettlementItemType.WATER, new BigDecimal("18.50"))));
+    when(mediaReadingRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+    when(ocrClient.readMeter(multipartFile))
+        .thenReturn(new OcrResponseDto("100.00", new BigDecimal("0.95")));
+    when(multipartFile.getBytes()).thenReturn(new byte[0]);
+
+    mediaReadingService.processInitialReadingUpload(
+        settlementId, unitId, UtilityType.WATER, multipartFile);
+
+    verify(mediaReadingRepository, atLeastOnce())
+        .save(
+            argThat(
+                reading ->
+                    UtilityType.WATER == reading.getUtilityType()
+                        && new BigDecimal("18.50").compareTo(reading.getUnitPrice()) == 0));
+  }
+
+  @Test
+  void shouldRejectInitialUploadWhenWaterTariffIsMissing() throws Exception {
+    UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    when(mediaReadingRepository.findBySettlementIdAndUtilityType(settlementId, UtilityType.WATER))
+        .thenReturn(Optional.empty());
+    when(propertyClient.getUnitSettlementItems(unitId))
+        .thenReturn(
+            List.of(tariff(unitId, SettlementItemType.ELECTRICITY, new BigDecimal("0.90"))));
+
+    IllegalStateException exception =
+        assertThrows(
+            IllegalStateException.class,
+            () ->
+                mediaReadingService.processInitialReadingUpload(
+                    settlementId, unitId, UtilityType.WATER, multipartFile));
+
+    assertTrue(exception.getMessage().contains("No tariff configured"));
+    verify(mediaReadingRepository, never()).save(any(MediaReading.class));
+    verifyNoInteractions(ocrClient);
   }
 
   @Test
@@ -490,11 +522,7 @@ class MediaReadingServiceTest {
 
     ReadingStatus status =
         mediaReadingService.processInitialReadingUpload(
-            settlementId,
-            UUID.randomUUID(),
-            UtilityType.WATER,
-            new BigDecimal("5.00"),
-            multipartFile);
+            settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile);
 
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, status);
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, reading.getInitialReadingStatus());
@@ -516,11 +544,7 @@ class MediaReadingServiceTest {
 
     ReadingStatus status =
         mediaReadingService.processInitialReadingUpload(
-            settlementId,
-            UUID.randomUUID(),
-            UtilityType.WATER,
-            new BigDecimal("5.00"),
-            multipartFile);
+            settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile);
 
     assertEquals(ReadingStatus.REQUEST_MANUAL_REVIEW, status);
     assertEquals(ReadingStatus.REQUEST_MANUAL_REVIEW, reading.getInitialReadingStatus());
@@ -542,11 +566,7 @@ class MediaReadingServiceTest {
 
     ReadingStatus status =
         mediaReadingService.processInitialReadingUpload(
-            settlementId,
-            UUID.randomUUID(),
-            UtilityType.WATER,
-            new BigDecimal("5.00"),
-            multipartFile);
+            settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile);
 
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, status);
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, reading.getInitialReadingStatus());
@@ -568,11 +588,7 @@ class MediaReadingServiceTest {
 
     ReadingStatus status =
         mediaReadingService.processInitialReadingUpload(
-            settlementId,
-            UUID.randomUUID(),
-            UtilityType.WATER,
-            new BigDecimal("5.00"),
-            multipartFile);
+            settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile);
 
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, status);
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, reading.getInitialReadingStatus());
@@ -593,11 +609,7 @@ class MediaReadingServiceTest {
 
     ReadingStatus status =
         mediaReadingService.processInitialReadingUpload(
-            settlementId,
-            UUID.randomUUID(),
-            UtilityType.WATER,
-            new BigDecimal("5.00"),
-            multipartFile);
+            settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile);
 
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, status);
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, reading.getInitialReadingStatus());
@@ -619,11 +631,7 @@ class MediaReadingServiceTest {
 
     ReadingStatus status =
         mediaReadingService.processInitialReadingUpload(
-            settlementId,
-            UUID.randomUUID(),
-            UtilityType.WATER,
-            new BigDecimal("5.00"),
-            multipartFile);
+            settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile);
 
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, status);
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, reading.getInitialReadingStatus());

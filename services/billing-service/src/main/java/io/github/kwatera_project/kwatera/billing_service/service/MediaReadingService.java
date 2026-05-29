@@ -1,9 +1,11 @@
 package io.github.kwatera_project.kwatera.billing_service.service;
 
 import io.github.kwatera_project.kwatera.billing_service.client.OcrClient;
+import io.github.kwatera_project.kwatera.billing_service.client.PropertyClient;
 import io.github.kwatera_project.kwatera.billing_service.dto.MediaReadingStatusDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.MediaReadingUploadAttemptDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.OcrResponseDto;
+import io.github.kwatera_project.kwatera.billing_service.dto.UnitSettlementItemDto;
 import io.github.kwatera_project.kwatera.billing_service.model.*;
 import io.github.kwatera_project.kwatera.billing_service.repository.MediaReadingRepository;
 import io.github.kwatera_project.kwatera.billing_service.repository.MediaReadingUploadAttemptRepository;
@@ -12,6 +14,7 @@ import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,18 +29,10 @@ public class MediaReadingService {
   private final SettlementService settlementService;
   private final OcrClient ocrClient;
   private final MediaReadingUploadAttemptRepository uploadAttemptRepository;
+  private final PropertyClient propertyClient;
 
   @Value("${ocr.confidence-threshold}")
   private BigDecimal ocrConfidenceThreshold;
-
-  @Transactional
-  public void createMediaReading(UUID settlementId, UtilityType utilityType, BigDecimal unitPrice) {
-    MediaReading reading = new MediaReading();
-    reading.setSettlementId(settlementId);
-    reading.setUtilityType(utilityType);
-    reading.setUnitPrice(unitPrice);
-    mediaReadingRepository.save(reading);
-  }
 
   public List<MediaReadingStatusDto> getMediaReadings(UUID settlementId) {
     return mediaReadingRepository.findBySettlementId(settlementId).stream()
@@ -102,17 +97,14 @@ public class MediaReadingService {
 
   @Transactional
   public ReadingStatus processInitialReadingUpload(
-      UUID settlementId,
-      UUID unitId,
-      UtilityType utilityType,
-      BigDecimal unitPrice,
-      MultipartFile file)
+      UUID settlementId, UUID unitId, UtilityType utilityType, MultipartFile file)
       throws IOException {
     MediaReading reading =
         mediaReadingRepository
             .findBySettlementIdAndUtilityType(settlementId, utilityType)
             .orElseGet(
                 () -> {
+                  BigDecimal unitPrice = resolveUnitPrice(unitId, utilityType);
                   MediaReading r = new MediaReading();
                   r.setSettlementId(settlementId);
                   r.setUtilityType(utilityType);
@@ -358,6 +350,20 @@ public class MediaReadingService {
       case WATER -> SettlementItemType.WATER;
       case ELECTRICITY -> SettlementItemType.ELECTRICITY;
     };
+  }
+
+  private BigDecimal resolveUnitPrice(UUID unitId, UtilityType utilityType) {
+    SettlementItemType settlementItemType = mapUtilityType(utilityType);
+
+    return propertyClient.getUnitSettlementItems(unitId).stream()
+        .filter(item -> item.settlementItemType() == settlementItemType)
+        .map(UnitSettlementItemDto::pricePerUnit)
+        .filter(Objects::nonNull)
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "No tariff configured for unit " + unitId + " and utility " + utilityType));
   }
 
   private String descriptionFor(UtilityType utilityType) {

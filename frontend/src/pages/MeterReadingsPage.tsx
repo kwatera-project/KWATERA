@@ -9,9 +9,6 @@ export default function MeterReadingsPage() {
     const [searchParams] = useSearchParams();
 
     const unitId = searchParams.get("unitId");
-    const unitPriceParam = searchParams.get("unitPrice");
-
-    const unitPrice = unitPriceParam ? Number(unitPriceParam) : 0;
 
     const [readings, setReadings] = useState<MediaReadingStatus[]>([]);
     const [loading, setLoading] = useState(true);
@@ -118,7 +115,6 @@ export default function MeterReadingsPage() {
                     settlementId={settlementId}
                     unitId={unitId}
                     utilityType="WATER"
-                    unitPrice={unitPrice}
                     readingType="INITIAL"
                     onSuccess={loadReadings}
                 />

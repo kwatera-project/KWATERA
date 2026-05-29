@@ -53,20 +53,19 @@ class MediaReadingControllerTest {
     UUID unitId = UUID.randomUUID();
 
     when(mediaReadingService.processInitialReadingUpload(
-            settlementId, unitId, UtilityType.WATER, new BigDecimal("5.00"), multipartFile))
+            settlementId, unitId, UtilityType.WATER, multipartFile))
         .thenReturn(ReadingStatus.AUTO_APPROVED);
 
     ResponseEntity<MeterReadingResponseDto> response =
         mediaReadingController.uploadInitialReading(
-            settlementId, unitId, UtilityType.WATER, new BigDecimal("5.00"), multipartFile);
+            settlementId, unitId, UtilityType.WATER, multipartFile);
 
     assertEquals(200, response.getStatusCode().value());
     assertNotNull(response.getBody());
     assertEquals(ReadingStatus.AUTO_APPROVED, response.getBody().status());
 
     verify(mediaReadingService)
-        .processInitialReadingUpload(
-            settlementId, unitId, UtilityType.WATER, new BigDecimal("5.00"), multipartFile);
+        .processInitialReadingUpload(settlementId, unitId, UtilityType.WATER, multipartFile);
   }
 
   @Test

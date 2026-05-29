@@ -7,7 +7,6 @@ type Props = {
     settlementId: string;
     unitId: string;
     utilityType: UtilityType;
-    unitPrice?: number;
     readingType: "INITIAL" | "FINAL";
     onSuccess?: () => void;
 };
@@ -16,7 +15,6 @@ export default function MeterReadingUpload({
    settlementId,
    unitId,
    utilityType,
-   unitPrice,
    readingType,
    onSuccess,
 }: Props) {
@@ -84,15 +82,10 @@ export default function MeterReadingUpload({
             let response: MeterReadingResponse;
 
             if (readingType === "INITIAL") {
-                if (unitPrice === undefined || unitPrice < 0) {
-                    throw new Error("Valid unit price is required for initial reading");
-                }
-
                 response = await uploadInitialMeterReading(
                     settlementId,
                     unitId,
                     utilityType,
-                    unitPrice,
                     file
                 );
             } else {

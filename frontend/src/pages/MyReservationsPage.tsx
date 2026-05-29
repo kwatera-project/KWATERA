@@ -82,7 +82,7 @@ export default function MyReservationsPage() {
                                     {settlementIds[res.id] &&
                                         (res.status === "CONFIRMED" || res.status === "COMPLETED") && (
                                             <Link
-                                                to={`/settlements/${settlementIds[res.id]}/meter-readings?unitId=${res.unitId}&unitPrice=5`}
+                                                to={`/settlements/${settlementIds[res.id]}/meter-readings?unitId=${res.unitId}`}
                                                 className="text-blue-600 hover:underline text-sm"
                                             >
                                                 Water Meter

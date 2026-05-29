@@ -35,13 +35,11 @@ public class MediaReadingController {
       @PathVariable("settlementId") UUID settlementId,
       @RequestParam("unitId") UUID unitId,
       @RequestParam("utilityType") UtilityType utilityType,
-      @RequestParam("unitPrice") BigDecimal unitPrice,
       @RequestParam("file") MultipartFile file)
       throws IOException {
 
     ReadingStatus status =
-        mediaReadingService.processInitialReadingUpload(
-            settlementId, unitId, utilityType, unitPrice, file);
+        mediaReadingService.processInitialReadingUpload(settlementId, unitId, utilityType, file);
 
     return ResponseEntity.ok(MeterReadingResponseDto.from(status));
   }

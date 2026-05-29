@@ -76,7 +76,6 @@ export async function uploadInitialMeterReading(
     settlementId: string,
     unitId: string,
     utilityType: UtilityType,
-    unitPrice: number,
     file: File
 ): Promise<MeterReadingResponse> {
     const formData = new FormData();
@@ -84,7 +83,6 @@ export async function uploadInitialMeterReading(
     formData.append("file", file);
     formData.append("unitId", unitId);
     formData.append("utilityType", utilityType);
-    formData.append("unitPrice", unitPrice.toString());
 
     const response = await fetch(`${BILLING_URL}/${settlementId}/upload-initial`, {
         method: "POST",
