@@ -39,12 +39,14 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
       @Param("endDate") LocalDate endDate);
 
   @Query(
-      "SELECT COUNT(r) FROM Reservation r WHERE r.startDate < :endDate AND r.endDate > :startDate")
+      "SELECT COUNT(r) FROM Reservation r WHERE r.status <> io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus.CANCELLED "
+          + "AND r.startDate < :endDate AND r.endDate > :startDate")
   long countReservationsInDateRange(
       @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
   @Query(
       "SELECT COUNT(r) FROM Reservation r WHERE r.unitId IN :unitIds "
+          + "AND r.status <> io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus.CANCELLED "
           + "AND r.startDate < :endDate AND r.endDate > :startDate")
   long countReservationsInDateRangeForUnits(
       @Param("unitIds") List<UUID> unitIds,
