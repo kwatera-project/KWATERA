@@ -174,11 +174,16 @@ public class ReservationService {
   @Transactional
   public Reservation createReservation(
       UUID userId, CreateReservationRequest request, String token) {
-    return createReservation(userId, null, request, token);
+    return createReservationInternal(userId, null, request, token);
   }
 
   @Transactional
   public Reservation createReservation(
+      UUID userId, String guestEmail, CreateReservationRequest request, String token) {
+    return createReservationInternal(userId, guestEmail, request, token);
+  }
+
+  private Reservation createReservationInternal(
       UUID userId, String guestEmail, CreateReservationRequest request, String token) {
     if (userId == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User id is required");

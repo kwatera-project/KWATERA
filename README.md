@@ -129,13 +129,17 @@ To verify emails locally:
 docker compose -f infra/compose/docker-compose.yml up --build
 ```
 
-Open [http://localhost:8025](http://localhost:8025), then trigger a reservation creation,
-reservation status change, settlement creation, or payment/settlement status change. The generated
-email is sent to the event recipient, such as the authenticated guest email stored with the
-reservation, and should appear in the Mailpit inbox. `KWATERA_MAIL_TEST_RECIPIENT`
-(`guest@kwatera.local` by default) is only a development fallback for flows where no recipient email
-is available; fallback usage is logged as a warning. Do not configure Gmail, real SMTP credentials,
-or production secrets in the repository.
+Open http://localhost:8025, then trigger one of the supported business events. The generated e-mail is sent to the event recipient and should appear in the Mailpit inbox.
+
+| Event                               | Service               | Recipient source                                                         | Mail subject                 |
+| ----------------------------------- | --------------------- | ------------------------------------------------------------------------ | ---------------------------- |
+| Reservation created                 | `reservation-service` | Authenticated guest e-mail stored as `Reservation.guestEmail`            | `Reservation created`        |
+| Reservation status changed          | `reservation-service` | `Reservation.guestEmail`                                                 | `Reservation status changed` |
+| Settlement created / issued         | `billing-service`     | Guest e-mail resolved from reservation data                              | `Settlement issued`          |
+| Payment / settlement status changed | `billing-service`     | `recipientEmail` propagated through Stripe metadata and webhook handling | `Payment status changed`     |
+
+`KWATERA_MAIL_TEST_RECIPIENT` (`guest@kwatera.local` by default) is only a development fallback for flows where no recipient e-mail is available. Fallback usage is logged as a warning.
+
 
 #### Auth / local testing
 
