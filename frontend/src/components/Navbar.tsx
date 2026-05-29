@@ -70,12 +70,20 @@ export default function Navbar() {
                 )}
 
                 {isLoggedIn && (userRoles.includes("ROLE_ADMIN") || userRoles.includes("ROLE_OWNER"))  && (
-                    <Link
-                        to="/admin/reservations"
-                        className="hover:text-[rgb(var(--color-burgundy))] transition"
-                    >
-                        Reservations
-                    </Link>
+                    <>
+                        <Link
+                            to="/admin/dashboard"
+                            className="hover:text-[rgb(var(--color-burgundy))] transition"
+                        >
+                            Dashboard
+                        </Link>
+                        <Link
+                            to="/admin/reservations"
+                            className="hover:text-[rgb(var(--color-burgundy))] transition"
+                        >
+                            Reservations
+                        </Link>
+                    </>
                 )}
 
                 <div className="relative ml-4">

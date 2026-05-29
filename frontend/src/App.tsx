@@ -14,6 +14,7 @@ import PaymentCancelPage from "./pages/PaymentCancelPage";
 import SettlementDetailsPage from "./pages/SettlementDetailsPage";
 import OccupancyCalendarPage from "./pages/OccupancyCalendarPage";
 import ProfilePage from "./pages/ProfilePage";
+import DashboardPage from "./pages/DashboardPage";
 import { CurrencyProvider } from "./contexts/CurrencyContext";
 import MeterReadingsPage from "./pages/MeterReadingsPage";
 import AdminMeterReadingsPage from "./pages/AdminMeterReadingsPage";
@@ -26,6 +27,14 @@ function App() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/register" element={<RegisterForm/>}/>
                 <Route path="/login" element={<LoginForm/>}/>
+                <Route
+                    path="/admin/dashboard"
+                    element={
+                        <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
+                            <DashboardPage />
+                        </ProtectedRoute>
+                    }
+                />
                 <Route
                     path="/admin/reservations"
                     element={
