@@ -27,3 +27,8 @@ stripe:
 services:
   property:
     url: http://localhost:8080
+  ocr:
+    url: http://localhost:8081
+
+ocr:
+  confidence-threshold: 0.8

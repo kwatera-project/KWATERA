@@ -20,7 +20,10 @@ spring:
 services:
   property:
     url: http://property-service/api/properties
-
+  ocr:
+    url: http://ocr-service
+ocr:
+  confidence-threshold: 0.80
 eureka:
   client:
     serviceUrl:
