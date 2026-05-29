@@ -262,7 +262,7 @@ class PropertyServiceTest {
         new io.github.kwatera_project.kwatera.property_service.dto.NbpResponseDto(
             "A", "EUR", "code", List.of(rateDto));
 
-    when(nbpExchangeRateClient.getExchangeRate("EUR")).thenReturn(responseDto);
+    when(nbpExchangeRateClient.getEurExchangeRate()).thenReturn(responseDto);
 
     var result = propertyService.getUnitById(id, "EUR");
 
@@ -279,11 +279,53 @@ class PropertyServiceTest {
     unit.setPricePerNight(BigDecimal.valueOf(200));
 
     when(unitRepository.findById(id)).thenReturn(Optional.of(unit));
-    when(nbpExchangeRateClient.getExchangeRate("EUR")).thenThrow(new RuntimeException("API error"));
+    when(nbpExchangeRateClient.getEurExchangeRate()).thenThrow(new RuntimeException("API error"));
 
     var result = propertyService.getUnitById(id, "EUR");
 
     assertEquals(BigDecimal.valueOf(200), result.getConvertedPricePerNight());
     assertEquals("PLN", result.getCurrencyInfo().displayCurrency());
+  }
+
+  @Test
+  void getUnitById_shouldConvertUsdCurrencyWhenProvided() {
+    UUID id = UUID.randomUUID();
+    Unit unit = new Unit();
+    unit.setId(id);
+    unit.setName("Room");
+    unit.setPricePerNight(BigDecimal.valueOf(200));
+
+    when(unitRepository.findById(id)).thenReturn(Optional.of(unit));
+
+    io.github.kwatera_project.kwatera.property_service.dto.NbpRateDto rateDto =
+        new io.github.kwatera_project.kwatera.property_service.dto.NbpRateDto(
+            "no", java.time.LocalDate.now(), BigDecimal.valueOf(4.0));
+    io.github.kwatera_project.kwatera.property_service.dto.NbpResponseDto responseDto =
+        new io.github.kwatera_project.kwatera.property_service.dto.NbpResponseDto(
+            "A", "USD", "code", List.of(rateDto));
+
+    when(nbpExchangeRateClient.getUsdExchangeRate()).thenReturn(responseDto);
+
+    var result = propertyService.getUnitById(id, "USD");
+
+    assertEquals(BigDecimal.valueOf(50).setScale(2), result.getConvertedPricePerNight());
+    assertEquals("USD", result.getCurrencyInfo().displayCurrency());
+  }
+
+  @Test
+  void getUnitById_shouldThrowBadRequestForUnsupportedCurrency() {
+    UUID id = UUID.randomUUID();
+    Unit unit = new Unit();
+    unit.setId(id);
+    unit.setName("Room");
+    unit.setPricePerNight(BigDecimal.valueOf(200));
+
+    when(unitRepository.findById(id)).thenReturn(Optional.of(unit));
+
+    ResponseStatusException ex =
+        assertThrows(ResponseStatusException.class, () -> propertyService.getUnitById(id, "GBP"));
+
+    assertEquals(org.springframework.http.HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    assertEquals("Unsupported currency", ex.getReason());
   }
 }
