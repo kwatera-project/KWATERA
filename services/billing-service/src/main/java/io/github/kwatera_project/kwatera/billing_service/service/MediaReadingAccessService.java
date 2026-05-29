@@ -43,6 +43,20 @@ public class MediaReadingAccessService {
     }
   }
 
+  public void validateGuestAccess(
+      UUID settlementId, UUID unitId, Authentication authentication, String token) {
+    requireAuthority(authentication, "ROLE_GUEST");
+
+    ReservationDto reservation = fetchReservationForSettlement(settlementId, token);
+    UUID authenticatedUserId = authenticatedUserId(authentication);
+
+    if (reservation.getUserId() == null || !reservation.getUserId().equals(authenticatedUserId)) {
+      throw new AccessDeniedException("Access denied");
+    }
+
+    validateReservationUnit(reservation, unitId);
+  }
+
   public void validateReviewerAccess(
       UUID settlementId, Authentication authentication, String token) {
     if (!hasAuthority(authentication, "ROLE_ADMIN")
@@ -52,6 +66,26 @@ public class MediaReadingAccessService {
 
     // Reservation-service validates admin/global access and owner access to the reservation unit.
     fetchReservationForSettlement(settlementId, token);
+  }
+
+  public void validateReviewerAccess(
+      UUID settlementId, UUID unitId, Authentication authentication, String token) {
+    if (!hasAuthority(authentication, "ROLE_ADMIN")
+        && !hasAuthority(authentication, "ROLE_OWNER")) {
+      throw new AccessDeniedException("Access denied");
+    }
+
+    // Reservation-service validates admin/global access and owner access to the reservation unit.
+    ReservationDto reservation = fetchReservationForSettlement(settlementId, token);
+    validateReservationUnit(reservation, unitId);
+  }
+
+  private void validateReservationUnit(ReservationDto reservation, UUID unitId) {
+    if (unitId == null
+        || reservation.getUnitId() == null
+        || !reservation.getUnitId().equals(unitId)) {
+      throw new AccessDeniedException("Access denied");
+    }
   }
 
   private ReservationDto fetchReservationForSettlement(UUID settlementId, String token) {

@@ -75,7 +75,8 @@ class MediaReadingControllerTest {
     assertNotNull(response.getBody());
     assertEquals(ReadingStatus.AUTO_APPROVED, response.getBody().status());
 
-    verify(mediaReadingAccessService).validateGuestAccess(settlementId, authentication, TOKEN);
+    verify(mediaReadingAccessService)
+        .validateGuestAccess(settlementId, unitId, authentication, TOKEN);
     verify(mediaReadingService)
         .processInitialReadingUpload(settlementId, unitId, UtilityType.WATER, multipartFile);
   }
@@ -98,7 +99,8 @@ class MediaReadingControllerTest {
     assertNotNull(response.getBody());
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, response.getBody().status());
 
-    verify(mediaReadingAccessService).validateGuestAccess(settlementId, authentication, TOKEN);
+    verify(mediaReadingAccessService)
+        .validateGuestAccess(settlementId, unitId, authentication, TOKEN);
     verify(mediaReadingService)
         .processFinalReadingUpload(settlementId, unitId, UtilityType.WATER, multipartFile);
   }
@@ -121,7 +123,8 @@ class MediaReadingControllerTest {
 
     assertEquals(200, response.getStatusCode().value());
 
-    verify(mediaReadingAccessService).validateReviewerAccess(settlementId, authentication, TOKEN);
+    verify(mediaReadingAccessService)
+        .validateReviewerAccess(settlementId, unitId, authentication, TOKEN);
     verify(mediaReadingService)
         .manuallyApproveReading(
             settlementId, unitId, UtilityType.WATER, new BigDecimal("123.45"), ReadingType.INITIAL);

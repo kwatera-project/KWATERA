@@ -54,7 +54,7 @@ public class MediaReadingController {
       throws IOException {
 
     mediaReadingAccessService.validateGuestAccess(
-        settlementId, authentication, request.getHeader(AUTHORIZATION_HEADER));
+        settlementId, unitId, authentication, request.getHeader(AUTHORIZATION_HEADER));
     ReadingStatus status =
         mediaReadingService.processInitialReadingUpload(settlementId, unitId, utilityType, file);
 
@@ -73,7 +73,7 @@ public class MediaReadingController {
       throws IOException {
 
     mediaReadingAccessService.validateGuestAccess(
-        settlementId, authentication, request.getHeader(AUTHORIZATION_HEADER));
+        settlementId, unitId, authentication, request.getHeader(AUTHORIZATION_HEADER));
     ReadingStatus status =
         mediaReadingService.processFinalReadingUpload(settlementId, unitId, utilityType, file);
 
@@ -92,7 +92,7 @@ public class MediaReadingController {
       HttpServletRequest request) {
 
     mediaReadingAccessService.validateReviewerAccess(
-        settlementId, authentication, request.getHeader(AUTHORIZATION_HEADER));
+        settlementId, unitId, authentication, request.getHeader(AUTHORIZATION_HEADER));
     mediaReadingService.manuallyApproveReading(
         settlementId, unitId, utilityType, correctedReading, readingType);
 

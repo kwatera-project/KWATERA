@@ -52,6 +52,21 @@ class MediaReadingAccessServiceTest {
   }
 
   @Test
+  void shouldAllowGuestAccessWhenReservationUnitMatchesRequestUnit() {
+    UUID guestId = UUID.randomUUID();
+    UUID settlementId = UUID.randomUUID();
+    UUID reservationId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    mockSettlementReservation(settlementId, reservationId, guestId, unitId);
+
+    assertDoesNotThrow(
+        () ->
+            mediaReadingAccessService.validateGuestAccess(
+                settlementId, unitId, auth(guestId, "ROLE_GUEST"), TOKEN));
+  }
+
+  @Test
   void shouldDenyGuestAccessForAnotherGuestsSettlementReservation() {
     UUID guestId = UUID.randomUUID();
     UUID otherGuestId = UUID.randomUUID();
@@ -65,6 +80,23 @@ class MediaReadingAccessServiceTest {
         () ->
             mediaReadingAccessService.validateGuestAccess(
                 settlementId, auth(guestId, "ROLE_GUEST"), TOKEN));
+  }
+
+  @Test
+  void shouldDenyGuestAccessWhenReservationUnitDiffersFromRequestUnit() {
+    UUID guestId = UUID.randomUUID();
+    UUID settlementId = UUID.randomUUID();
+    UUID reservationId = UUID.randomUUID();
+    UUID reservationUnitId = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    UUID requestUnitId = UUID.fromString("00000000-0000-0000-0000-000000000002");
+
+    mockSettlementReservation(settlementId, reservationId, guestId, reservationUnitId);
+
+    assertThrows(
+        AccessDeniedException.class,
+        () ->
+            mediaReadingAccessService.validateGuestAccess(
+                settlementId, requestUnitId, auth(guestId, "ROLE_GUEST"), TOKEN));
   }
 
   @Test
@@ -106,6 +138,31 @@ class MediaReadingAccessServiceTest {
   }
 
   @Test
+  void shouldAllowOwnerAndAdminReviewerAccessWhenReservationUnitMatchesRequestUnit() {
+    UUID settlementId = UUID.randomUUID();
+    UUID ownerId = UUID.randomUUID();
+    UUID reservationId = UUID.randomUUID();
+    UUID guestId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    mockSettlementReservation(settlementId, reservationId, guestId, unitId);
+
+    assertDoesNotThrow(
+        () ->
+            mediaReadingAccessService.validateReviewerAccess(
+                settlementId, unitId, auth(ownerId, "ROLE_OWNER"), TOKEN));
+
+    UUID adminSettlementId = UUID.randomUUID();
+    UUID adminReservationId = UUID.randomUUID();
+    UUID adminUnitId = UUID.randomUUID();
+    mockSettlementReservation(adminSettlementId, adminReservationId, guestId, adminUnitId);
+
+    assertDoesNotThrow(
+        () ->
+            mediaReadingAccessService.validateReviewerAccess(
+                adminSettlementId, adminUnitId, auth(UUID.randomUUID(), "ROLE_ADMIN"), TOKEN));
+  }
+
+  @Test
   void shouldAllowAdminReviewerAccessWhenReservationServiceAllowsIt() {
     UUID adminId = UUID.randomUUID();
     UUID settlementId = UUID.randomUUID();
@@ -120,6 +177,42 @@ class MediaReadingAccessServiceTest {
                 settlementId, auth(adminId, "ROLE_ADMIN"), TOKEN));
   }
 
+  @Test
+  void shouldDenyOwnerAndAdminReviewerAccessWhenReservationUnitDiffersFromRequestUnit() {
+    UUID ownerSettlementId = UUID.randomUUID();
+    UUID ownerReservationId = UUID.randomUUID();
+    UUID guestId = UUID.randomUUID();
+    UUID ownerReservationUnitId = UUID.fromString("00000000-0000-0000-0000-000000000003");
+    UUID ownerRequestUnitId = UUID.fromString("00000000-0000-0000-0000-000000000004");
+    mockSettlementReservation(
+        ownerSettlementId, ownerReservationId, guestId, ownerReservationUnitId);
+
+    assertThrows(
+        AccessDeniedException.class,
+        () ->
+            mediaReadingAccessService.validateReviewerAccess(
+                ownerSettlementId,
+                ownerRequestUnitId,
+                auth(UUID.randomUUID(), "ROLE_OWNER"),
+                TOKEN));
+
+    UUID adminSettlementId = UUID.randomUUID();
+    UUID adminReservationId = UUID.randomUUID();
+    UUID adminReservationUnitId = UUID.fromString("00000000-0000-0000-0000-000000000005");
+    UUID adminRequestUnitId = UUID.fromString("00000000-0000-0000-0000-000000000006");
+    mockSettlementReservation(
+        adminSettlementId, adminReservationId, guestId, adminReservationUnitId);
+
+    assertThrows(
+        AccessDeniedException.class,
+        () ->
+            mediaReadingAccessService.validateReviewerAccess(
+                adminSettlementId,
+                adminRequestUnitId,
+                auth(UUID.randomUUID(), "ROLE_ADMIN"),
+                TOKEN));
+  }
+
   private Authentication auth(UUID userId, String role) {
     UsernamePasswordAuthenticationToken authentication =
         new UsernamePasswordAuthenticationToken(
@@ -129,6 +222,11 @@ class MediaReadingAccessServiceTest {
   }
 
   private void mockSettlementReservation(UUID settlementId, UUID reservationId, UUID guestId) {
+    mockSettlementReservation(settlementId, reservationId, guestId, UUID.randomUUID());
+  }
+
+  private void mockSettlementReservation(
+      UUID settlementId, UUID reservationId, UUID guestId, UUID unitId) {
     Settlement settlement = new Settlement();
     settlement.setId(settlementId);
     settlement.setReservationId(reservationId);
@@ -136,6 +234,7 @@ class MediaReadingAccessServiceTest {
     ReservationDto reservation = new ReservationDto();
     reservation.setId(reservationId);
     reservation.setUserId(guestId);
+    reservation.setUnitId(unitId);
 
     when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
     when(restTemplate.exchange(
