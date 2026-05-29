@@ -1,5 +1,6 @@
 package io.github.kwatera_project.kwatera.billing_service.client;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.kwatera_project.kwatera.billing_service.dto.OcrResponseDto;
 import java.io.IOException;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -24,6 +25,9 @@ public class OcrClient {
   @Value("${services.ocr.url}")
   private String ocrServiceUrl;
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification = "RestTemplate is a Spring-managed bean injected by the container.")
   public OcrClient(@Qualifier("plainRestTemplate") RestTemplate restTemplate) {
     this.restTemplate = restTemplate;
   }

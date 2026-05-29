@@ -35,7 +35,13 @@ export default function AdminMeterReadingsPage() {
     }, [settlementId]);
 
     useEffect(() => {
-        loadReadings();
+        const timeoutId = window.setTimeout(() => {
+            void loadReadings();
+        }, 0);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+        };
     }, [loadReadings]);
 
     if (!settlementId || !unitId) {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import MeterReadingUpload from "../components/MeterReadingUpload";
 import { getMediaReadings } from "../api/ocrApi";
@@ -17,7 +17,7 @@ export default function MeterReadingsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    const loadReadings = async () => {
+    const loadReadings = useCallback(async () => {
         if (!settlementId) return;
 
         setLoading(true);
@@ -31,11 +31,17 @@ export default function MeterReadingsPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [settlementId]);
 
     useEffect(() => {
-        loadReadings();
-    }, [settlementId]);
+        const timeoutId = window.setTimeout(() => {
+            void loadReadings();
+        }, 0);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+        };
+    }, [loadReadings]);
 
     if (!settlementId || !unitId) {
         return (

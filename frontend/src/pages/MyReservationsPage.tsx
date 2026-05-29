@@ -20,7 +20,9 @@ export default function MyReservationsPage() {
                     try {
                         const settlement = await getSettlementDetails(res.id);
                         setSettlementIds(prev => ({ ...prev, [res.id]: settlement.id }));
-                    } catch { }
+                    } catch (err) {
+                        console.error("Failed to load settlement details", err);
+                    }
                 });
             })
             .catch(err => {
