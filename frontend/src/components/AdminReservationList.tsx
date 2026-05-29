@@ -45,7 +45,9 @@ export default function AdminReservationList() {
                     try {
                         const settlement = await getSettlementDetails(res.id);
                         setSettlementIds(prev => ({ ...prev, [res.id]: settlement.id }));
-                    } catch { }
+                    } catch (err) {
+                        console.error("Failed to load settlement details", err);
+                    }
                     try {
                         const t = localStorage.getItem("token");
                         const resDetails = await fetch(
@@ -54,7 +56,9 @@ export default function AdminReservationList() {
                         );
                         const resData = await resDetails.json();
                         setUnitIds(prev => ({ ...prev, [res.id]: resData.unitId }));
-                    } catch { }
+                    } catch (err) {
+                        console.error("Failed to load reservation details", err);
+                    }
                 });
             })
             .catch((err) => console.error(err));

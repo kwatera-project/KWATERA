@@ -276,7 +276,7 @@ class MediaReadingServiceTest {
   }
 
   @Test
-  void shouldRejectFinalReadingLowerThanInitial() throws Exception {
+  void shouldRequestReuploadWhenFinalReadingIsLowerThanInitial() throws Exception {
     UUID settlementId = UUID.randomUUID();
     MediaReading reading = new MediaReading();
     reading.setInitialReading(new BigDecimal("200"));
@@ -289,11 +289,14 @@ class MediaReadingServiceTest {
         .thenReturn(new OcrResponseDto("100", new BigDecimal("0.99")));
     when(multipartFile.getBytes()).thenReturn(new byte[0]);
 
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            mediaReadingService.processFinalReadingUpload(
-                settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile));
+    ReadingStatus status =
+        mediaReadingService.processFinalReadingUpload(
+            settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile);
+
+    assertEquals(ReadingStatus.REQUEST_REUPLOAD, status);
+    assertEquals(ReadingStatus.REQUEST_REUPLOAD, reading.getFinalReadingStatus());
+    assertNull(reading.getFinalReading());
+    verifyNoInteractions(settlementService);
   }
 
   @Test
@@ -305,15 +308,14 @@ class MediaReadingServiceTest {
 
     when(mediaReadingRepository.findBySettlementIdAndUtilityType(settlementId, UtilityType.WATER))
         .thenReturn(Optional.of(reading));
-    when(ocrClient.readMeter(multipartFile))
-        .thenReturn(new OcrResponseDto("150", new BigDecimal("0.99")));
-    when(multipartFile.getBytes()).thenReturn(new byte[0]);
 
     assertThrows(
         IllegalStateException.class,
         () ->
             mediaReadingService.processFinalReadingUpload(
                 settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile));
+
+    verifyNoInteractions(ocrClient);
   }
 
   @Test
