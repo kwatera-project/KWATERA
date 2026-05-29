@@ -27,7 +27,7 @@ services:
   ocr:
     url: http://ocr-service:8085
 ocr:
-  confidence-threshold: 0.80
+  confidence-threshold: 0.70
 eureka:
   client:
     serviceUrl:

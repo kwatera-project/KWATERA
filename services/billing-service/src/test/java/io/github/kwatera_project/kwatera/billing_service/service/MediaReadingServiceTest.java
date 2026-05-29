@@ -39,7 +39,7 @@ class MediaReadingServiceTest {
   @BeforeEach
   void setUp() {
     ReflectionTestUtils.setField(
-        mediaReadingService, "ocrConfidenceThreshold", new BigDecimal("0.90"));
+        mediaReadingService, "ocrConfidenceThreshold", new BigDecimal("0.70"));
   }
 
   private UnitSettlementItemDto tariff(

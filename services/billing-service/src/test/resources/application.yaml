@@ -31,4 +31,4 @@ services:
     url: http://localhost:8081
 
 ocr:
-  confidence-threshold: 0.8
+  confidence-threshold: 0.7
