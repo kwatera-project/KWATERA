@@ -137,7 +137,7 @@ export default function OccupancyCalendarPage() {
                 const displayText = `${unitName} - ${occ.guestName || occ.status}`;
 
                 cells.push(
-                    <td key={dateStr} colSpan={span} className="p-1.5 border-b border-r border-[#DACDCA] bg-[#FFFFFF]">
+                    <td key={dateStr} colSpan={span} className="p-1.5 border-b border-r border-[#DACDCA] bg-white">
                         <button
                             onClick={() => setSelectedOcc(occ)}
                             className={`w-full h-10 ${roundedClass} ${bgColor} ${textColor} text-xs font-semibold flex items-center shadow-sm transition-colors truncate cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#42211D]`}
@@ -149,7 +149,7 @@ export default function OccupancyCalendarPage() {
                 i += span;
             } else {
                 cells.push(
-                    <td key={dateStr} className="p-1.5 border-b border-r border-[#DACDCA] bg-[#FFFFFF] min-w-[60px] w-[calc(100%/14)] group">
+                    <td key={dateStr} className="p-1.5 border-b border-r border-[#DACDCA] bg-white min-w-[60px] w-[calc(100%/14)] group">
                         <div className="w-full h-10 rounded flex items-center justify-center bg-transparent group-hover:bg-[#F7F7F7] transition-colors"></div>
                     </td>
                 );
@@ -164,16 +164,16 @@ export default function OccupancyCalendarPage() {
             <div className="flex justify-between items-center mb-6 relative z-[100]">
                 <h1 className="text-3xl font-bold text-[#1A1A1A]">Occupancy Dashboard</h1>
                 <div className="flex bg-[#F7F7F7] p-1 rounded-lg border border-[#DACDCA] shadow-sm">
-                    <Link to="/admin/reservations" className="px-4 py-2 text-sm font-medium rounded-md text-[#7A7A7A] hover:bg-[#FFFFFF] hover:text-[#1A1A1A] hover:shadow-sm transition-all">
+                    <Link to="/admin/reservations" className="px-4 py-2 text-sm font-medium rounded-md text-[#7A7A7A] hover:bg-white hover:text-[#1A1A1A] hover:shadow-sm transition-all">
                         List View
                     </Link>
-                    <span className="px-4 py-2 text-sm font-bold rounded-md bg-[#FFFFFF] text-[#1A1A1A] shadow border border-[#DACDCA] cursor-default">
+                    <span className="px-4 py-2 text-sm font-bold rounded-md bg-white text-[#1A1A1A] shadow border border-[#DACDCA] cursor-default">
                         Calendar View
                     </span>
                 </div>
             </div>
 
-            <div className="mb-8 flex gap-4 p-6 bg-[#FFFFFF] rounded-xl shadow-sm flex-col border border-[#DACDCA] relative z-[90]">
+            <div className="mb-8 flex gap-4 p-6 bg-white rounded-xl shadow-sm flex-col border border-[#DACDCA] relative z-[90]">
                 <div className="flex gap-6 items-center flex-wrap justify-between">
                     <div className="flex gap-4 items-center flex-wrap">
                         <span className="text-sm font-bold text-[#7A7A7A] uppercase tracking-wider">Date Range</span>
@@ -238,7 +238,7 @@ export default function OccupancyCalendarPage() {
                         const lanes = getLanesForChunk(chunkDates);
 
                         return (
-                            <div key={chunkIdx} className="w-full border border-[#DACDCA] rounded-xl shadow-sm bg-[#FFFFFF] overflow-hidden">
+                            <div key={chunkIdx} className="w-full border border-[#DACDCA] rounded-xl shadow-sm bg-white overflow-hidden">
                                 <div className="w-full overflow-x-auto">
                                     <table className="w-full border-collapse text-sm table-fixed min-w-max">
                                         <thead>
@@ -270,10 +270,10 @@ export default function OccupancyCalendarPage() {
                                         ) : (
                                             <tr>
                                                 {chunkDates.map(d => (
-                                                    <td key={`empty-row-${d.toISOString()}`} className="p-1.5 border-b border-r border-[#DACDCA] bg-[#FFFFFF] h-14 w-[calc(100%/14)] last:border-r-0"></td>
+                                                    <td key={`empty-row-${d.toISOString()}`} className="p-1.5 border-b border-r border-[#DACDCA] bg-white h-14 w-[calc(100%/14)] last:border-r-0"></td>
                                                 ))}
                                                 {chunkDates.length < CHUNK_SIZE && Array.from({ length: CHUNK_SIZE - chunkDates.length }).map((_, idx) => (
-                                                    <td key={`empty-row-fill-${idx}`} className="p-1.5 border-b border-r border-[#DACDCA] bg-[#FFFFFF] h-14 w-[calc(100%/14)] last:border-r-0"></td>
+                                                    <td key={`empty-row-fill-${idx}`} className="p-1.5 border-b border-r border-[#DACDCA] bg-white h-14 w-[calc(100%/14)] last:border-r-0"></td>
                                                 ))}
                                             </tr>
                                         )}
@@ -288,8 +288,8 @@ export default function OccupancyCalendarPage() {
 
             {selectedOcc && (
                 <>
-                    <div className="fixed inset-0 bg-[#1A1A1A]/50 z-[9998] backdrop-blur-sm transition-opacity" onClick={() => setSelectedOcc(null)}></div>
-                    <div className="fixed top-0 right-0 w-full sm:w-96 h-full bg-[#FFFFFF] opacity-100 shadow-2xl z-[9999] transform transition-transform duration-300 flex flex-col border-l border-[#DACDCA]">
+                    <div className="fixed inset-0 bg-[#1A1A1A]/40 z-[9998] backdrop-blur-sm transition-opacity" onClick={() => setSelectedOcc(null)}></div>
+                    <div className="fixed top-0 right-0 w-full sm:w-96 h-full bg-[#FFFFFF] shadow-2xl z-[9999] transform transition-transform duration-300 flex flex-col border-l border-[#DACDCA]">
 
                         <div className="p-6 border-b border-[#DACDCA] flex justify-between items-center bg-[#FFFFFF]">
                             <h2 className="text-xl font-bold text-[#1A1A1A]">Reservation Details</h2>
