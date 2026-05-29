@@ -1,5 +1,7 @@
 package io.github.kwatera_project.kwatera.billing_service.controller;
 
+import io.github.kwatera_project.kwatera.billing_service.dto.MediaReadingStatusDto;
+import io.github.kwatera_project.kwatera.billing_service.dto.MediaReadingUploadAttemptDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.MeterReadingResponseDto;
 import io.github.kwatera_project.kwatera.billing_service.model.ReadingStatus;
 import io.github.kwatera_project.kwatera.billing_service.model.ReadingType;
@@ -7,6 +9,7 @@ import io.github.kwatera_project.kwatera.billing_service.model.UtilityType;
 import io.github.kwatera_project.kwatera.billing_service.service.MediaReadingService;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,13 +23,20 @@ public class MediaReadingController {
 
   private final MediaReadingService mediaReadingService;
 
+  @GetMapping("/{settlementId}")
+  public ResponseEntity<List<MediaReadingStatusDto>> getMediaReadings(
+      @PathVariable("settlementId") UUID settlementId) {
+
+    return ResponseEntity.ok(mediaReadingService.getMediaReadings(settlementId));
+  }
+
   @PostMapping("/{settlementId}/upload-initial")
   public ResponseEntity<MeterReadingResponseDto> uploadInitialReading(
-      @PathVariable UUID settlementId,
-      @RequestParam UUID unitId,
-      @RequestParam UtilityType utilityType,
-      @RequestParam BigDecimal unitPrice,
-      @RequestParam MultipartFile file)
+      @PathVariable("settlementId") UUID settlementId,
+      @RequestParam("unitId") UUID unitId,
+      @RequestParam("utilityType") UtilityType utilityType,
+      @RequestParam("unitPrice") BigDecimal unitPrice,
+      @RequestParam("file") MultipartFile file)
       throws IOException {
 
     ReadingStatus status =
@@ -38,10 +48,10 @@ public class MediaReadingController {
 
   @PostMapping("/{settlementId}/upload-final")
   public ResponseEntity<MeterReadingResponseDto> uploadFinalReading(
-      @PathVariable UUID settlementId,
-      @RequestParam UUID unitId,
-      @RequestParam UtilityType utilityType,
-      @RequestParam MultipartFile file)
+      @PathVariable("settlementId") UUID settlementId,
+      @RequestParam("unitId") UUID unitId,
+      @RequestParam("utilityType") UtilityType utilityType,
+      @RequestParam("file") MultipartFile file)
       throws IOException {
 
     ReadingStatus status =
@@ -52,15 +62,23 @@ public class MediaReadingController {
 
   @PostMapping("/{settlementId}/approve")
   public ResponseEntity<Void> manuallyApproveReading(
-      @PathVariable UUID settlementId,
-      @RequestParam UUID unitId,
-      @RequestParam UtilityType utilityType,
-      @RequestParam BigDecimal correctedReading,
-      @RequestParam ReadingType readingType) {
+      @PathVariable("settlementId") UUID settlementId,
+      @RequestParam("unitId") UUID unitId,
+      @RequestParam("utilityType") UtilityType utilityType,
+      @RequestParam("correctedReading") BigDecimal correctedReading,
+      @RequestParam("readingType") ReadingType readingType) {
 
     mediaReadingService.manuallyApproveReading(
         settlementId, unitId, utilityType, correctedReading, readingType);
 
     return ResponseEntity.ok().build();
+  }
+
+  @GetMapping("/{settlementId}/attempts")
+  public ResponseEntity<List<MediaReadingUploadAttemptDto>> getUploadAttempts(
+      @PathVariable("settlementId") UUID settlementId,
+      @RequestParam("utilityType") UtilityType utilityType) {
+
+    return ResponseEntity.ok(mediaReadingService.getUploadAttempts(settlementId, utilityType));
   }
 }

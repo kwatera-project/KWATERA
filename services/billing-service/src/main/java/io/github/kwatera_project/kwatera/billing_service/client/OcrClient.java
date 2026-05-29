@@ -2,7 +2,7 @@ package io.github.kwatera_project.kwatera.billing_service.client;
 
 import io.github.kwatera_project.kwatera.billing_service.dto.OcrResponseDto;
 import java.io.IOException;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
@@ -17,13 +17,16 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 @Component
-@RequiredArgsConstructor
 public class OcrClient {
 
   private final RestTemplate restTemplate;
 
   @Value("${services.ocr.url}")
   private String ocrServiceUrl;
+
+  public OcrClient(@Qualifier("plainRestTemplate") RestTemplate restTemplate) {
+    this.restTemplate = restTemplate;
+  }
 
   public OcrResponseDto readMeter(MultipartFile file) throws IOException {
     ByteArrayResource resource =

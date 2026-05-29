@@ -1,6 +1,8 @@
 package io.github.kwatera_project.kwatera.billing_service.service;
 
 import io.github.kwatera_project.kwatera.billing_service.client.OcrClient;
+import io.github.kwatera_project.kwatera.billing_service.dto.MediaReadingStatusDto;
+import io.github.kwatera_project.kwatera.billing_service.dto.MediaReadingUploadAttemptDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.OcrResponseDto;
 import io.github.kwatera_project.kwatera.billing_service.model.*;
 import io.github.kwatera_project.kwatera.billing_service.repository.MediaReadingRepository;
@@ -9,6 +11,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +39,12 @@ public class MediaReadingService {
     mediaReadingRepository.save(reading);
   }
 
+  public List<MediaReadingStatusDto> getMediaReadings(UUID settlementId) {
+    return mediaReadingRepository.findBySettlementId(settlementId).stream()
+        .map(MediaReadingStatusDto::from)
+        .toList();
+  }
+
   @Transactional
   public ReadingStatus processFinalReadingUpload(
       UUID settlementId, UUID unitId, UtilityType utilityType, MultipartFile file)
@@ -60,17 +69,24 @@ public class MediaReadingService {
           "Cannot upload final reading before initial reading is approved");
     }
 
-    OcrResponseDto ocrResponse = ocrClient.readMeter(file);
-
-    if (ocrResponse == null || ocrResponse.readingValue() == null) {
-      throw new IllegalArgumentException("OCR could not read meter");
+    OcrResponseDto ocrResponse;
+    try {
+      ocrResponse = ocrClient.readMeter(file);
+    } catch (RuntimeException e) {
+      return handleFailedOcrAttempt(reading, file.getBytes(), ReadingType.FINAL);
     }
+
+    if (ocrResponse == null
+        || ocrResponse.readingValue() == null
+        || ocrResponse.confidence() == null) {
+      return handleFailedOcrAttempt(reading, file.getBytes(), ReadingType.FINAL);
+    }
+
     BigDecimal parsedReading;
     try {
       parsedReading = new BigDecimal(ocrResponse.readingValue().trim());
     } catch (NumberFormatException e) {
-      throw new IllegalArgumentException(
-          "OCR returned an invalid numeric value: " + ocrResponse.readingValue());
+      return handleFailedOcrAttempt(reading, file.getBytes(), ReadingType.FINAL);
     }
 
     return addFinalMediaReading(
@@ -110,18 +126,24 @@ public class MediaReadingService {
           "Upload not allowed in current status: " + reading.getInitialReadingStatus());
     }
 
-    OcrResponseDto ocrResponse = ocrClient.readMeter(file);
+    OcrResponseDto ocrResponse;
+    try {
+      ocrResponse = ocrClient.readMeter(file);
+    } catch (RuntimeException e) {
+      return handleFailedOcrAttempt(reading, file.getBytes(), ReadingType.INITIAL);
+    }
 
-    if (ocrResponse == null || ocrResponse.readingValue() == null) {
-      throw new IllegalArgumentException("OCR could not read meter");
+    if (ocrResponse == null
+        || ocrResponse.readingValue() == null
+        || ocrResponse.confidence() == null) {
+      return handleFailedOcrAttempt(reading, file.getBytes(), ReadingType.INITIAL);
     }
 
     BigDecimal parsedReading;
     try {
       parsedReading = new BigDecimal(ocrResponse.readingValue().trim());
     } catch (NumberFormatException e) {
-      throw new IllegalArgumentException(
-          "OCR returned an invalid numeric value: " + ocrResponse.readingValue());
+      return handleFailedOcrAttempt(reading, file.getBytes(), ReadingType.INITIAL);
     }
 
     return addInitialMediaReading(
@@ -166,9 +188,9 @@ public class MediaReadingService {
       if (reading.getInitialReading() == null) {
         throw new IllegalStateException("Initial reading must be approved before final approval");
       }
-      if (correctedReading.compareTo(reading.getInitialReading()) < 0) {
+      if (correctedReading.compareTo(reading.getInitialReading()) <= 0) {
         throw new IllegalArgumentException(
-            "Corrected reading cannot be lower than initial reading");
+            "Corrected final reading must be greater than initial reading");
       }
       reading.setFinalReading(correctedReading);
       reading.setFinalReadingSource(ReadingSource.MANUAL);
@@ -199,11 +221,22 @@ public class MediaReadingService {
     if (reading.getInitialReading() == null) {
       throw new IllegalStateException("Initial reading must be approved before final reading");
     }
-    if (finalReading.compareTo(reading.getInitialReading()) < 0) {
-      throw new IllegalArgumentException("Final reading cannot be lower than initial reading");
-    }
 
     boolean isRetry = reading.getFinalReadingStatus() == ReadingStatus.REQUEST_REUPLOAD;
+
+    if (finalReading.compareTo(reading.getInitialReading()) <= 0) {
+      ReadingStatus status =
+          isRetry ? ReadingStatus.REQUEST_MANUAL_REVIEW : ReadingStatus.REQUEST_REUPLOAD;
+
+      reading.setFinalReadingStatus(status);
+      mediaReadingRepository.save(reading);
+
+      saveUploadAttempt(
+          reading.getId(), imageBytes, ocrValue, finalConfidenceScore, status, ReadingType.FINAL);
+
+      return status;
+    }
+
     ReadingStatus status = determineReadingStatus(finalConfidenceScore, isRetry);
     reading.setFinalReadingStatus(status);
 
@@ -212,6 +245,7 @@ public class MediaReadingService {
       reading.setFinalConfidenceScore(finalConfidenceScore);
       reading.setFinalReadingSource(ReadingSource.OCR);
     }
+
     mediaReadingRepository.save(reading);
 
     saveUploadAttempt(
@@ -227,6 +261,43 @@ public class MediaReadingService {
           consumptionDifference,
           reading.getUnitPrice());
     }
+
+    return status;
+  }
+
+  public List<MediaReadingUploadAttemptDto> getUploadAttempts(
+      UUID settlementId, UtilityType utilityType) {
+    return mediaReadingRepository
+        .findBySettlementIdAndUtilityType(settlementId, utilityType)
+        .map(
+            reading ->
+                uploadAttemptRepository
+                    .findByMediaReadingIdOrderByAttemptedAtAsc(reading.getId())
+                    .stream()
+                    .map(MediaReadingUploadAttemptDto::from)
+                    .toList())
+        .orElse(List.of());
+  }
+
+  private ReadingStatus handleFailedOcrAttempt(
+      MediaReading reading, byte[] imageBytes, ReadingType readingType) {
+    boolean isRetry =
+        readingType == ReadingType.INITIAL
+            ? reading.getInitialReadingStatus() == ReadingStatus.REQUEST_REUPLOAD
+            : reading.getFinalReadingStatus() == ReadingStatus.REQUEST_REUPLOAD;
+
+    ReadingStatus status =
+        isRetry ? ReadingStatus.REQUEST_MANUAL_REVIEW : ReadingStatus.REQUEST_REUPLOAD;
+
+    if (readingType == ReadingType.INITIAL) {
+      reading.setInitialReadingStatus(status);
+    } else {
+      reading.setFinalReadingStatus(status);
+    }
+
+    mediaReadingRepository.save(reading);
+
+    saveUploadAttempt(reading.getId(), imageBytes, null, BigDecimal.ZERO, status, readingType);
 
     return status;
   }
