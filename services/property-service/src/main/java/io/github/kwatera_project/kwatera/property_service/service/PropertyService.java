@@ -135,16 +135,23 @@ public class PropertyService {
     java.math.BigDecimal convertedPricePerNight = unit.getPricePerNight();
 
     if (currency != null && !"PLN".equalsIgnoreCase(currency)) {
+      String requestedCurrency = currency.toUpperCase(java.util.Locale.ROOT);
+
       try {
         io.github.kwatera_project.kwatera.property_service.dto.NbpResponseDto nbpResponse =
-            nbpExchangeRateClient.getExchangeRate(currency);
+            "EUR".equals(requestedCurrency)
+                ? nbpExchangeRateClient.getEurExchangeRate()
+                : nbpExchangeRateClient.getUsdExchangeRate();
+
         if (nbpResponse != null && nbpResponse.rates() != null && !nbpResponse.rates().isEmpty()) {
           io.github.kwatera_project.kwatera.property_service.dto.NbpRateDto rateDto =
               nbpResponse.rates().get(0);
           java.math.BigDecimal rate = rateDto.mid();
+
           currencyInfo =
               new io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto(
-                  "PLN", currency.toUpperCase(), rate, rateDto.effectiveDate());
+                  "PLN", requestedCurrency, rate, rateDto.effectiveDate());
+
           if (convertedPricePerNight != null) {
             convertedPricePerNight =
                 convertedPricePerNight.divide(rate, 2, java.math.RoundingMode.HALF_UP);
