@@ -85,6 +85,10 @@ public class SettlementService {
       throw new IllegalArgumentException(
           "Only water and electricity utility charges are supported");
     }
+    if (settlementItemRepository.findBySettlementIdAndType(settlementId, type).isPresent()) {
+      throw new IllegalStateException(
+          "Utility charge already exists for settlementId: " + settlementId + " and type: " + type);
+    }
 
     Settlement settlement =
         settlementRepository
