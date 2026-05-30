@@ -38,6 +38,8 @@ class AdminReservationServiceTest {
 
   @Mock private RestTemplate restTemplate;
 
+  @Mock private EmailNotificationService emailNotificationService;
+
   @InjectMocks private AdminReservationService adminReservationService;
 
   @BeforeEach

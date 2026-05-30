@@ -11,6 +11,7 @@ import lombok.Data;
 public class ReservationDetailsDto {
   private UUID id;
   private UUID userId;
+  private String guestEmail;
   private UUID unitId;
   private LocalDate startDate;
   private LocalDate endDate;

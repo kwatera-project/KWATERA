@@ -59,6 +59,7 @@ public class StripeService {
 
     UUID reservationId = settlement.getReservationId();
     UUID unitId = reservationDto.getUnitId();
+    String recipientEmail = reservationDto.getGuestEmail();
 
     String currency =
         (reservationDto.getCurrencyInfo() != null
@@ -110,6 +111,7 @@ public class StripeService {
             .putMetadata("description", description)
             .putMetadata("quantity", quantity.toString())
             .putMetadata("unitPrice", unitPrice.toString())
+            .putMetadata("recipientEmail", recipientEmail != null ? recipientEmail : "")
 
             // metadata payment_intent.*
             .setPaymentIntentData(
@@ -121,6 +123,7 @@ public class StripeService {
                     .putMetadata("description", description)
                     .putMetadata("quantity", quantity.toString())
                     .putMetadata("unitPrice", unitPrice.toString())
+                    .putMetadata("recipientEmail", recipientEmail != null ? recipientEmail : "")
                     .build())
             .addLineItem(
                 SessionCreateParams.LineItem.builder()

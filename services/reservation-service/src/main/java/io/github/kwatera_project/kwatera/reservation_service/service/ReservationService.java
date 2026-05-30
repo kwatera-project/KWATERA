@@ -31,6 +31,7 @@ public class ReservationService {
   private final ReservationRepository reservationRepository;
   private final RestTemplate restTemplate;
   private final NbpExchangeRateClient nbpExchangeRateClient;
+  private final EmailNotificationService emailNotificationService;
 
   public AvailabilityDto checkAvailability(UUID unitId, LocalDate from, LocalDate to) {
     if (from == null || to == null) {
@@ -173,6 +174,17 @@ public class ReservationService {
   @Transactional
   public Reservation createReservation(
       UUID userId, CreateReservationRequest request, String token) {
+    return createReservationInternal(userId, null, request, token);
+  }
+
+  @Transactional
+  public Reservation createReservation(
+      UUID userId, String guestEmail, CreateReservationRequest request, String token) {
+    return createReservationInternal(userId, guestEmail, request, token);
+  }
+
+  private Reservation createReservationInternal(
+      UUID userId, String guestEmail, CreateReservationRequest request, String token) {
     if (userId == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User id is required");
     }
@@ -188,6 +200,7 @@ public class ReservationService {
 
     Reservation reservation = new Reservation();
     reservation.setUserId(userId);
+    reservation.setGuestEmail(guestEmail);
     reservation.setUnitId(request.getUnitId());
     reservation.setStartDate(request.getStartDate());
     reservation.setEndDate(request.getEndDate());
@@ -229,7 +242,9 @@ public class ReservationService {
     reservation.setPaymentCurrency(paymentCurrency);
     reservation.setPaymentExchangeRate(paymentExchangeRate);
 
-    return reservationRepository.save(reservation);
+    Reservation saved = reservationRepository.save(reservation);
+    emailNotificationService.sendReservationCreated(saved, saved.getGuestEmail());
+    return saved;
   }
 
   public ReservationDetailsDto getReservationDetails(
@@ -250,6 +265,7 @@ public class ReservationService {
     ReservationDetailsDto dto = new ReservationDetailsDto();
     dto.setId(reservation.getId());
     dto.setUserId(reservation.getUserId());
+    dto.setGuestEmail(reservation.getGuestEmail());
     dto.setUnitId(reservation.getUnitId());
     dto.setStartDate(reservation.getStartDate());
     dto.setEndDate(reservation.getEndDate());
@@ -327,6 +343,7 @@ public class ReservationService {
         reservationRepository
             .findById(reservationId)
             .orElseThrow(() -> new RuntimeException("Reservation not found"));
+    ReservationStatus oldStatus = reservation.getStatus();
 
     switch (settlementStatus) {
       case PAID -> reservation.setStatus(ReservationStatus.COMPLETED);
@@ -343,6 +360,8 @@ public class ReservationService {
     }
 
     reservationRepository.save(reservation);
+    emailNotificationService.sendReservationStatusChanged(
+        reservation, oldStatus, reservation.getStatus(), reservation.getGuestEmail());
   }
 
   public ReservationMetricsDto getDashboardReservationMetrics(

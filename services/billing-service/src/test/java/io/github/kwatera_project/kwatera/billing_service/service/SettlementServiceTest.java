@@ -39,6 +39,8 @@ class SettlementServiceTest {
 
   @Mock private PropertyClient propertyClient;
 
+  @Mock private EmailNotificationService emailNotificationService;
+
   @InjectMocks private SettlementService settlementService;
 
   private Settlement baseSettlement(UUID id) {
