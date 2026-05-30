@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from "react-router-dom";
 import { GATEWAY_BASE_URL } from '../api/apiConfig';
+import { getSettlementDetails } from '../api/settlementApi';
 
 interface ReservationOverview {
     id: string;
@@ -16,6 +17,8 @@ export default function AdminReservationList() {
     const [statusFilter, setStatusFilter] = useState<string>("");
     const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
     const API_BASE_URL = GATEWAY_BASE_URL;
+    const [settlementIds, setSettlementIds] = useState<Record<string, string>>({});
+    const [unitIds, setUnitIds] = useState<Record<string, string>>({});
 
     const fetchReservations = useCallback(() => {
         const url = statusFilter
@@ -32,13 +35,32 @@ export default function AdminReservationList() {
             }
         })
             .then((res) => {
-                if (res.status === 401) {
-                    console.error("Token is incorrect!");
-                }
+                if (res.status === 401) console.error("Token is incorrect!");
                 if (!res.ok) throw new Error("Get data error");
                 return res.json();
             })
-            .then((data) => setReservations(data))
+            .then((data) => {
+                setReservations(data);
+                data.forEach(async (res: ReservationOverview) => {
+                    try {
+                        const settlement = await getSettlementDetails(res.id);
+                        setSettlementIds(prev => ({ ...prev, [res.id]: settlement.id }));
+                    } catch (err) {
+                        console.error("Failed to load settlement details", err);
+                    }
+                    try {
+                        const t = localStorage.getItem("token");
+                        const resDetails = await fetch(
+                            `${API_BASE_URL}/api/v1/reservations/${res.id}`,
+                            { headers: { Authorization: `Bearer ${t}` } }
+                        );
+                        const resData = await resDetails.json();
+                        setUnitIds(prev => ({ ...prev, [res.id]: resData.unitId }));
+                    } catch (err) {
+                        console.error("Failed to load reservation details", err);
+                    }
+                });
+            })
             .catch((err) => console.error(err));
     }, [statusFilter, API_BASE_URL]);
 
@@ -156,6 +178,16 @@ export default function AdminReservationList() {
                                     >
                                         View Details
                                     </Link>
+                                    {settlementIds[res.id] &&
+                                        unitIds[res.id] &&
+                                        (res.status === "CONFIRMED" || res.status === "COMPLETED") && (
+                                            <Link
+                                                to={`/admin/settlements/${settlementIds[res.id]}/meter-readings?unitId=${unitIds[res.id]}`}
+                                                className="text-purple-600 hover:underline text-sm font-medium"
+                                            >
+                                                Meter Readings
+                                            </Link>
+                                        )}
 
 
 

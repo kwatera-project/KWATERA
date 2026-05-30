@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getOccupancy } from "../api/adminApi";
 import { format, addDays, startOfToday, differenceInCalendarDays, isBefore, isAfter, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+import SharedDatePicker from "../components/SharedDatePicker";
 
 interface Occupancy {
     reservationId: string;
@@ -181,31 +180,23 @@ export default function OccupancyCalendarPage() {
                                 <svg className="w-4 h-4 text-[#7A7A7A] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                 </svg>
-                                <DatePicker
-                                    selected={startDate ?? undefined}
+                                <SharedDatePicker
+                                    selected={startDate}
                                     onChange={(date: Date | null) => { if (date) setDateRange([date, endDate]) }}
                                     selectsStart
-                                    startDate={startDate ?? undefined}
-                                    endDate={endDate ?? undefined}
-                                    className="bg-transparent text-sm font-bold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center"
-                                    dateFormat="yyyy-MM-dd"
+                                    startDate={startDate}
+                                    endDate={endDate}
                                     placeholderText="Start"
-                                    previousMonthButtonLabel={<span className="text-[#1A1A1A] text-xl font-bold leading-none px-2">&lt;</span>}
-                                    nextMonthButtonLabel={<span className="text-[#1A1A1A] text-xl font-bold leading-none px-2">&gt;</span>}
                                 />
                                 <span className="text-[#7A7A7A] font-bold">-</span>
-                                <DatePicker
-                                    selected={endDate ?? undefined}
+                                <SharedDatePicker
+                                    selected={endDate}
                                     onChange={(date: Date | null) => { if (date) setDateRange([startDate, date]) }}
                                     selectsEnd
-                                    startDate={startDate ?? undefined}
-                                    endDate={endDate ?? undefined}
-                                    minDate={startDate ?? undefined}
-                                    className="bg-transparent text-sm font-bold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center"
-                                    dateFormat="yyyy-MM-dd"
+                                    startDate={startDate}
+                                    endDate={endDate}
+                                    minDate={startDate}
                                     placeholderText="End"
-                                    previousMonthButtonLabel={<span className="text-[#1A1A1A] text-xl font-bold leading-none px-2">&lt;</span>}
-                                    nextMonthButtonLabel={<span className="text-[#1A1A1A] text-xl font-bold leading-none px-2">&gt;</span>}
                                 />
                             </div>
                             <div className="flex gap-2">

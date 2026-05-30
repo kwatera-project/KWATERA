@@ -363,4 +363,64 @@ public class ReservationService {
     emailNotificationService.sendReservationStatusChanged(
         reservation, oldStatus, reservation.getStatus(), reservation.getGuestEmail());
   }
+
+  public ReservationMetricsDto getDashboardReservationMetrics(
+      LocalDate startDate, LocalDate endDate, UUID ownerId, boolean isAdmin) {
+
+    LocalDate start = (startDate != null) ? startDate : LocalDate.now().withDayOfMonth(1);
+    LocalDate end =
+        (endDate != null)
+            ? endDate
+            : LocalDate.now().with(java.time.temporal.TemporalAdjusters.lastDayOfMonth());
+
+    if (start.isAfter(end)) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Start date must be before or equal to end date");
+    }
+
+    List<UUID> allUnitIds = fetchAllRelevantUnitIds(ownerId, isAdmin);
+    if (allUnitIds.isEmpty()) {
+      return new ReservationMetricsDto(0L, 0.0, 0L);
+    }
+
+    long totalReservations =
+        isAdmin
+            ? reservationRepository.countReservationsInDateRange(start, end)
+            : reservationRepository.countReservationsInDateRangeForUnits(allUnitIds, start, end);
+
+    List<Reservation> reservations =
+        isAdmin
+            ? reservationRepository.findActiveReservationsInDateRange(start, end)
+            : reservationRepository.findActiveReservationsInDateRangeForUnits(
+                allUnitIds, start, end);
+
+    long totalDaysInRange = java.time.temporal.ChronoUnit.DAYS.between(start, end);
+    if (totalDaysInRange <= 0) {
+      totalDaysInRange = 1;
+    }
+
+    long totalAvailableNights = allUnitIds.size() * totalDaysInRange;
+
+    long occupiedNights = 0;
+    for (Reservation r : reservations) {
+      LocalDate overlapStart = r.getStartDate().isBefore(start) ? start : r.getStartDate();
+      LocalDate overlapEnd = r.getEndDate().isAfter(end) ? end : r.getEndDate();
+
+      if (overlapStart.isBefore(overlapEnd)) {
+        occupiedNights += java.time.temporal.ChronoUnit.DAYS.between(overlapStart, overlapEnd);
+      }
+    }
+
+    double occupancyRate = 0.0;
+    if (totalAvailableNights > 0) {
+      occupancyRate = ((double) occupiedNights / totalAvailableNights) * 100.0;
+      occupancyRate = Math.round(occupancyRate * 100.0) / 100.0;
+    }
+
+    if (occupancyRate > 100.0) {
+      occupancyRate = 100.0;
+    }
+
+    return new ReservationMetricsDto(totalReservations, occupancyRate, occupiedNights);
+  }
 }
