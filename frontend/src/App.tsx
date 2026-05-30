@@ -16,6 +16,8 @@ import OccupancyCalendarPage from "./pages/OccupancyCalendarPage";
 import ProfilePage from "./pages/ProfilePage";
 import DashboardPage from "./pages/DashboardPage";
 import { CurrencyProvider } from "./contexts/CurrencyContext";
+import MeterReadingsPage from "./pages/MeterReadingsPage";
+import AdminMeterReadingsPage from "./pages/AdminMeterReadingsPage";
 
 function App() {
     return (
@@ -81,6 +83,22 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={[]}>
                             <SettlementDetailsPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/settlements/:settlementId/meter-readings"
+                    element={
+                        <ProtectedRoute allowedRoles={['ROLE_GUEST']}>
+                            <MeterReadingsPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/admin/settlements/:settlementId/meter-readings"
+                    element={
+                        <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
+                            <AdminMeterReadingsPage />
                         </ProtectedRoute>
                     }
                 />

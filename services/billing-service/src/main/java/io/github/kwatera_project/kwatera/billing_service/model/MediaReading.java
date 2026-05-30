@@ -19,7 +19,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
-@Check(constraints = "final_reading >= initial_reading")
+@Check(
+    constraints =
+        "(final_reading IS NULL OR initial_reading IS NULL OR final_reading >= initial_reading)")
 @Table(name = "media_readings")
 public class MediaReading {
   @Id
@@ -33,12 +35,11 @@ public class MediaReading {
   @Column(name = "utility_type", nullable = false, length = 50)
   private UtilityType utilityType;
 
-  @NotNull
-  @Column(name = "initial_reading", precision = 12, scale = 6, nullable = false)
+  @Column(name = "initial_reading", precision = 12, scale = 6)
   @DecimalMin(value = "0.0")
   private BigDecimal initialReading;
 
-  @Column(name = "initial_confidence_score", precision = 12, scale = 6, nullable = false)
+  @Column(name = "initial_confidence_score", precision = 12, scale = 6)
   private BigDecimal initialConfidenceScore;
 
   @Column(name = "final_reading", precision = 12, scale = 6)
@@ -48,7 +49,7 @@ public class MediaReading {
   @Column(name = "final_confidence_score", precision = 12, scale = 6)
   private BigDecimal finalConfidenceScore;
 
-  @Generated(event = EventType.INSERT)
+  @Generated(event = {EventType.INSERT, EventType.UPDATE})
   @Column(
       name = "consumption_difference",
       precision = 12,
@@ -64,7 +65,7 @@ public class MediaReading {
   @DecimalMin(value = "0.0")
   private BigDecimal unitPrice;
 
-  @Generated(event = EventType.INSERT)
+  @Generated(event = {EventType.INSERT, EventType.UPDATE})
   @Column(
       name = "calculated_cost",
       precision = 12,
@@ -76,12 +77,12 @@ public class MediaReading {
   private BigDecimal calculatedCost; // GENERATED ALWAYS AS (...) STORED
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "reading_source", nullable = false, length = 50)
-  private ReadingSource readingSource = ReadingSource.OCR;
+  @Column(name = "initial_reading_source", length = 50)
+  private ReadingSource initialReadingSource;
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "reading_status", nullable = false, length = 50)
-  private ReadingStatus readingStatus = ReadingStatus.PENDING;
+  @Column(name = "final_reading_source", length = 50)
+  private ReadingSource finalReadingSource;
 
   @Column(name = "created_at", nullable = false, updatable = false)
   @CreatedDate
@@ -90,4 +91,12 @@ public class MediaReading {
   @Column(name = "updated_at", nullable = false)
   @LastModifiedDate
   private Instant updatedAt;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "initial_reading_status", nullable = false, length = 50)
+  private ReadingStatus initialReadingStatus = ReadingStatus.PENDING;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "final_reading_status", nullable = false, length = 50)
+  private ReadingStatus finalReadingStatus = ReadingStatus.PENDING;
 }
