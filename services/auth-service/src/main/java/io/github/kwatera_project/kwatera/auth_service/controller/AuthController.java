@@ -60,6 +60,8 @@ public class AuthController {
 
     Map<String, Object> extraClaims = new HashMap<>();
     extraClaims.put("userId", userEntity.getId().toString());
+    extraClaims.put("firstName", userEntity.getFirstName());
+    extraClaims.put("lastName", userEntity.getLastName());
 
     String token = jwtService.generateToken(extraClaims, userDetails);
 
