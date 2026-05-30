@@ -2,6 +2,7 @@ package io.github.kwatera_project.kwatera.billing_service.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -250,9 +251,14 @@ class SettlementServiceTest {
     settlement.setAmountPaid(BigDecimal.valueOf(500));
     settlement.setBalanceDue(BigDecimal.ZERO);
 
+    when(settlementItemRepository.findBySettlementIdAndType(settlementId, SettlementItemType.WATER))
+        .thenReturn(Optional.empty());
+
     when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
+
     when(settlementItemRepository.save(any(SettlementItem.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
+
     when(settlementItemRepository.existsBySettlementIdAndTypeIn(any(), any())).thenReturn(true);
 
     settlementService.addUtilitySettlementItem(
@@ -267,6 +273,8 @@ class SettlementServiceTest {
     assertEquals(BigDecimal.valueOf(600), settlement.getTotalAmount());
     assertEquals(BigDecimal.valueOf(500), settlement.getAmountPaid());
     assertEquals(BigDecimal.valueOf(100), settlement.getBalanceDue());
+    verify(settlementItemRepository)
+        .findBySettlementIdAndType(settlementId, SettlementItemType.WATER);
     verify(settlementRepository).save(settlement);
   }
 
@@ -280,9 +288,15 @@ class SettlementServiceTest {
     settlement.setAmountPaid(BigDecimal.valueOf(200));
     settlement.setBalanceDue(BigDecimal.valueOf(300));
 
+    when(settlementItemRepository.findBySettlementIdAndType(
+            settlementId, SettlementItemType.ELECTRICITY))
+        .thenReturn(Optional.empty());
+
     when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
+
     when(settlementItemRepository.save(any(SettlementItem.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
+
     when(settlementItemRepository.existsBySettlementIdAndTypeIn(any(), any())).thenReturn(true);
 
     settlementService.addUtilitySettlementItem(
@@ -297,6 +311,9 @@ class SettlementServiceTest {
     assertEquals(BigDecimal.valueOf(600), settlement.getTotalAmount());
     assertEquals(BigDecimal.valueOf(200), settlement.getAmountPaid());
     assertEquals(BigDecimal.valueOf(400), settlement.getBalanceDue());
+
+    verify(settlementItemRepository)
+        .findBySettlementIdAndType(settlementId, SettlementItemType.ELECTRICITY);
     verify(settlementRepository).save(settlement);
   }
 
@@ -361,8 +378,7 @@ class SettlementServiceTest {
             settlementId, SettlementItemType.ACCOMMODATION))
         .thenReturn(Optional.empty());
 
-    io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto reservationDto =
-        new io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto();
+    ReservationDto reservationDto = new ReservationDto();
     reservationDto.setId(reservationId);
     reservationDto.setCurrencyInfo(new CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, null));
 
@@ -794,5 +810,34 @@ class SettlementServiceTest {
     // If exchange rate is null, it should fallback to ONE, so amount shouldn't change
     assertEquals(new BigDecimal("40.00"), result.convertedAmount());
     assertEquals("EUR", result.currencyInfo().displayCurrency());
+  }
+
+  @Test
+  void shouldRejectDuplicateUtilityCharge() {
+    UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    SettlementItem existingItem = new SettlementItem();
+    existingItem.setSettlementId(settlementId);
+    existingItem.setType(SettlementItemType.WATER);
+
+    when(settlementItemRepository.findBySettlementIdAndType(settlementId, SettlementItemType.WATER))
+        .thenReturn(Optional.of(existingItem));
+
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            settlementService.addUtilitySettlementItem(
+                settlementId,
+                unitId,
+                SettlementItemType.WATER,
+                "Water usage",
+                BigDecimal.valueOf(5),
+                BigDecimal.valueOf(20)));
+
+    verify(settlementItemRepository)
+        .findBySettlementIdAndType(settlementId, SettlementItemType.WATER);
+    verify(settlementRepository, never()).findById(any());
+    verify(settlementItemRepository, never()).save(any(SettlementItem.class));
   }
 }
