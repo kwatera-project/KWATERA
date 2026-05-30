@@ -127,6 +127,7 @@ class MediaReadingServiceTest {
                 settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile));
 
     verifyNoInteractions(ocrClient);
+    verifyNoInteractions(settlementService);
   }
 
   @Test
@@ -305,6 +306,8 @@ class MediaReadingServiceTest {
 
     assertEquals(ReadingStatus.REQUEST_MANUAL_REVIEW, status);
     assertNull(reading.getFinalReading());
+    verify(settlementService, never())
+        .addUtilitySettlementItem(any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -348,6 +351,7 @@ class MediaReadingServiceTest {
                 settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile));
 
     verifyNoInteractions(ocrClient);
+    verifyNoInteractions(settlementService);
   }
 
   @Test
@@ -362,22 +366,9 @@ class MediaReadingServiceTest {
         () ->
             mediaReadingService.processFinalReadingUpload(
                 settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile));
-  }
 
-  @Test
-  void shouldRejectFinalUploadWhenStatusIsAlreadyApproved() throws Exception {
-    UUID settlementId = UUID.randomUUID();
-    MediaReading reading = new MediaReading();
-    reading.setFinalReadingStatus(ReadingStatus.AUTO_APPROVED);
-
-    when(mediaReadingRepository.findBySettlementIdAndUtilityType(settlementId, UtilityType.WATER))
-        .thenReturn(Optional.of(reading));
-
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            mediaReadingService.processFinalReadingUpload(
-                settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile));
+    verifyNoInteractions(ocrClient);
+    verifyNoInteractions(settlementService);
   }
 
   @Test
@@ -446,6 +437,8 @@ class MediaReadingServiceTest {
                 UtilityType.WATER,
                 new BigDecimal("140"),
                 ReadingType.FINAL));
+    verify(settlementService, never())
+        .addUtilitySettlementItem(any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -487,6 +480,8 @@ class MediaReadingServiceTest {
                 UtilityType.WATER,
                 new BigDecimal("100"),
                 ReadingType.FINAL));
+    verify(settlementService, never())
+        .addUtilitySettlementItem(any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -505,6 +500,7 @@ class MediaReadingServiceTest {
                 UtilityType.WATER,
                 new BigDecimal("140"),
                 ReadingType.FINAL));
+    verifyNoInteractions(settlementService);
   }
 
   @Test
@@ -592,6 +588,7 @@ class MediaReadingServiceTest {
 
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, status);
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, reading.getInitialReadingStatus());
+    assertNull(reading.getInitialReading());
   }
 
   @Test
@@ -613,6 +610,7 @@ class MediaReadingServiceTest {
 
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, status);
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, reading.getInitialReadingStatus());
+    assertNull(reading.getInitialReading());
   }
 
   @Test
@@ -635,28 +633,7 @@ class MediaReadingServiceTest {
 
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, status);
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, reading.getInitialReadingStatus());
-  }
-
-  @Test
-  void shouldRequestReuploadWhenFinalOcrClientFails() throws Exception {
-    UUID settlementId = UUID.randomUUID();
-    MediaReading reading = new MediaReading();
-    reading.setInitialReading(new BigDecimal("100"));
-    reading.setInitialReadingStatus(ReadingStatus.AUTO_APPROVED);
-    reading.setFinalReadingStatus(ReadingStatus.PENDING);
-
-    when(mediaReadingRepository.findBySettlementIdAndUtilityType(settlementId, UtilityType.WATER))
-        .thenReturn(Optional.of(reading));
-    when(ocrClient.readMeter(multipartFile)).thenThrow(new RuntimeException("OCR failed"));
-    when(multipartFile.getBytes()).thenReturn(new byte[0]);
-
-    ReadingStatus status =
-        mediaReadingService.processFinalReadingUpload(
-            settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile);
-
-    assertEquals(ReadingStatus.REQUEST_REUPLOAD, status);
-    assertEquals(ReadingStatus.REQUEST_REUPLOAD, reading.getFinalReadingStatus());
-    assertNull(reading.getFinalReading());
+    assertNull(reading.getInitialReading());
   }
 
   @Test
@@ -679,6 +656,8 @@ class MediaReadingServiceTest {
     assertEquals(ReadingStatus.REQUEST_MANUAL_REVIEW, status);
     assertEquals(ReadingStatus.REQUEST_MANUAL_REVIEW, reading.getFinalReadingStatus());
     assertNull(reading.getFinalReading());
+    verify(settlementService, never())
+        .addUtilitySettlementItem(any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -700,10 +679,66 @@ class MediaReadingServiceTest {
 
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, status);
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, reading.getFinalReadingStatus());
+    assertNull(reading.getFinalReading());
+
+    verify(settlementService, never())
+        .addUtilitySettlementItem(any(), any(), any(), any(), any(), any());
+  }
+
+  // Duplicate handling: approved final readings must not create another utility charge.
+  @Test
+  void shouldBlockDuplicateAutoApprovedFinalCharge() throws Exception {
+    UUID settlementId = UUID.randomUUID();
+    MediaReading reading = new MediaReading();
+    reading.setInitialReading(new BigDecimal("100"));
+    reading.setInitialReadingStatus(ReadingStatus.AUTO_APPROVED);
+    reading.setFinalReading(new BigDecimal("150"));
+    reading.setFinalReadingStatus(ReadingStatus.AUTO_APPROVED);
+    reading.setUnitPrice(new BigDecimal("5.00"));
+
+    when(mediaReadingRepository.findBySettlementIdAndUtilityType(settlementId, UtilityType.WATER))
+        .thenReturn(Optional.of(reading));
+
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            mediaReadingService.processFinalReadingUpload(
+                settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile));
+
+    verifyNoInteractions(ocrClient);
+    verify(settlementService, never())
+        .addUtilitySettlementItem(any(), any(), any(), any(), any(), any());
   }
 
   @Test
-  void shouldRequestReuploadWhenFinalOcrReturnsInvalidNumber() throws Exception {
+  void shouldBlockDuplicateManuallyApprovedFinalCharge() {
+    UUID settlementId = UUID.randomUUID();
+    MediaReading reading = new MediaReading();
+    reading.setInitialReading(new BigDecimal("100"));
+    reading.setFinalReading(new BigDecimal("150"));
+    reading.setFinalReadingStatus(ReadingStatus.MANUALLY_APPROVED);
+    reading.setUnitPrice(new BigDecimal("5.00"));
+
+    when(mediaReadingRepository.findBySettlementIdAndUtilityType(settlementId, UtilityType.WATER))
+        .thenReturn(Optional.of(reading));
+
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            mediaReadingService.manuallyApproveReading(
+                settlementId,
+                UUID.randomUUID(),
+                UtilityType.WATER,
+                new BigDecimal("160"),
+                ReadingType.FINAL));
+
+    verify(settlementService, never())
+        .addUtilitySettlementItem(any(), any(), any(), any(), any(), any());
+  }
+
+  // Failure path: invalid OCR result must not change settlement.
+  @Test
+  void shouldNotUpdateSettlementForInvalidFinalOcrValue() throws Exception {
     UUID settlementId = UUID.randomUUID();
     MediaReading reading = new MediaReading();
     reading.setInitialReading(new BigDecimal("100"));
@@ -722,5 +757,85 @@ class MediaReadingServiceTest {
 
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, status);
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, reading.getFinalReadingStatus());
+    assertNull(reading.getFinalReading());
+
+    verify(settlementService, never())
+        .addUtilitySettlementItem(any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void shouldNotUpdateSettlementWhenFinalOcrFails() throws Exception {
+    UUID settlementId = UUID.randomUUID();
+    MediaReading reading = new MediaReading();
+    reading.setInitialReading(new BigDecimal("100"));
+    reading.setInitialReadingStatus(ReadingStatus.AUTO_APPROVED);
+    reading.setFinalReadingStatus(ReadingStatus.PENDING);
+
+    when(mediaReadingRepository.findBySettlementIdAndUtilityType(settlementId, UtilityType.WATER))
+        .thenReturn(Optional.of(reading));
+    when(ocrClient.readMeter(multipartFile)).thenThrow(new RuntimeException("OCR failed"));
+    when(multipartFile.getBytes()).thenReturn(new byte[0]);
+
+    ReadingStatus status =
+        mediaReadingService.processFinalReadingUpload(
+            settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile);
+
+    assertEquals(ReadingStatus.REQUEST_REUPLOAD, status);
+    assertEquals(ReadingStatus.REQUEST_REUPLOAD, reading.getFinalReadingStatus());
+    assertNull(reading.getFinalReading());
+
+    verify(settlementService, never())
+        .addUtilitySettlementItem(any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void shouldNotUpdateSettlementWhenFinalOcrReturnsNull() throws Exception {
+    UUID settlementId = UUID.randomUUID();
+    MediaReading reading = new MediaReading();
+    reading.setInitialReading(new BigDecimal("100"));
+    reading.setInitialReadingStatus(ReadingStatus.AUTO_APPROVED);
+    reading.setFinalReadingStatus(ReadingStatus.PENDING);
+
+    when(mediaReadingRepository.findBySettlementIdAndUtilityType(settlementId, UtilityType.WATER))
+        .thenReturn(Optional.of(reading));
+    when(ocrClient.readMeter(multipartFile)).thenReturn(null);
+    when(multipartFile.getBytes()).thenReturn(new byte[0]);
+
+    ReadingStatus status =
+        mediaReadingService.processFinalReadingUpload(
+            settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile);
+
+    assertEquals(ReadingStatus.REQUEST_REUPLOAD, status);
+    assertEquals(ReadingStatus.REQUEST_REUPLOAD, reading.getFinalReadingStatus());
+    assertNull(reading.getFinalReading());
+
+    verify(settlementService, never())
+        .addUtilitySettlementItem(any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void shouldNotUpdateSettlementWhenFinalOcrReturnsNullReadingValue() throws Exception {
+    UUID settlementId = UUID.randomUUID();
+    MediaReading reading = new MediaReading();
+    reading.setInitialReading(new BigDecimal("100"));
+    reading.setInitialReadingStatus(ReadingStatus.AUTO_APPROVED);
+    reading.setFinalReadingStatus(ReadingStatus.PENDING);
+
+    when(mediaReadingRepository.findBySettlementIdAndUtilityType(settlementId, UtilityType.WATER))
+        .thenReturn(Optional.of(reading));
+    when(ocrClient.readMeter(multipartFile))
+        .thenReturn(new OcrResponseDto(null, new BigDecimal("0.95")));
+    when(multipartFile.getBytes()).thenReturn(new byte[0]);
+
+    ReadingStatus status =
+        mediaReadingService.processFinalReadingUpload(
+            settlementId, UUID.randomUUID(), UtilityType.WATER, multipartFile);
+
+    assertEquals(ReadingStatus.REQUEST_REUPLOAD, status);
+    assertEquals(ReadingStatus.REQUEST_REUPLOAD, reading.getFinalReadingStatus());
+    assertNull(reading.getFinalReading());
+
+    verify(settlementService, never())
+        .addUtilitySettlementItem(any(), any(), any(), any(), any(), any());
   }
 }
