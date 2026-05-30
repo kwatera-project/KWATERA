@@ -6,9 +6,9 @@ CREATE TABLE media_readings (
                                 utility_type VARCHAR(50) NOT NULL,
 
                                 initial_reading NUMERIC(12, 6) NOT NULL,
-                                initial_confidence_score NUMERIC(12, 6) NOT NULL,
-                                initial_reading_source VARCHAR(50) NOT NULL,
-                                initial_reading_status VARCHAR(50) NOT NULL,
+                                initial_confidence_score NUMERIC(12, 6),
+                                initial_reading_source VARCHAR(50),
+                                initial_reading_status VARCHAR(50),
 
                                 final_reading NUMERIC(12, 6),
                                 final_confidence_score NUMERIC(12, 6),
