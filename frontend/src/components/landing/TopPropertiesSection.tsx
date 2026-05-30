@@ -1,4 +1,4 @@
-import { Star, MapPin } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface Property {
@@ -11,6 +11,7 @@ interface Property {
     pricePerNight?: number;
     rating?: number;
     imageUrl: string;
+    reviewsCount?: number;
 }
 
 interface TopPropertiesProps {
@@ -27,11 +28,11 @@ export default function TopPropertiesSection({ properties = [] }: TopPropertiesP
   }
 
   return (
-    <section className="bg-card py-32 px-4 md:px-8 lg:px-16 border-t border-[#DACDCA]/30">
+    <section className="bg-white py-24 px-4 md:px-8 lg:px-16 border-t border-[#DACDCA]/30">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16">
-          <div>
-            <span className="block text-sm font-bold uppercase tracking-widest mb-3" style={{ color: 'rgb(var(--color-burgundy))' }}>Top Book Now</span>
+          <div className="flex flex-col items-start text-left">
+            <span className="block text-xs md:text-sm font-bold uppercase tracking-widest mb-2.5" style={{ color: 'rgb(var(--color-burgundy))' }}>TOP BOOK NOW</span>
             <h2 className="text-3xl md:text-5xl font-bold text-title">Featured Properties</h2>
           </div>
           <Link to="/catalog" className="mt-6 md:mt-0 text-title font-semibold hover:text-[rgb(var(--color-burgundy))] transition-colors text-lg">
@@ -41,40 +42,47 @@ export default function TopPropertiesSection({ properties = [] }: TopPropertiesP
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {displayProperties.map((property) => (
-            <Link to={`/property/${property.id}`} key={property.id} className="group cursor-pointer block">
+            <Link 
+              to={`/property/${property.id}`} 
+              key={property.id} 
+              className="group block bg-white rounded-[32px] p-3 border border-gray-100/50 shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl cursor-pointer"
+            >
 
-              <div className="relative aspect-[4/3] rounded-3xl overflow-hidden mb-6 shadow-md">
+              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-5 shadow-sm">
                 <img 
                   src={property.imageUrl || 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} 
                   alt={property.title || property.name || "Property image"} 
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                 />
-                
-
-                <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
-                  <Star size={16} className="text-yellow-500 fill-yellow-500" />
-                  <span className="text-sm font-bold text-[#1A1A1A]">{property.rating || '4.8'}</span>
-                </div>
               </div>
 
 
-              <div className="flex justify-between items-start gap-4 px-2">
+              <div className="flex justify-between items-start gap-3 px-1.5">
                 <div className="flex-1">
-                  <h3 className="font-bold text-title text-xl mb-2 group-hover:text-[rgb(var(--color-burgundy))] transition-colors line-clamp-1">
+                  <h3 className="font-bold text-title text-lg mb-1.5 group-hover:text-[rgb(var(--color-burgundy))] transition-colors line-clamp-1">
                     {property.title || property.name || 'Cozy Accommodation'}
                   </h3>
                   <div className="flex items-center gap-1.5 text-details font-medium">
-                    <MapPin size={16} />
-                    <span className="text-base">{property.location || property.city || 'Poland'}</span>
+                    <MapPin size={15} />
+                    <span className="text-sm">{property.location || property.city || 'Poland'}</span>
                   </div>
                 </div>
                 <div className="text-right whitespace-nowrap">
-                  <span className="font-black text-xl text-title">{property.price || property.pricePerNight || 250} PLN</span>
-                  <span className="text-sm text-details block font-medium">/night</span>
+                  <span className="font-black text-lg text-[rgb(var(--color-burgundy))]">
+                    {property.price || property.pricePerNight || 250} 
+                    <span className="font-bold text-[10px] ml-0.5 text-[rgb(var(--color-burgundy))]/85">PLN</span>
+                  </span>
+                  <span className="text-[10px] text-details block font-semibold">/night</span>
                 </div>
               </div>
             </Link>
           ))}
+        </div>
+
+        <div className="flex justify-center gap-2 mt-12">
+          <span className="w-8 h-2 rounded-full bg-[rgb(var(--color-burgundy))] transition-all duration-300" />
+          <span className="w-2 h-2 rounded-full bg-details/30 hover:bg-details/60 cursor-pointer transition-colors" />
+          <span className="w-2 h-2 rounded-full bg-details/30 hover:bg-details/60 cursor-pointer transition-colors" />
         </div>
       </div>
     </section>

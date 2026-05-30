@@ -1,50 +1,50 @@
 const EXPLORE_ITEMS = [
   {
     title: 'Azure Haven',
-    image: 'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'
+    image: 'https://images.pexels.com/photos/34054370/pexels-photo-34054370.jpeg'
   },
   {
     title: 'Emerald Valley',
-    image: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'
+    image: 'https://images.pexels.com/photos/37115349/pexels-photo-37115349.jpeg'
   },
   {
     title: 'Golden Peaks',
-    image: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'
+    image: 'https://images.pexels.com/photos/32906975/pexels-photo-32906975.jpeg'
   }
 ];
 
 export default function ExploreSection() {
   return (
-    <section className="py-32 px-4 md:px-8 lg:px-16 bg-section border-t border-[#DACDCA]/30">
+    <section className="bg-orange-50/20 py-24 px-4 md:px-8 lg:px-16 border-t border-[#DACDCA]/30">
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-16 items-center">
         
-        <div className="flex-1 w-full text-center lg:text-left">
-          <span className="block text-sm font-bold uppercase tracking-widest mb-3" style={{ color: 'rgb(var(--color-burgundy))' }}>Discover</span>
-          <h2 className="text-3xl md:text-5xl font-bold text-title mb-8 leading-tight">Explore Poland</h2>
-          <p className="text-details text-lg mb-10 leading-relaxed max-w-xl mx-auto lg:mx-0">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla vitae felis vel sem pretium interdum vel eget ex.
+        <div className="flex-1 w-full text-left flex flex-col items-start justify-center">
+          <span className="block text-xs md:text-sm font-bold uppercase tracking-widest mb-2.5" style={{ color: 'rgb(var(--color-burgundy))' }}>DISCOVER</span>
+          <h2 className="text-3xl md:text-5xl font-bold text-title mb-5 leading-tight">Explore Poland</h2>
+          <p className="text-details text-lg mb-8 leading-relaxed max-w-xl font-medium">
+            Discover the true beauty of Poland, from the majestic Tatra Mountains to the vibrant streets of Warsaw. Find the perfect stay for your next adventure and immerse yourself in local culture.
           </p>
-          <button className="bg-[rgb(var(--color-burgundy))] text-white font-bold py-4 px-10 rounded-full hover:bg-[rgb(var(--color-burgundy-hover))] transition-colors shadow-lg text-lg">
+          <button className="bg-[rgb(var(--color-burgundy))] text-white font-semibold py-2.5 px-7 rounded-full hover:bg-[rgb(var(--color-burgundy-hover))] transition-all shadow-md text-sm hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 duration-200">
             See all destinations
           </button>
         </div>
 
         
-        <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-6">
-             <div className="w-full h-64 rounded-3xl overflow-hidden shadow-lg relative group">
+        <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+          <div className="flex flex-col gap-6 w-full">
+             <div className="w-full h-60 md:h-[240px] rounded-[32px] overflow-hidden shadow-lg relative group">
                 <img src={EXPLORE_ITEMS[0].image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Explore 1"/>
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+                <div className="absolute inset-0 bg-black/15 group-hover:bg-black/10 transition-colors" />
              </div>
-             <div className="w-full h-48 rounded-3xl overflow-hidden shadow-lg relative group">
+             <div className="w-full h-48 md:h-[180px] rounded-[32px] overflow-hidden shadow-lg relative group">
                 <img src={EXPLORE_ITEMS[1].image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Explore 2"/>
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+                <div className="absolute inset-0 bg-black/15 group-hover:bg-black/10 transition-colors" />
              </div>
           </div>
-          <div className="pt-0 md:pt-12">
-             <div className="w-full h-80 md:h-96 rounded-3xl overflow-hidden shadow-lg relative group">
+          <div className="w-full pt-0 md:pt-12">
+             <div className="w-full h-80 md:h-[396px] rounded-[32px] overflow-hidden shadow-lg relative group">
                 <img src={EXPLORE_ITEMS[2].image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Explore 3"/>
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+                <div className="absolute inset-0 bg-black/15 group-hover:bg-black/10 transition-colors" />
              </div>
           </div>
         </div>

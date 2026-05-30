@@ -1,8 +1,8 @@
 export default function NewsletterSection() {
   return (
-    <section className="py-32 px-4 md:px-8 lg:px-16 bg-card border-t border-[#DACDCA]/30">
+    <section className="py-24 px-4 md:px-8 lg:px-16 bg-stone-50/60 border-t border-[#DACDCA]/30">
       <div className="max-w-7xl mx-auto">
-        <div className="bg-main rounded-[40px] overflow-hidden shadow-2xl flex flex-col lg:flex-row min-h-[450px]">
+        <div className="bg-gradient-to-br from-[#FAF5F2] via-[#F6E5E0] to-[#ECD5CE] rounded-[40px] overflow-hidden shadow-2xl flex flex-col lg:flex-row min-h-[450px]">
 
           <div className="w-full lg:w-5/12 h-72 lg:h-auto">
             <img 
@@ -14,12 +14,12 @@ export default function NewsletterSection() {
           
 
           <div className="w-full lg:w-7/12 p-8 md:p-12 lg:p-20 flex flex-col justify-center">
-            <span className="block text-sm font-bold uppercase tracking-widest mb-3" style={{ color: 'rgb(var(--color-burgundy))' }}>Newsletter</span>
+            <span className="block text-xs md:text-sm font-bold uppercase tracking-widest mb-6" style={{ color: 'rgb(var(--color-burgundy))' }}>NEWSLETTER</span>
             <h2 className="text-3xl md:text-5xl font-bold text-title mb-6 leading-tight">
-              Get special offers, and more from travelworld
+              Get special offers, and more from Kwatera
             </h2>
-            <p className="text-details mb-12 text-xl font-medium">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus lacinia odio vitae vestibulum vestibulum.
+            <p className="text-details mb-10 text-base md:text-xl font-medium leading-relaxed">
+              Join our community and be the first to know about exclusive discounts, personalized recommendations, and inspiring travel destinations directly in your inbox.
             </p>
             
             <form className="relative max-w-lg w-full" onSubmit={(e) => e.preventDefault()}>

@@ -37,7 +37,7 @@ export default function HeroSection() {
             <div className="relative z-[9999] w-full bg-card rounded-t-[50px] pt-10 pb-16 px-4 md:px-8 lg:px-16 mt-auto">
                 <div className="max-w-7xl mx-auto flex flex-col items-center text-center">
                     <h1 className="text-4xl md:text-5xl lg:text-7xl font-black text-title mb-6 drop-shadow-sm" style={{ color: 'rgb(var(--color-burgundy))' }}>Good Morning!</h1>
-                    <p className="text-details text-lg md:text-2xl mb-16 max-w-2xl font-medium drop-shadow-sm">
+                    <p className="text-details text-lg md:text-2xl mb-8 max-w-2xl font-medium drop-shadow-sm">
                         Explore beautiful places in the world with Kwatera
                     </p>
 
@@ -53,7 +53,7 @@ export default function HeroSection() {
                                 value={location}
                                 onChange={(e) => setLocation(e.target.value)}
                                 className="w-full bg-transparent text-title placeholder-gray-400 focus:outline-none font-medium text-lg"
-                                placeholder="Where are you going?"
+                                placeholder="Warszawa, Zakopane..."
                                 autoComplete="off"
                             />
                         </div>

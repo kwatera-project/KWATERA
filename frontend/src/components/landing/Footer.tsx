@@ -1,33 +1,33 @@
 export default function Footer() {
   return (
-    <footer className="bg-[rgb(var(--color-burgundy))] text-white pt-24 pb-12 px-4 md:px-12 lg:px-20 w-full mt-10">
+    <footer className="bg-[#4E2723] text-white pt-24 pb-12 px-4 md:px-12 lg:px-20 w-full mt-10 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 lg:gap-24 mb-16 text-left">
 
-          <div>
-            <h3 className="font-bold text-xl mb-6 tracking-wide text-white">Support</h3>
-            <ul className="space-y-4 text-white/80 text-lg">
-              <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Report an issue</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Privacy Terms</a></li>
+          <div className="text-left">
+            <h3 className="font-bold text-xl mb-6 tracking-wide text-white text-left">Support</h3>
+            <ul className="space-y-4 text-white/80 text-lg text-left">
+              <li className="text-left"><a href="#" className="hover:text-white transition-colors block text-left">Help Center</a></li>
+              <li className="text-left"><a href="#" className="hover:text-white transition-colors block text-left">Report an issue</a></li>
+              <li className="text-left"><a href="#" className="hover:text-white transition-colors block text-left">Privacy Terms</a></li>
             </ul>
           </div>
           
 
-          <div>
-            <h3 className="font-bold text-xl mb-6 tracking-wide text-white">Company</h3>
-            <ul className="space-y-4 text-white/80 text-lg">
-              <li><a href="#" className="hover:text-white transition-colors">About us</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Press room</a></li>
+          <div className="text-left">
+            <h3 className="font-bold text-xl mb-6 tracking-wide text-white text-left">Company</h3>
+            <ul className="space-y-4 text-white/80 text-lg text-left">
+              <li className="text-left"><a href="#" className="hover:text-white transition-colors block text-left">About us</a></li>
+              <li className="text-left"><a href="#" className="hover:text-white transition-colors block text-left">Press room</a></li>
             </ul>
           </div>
           
 
-          <div>
-            <h3 className="font-bold text-xl mb-6 tracking-wide text-white">Contact</h3>
-            <ul className="space-y-4 text-white/80 text-lg">
-              <li><a href="#" className="hover:text-white transition-colors">FAQ</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Support center</a></li>
+          <div className="text-left">
+            <h3 className="font-bold text-xl mb-6 tracking-wide text-white text-left">Contact</h3>
+            <ul className="space-y-4 text-white/80 text-lg text-left">
+              <li className="text-left"><a href="#" className="hover:text-white transition-colors block text-left">FAQ</a></li>
+              <li className="text-left"><a href="#" className="hover:text-white transition-colors block text-left">Support center</a></li>
             </ul>
           </div>
           

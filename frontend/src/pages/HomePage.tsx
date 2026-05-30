@@ -6,6 +6,7 @@ import TopPropertiesSection from '../components/landing/TopPropertiesSection';
 import ExploreSection from '../components/landing/ExploreSection';
 import BlogSection from '../components/landing/BlogSection';
 import NewsletterSection from '../components/landing/NewsletterSection';
+import TrustBadges from '../components/landing/TrustBadges';
 import Footer from '../components/landing/Footer';
 
 interface PropertyData {
@@ -43,6 +44,7 @@ export default function HomePage() {
             <ExploreSection />
             <BlogSection />
             <NewsletterSection />
+            <TrustBadges />
             <Footer />
         </div>
     );
