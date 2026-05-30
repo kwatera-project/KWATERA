@@ -12,7 +12,8 @@ public record PaymentMetadataDto(
     SettlementItemType type,
     String description,
     BigDecimal quantity,
-    BigDecimal unitPrice) {
+    BigDecimal unitPrice,
+    String recipientEmail) {
 
   public static PaymentMetadataDto from(Map<String, String> metadata) {
 
@@ -51,13 +52,16 @@ public record PaymentMetadataDto(
     }
 
     try {
+      String recipientEmailStr = metadata.get("recipientEmail");
+
       return new PaymentMetadataDto(
           UUID.fromString(settlementIdStr),
           UUID.fromString(unitIdStr),
           SettlementItemType.valueOf(typeStr),
           descriptionStr,
           parseBigDecimal(quantityStr),
-          parseBigDecimal(unitPriceStr));
+          parseBigDecimal(unitPriceStr),
+          recipientEmailStr);
 
     } catch (Exception e) {
       throw new WebhookProcessingException("Invalid payment metadata", e);
