@@ -113,7 +113,8 @@ public class PaymentWebhookService {
           metadata.type(),
           metadata.description(),
           metadata.quantity(),
-          metadata.unitPrice());
+          metadata.unitPrice(),
+          metadata.recipientEmail());
 
     } catch (RuntimeException e) {
       paymentTransactionService.markFailed(

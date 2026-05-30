@@ -27,6 +27,9 @@ public class Reservation {
   @Column(name = "user_id", nullable = false)
   private UUID userId;
 
+  @Column(name = "guest_email")
+  private String guestEmail;
+
   @Column(name = "unit_id", nullable = false)
   private UUID unitId;
 

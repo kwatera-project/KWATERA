@@ -20,7 +20,8 @@ class ReservationServiceValidationTest {
           mock(org.springframework.web.client.RestTemplate.class),
           mock(
               io.github.kwatera_project.kwatera.reservation_service.client.NbpExchangeRateClient
-                  .class));
+                  .class),
+          mock(EmailNotificationService.class));
 
   @Test
   void shouldThrow_whenDatesAreNull() {
