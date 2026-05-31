@@ -27,7 +27,9 @@ export async function getPredictedPrice(
         try {
             const errorData = await res.json();
             errorMessage = errorData.message || errorMessage;
-        } catch {}
+        } catch {
+            // Default error massage
+        }
 
         throw new Error(errorMessage);
     }

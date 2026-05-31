@@ -5,11 +5,14 @@ import io.github.kwatera_project.kwatera.property_service.model.*;
 import io.github.kwatera_project.kwatera.property_service.repository.*;
 import java.util.List;
 import java.util.UUID;
+
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
+@RequiredArgsConstructor
 public class PropertyService {
 
   private final PropertyRepository propertyRepository;
@@ -19,22 +22,6 @@ public class PropertyService {
   private final UnitSettlementItemRepository unitSettlementItemRepository;
   private final io.github.kwatera_project.kwatera.property_service.client.NbpExchangeRateClient
       nbpExchangeRateClient;
-
-  public PropertyService(
-      PropertyRepository propertyRepository,
-      UnitRepository unitRepository,
-      PropertyImageRepository propertyImageRepository,
-      UnitImageRepository unitImageRepository,
-      UnitSettlementItemRepository unitSettlementItemRepository,
-      io.github.kwatera_project.kwatera.property_service.client.NbpExchangeRateClient
-          nbpExchangeRateClient) {
-    this.propertyRepository = propertyRepository;
-    this.unitRepository = unitRepository;
-    this.propertyImageRepository = propertyImageRepository;
-    this.unitImageRepository = unitImageRepository;
-    this.unitSettlementItemRepository = unitSettlementItemRepository;
-    this.nbpExchangeRateClient = nbpExchangeRateClient;
-  }
 
   public List<UnitDto> getUnits(UUID propertyId, String currency) {
     if (!propertyRepository.existsById(propertyId)) {
