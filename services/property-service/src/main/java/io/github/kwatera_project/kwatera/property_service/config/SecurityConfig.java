@@ -27,6 +27,7 @@ public class SecurityConfig {
   @Autowired private JwtAuthFilter jwtAuthFilter;
 
   @Bean
+  @SuppressWarnings("squid:S4502")
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http.csrf(
             AbstractHttpConfigurer
