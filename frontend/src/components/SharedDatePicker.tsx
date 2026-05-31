@@ -12,6 +12,7 @@ interface SharedDatePickerProps {
     minDate?: Date | null;
     placeholderText?: string;
     className?: string;
+    dateFormat?: string;
 }
 
 const MONTHS = [
@@ -154,7 +155,8 @@ export default function SharedDatePicker({
     endDate,
     minDate,
     placeholderText,
-    className
+    className,
+    dateFormat
 }: SharedDatePickerProps) {
     return (
         <DatePicker
@@ -166,11 +168,12 @@ export default function SharedDatePicker({
             endDate={endDate ?? undefined}
             minDate={minDate ?? undefined}
             className={className || "bg-white text-sm font-bold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center border-b border-transparent hover:border-gray-300 focus:border-blue-500 transition-colors pb-1"}
-            dateFormat="yyyy-MM-dd"
+            dateFormat={dateFormat || "yyyy-MM-dd"}
             placeholderText={placeholderText}
             renderCustomHeader={(props) => <CustomCalendarHeader {...props} />}
             calendarClassName="bg-white border border-gray-200 shadow-xl rounded-lg"
-            popperClassName="z-50"
+            popperClassName="z-[9999]"
+            calendarStartDay={1}
         />
     );
 }

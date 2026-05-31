@@ -282,7 +282,7 @@ export default function PropertyDetailsPage() {
                             <p className="mt-2 font-semibold text-[#42211D]">
                                 {u.convertedPricePerNight && u.currencyInfo && u.currencyInfo.displayCurrency !== 'PLN' 
                                     ? `${u.convertedPricePerNight.toFixed(2)} ${u.currencyInfo.displayCurrency} / night` 
-                                    : `${u.pricePerNight} zł / night`}
+                                    : `${u.pricePerNight} PLN / night`}
                             </p>
                             <p className="text-sm text-[#7A7A7A]">Capacity: {u.capacity} {u.capacity === 1 ? "person" : "people"}</p>
                         </div>
@@ -353,7 +353,7 @@ export default function PropertyDetailsPage() {
                                             {u.convertedPricePerNight && u.currencyInfo && u.currencyInfo.displayCurrency !== 'PLN' ? (
                                                 <div>{(nights * u.convertedPricePerNight).toFixed(2)} {u.currencyInfo.displayCurrency}</div>
                                             ) : (
-                                                <span>{totalPrice} zł</span>
+                                                <span>{totalPrice} PLN</span>
                                             )}
                                         </div>
                                     </div>

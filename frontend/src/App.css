@@ -1,16 +1,19 @@
 :root {
-    --color-brown: 64 28 26;
-    --color-gray: 37 37 37;
+    --color-black: 26 26 26;
+    --color-burgundy: 66 33 29;
+    --color-burgundy-hover: 84 43 38;
+    --color-light-gray: 122 122 122;
+    --color-pink-burgundy: 218 205 202;
+    --color-section: 247 247 247;
     --color-white: 255 255 255;
-    --color-light-gray: 148 148 148;
-    --color-pink-burgundy: 206 197 197;
-    --color-burgundy: 54 16 15;
-    --color-burgundy-hover: 84 30 28;
-    --color-black: 0 0 0;
 }
 
 .bg-main {
     background-color: rgb(var(--color-pink-burgundy));
+}
+
+.bg-section {
+    background-color: rgb(var(--color-section));
 }
 
 .bg-card {
@@ -31,10 +34,6 @@
 
 .text-white {
     color: rgb(var(--color-white));
-}
-
-.text-primary {
-    color: rgb(var(--color-gray));
 }
 
 .text-details {
@@ -177,22 +176,48 @@
     color: #1A1A1A !important;
 }
 
+.react-datepicker__navigation {
+    top: 10px !important;
+}
+
 .react-datepicker__navigation-icon::before {
-    display: none !important;
+    content: "";
+    display: block !important;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 9px;
+    height: 9px;
+    border-width: 2px 2px 0 0;
+    border-style: solid;
+    border-color: #7A7A7A !important;
+    transform: translate(-50%, -50%) rotate(45deg);
 }
 
-.react-datepicker__navigation-icon {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    top: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
+.react-datepicker__navigation--previous .react-datepicker__navigation-icon::before {
+    transform: translate(-50%, -50%) rotate(-135deg);
 }
 
+.react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
+    border-color: #1A1A1A !important;
+}
+
+/* React DatePicker v9 SVG arrows */
 .react-datepicker__navigation svg {
     width: 20px !important;
     height: 20px !important;
-    stroke: currentColor !important;
-    display: block !important;
+    stroke: #7A7A7A !important;
+    fill: none !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+}
+
+.react-datepicker__navigation:hover svg {
+    stroke: #1A1A1A !important;
+}
+
+.react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
+    border-color: #1A1A1A !important;
 }
