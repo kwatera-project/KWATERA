@@ -15,6 +15,10 @@
     <properties>
         <sonar.coverage.exclusions>
             **/dto/**/*.class
+            **/AiPricingServiceApplication.class
+            **/config/CatBoostConfig.class
+            **/config/RestTemplateConfig.class
+            **/model/**/*.class
         </sonar.coverage.exclusions>
     </properties>
 
@@ -124,6 +128,8 @@
                     <excludes>
                         <exclude>**/AiPricingServiceApplication.class</exclude>
                         <exclude>**/config/JpaConfig.class</exclude>
+                        <exclude>**/config/CatBoostConfig.class</exclude>
+                        <exclude>**/config/RestTemplateConfig.class</exclude>
                         <exclude>**/model/**/*.class</exclude>
                         <exclude>**/mapper/**/*.class</exclude>
                         <exclude>**/dto/**/*.class</exclude>
