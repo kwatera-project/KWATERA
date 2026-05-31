@@ -180,7 +180,10 @@ class BillingControllerTest {
         mock(io.github.kwatera_project.kwatera.billing_service.dto.SettlementItemDto.class);
 
     when(paymentService.getSettlementItemInfoByType(
-            reservationId, io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType.ACCOMMODATION, "Bearer token"))
+            reservationId,
+            io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType
+                .ACCOMMODATION,
+            "Bearer token"))
         .thenReturn(dto);
 
     UsernamePasswordAuthenticationToken auth =
