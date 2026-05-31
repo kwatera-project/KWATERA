@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 import {getMyProperties} from "../api/ownerPropertyApi.ts";
-import type { Property } from "../types/property";
-import { Link } from "react-router-dom";
+import type {Property} from "../types/property";
+import {Link} from "react-router-dom";
 
 export default function OwnerPropertiesPage() {
     const [properties, setProperties] = useState<Property[]>([]);
@@ -39,29 +39,46 @@ export default function OwnerPropertiesPage() {
                     >
                         <div className="flex justify-between items-center">
                             <div>
+
                                 <h2 className="font-bold text-xl">
                                     {property.title}
                                 </h2>
 
-                                <p>{property.location}</p>
+                                <p>{property.description}</p>
+
+                                <div>
+                                    Country: {property.country}
+                                </div>
+
+                                <div>
+                                    City: {property.city}
+                                </div>
+
+                                <div>
+                                    Postal Code: {property.postalCode}
+                                </div>
+
+                                <div>
+                                    Street: {property.street}
+                                </div>
+
+                                <div>
+                                    Street number: {property.streetNumber}
+                                </div>
                             </div>
 
-                            <div className="flex gap-2">
-                                <Link
-                                    to={`/owner/properties/${property.id}/edit`}
-                                >
-                                    Edit
-                                </Link>
-
-                                <button>
-                                    Delete
-                                </button>
-
+                            <div className="flex gap-3 mt-3">
                                 <Link
                                     to={`/owner/properties/${property.id}/units`}
                                 >
                                     Manage Units
                                 </Link>
+                                <button>
+                                    Edit
+                                </button>
+                                <button>
+                                    Delete
+                                </button>
                             </div>
                         </div>
                     </div>

@@ -7,10 +7,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/predict")
@@ -19,17 +16,29 @@ public class PredictionController {
 
   private final PredictionModelService predictionService;
 
-  @GetMapping("/price")
-  public ResponseEntity<BigDecimal> getPredictedPrice(
-      @RequestParam("propertyId") UUID propertyId,
-      @RequestParam("unitId") UUID unitId,
-      @RequestParam(value = "date", required = false) String date)
-      throws CatBoostError {
+    @GetMapping("/price/property/{propertyId}/unit/{unitId}/date/{date}")
+    public ResponseEntity<BigDecimal> getPredictedPriceWithDate(
+            @PathVariable("propertyId") UUID propertyId,
+            @PathVariable("unitId") UUID unitId,
+            @PathVariable("date") String date) throws CatBoostError {
 
-    String dateToUse = (date != null) ? date : LocalDate.now().toString();
+        return handlePrediction(propertyId, unitId, date);
+    }
 
-    BigDecimal prediction = predictionService.predictPrice(propertyId, unitId, dateToUse);
+    @GetMapping("/price/property/{propertyId}/unit/{unitId}")
+    public ResponseEntity<BigDecimal> getPredictedPriceWithoutDate(
+            @PathVariable("propertyId") UUID propertyId,
+            @PathVariable("unitId") UUID unitId) throws CatBoostError {
 
-    return ResponseEntity.ok(prediction);
-  }
+        return handlePrediction(propertyId, unitId, null);
+    }
+
+    private ResponseEntity<BigDecimal> handlePrediction(UUID propertyId, UUID unitId, String date)
+            throws CatBoostError {
+
+        String dateToUse = (date != null) ? date : LocalDate.now().toString();
+        BigDecimal prediction = predictionService.predictPrice(propertyId, unitId, dateToUse);
+        return ResponseEntity.ok(prediction);
+    }
 }
+

@@ -46,8 +46,8 @@ public class Property {
   @Column(nullable = false)
   private String country;
 
-  @Column(nullable = false)
-  private String postal_code;
+  @Column(name = "postal_code", nullable = false)
+  private String postalCode;
 
   @Column(nullable = false)
   private String street;

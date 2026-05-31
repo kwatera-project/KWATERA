@@ -3,11 +3,16 @@ package io.github.kwatera_project.kwatera.ai_pricing_service.dto;
 import io.github.kwatera_project.kwatera.ai_pricing_service.model.UnitType;
 import java.math.BigDecimal;
 import java.util.UUID;
+
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class UnitDto {
 
   private UUID id;
@@ -17,21 +22,7 @@ public class UnitDto {
   private Integer capacity;
   private String imageUrl;
   private UnitType unitType;
+  private String unitNumber;
+  private Integer floor;
 
-  public UnitDto(
-      UUID id,
-      String name,
-      String description,
-      BigDecimal pricePerNight,
-      Integer capacity,
-      String imageUrl,
-      UnitType unitType) {
-    this.id = id;
-    this.name = name;
-    this.description = description;
-    this.pricePerNight = pricePerNight;
-    this.capacity = capacity;
-    this.imageUrl = imageUrl;
-    this.unitType = unitType;
-  }
 }

@@ -1,12 +1,13 @@
 package io.github.kwatera_project.kwatera.property_service.service;
 
-import io.github.kwatera_project.kwatera.property_service.dto.PropertyDto;
-import io.github.kwatera_project.kwatera.property_service.dto.UnitDto;
-import io.github.kwatera_project.kwatera.property_service.dto.UnitSettlementItemDto;
+import io.github.kwatera_project.kwatera.property_service.dto.*;
 import io.github.kwatera_project.kwatera.property_service.model.*;
 import io.github.kwatera_project.kwatera.property_service.repository.*;
+import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -139,7 +140,13 @@ public class PropertyService {
         property.getTitle(),
         property.getDescription(),
         property.getCity(),
-        imageUrl);
+        imageUrl,
+        property.getLatitude(),
+        property.getLongitude(),
+        property.getCountry(),
+        property.getPostalCode(),
+        property.getStreet(),
+        property.getStreetNumber());
   }
 
   private UnitDto mapToDto(Unit unit, String currency) {
@@ -190,6 +197,9 @@ public class PropertyService {
         unit.getPricePerNight(),
         unit.getCapacity(),
         imageUrl,
+        unit.getUnitType(),
+        unit.getUnitNumber(),
+        unit.getFloor(),
         convertedPricePerNight,
         currencyInfo);
   }
