@@ -25,7 +25,7 @@ export interface Unit {
         exchangeRate: number;
         rateEffectiveDate: string;
     };
-    unit_type: string;
-    unit_number: string;
+    unitType: string;
+    unitNumber: string;
     floor: number;
 }
