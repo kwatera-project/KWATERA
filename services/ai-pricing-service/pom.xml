@@ -14,10 +14,10 @@
 
     <properties>
         <sonar.coverage.exclusions>
-            **/dto/**/*.class
-            **/AiPricingServiceApplication.class
-            **/config/CatBoostConfig.class
-            **/config/RestTemplateConfig.class
+            **/dto/**/*.class,
+            **/AiPricingServiceApplication.java,
+            **/config/CatBoostConfig.java,
+            **/config/RestTemplateConfig.java,
             **/model/**/*.class
         </sonar.coverage.exclusions>
     </properties>
