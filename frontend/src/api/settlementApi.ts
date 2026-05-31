@@ -21,7 +21,10 @@ export async function getSettlementDetails(id: string) {
     }
 
     const data = await res.json();
-    return data.settlement;
+    return {
+        ...data.settlement,
+        items: data.items
+    };
 }
 
 export async function getSettlementItemInfoByType(id: string, type: string) {

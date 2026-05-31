@@ -1,5 +1,16 @@
 import type {CurrencyMetadata} from "./reservation";
 
+export interface SettlementItemDetails {
+    id: string;
+    settlementId: string;
+    type: "ACCOMMODATION" | "ELECTRICITY" | "WATER" | "CLEANING_FEE" | "DEPOSIT";
+    description?: string;
+    quantity: number;
+    unitPrice: number;
+    amount: number;
+    createdAt: string;
+}
+
 export interface SettlementDetails {
     id: string;
     reservationId: string;
@@ -27,4 +38,5 @@ export interface SettlementDetails {
     updatedAt: string;
 
     finalized: boolean;
+    items?: SettlementItemDetails[];
 }

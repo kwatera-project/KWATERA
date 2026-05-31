@@ -1,7 +1,7 @@
 import {useEffect, useState, useCallback} from "react";
 import {useParams, Link} from "react-router-dom";
-import {getSettlementDetails, getSettlementItemInfoByType} from "../api/settlementApi";
-import type {SettlementDetails} from "../types/settlement";
+import {getSettlementDetails} from "../api/settlementApi";
+import type {SettlementDetails, SettlementItemDetails} from "../types/settlement";
 import {GATEWAY_BASE_URL} from "../api/apiConfig.ts";
 import {getReservationDetails} from "../api/reservationApi.ts";
 
@@ -36,17 +36,15 @@ export default function SettlementDetailsPage() {
 
     const [paymentButtons, setPaymentButtons] = useState<PaymentButton[]>([]);
 
-    const loadPaymentButtons = useCallback (async (
+    const loadPaymentButtons = useCallback((
         settlement: SettlementDetails,
         settlementItemTypes: string[]
     ) => {
-
         const buttons: PaymentButton[] = [];
 
-        if (settlementItemTypes.includes("DEPOSIT")) {
-            try {
-                await getSettlementItemInfoByType(settlement.reservationId, "DEPOSIT");
-            } catch {
+        if (settlementItemTypes.includes("DEPOSIT") && settlement.depositAmount > 0) {
+            const depositPaid = settlement.items?.some(item => item.type === "DEPOSIT");
+            if (!depositPaid) {
                 buttons.push({
                     type: "DEPOSIT",
                     quantity: 1,
@@ -55,34 +53,30 @@ export default function SettlementDetailsPage() {
             }
         }
 
-        try {
-            await getSettlementItemInfoByType(settlement.reservationId, "ACCOMMODATION");
-        } catch {
-            buttons.push({
-                type: "ACCOMMODATION",
-                quantity: 1,
-                unitPrice: settlement.accommodationAmount
-            });
+        if (settlement.accommodationAmount > 0) {
+            const accommodationPaid = settlement.items?.some(item => item.type === "ACCOMMODATION");
+            if (!accommodationPaid) {
+                buttons.push({
+                    type: "ACCOMMODATION",
+                    quantity: 1,
+                    unitPrice: settlement.accommodationAmount
+                });
+            }
         }
 
         const utilityTypes = ["WATER", "ELECTRICITY", "CLEANING_FEE"];
-
         for (const type of utilityTypes) {
             if (!settlementItemTypes.includes(type)) {
                 continue;
             }
 
-            try {
-                const res = await getSettlementItemInfoByType(settlement.reservationId, type);
-                if (res) {
-                    buttons.push({
-                        type,
-                        quantity: res.quantity,
-                        unitPrice: res.unitPrice
-                    });
-                }
-            } catch {
-                // ignore missing item
+            const matchingItems = settlement.items?.filter(item => item.type === type) || [];
+            if (matchingItems.length === 1) {
+                buttons.push({
+                    type,
+                    quantity: matchingItems[0].quantity,
+                    unitPrice: matchingItems[0].unitPrice
+                });
             }
         }
 
@@ -166,7 +160,14 @@ export default function SettlementDetailsPage() {
                 throw new Error("Invalid checkout URL received");
             }
 
-            window.location.assign(checkoutUrl);
+            setSettlementState(prev => ({
+                ...prev,
+                [stateKey]: { loading: false, success: true }
+            }));
+
+            setTimeout(() => {
+                window.location.assign(checkoutUrl);
+            }, 800);
 
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "An error occurred";
@@ -178,7 +179,33 @@ export default function SettlementDetailsPage() {
     };
 
     if (loading) return <div className="p-6">Loading settlement details...</div>;
-    if (error) return <div className="p-6 text-red-500">{error}</div>;
+    if (error) {
+        const isForbidden = error.toLowerCase().includes("forbidden") || error.toLowerCase().includes("access denied") || error.toLowerCase().includes("403");
+
+        if (isForbidden) {
+            return (
+                <div className="max-w-md mx-auto mt-12 p-8 bg-card rounded-2xl shadow-xl border border-red-100 text-center animate-fade-in">
+                    <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m0-6V9m0 12a9 9 0 110-18 9 9 0 010 18z" />
+                        </svg>
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">Access Denied</h2>
+                    <p className="text-gray-600 mb-6">
+                        You do not have permission to view this settlement billing page. If you believe this is an error, please contact support.
+                    </p>
+                    <Link
+                        to="/"
+                        className="inline-flex items-center justify-center px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow transition duration-150 ease-in-out"
+                    >
+                        Return to Home
+                    </Link>
+                </div>
+            );
+        }
+
+        return <div className="p-6 text-red-500">{error}</div>;
+    }
     if (!settlement) return <div className="p-6">Settlement not found.</div>;
 
     const displayCurrency = settlement.currencyInfo?.displayCurrency || 'PLN';
@@ -234,6 +261,31 @@ export default function SettlementDetailsPage() {
                                 <p className="font-medium">
                                     {renderAmount(settlement.convertedUtilitiesAmount, settlement.utilitiesAmount)}
                                 </p>
+                                {settlement.items && settlement.items.length > 0 && (
+                                    <div className="mt-2 pl-4 border-l-2 border-gray-200">
+                                        <ul className="space-y-1">
+                                            {settlement.items
+                                                .filter((item: SettlementItemDetails) => ["ELECTRICITY", "WATER", "CLEANING_FEE"].includes(item.type))
+                                                .map((item: SettlementItemDetails) => {
+                                                    const rate = settlement.currencyInfo?.exchangeRate || 1;
+                                                    const convertedAmount = displayCurrency !== 'PLN'
+                                                        ? Number((item.amount / rate).toFixed(2))
+                                                        : item.amount;
+
+                                                    return (
+                                                        <li key={item.id} className="text-xs text-gray-600 flex justify-between gap-4">
+                                                            <span>
+                                                                {item.description || item.type} ({item.quantity} x {displayCurrency !== 'PLN' ? Number((item.unitPrice / rate).toFixed(2)) : item.unitPrice} {displayCurrency})
+                                                            </span>
+                                                            <span className="font-semibold text-gray-700">
+                                                                {convertedAmount} {displayCurrency}
+                                                            </span>
+                                                        </li>
+                                                    );
+                                                })}
+                                        </ul>
+                                    </div>
+                                )}
                             </div>
                             <div>
                                 <p className="text-gray-500 text-sm">Deposit Amount</p>
