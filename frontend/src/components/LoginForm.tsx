@@ -31,7 +31,7 @@ export default function LoginForm() {
 
     return (
         <div className="h-screen w-full flex flex-col bg-white">
-            <header className="flex-none bg-white border-b border-gray-100 px-8 py-10 flex items-center justify-between z-50 shadow-sm">
+            <header className="flex-none bg-white border-b border-gray-100 px-8 py-9 flex items-center justify-between z-50 shadow-sm">
             </header>
 
             <div className="flex-1 w-full grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
