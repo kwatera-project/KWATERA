@@ -3,6 +3,7 @@ package io.github.kwatera_project.kwatera.ai_pricing_service.service;
 import ai.catboost.CatBoostError;
 import ai.catboost.CatBoostModel;
 import ai.catboost.CatBoostPredictions;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.kwatera_project.kwatera.ai_pricing_service.client.PropertyClient;
 import io.github.kwatera_project.kwatera.ai_pricing_service.dto.PropertyDto;
 import io.github.kwatera_project.kwatera.ai_pricing_service.dto.UnitDto;
@@ -18,6 +19,10 @@ public class PredictionModelService {
   private final CatBoostModel model;
   private final PropertyClient propertyClient;
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "CatBoostModel is a Spring-managed inference dependency. It cannot be defensively copied and is not exposed outside this service.")
   public PredictionModelService(PropertyClient propertyClient, CatBoostModel model)
       throws CatBoostError {
     this.propertyClient = propertyClient;
