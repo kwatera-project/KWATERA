@@ -12,8 +12,8 @@ export async function getProperty(id: string) {
     return res.json();
 }
 
-export async function getUnits(propertyId: string) {
-    const res = await fetch(`${API_URL}/properties/${propertyId}/units`);
+export async function getUnits(propertyId: string, currency: string = "PLN") {
+    const res = await fetch(`${API_URL}/properties/${propertyId}/units?currency=${currency}`);
     return res.json();
 }
 

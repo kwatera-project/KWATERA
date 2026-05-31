@@ -41,16 +41,29 @@ class Stage2ReservationFlowTest {
 
   @Mock private RestTemplate restTemplate;
 
+  @Mock private EmailNotificationService emailNotificationService;
+
   private ReservationService reservationService;
 
   private AdminReservationService adminReservationService;
 
   @BeforeEach
   void setUp() {
-    reservationService = new ReservationService(reservationRepository, restTemplate);
+    reservationService =
+        new ReservationService(
+            reservationRepository,
+            restTemplate,
+            mock(
+                io.github.kwatera_project.kwatera.reservation_service.client.NbpExchangeRateClient
+                    .class),
+            emailNotificationService);
     adminReservationService =
         new AdminReservationService(
-            reservationRepository, statusHistoryRepository, statusValidator, restTemplate);
+            reservationRepository,
+            statusHistoryRepository,
+            statusValidator,
+            restTemplate,
+            emailNotificationService);
   }
 
   @Test
@@ -117,6 +130,10 @@ class Stage2ReservationFlowTest {
     ArgumentCaptor<ReservationStatusHistory> historyCaptor =
         ArgumentCaptor.forClass(ReservationStatusHistory.class);
     verify(statusHistoryRepository).save(historyCaptor.capture());
+    verify(emailNotificationService).sendReservationCreated(createdReservation, null);
+    verify(emailNotificationService)
+        .sendReservationStatusChanged(
+            createdReservation, ReservationStatus.PENDING, ReservationStatus.CONFIRMED, null);
 
     ReservationStatusHistory history = historyCaptor.getValue();
     assertThat(history.getReservationId()).isEqualTo(reservationId);

@@ -51,7 +51,8 @@ class PaymentWebhookServiceTest {
         "type", "DEPOSIT",
         "description", "desc",
         "quantity", "1",
-        "unitPrice", "40");
+        "unitPrice", "40",
+        "recipientEmail", "guest@example.com");
   }
 
   private Event mockEvent(String id, String type) {
@@ -82,7 +83,8 @@ class PaymentWebhookServiceTest {
     paymentWebhookService.processWebhook("payload", "sig");
     paymentWebhookService.processWebhook("payload", "sig");
 
-    verify(settlementService, never()).registerPayment(any(), any(), any(), any(), any(), any());
+    verify(settlementService, never())
+        .registerPayment(any(), any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -104,7 +106,8 @@ class PaymentWebhookServiceTest {
 
     paymentWebhookService.processWebhook("payload", "sig");
 
-    verify(settlementService).registerPayment(any(), any(), any(), any(), any(), any());
+    verify(settlementService)
+        .registerPayment(any(), any(), any(), any(), any(), any(), eq("guest@example.com"));
     verify(paymentTransactionService).markSuccessIfAllowed("evt_1");
   }
 
@@ -149,7 +152,7 @@ class PaymentWebhookServiceTest {
 
     doThrow(new RuntimeException("Settlement update failed"))
         .when(settlementService)
-        .registerPayment(any(), any(), any(), any(), any(), any());
+        .registerPayment(any(), any(), any(), any(), any(), any(), any());
 
     org.junit.jupiter.api.Assertions.assertThrows(
         RuntimeException.class, () -> paymentWebhookService.processWebhook("payload", "sig"));

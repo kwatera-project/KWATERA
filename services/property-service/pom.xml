@@ -16,7 +16,8 @@
         <sonar.coverage.exclusions>
             **/config/OpenApiConfig.java,
             **/config/JpaConfig.java,
-            **/dto/**/*.class
+            **/dto/**,
+            **/client/**
         </sonar.coverage.exclusions>
     </properties>
 
@@ -104,6 +105,7 @@
                         <exclude>**/mapper/**/*.class</exclude>
                         <exclude>**/dto/**/*.class</exclude>
                         <exclude>**/config/OpenApiConfig.class</exclude>
+                        <exclude>**/client/**/*.class</exclude>
                     </excludes>
                 </configuration>
             </plugin>

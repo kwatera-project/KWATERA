@@ -16,8 +16,10 @@
         <sonar.coverage.exclusions>
             **/config/OpenApiConfig.java,
             **/config/RestTemplateConfig.java,
-            **/dto/**/*.class,
-            **/model/**/*.class
+            **/dto/**,
+            **/model/**,
+            **/client/**,
+            **/Client/**
         </sonar.coverage.exclusions>
     </properties>
 
@@ -50,6 +52,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
         <dependency>
@@ -130,10 +137,6 @@
             <version>${springdoc.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>org.springframework.kafka</groupId>
@@ -159,6 +162,7 @@
                         <exclude>**/model/**/*.class</exclude>
                         <exclude>**/config/OpenApiConfig.class</exclude>
                         <exclude>**/config/RestTemplateConfig.class</exclude>
+                        <exclude>**/client/**/*.class</exclude>
                     </excludes>
                 </configuration>
             </plugin>

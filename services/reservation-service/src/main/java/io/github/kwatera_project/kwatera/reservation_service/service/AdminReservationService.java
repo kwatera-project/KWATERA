@@ -29,6 +29,8 @@ public class AdminReservationService {
 
   private final RestTemplate restTemplate;
 
+  private final EmailNotificationService emailNotificationService;
+
   public List<ReservationOverviewDto> getReservationsOverview(
       UUID ownerId, ReservationStatus status, boolean isAdmin) {
 
@@ -100,6 +102,9 @@ public class AdminReservationService {
     history.setChangedBy(userId);
     history.setChangedAt(LocalDateTime.now());
     statusHistoryRepository.save(history);
+
+    emailNotificationService.sendReservationStatusChanged(
+        reservation, oldStatus, newStatus, reservation.getGuestEmail());
 
     return mapToOverviewDto(reservation);
   }

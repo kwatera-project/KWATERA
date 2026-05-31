@@ -18,7 +18,8 @@
             **/config/JpaConfig.java,
             **/model/**,
             **/dto/**,
-            **/client/**/*.class
+            **/client/**,
+            **/Client/**
         </sonar.coverage.exclusions>
     </properties>
 
@@ -112,6 +113,11 @@
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-webmvc-test</artifactId>
             <scope>test</scope>
         </dependency>
@@ -145,6 +151,12 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>jdbc</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+            <version>4.9.8</version>
+            <scope>provided</scope>
         </dependency>
 
     </dependencies>

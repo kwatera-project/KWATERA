@@ -26,7 +26,7 @@ spring:
             - id: reservation-service-admin
               uri: lb://reservation-service
               predicates:
-                - Path=/api/v1/admin/reservations,/api/v1/admin/reservations/**,/api/v1/admin/occupancy,/api/v1/admin/occupancy/**
+                - Path=/api/v1/admin/reservations,/api/v1/admin/reservations/**,/api/v1/admin/occupancy,/api/v1/admin/occupancy/**,/api/v1/admin/dashboard/reservations,/api/v1/admin/dashboard/reservations/**
 
             - id: reservation-service-availability
               uri: lb://reservation-service
@@ -42,6 +42,11 @@ spring:
               uri: lb://billing-service
               predicates:
                 - Path=/api/billing/**
+
+            - id: billing-service-admin
+              uri: lb://billing-service
+              predicates:
+                - Path=/api/v1/admin/dashboard/billing,/api/v1/admin/dashboard/billing/**
 
             - id: ai-pricing-service
               uri: lb://ai-pricing-service

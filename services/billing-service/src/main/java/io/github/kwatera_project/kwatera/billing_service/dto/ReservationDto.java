@@ -16,6 +16,7 @@ import lombok.Setter;
 public class ReservationDto {
   private UUID id;
   private UUID userId;
+  private String guestEmail;
   private UUID unitId;
   private LocalDate startDate;
   private LocalDate endDate;
@@ -23,4 +24,5 @@ public class ReservationDto {
   private Instant createdAt;
   private BigDecimal pricePerNightSnapshot;
   private BigDecimal totalPrice;
+  private CurrencyMetadataDto currencyInfo;
 }

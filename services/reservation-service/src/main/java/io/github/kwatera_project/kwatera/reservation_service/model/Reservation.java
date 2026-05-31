@@ -27,6 +27,9 @@ public class Reservation {
   @Column(name = "user_id", nullable = false)
   private UUID userId;
 
+  @Column(name = "guest_email")
+  private String guestEmail;
+
   @Column(name = "unit_id", nullable = false)
   private UUID unitId;
 
@@ -55,4 +58,11 @@ public class Reservation {
   @Column(name = "total_price", nullable = false)
   @Positive
   private BigDecimal totalPrice;
+
+  @Column(name = "payment_currency", nullable = false)
+  private String paymentCurrency;
+
+  @Column(name = "payment_exchange_rate", nullable = false)
+  @Positive
+  private BigDecimal paymentExchangeRate;
 }

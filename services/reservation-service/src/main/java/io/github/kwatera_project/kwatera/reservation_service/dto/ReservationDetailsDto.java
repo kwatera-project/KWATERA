@@ -11,6 +11,7 @@ import lombok.Data;
 public class ReservationDetailsDto {
   private UUID id;
   private UUID userId;
+  private String guestEmail;
   private UUID unitId;
   private LocalDate startDate;
   private LocalDate endDate;
@@ -18,4 +19,6 @@ public class ReservationDetailsDto {
   private Instant createdAt;
   private BigDecimal pricePerNightSnapshot;
   private BigDecimal totalPrice;
+  private BigDecimal convertedTotalPrice;
+  private CurrencyMetadataDto currencyInfo;
 }

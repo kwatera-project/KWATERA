@@ -1,18 +1,29 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getMyReservations } from '../api/reservationApi';
+import { getSettlementDetails } from '../api/settlementApi';
 import type {GuestReservation} from '../types/reservation';
 
 export default function MyReservationsPage() {
     const [reservations, setReservations] = useState<GuestReservation[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [settlementIds, setSettlementIds] = useState<Record<string, string>>({});
+
 
     useEffect(() => {
         getMyReservations()
             .then(data => {
                 setReservations(data);
                 setLoading(false);
+                data.forEach(async (res: GuestReservation) => {
+                    try {
+                        const settlement = await getSettlementDetails(res.id);
+                        setSettlementIds(prev => ({ ...prev, [res.id]: settlement.id }));
+                    } catch (err) {
+                        console.error("Failed to load settlement details", err);
+                    }
+                });
             })
             .catch(err => {
                 setError(err.message);
@@ -44,6 +55,11 @@ export default function MyReservationsPage() {
                                 <div className="text-sm text-gray-600">
                                     {res.startDate} to {res.endDate}
                                 </div>
+                                {res.convertedTotalPrice && res.currencyInfo && (
+                                    <div className="text-sm font-semibold mt-2">
+                                        Total Price: {res.convertedTotalPrice.toFixed(2)} {res.currencyInfo.displayCurrency}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="flex flex-col items-end gap-4 w-full md:w-auto">
@@ -63,6 +79,15 @@ export default function MyReservationsPage() {
                                     >
                                         View Bill
                                     </Link>
+                                    {settlementIds[res.id] &&
+                                        (res.status === "CONFIRMED" || res.status === "COMPLETED") && (
+                                            <Link
+                                                to={`/settlements/${settlementIds[res.id]}/meter-readings?unitId=${res.unitId}`}
+                                                className="text-blue-600 hover:underline text-sm"
+                                            >
+                                                Water Meter
+                                            </Link>
+                                        )}
                                     <Link
                                         to={`/reservations/${res.id}`}
                                         className="text-blue-600 hover:underline text-sm"

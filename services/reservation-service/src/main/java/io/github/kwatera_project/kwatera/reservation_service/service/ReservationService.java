@@ -1,11 +1,13 @@
 package io.github.kwatera_project.kwatera.reservation_service.service;
 
+import io.github.kwatera_project.kwatera.reservation_service.client.NbpExchangeRateClient;
 import io.github.kwatera_project.kwatera.reservation_service.dto.*;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
 import io.github.kwatera_project.kwatera.reservation_service.model.SettlementStatus;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -28,6 +30,8 @@ public class ReservationService {
 
   private final ReservationRepository reservationRepository;
   private final RestTemplate restTemplate;
+  private final NbpExchangeRateClient nbpExchangeRateClient;
+  private final EmailNotificationService emailNotificationService;
 
   public AvailabilityDto checkAvailability(UUID unitId, LocalDate from, LocalDate to) {
     if (from == null || to == null) {
@@ -170,6 +174,17 @@ public class ReservationService {
   @Transactional
   public Reservation createReservation(
       UUID userId, CreateReservationRequest request, String token) {
+    return createReservationInternal(userId, null, request, token);
+  }
+
+  @Transactional
+  public Reservation createReservation(
+      UUID userId, String guestEmail, CreateReservationRequest request, String token) {
+    return createReservationInternal(userId, guestEmail, request, token);
+  }
+
+  private Reservation createReservationInternal(
+      UUID userId, String guestEmail, CreateReservationRequest request, String token) {
     if (userId == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User id is required");
     }
@@ -185,6 +200,7 @@ public class ReservationService {
 
     Reservation reservation = new Reservation();
     reservation.setUserId(userId);
+    reservation.setGuestEmail(guestEmail);
     reservation.setUnitId(request.getUnitId());
     reservation.setStartDate(request.getStartDate());
     reservation.setEndDate(request.getEndDate());
@@ -198,7 +214,37 @@ public class ReservationService {
     reservation.setPricePerNightSnapshot(pricePerNight);
     reservation.setTotalPrice(totalPrice);
 
-    return reservationRepository.save(reservation);
+    String paymentCurrency = "PLN";
+    BigDecimal paymentExchangeRate = BigDecimal.ONE;
+
+    if (request.getCurrency() != null && !"PLN".equalsIgnoreCase(request.getCurrency())) {
+      String requestedCurrency = request.getCurrency().toUpperCase(java.util.Locale.ROOT);
+
+      try {
+        NbpResponseDto nbpResponse =
+            switch (requestedCurrency) {
+              case "EUR" -> nbpExchangeRateClient.getEurExchangeRate();
+              case "USD" -> nbpExchangeRateClient.getUsdExchangeRate();
+              default ->
+                  throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported currency");
+            };
+
+        if (nbpResponse != null && nbpResponse.rates() != null && !nbpResponse.rates().isEmpty()) {
+          paymentCurrency = requestedCurrency;
+          paymentExchangeRate = nbpResponse.rates().get(0).mid();
+        }
+      } catch (ResponseStatusException e) {
+        throw e;
+      } catch (Exception e) {
+        log.warn("Failed to fetch exchange rate from NBP; falling back to PLN");
+      }
+    }
+    reservation.setPaymentCurrency(paymentCurrency);
+    reservation.setPaymentExchangeRate(paymentExchangeRate);
+
+    Reservation saved = reservationRepository.save(reservation);
+    emailNotificationService.sendReservationCreated(saved, saved.getGuestEmail());
+    return saved;
   }
 
   public ReservationDetailsDto getReservationDetails(
@@ -219,6 +265,7 @@ public class ReservationService {
     ReservationDetailsDto dto = new ReservationDetailsDto();
     dto.setId(reservation.getId());
     dto.setUserId(reservation.getUserId());
+    dto.setGuestEmail(reservation.getGuestEmail());
     dto.setUnitId(reservation.getUnitId());
     dto.setStartDate(reservation.getStartDate());
     dto.setEndDate(reservation.getEndDate());
@@ -226,15 +273,53 @@ public class ReservationService {
     dto.setCreatedAt(reservation.getCreatedAt());
     dto.setPricePerNightSnapshot(reservation.getPricePerNightSnapshot());
     dto.setTotalPrice(reservation.getTotalPrice());
+
+    CurrencyMetadataDto currencyInfo =
+        new CurrencyMetadataDto(
+            "PLN",
+            reservation.getPaymentCurrency(),
+            reservation.getPaymentExchangeRate(),
+            reservation.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
+    BigDecimal convertedTotalPrice = reservation.getTotalPrice();
+
+    if (!"PLN".equalsIgnoreCase(reservation.getPaymentCurrency())) {
+      convertedTotalPrice =
+          convertedTotalPrice.divide(reservation.getPaymentExchangeRate(), 2, RoundingMode.HALF_UP);
+    }
+
+    dto.setConvertedTotalPrice(convertedTotalPrice);
+    dto.setCurrencyInfo(currencyInfo);
+
     return dto;
   }
 
   public List<GuestReservationDto> getMyReservations(UUID userId) {
     return reservationRepository.findByUserId(userId).stream()
         .map(
-            r ->
-                new GuestReservationDto(
-                    r.getId(), r.getUnitId(), r.getStartDate(), r.getEndDate(), r.getStatus()))
+            r -> {
+              CurrencyMetadataDto currencyInfo =
+                  new CurrencyMetadataDto(
+                      "PLN",
+                      r.getPaymentCurrency(),
+                      r.getPaymentExchangeRate(),
+                      r.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
+              BigDecimal convertedTotalPrice = r.getTotalPrice();
+
+              if (!"PLN".equalsIgnoreCase(r.getPaymentCurrency())) {
+                convertedTotalPrice =
+                    convertedTotalPrice.divide(r.getPaymentExchangeRate(), 2, RoundingMode.HALF_UP);
+              }
+
+              return new GuestReservationDto(
+                  r.getId(),
+                  r.getUnitId(),
+                  r.getStartDate(),
+                  r.getEndDate(),
+                  r.getStatus(),
+                  r.getTotalPrice(),
+                  convertedTotalPrice,
+                  currencyInfo);
+            })
         .toList();
   }
 
@@ -258,6 +343,7 @@ public class ReservationService {
         reservationRepository
             .findById(reservationId)
             .orElseThrow(() -> new RuntimeException("Reservation not found"));
+    ReservationStatus oldStatus = reservation.getStatus();
 
     switch (settlementStatus) {
       case PAID -> reservation.setStatus(ReservationStatus.COMPLETED);
@@ -274,5 +360,67 @@ public class ReservationService {
     }
 
     reservationRepository.save(reservation);
+    emailNotificationService.sendReservationStatusChanged(
+        reservation, oldStatus, reservation.getStatus(), reservation.getGuestEmail());
+  }
+
+  public ReservationMetricsDto getDashboardReservationMetrics(
+      LocalDate startDate, LocalDate endDate, UUID ownerId, boolean isAdmin) {
+
+    LocalDate start = (startDate != null) ? startDate : LocalDate.now().withDayOfMonth(1);
+    LocalDate end =
+        (endDate != null)
+            ? endDate
+            : LocalDate.now().with(java.time.temporal.TemporalAdjusters.lastDayOfMonth());
+
+    if (start.isAfter(end)) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Start date must be before or equal to end date");
+    }
+
+    List<UUID> allUnitIds = fetchAllRelevantUnitIds(ownerId, isAdmin);
+    if (allUnitIds.isEmpty()) {
+      return new ReservationMetricsDto(0L, 0.0, 0L);
+    }
+
+    long totalReservations =
+        isAdmin
+            ? reservationRepository.countReservationsInDateRange(start, end)
+            : reservationRepository.countReservationsInDateRangeForUnits(allUnitIds, start, end);
+
+    List<Reservation> reservations =
+        isAdmin
+            ? reservationRepository.findActiveReservationsInDateRange(start, end)
+            : reservationRepository.findActiveReservationsInDateRangeForUnits(
+                allUnitIds, start, end);
+
+    long totalDaysInRange = java.time.temporal.ChronoUnit.DAYS.between(start, end);
+    if (totalDaysInRange <= 0) {
+      totalDaysInRange = 1;
+    }
+
+    long totalAvailableNights = allUnitIds.size() * totalDaysInRange;
+
+    long occupiedNights = 0;
+    for (Reservation r : reservations) {
+      LocalDate overlapStart = r.getStartDate().isBefore(start) ? start : r.getStartDate();
+      LocalDate overlapEnd = r.getEndDate().isAfter(end) ? end : r.getEndDate();
+
+      if (overlapStart.isBefore(overlapEnd)) {
+        occupiedNights += java.time.temporal.ChronoUnit.DAYS.between(overlapStart, overlapEnd);
+      }
+    }
+
+    double occupancyRate = 0.0;
+    if (totalAvailableNights > 0) {
+      occupancyRate = ((double) occupiedNights / totalAvailableNights) * 100.0;
+      occupancyRate = Math.round(occupancyRate * 100.0) / 100.0;
+    }
+
+    if (occupancyRate > 100.0) {
+      occupancyRate = 100.0;
+    }
+
+    return new ReservationMetricsDto(totalReservations, occupancyRate, occupiedNights);
   }
 }

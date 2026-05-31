@@ -46,6 +46,12 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
+      SPRING_MAIL_HOST: mailpit
+      SPRING_MAIL_PORT: 1025
+      SPRING_MAIL_USERNAME: ""
+      SPRING_MAIL_PASSWORD: ""
+      KWATERA_MAIL_FROM: no-reply@kwatera.local
+      KWATERA_MAIL_TEST_RECIPIENT: guest@kwatera.local
     depends_on:
       config-server:
         condition: service_healthy
@@ -168,6 +174,12 @@ services:
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
       JWT_SECRET: ${JWT_SECRET}
+      SPRING_MAIL_HOST: mailpit
+      SPRING_MAIL_PORT: 1025
+      SPRING_MAIL_USERNAME: ""
+      SPRING_MAIL_PASSWORD: ""
+      KWATERA_MAIL_FROM: no-reply@kwatera.local
+      KWATERA_MAIL_TEST_RECIPIENT: guest@kwatera.local
     depends_on:
       postgres:
         condition: service_started
@@ -220,6 +232,13 @@ services:
       - "POSTGRES_USER=${POSTGRES_USER}"
     ports:
       - "5433:5432"
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: kwatera-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
 
   kafka:
     image: apache/kafka:latest

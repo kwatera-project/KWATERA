@@ -115,6 +115,32 @@ JaCoCo coverage reports are generated locally during `verify` and can be opened 
 #### Frontend
 - Vite dev server for React [http://localhost:5173](http://localhost:5173)
 
+#### Local email testing
+- Mailpit UI: [http://localhost:8025](http://localhost:8025)
+- Mailpit SMTP: `localhost:1025`
+
+Reservation and billing services send development email notifications through Mailpit. Docker Compose
+sets `SPRING_MAIL_HOST=mailpit`, `SPRING_MAIL_PORT=1025`, empty SMTP credentials, and
+`KWATERA_MAIL_FROM=no-reply@kwatera.local`.
+
+To verify emails locally:
+
+```bash
+docker compose -f infra/compose/docker-compose.yml up --build
+```
+
+Open http://localhost:8025, then trigger one of the supported business events. The generated e-mail is sent to the event recipient and should appear in the Mailpit inbox.
+
+| Event                               | Service               | Recipient source                                                         | Mail subject                 |
+| ----------------------------------- | --------------------- | ------------------------------------------------------------------------ | ---------------------------- |
+| Reservation created                 | `reservation-service` | Authenticated guest e-mail stored as `Reservation.guestEmail`            | `Reservation created`        |
+| Reservation status changed          | `reservation-service` | `Reservation.guestEmail`                                                 | `Reservation status changed` |
+| Settlement created / issued         | `billing-service`     | Guest e-mail resolved from reservation data                              | `Settlement issued`          |
+| Payment / settlement status changed | `billing-service`     | `recipientEmail` propagated through Stripe metadata and webhook handling | `Payment status changed`     |
+
+`KWATERA_MAIL_TEST_RECIPIENT` (`guest@kwatera.local` by default) is only a development fallback for flows where no recipient e-mail is available. Fallback usage is logged as a warning.
+
+
 #### Auth / local testing
 
 Current authentication endpoints:

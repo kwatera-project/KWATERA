@@ -14,11 +14,15 @@ import io.github.kwatera_project.kwatera.billing_service.repository.SettlementIt
 import io.github.kwatera_project.kwatera.billing_service.repository.SettlementRepository;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -27,11 +31,13 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class SettlementService {
 
+  private static final Logger log = LoggerFactory.getLogger(SettlementService.class);
+
   private final SettlementRepository settlementRepository;
   private final SettlementItemRepository settlementItemRepository;
   private final SettlementEventPublisher settlementEventPublisher;
-
   private final PropertyClient propertyClient;
+  private final EmailNotificationService emailNotificationService;
 
   private static final String SETTLEMENT_NOT_FOUND = "Settlement not found";
 
@@ -43,6 +49,18 @@ public class SettlementService {
       String description,
       BigDecimal quantity,
       BigDecimal unitPrice) {
+    registerPayment(settlementId, unitId, type, description, quantity, unitPrice, null);
+  }
+
+  @Transactional
+  public void registerPayment(
+      UUID settlementId,
+      UUID unitId,
+      SettlementItemType type,
+      String description,
+      BigDecimal quantity,
+      BigDecimal unitPrice,
+      String recipientEmail) {
     Settlement settlement =
         settlementRepository
             .findById(settlementId)
@@ -58,7 +76,7 @@ public class SettlementService {
     settlement.setAmountPaid(newPaid);
 
     recalculateTotals(settlement);
-    recalculateSettlementStatus(settlement, unitId);
+    recalculateSettlementStatus(settlement, unitId, recipientEmail);
 
     if (newPaid.compareTo(settlement.getTotalAmount()) > 0) {
       throw new IllegalStateException("Payment exceeds settlement total");
@@ -80,6 +98,10 @@ public class SettlementService {
       throw new IllegalArgumentException(
           "Only water and electricity utility charges are supported");
     }
+    if (settlementItemRepository.findBySettlementIdAndType(settlementId, type).isPresent()) {
+      throw new IllegalStateException(
+          "Utility charge already exists for settlementId: " + settlementId + " and type: " + type);
+    }
 
     Settlement settlement =
         settlementRepository
@@ -91,7 +113,7 @@ public class SettlementService {
 
     applyItemToSettlement(settlement, item);
     recalculateTotals(settlement);
-    recalculateSettlementStatus(settlement, unitId);
+    recalculateSettlementStatus(settlement, unitId, null);
 
     settlementRepository.save(settlement);
 
@@ -129,7 +151,8 @@ public class SettlementService {
     return hasAdditionalCharges ? ISSUED : PARTIALLY_PAID;
   }
 
-  private void recalculateSettlementStatus(Settlement settlement, UUID unitId) {
+  private void recalculateSettlementStatus(
+      Settlement settlement, UUID unitId, String recipientEmail) {
 
     BigDecimal balance = settlement.getTotalAmount().subtract(settlement.getAmountPaid());
 
@@ -152,6 +175,8 @@ public class SettlementService {
     if (previous != newStatus) {
       settlementEventPublisher.publishSettlementStatusChanged(
           new SettlementStatusChangedEvent(settlement.getReservationId(), newStatus));
+      emailNotificationService.sendPaymentStatusChanged(
+          settlement, previous, newStatus, recipientEmail);
     }
   }
 
@@ -177,12 +202,27 @@ public class SettlementService {
 
   @Transactional
   public Settlement createSettlement(UUID reservationId, BigDecimal accommodationAmount) {
-    return createSettlement(reservationId, accommodationAmount, BigDecimal.ZERO);
+    return createSettlement(reservationId, accommodationAmount, BigDecimal.ZERO, null);
+  }
+
+  @Transactional
+  public Settlement createSettlement(
+      UUID reservationId, BigDecimal accommodationAmount, String recipientEmail) {
+    return createSettlement(reservationId, accommodationAmount, BigDecimal.ZERO, recipientEmail);
   }
 
   @Transactional
   public Settlement createSettlement(
       UUID reservationId, BigDecimal accommodationAmount, BigDecimal depositAmount) {
+    return createSettlement(reservationId, accommodationAmount, depositAmount, null);
+  }
+
+  @Transactional
+  public Settlement createSettlement(
+      UUID reservationId,
+      BigDecimal accommodationAmount,
+      BigDecimal depositAmount,
+      String recipientEmail) {
     Settlement settlement = new Settlement();
 
     settlement.setReservationId(reservationId);
@@ -198,7 +238,9 @@ public class SettlementService {
 
     recalculateTotals(settlement);
 
-    return settlementRepository.save(settlement);
+    Settlement saved = settlementRepository.save(settlement);
+    emailNotificationService.sendSettlementCreated(saved, recipientEmail);
+    return saved;
   }
 
   private void recalculateTotals(Settlement settlement) {
@@ -229,30 +271,83 @@ public class SettlementService {
     settlement.setDiscountAmount(discountAmount);
 
     recalculateTotals(settlement);
-    recalculateSettlementStatus(settlement, unitId);
+    recalculateSettlementStatus(settlement, unitId, null);
 
     settlementRepository.save(settlement);
   }
 
-  public SettlementResponseDto getSettlementWithItems(UUID reservationId) {
+  public SettlementResponseDto getSettlementWithItems(ReservationDto reservation) {
 
     Settlement settlement =
         settlementRepository
-            .findByReservationId(reservationId)
+            .findByReservationId(reservation.getId())
             .orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, SETTLEMENT_NOT_FOUND));
 
     List<SettlementItem> items = settlementItemRepository.findBySettlementId(settlement.getId());
 
-    return new SettlementResponseDto(SettlementDto.from(settlement), items);
+    String rCurrency =
+        (reservation.getCurrencyInfo() != null
+                && reservation.getCurrencyInfo().displayCurrency() != null)
+            ? reservation.getCurrencyInfo().displayCurrency()
+            : "PLN";
+    BigDecimal rRate =
+        (reservation.getCurrencyInfo() != null
+                && reservation.getCurrencyInfo().exchangeRate() != null)
+            ? reservation.getCurrencyInfo().exchangeRate()
+            : BigDecimal.ONE;
+
+    CurrencyMetadataDto currencyInfo =
+        new CurrencyMetadataDto("PLN", rCurrency, rRate, LocalDate.now());
+
+    BigDecimal convertedTotalAmount = settlement.getTotalAmount();
+    BigDecimal convertedAmountPaid = settlement.getAmountPaid();
+    BigDecimal convertedBalanceDue = settlement.getBalanceDue();
+    BigDecimal convertedAccommodationAmount = settlement.getAccommodationAmount();
+    BigDecimal convertedUtilitiesAmount = settlement.getUtilitiesAmount();
+    BigDecimal convertedDepositAmount = settlement.getDepositAmount();
+
+    if (!"PLN".equalsIgnoreCase(rCurrency)) {
+      if (convertedTotalAmount != null) {
+        convertedTotalAmount = convertedTotalAmount.divide(rRate, 2, RoundingMode.HALF_UP);
+      }
+      if (convertedAmountPaid != null) {
+        convertedAmountPaid = convertedAmountPaid.divide(rRate, 2, RoundingMode.HALF_UP);
+      }
+      if (convertedBalanceDue != null) {
+        convertedBalanceDue = convertedBalanceDue.divide(rRate, 2, RoundingMode.HALF_UP);
+      }
+      if (convertedAccommodationAmount != null) {
+        convertedAccommodationAmount =
+            convertedAccommodationAmount.divide(rRate, 2, RoundingMode.HALF_UP);
+      }
+      if (convertedUtilitiesAmount != null) {
+        convertedUtilitiesAmount = convertedUtilitiesAmount.divide(rRate, 2, RoundingMode.HALF_UP);
+      }
+      if (convertedDepositAmount != null) {
+        convertedDepositAmount = convertedDepositAmount.divide(rRate, 2, RoundingMode.HALF_UP);
+      }
+    }
+
+    SettlementDto dto =
+        SettlementDto.from(
+            settlement,
+            convertedTotalAmount,
+            convertedAmountPaid,
+            convertedBalanceDue,
+            convertedAccommodationAmount,
+            convertedUtilitiesAmount,
+            convertedDepositAmount,
+            currencyInfo);
+    return new SettlementResponseDto(dto, items);
   }
 
   public SettlementItemDto getSettlementItemInfoByType(
-      UUID reservationId, SettlementItemType settlementItemType) {
+      ReservationDto reservation, SettlementItemType settlementItemType) {
 
     Settlement settlement =
         settlementRepository
-            .findByReservationId(reservationId)
+            .findByReservationId(reservation.getId())
             .orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, SETTLEMENT_NOT_FOUND));
 
@@ -263,7 +358,28 @@ public class SettlementService {
                 () ->
                     new ResponseStatusException(HttpStatus.NOT_FOUND, "Settlement item not found"));
 
-    return SettlementItemDto.from(item);
+    String rCurrency =
+        (reservation.getCurrencyInfo() != null
+                && reservation.getCurrencyInfo().displayCurrency() != null)
+            ? reservation.getCurrencyInfo().displayCurrency()
+            : "PLN";
+    BigDecimal rRate =
+        (reservation.getCurrencyInfo() != null
+                && reservation.getCurrencyInfo().exchangeRate() != null)
+            ? reservation.getCurrencyInfo().exchangeRate()
+            : BigDecimal.ONE;
+
+    CurrencyMetadataDto currencyInfo =
+        new CurrencyMetadataDto("PLN", rCurrency, rRate, LocalDate.now());
+    BigDecimal convertedAmount = item.getAmount();
+
+    if (!"PLN".equalsIgnoreCase(rCurrency)) {
+      if (convertedAmount != null) {
+        convertedAmount = convertedAmount.divide(rRate, 2, RoundingMode.HALF_UP);
+      }
+    }
+
+    return SettlementItemDto.from(item, convertedAmount, currencyInfo);
   }
 
   private boolean hasAllRequiredItems(Settlement settlement, UUID unitId) {

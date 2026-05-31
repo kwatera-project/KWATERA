@@ -60,7 +60,7 @@ class ReservationControllerTest {
             + "\", \"startDate\":\"2026-10-10\", \"endDate\":\"2026-10-15\"}";
 
     when(reservationService.createReservation(
-            eq(userId), any(CreateReservationRequest.class), anyString()))
+            eq(userId), eq("user@test.com"), any(CreateReservationRequest.class), anyString()))
         .thenReturn(new Reservation());
 
     mockMvc
@@ -73,7 +73,8 @@ class ReservationControllerTest {
         .andExpect(status().isCreated());
 
     verify(reservationService)
-        .createReservation(eq(userId), any(CreateReservationRequest.class), anyString());
+        .createReservation(
+            eq(userId), eq("user@test.com"), any(CreateReservationRequest.class), anyString());
   }
 
   @Test
@@ -243,14 +244,14 @@ class ReservationControllerTest {
   void shouldGetMyReservations_whenUserIsGuest() throws Exception {
     UUID guestId = UUID.randomUUID();
 
-    when(reservationService.getMyReservations(guestId)).thenReturn(List.of());
+    when(reservationService.getMyReservations(eq(guestId))).thenReturn(List.of());
 
     mockMvc
         .perform(
             get("/api/v1/reservations/my").with(authentication(buildAuth(guestId, "ROLE_GUEST"))))
         .andExpect(status().isOk());
 
-    verify(reservationService).getMyReservations(guestId);
+    verify(reservationService).getMyReservations(eq(guestId));
   }
 
   @Test
