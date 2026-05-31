@@ -66,9 +66,15 @@ export default function ReservationDetailsPage() {
                     )}
                 </div>
 
-                <div className="mt-8 pt-4 border-t">
+                <div className="mt-8 pt-4 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <Link to="/admin/reservations" className="text-blue-500 hover:text-blue-700 hover:underline">
                         &larr; Return to reservations
+                    </Link>
+                    <Link
+                        to={`/settlements/${reservation.id}`}
+                        className="inline-flex items-center justify-center px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow transition duration-150 ease-in-out"
+                    >
+                        View Bill
                     </Link>
                 </div>
             </div>

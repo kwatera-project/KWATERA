@@ -7,15 +7,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.kwatera_project.kwatera.billing_service.dto.CheckoutRequest;
+import io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto;
 import io.github.kwatera_project.kwatera.billing_service.service.PaymentService;
+import io.github.kwatera_project.kwatera.billing_service.service.StripeService;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -27,11 +34,25 @@ class BillingControllerTest {
 
   @MockitoBean private PaymentService paymentService;
 
+  @MockitoBean private StripeService stripeService;
+
   @Autowired private ObjectMapper objectMapper;
+
+  @AfterEach
+  void tearDown() {
+    SecurityContextHolder.clearContext();
+  }
 
   @Test
   void shouldCreateCheckout() throws Exception {
     UUID reservationId = UUID.randomUUID();
+    UUID guestId = UUID.randomUUID();
+
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setUserId(guestId);
+
+    when(stripeService.getReservation(reservationId, "Bearer token")).thenReturn(reservationDto);
 
     CheckoutRequest request = new CheckoutRequest();
     request.setType(ACCOMMODATION);
@@ -48,6 +69,12 @@ class BillingControllerTest {
             any(BigDecimal.class)))
         .thenReturn("https://stripe.checkout/session");
 
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(
+            "guest", null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+    auth.setDetails(guestId.toString());
+    SecurityContextHolder.getContext().setAuthentication(auth);
+
     mockMvc
         .perform(
             post("/api/billing/checkout/" + reservationId)
@@ -59,12 +86,77 @@ class BillingControllerTest {
   }
 
   @Test
-  void shouldReturnSettlement() throws Exception {
+  void shouldReturnSettlementWhenOwner() throws Exception {
     UUID reservationId = UUID.randomUUID();
+    UUID guestId = UUID.randomUUID();
+
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setUserId(guestId);
+
+    when(stripeService.getReservation(reservationId, "Bearer token")).thenReturn(reservationDto);
 
     SettlementResponseDto dto = mock(SettlementResponseDto.class);
 
     when(paymentService.getSettlementWithItems(reservationId, "Bearer token")).thenReturn(dto);
+
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(
+            "guest", null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+    auth.setDetails(guestId.toString());
+    SecurityContextHolder.getContext().setAuthentication(auth);
+
+    mockMvc
+        .perform(
+            get("/api/billing/settlements/" + reservationId)
+                .header("Authorization", "Bearer token"))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  void shouldReturnForbiddenWhenNotOwner() throws Exception {
+    UUID reservationId = UUID.randomUUID();
+    UUID guestId = UUID.randomUUID();
+    UUID otherGuestId = UUID.randomUUID();
+
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setUserId(guestId);
+
+    when(stripeService.getReservation(reservationId, "Bearer token")).thenReturn(reservationDto);
+
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(
+            "guest", null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+    auth.setDetails(otherGuestId.toString());
+    SecurityContextHolder.getContext().setAuthentication(auth);
+
+    mockMvc
+        .perform(
+            get("/api/billing/settlements/" + reservationId)
+                .header("Authorization", "Bearer token"))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void shouldReturnSettlementWhenAdmin() throws Exception {
+    UUID reservationId = UUID.randomUUID();
+    UUID guestId = UUID.randomUUID();
+
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setUserId(guestId);
+
+    when(stripeService.getReservation(reservationId, "Bearer token")).thenReturn(reservationDto);
+
+    SettlementResponseDto dto = mock(SettlementResponseDto.class);
+
+    when(paymentService.getSettlementWithItems(reservationId, "Bearer token")).thenReturn(dto);
+
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(
+            "admin", null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+    SecurityContextHolder.getContext().setAuthentication(auth);
 
     mockMvc
         .perform(

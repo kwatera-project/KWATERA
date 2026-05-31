@@ -2,15 +2,21 @@ package io.github.kwatera_project.kwatera.billing_service.controller;
 
 import com.stripe.exception.StripeException;
 import io.github.kwatera_project.kwatera.billing_service.dto.CheckoutRequest;
+import io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementItemDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto;
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
 import io.github.kwatera_project.kwatera.billing_service.service.PaymentService;
+import io.github.kwatera_project.kwatera.billing_service.service.StripeService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/billing")
@@ -18,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 public class BillingController {
 
   private final PaymentService paymentService;
+  private final StripeService stripeService;
 
   private static final String AUTHORIZATION_HEADER = "Authorization";
 
@@ -29,6 +36,9 @@ public class BillingController {
       throws StripeException {
 
     String token = request.getHeader(AUTHORIZATION_HEADER);
+
+    ReservationDto reservation = stripeService.getReservation(reservationId, token);
+    authorizeAccess(reservation);
 
     String checkoutUrl =
         paymentService.createCheckoutSession(
@@ -47,6 +57,9 @@ public class BillingController {
       @PathVariable("reservationId") UUID reservationId, HttpServletRequest request) {
     String token = request.getHeader(AUTHORIZATION_HEADER);
 
+    ReservationDto reservation = stripeService.getReservation(reservationId, token);
+    authorizeAccess(reservation);
+
     SettlementResponseDto response = paymentService.getSettlementWithItems(reservationId, token);
 
     return ResponseEntity.ok(response);
@@ -59,9 +72,38 @@ public class BillingController {
       HttpServletRequest request) {
     String token = request.getHeader(AUTHORIZATION_HEADER);
 
+    ReservationDto reservation = stripeService.getReservation(reservationId, token);
+    authorizeAccess(reservation);
+
     SettlementItemDto response =
         paymentService.getSettlementItemInfoByType(reservationId, settlementItemType, token);
 
     return ResponseEntity.ok(response);
+  }
+
+  private void authorizeAccess(ReservationDto reservation) {
+    if (reservation == null) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Reservation not found");
+    }
+
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+    }
+
+    boolean isAdmin =
+        authentication.getAuthorities().stream()
+            .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+
+    if (isAdmin) {
+      return;
+    }
+
+    String loggedInUserId = (String) authentication.getDetails();
+    if (loggedInUserId == null
+        || reservation.getUserId() == null
+        || !reservation.getUserId().toString().equals(loggedInUserId)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+    }
   }
 }
