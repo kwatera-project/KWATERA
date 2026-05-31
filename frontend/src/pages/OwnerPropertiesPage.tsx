@@ -23,12 +23,9 @@ export default function OwnerPropertiesPage() {
                     My Properties
                 </h1>
 
-                <Link
-                    to="/owner/properties/new"
-                    className="btn-primary"
-                >
+                <button>
                     Add Property
-                </Link>
+                </button>
             </div>
 
             <div className="space-y-4">

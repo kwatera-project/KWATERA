@@ -7,6 +7,7 @@ import io.github.kwatera_project.kwatera.ai_pricing_service.client.PropertyClien
 import io.github.kwatera_project.kwatera.ai_pricing_service.dto.PropertyDto;
 import io.github.kwatera_project.kwatera.ai_pricing_service.dto.UnitDto;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -57,8 +58,13 @@ public class PredictionModelService {
 
     CatBoostPredictions result = model.predict(numericFeatures, categoricalFeatures);
 
-    double prediction = result.get(0, 0);
+    double logPrediction = result.get(0, 0);
+    double realPrediction = Math.expm1(logPrediction);
 
-    return BigDecimal.valueOf(prediction);
+      if (realPrediction < 0) {
+          realPrediction = 0;
+      }
+
+      return BigDecimal.valueOf(realPrediction).setScale(2, RoundingMode.HALF_UP);
   }
 }

@@ -1,19 +1,19 @@
-import { useParams, Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import {useParams} from "react-router-dom";
+import {useEffect, useState} from "react";
 import {getProperty} from "../api/propertyApi.ts";
 import type {Property, Unit} from "../types/property";
 import {getPropertyUnits} from "../api/ownerUnitApi.ts";
-import { getPredictedPrice } from "../api/predictionApi.ts";
-import { useCurrency } from "../contexts/CurrencyContext";
+import {getPredictedPrice} from "../api/predictionApi.ts";
+import {useCurrency} from "../contexts/CurrencyContext";
 
 export default function OwnerPropertyUnitsPage() {
-    const { propertyId } = useParams();
+    const {propertyId} = useParams();
 
     const [property, setProperty] = useState<Property>();
     const [units, setUnits] = useState<Unit[]>([]);
     const [predictions, setPredictions] = useState<Record<string, number>>({});
 
-    const { currency } = useCurrency();
+    const {currency} = useCurrency();
 
     useEffect(() => {
         if (!propertyId) return;
@@ -62,11 +62,9 @@ export default function OwnerPropertyUnitsPage() {
                     <p>Manage Units</p>
                 </div>
 
-                <Link
-                    to={`/owner/properties/${propertyId}/units/new`}
-                >
+                <button>
                     Add Unit
-                </Link>
+                </button>
             </div>
 
             <div className="space-y-4">
