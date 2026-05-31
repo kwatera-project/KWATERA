@@ -54,7 +54,6 @@ function UnitCard({ unit, propertyId }: { unit: Unit; propertyId: string }) {
     const [loadingPrediction, setLoadingPrediction] = useState(true);
 
     useEffect(() => {
-        setLoadingPrediction(true);
         getPredictedPrice(propertyId, unit.id, undefined)
             .then((price) => {
                 setPredictedPrice(price);

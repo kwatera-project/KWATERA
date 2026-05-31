@@ -28,6 +28,10 @@ public class SecurityConfig {
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    // CSRF protection is disabled because the application is a stateless REST API using Bearer
+    // tokens (JWT).
+    // Tokens are passed via the Authorization header rather than cookies,
+    // which inherently protects against Cross-Site Request Forgery attacks.
     http.csrf(AbstractHttpConfigurer::disable)
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .authorizeHttpRequests(

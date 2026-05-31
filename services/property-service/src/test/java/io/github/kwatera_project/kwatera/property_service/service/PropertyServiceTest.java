@@ -3,6 +3,7 @@ package io.github.kwatera_project.kwatera.property_service.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import io.github.kwatera_project.kwatera.property_service.dto.UnitDto;
 import io.github.kwatera_project.kwatera.property_service.dto.UnitSettlementItemDto;
 import io.github.kwatera_project.kwatera.property_service.model.*;
 import io.github.kwatera_project.kwatera.property_service.repository.*;
@@ -12,6 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 class PropertyServiceTest {
@@ -327,5 +329,68 @@ class PropertyServiceTest {
 
     assertEquals(org.springframework.http.HttpStatus.BAD_REQUEST, ex.getStatusCode());
     assertEquals("Unsupported currency", ex.getReason());
+  }
+
+  @Test
+  void getUnitsForOwnerProperty_ShouldReturnUnits_WhenOwnerMatches() {
+    // Given
+    UUID ownerId = UUID.randomUUID();
+    UUID propertyId = UUID.randomUUID();
+
+    Property property = new Property();
+    property.setId(propertyId);
+    property.setOwnerId(ownerId);
+
+    Unit unit = new Unit();
+    unit.setId(UUID.randomUUID());
+    unit.setPricePerNight(new BigDecimal("400.00"));
+
+    when(propertyRepository.findById(propertyId)).thenReturn(Optional.of(property));
+    when(unitRepository.findByPropertyId(propertyId)).thenReturn(List.of(unit));
+    when(unitImageRepository.findByUnitIdAndIsMainTrue(any())).thenReturn(Optional.empty());
+
+    // When
+    List<UnitDto> result = propertyService.getUnitsForOwnerProperty(ownerId, propertyId, "PLN");
+
+    // Then
+    assertNotNull(result);
+    assertEquals(1, result.size());
+    verify(unitRepository).findByPropertyId(propertyId);
+  }
+
+  @Test
+  void getUnitsForOwnerProperty_ShouldThrowForbidden_WhenOwnerDoesNotMatch() {
+    // Given
+    UUID realOwnerId = UUID.randomUUID();
+    UUID wrongOwnerId = UUID.randomUUID();
+    UUID propertyId = UUID.randomUUID();
+
+    Property property = new Property();
+    property.setId(propertyId);
+    property.setOwnerId(realOwnerId);
+
+    when(propertyRepository.findById(propertyId)).thenReturn(Optional.of(property));
+
+    // When & Then
+    ResponseStatusException exception =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> propertyService.getUnitsForOwnerProperty(wrongOwnerId, propertyId, "PLN"));
+    assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
+    assertEquals("Access denied", exception.getReason());
+  }
+
+  @Test
+  void getUnitsForOwnerProperty_ShouldThrowNotFound_WhenPropertyDoesNotExist() {
+    // Given
+    UUID propertyId = UUID.randomUUID();
+    when(propertyRepository.findById(propertyId)).thenReturn(Optional.empty());
+
+    // When & Then
+    ResponseStatusException exception =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> propertyService.getUnitsForOwnerProperty(UUID.randomUUID(), propertyId, "PLN"));
+    assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
   }
 }

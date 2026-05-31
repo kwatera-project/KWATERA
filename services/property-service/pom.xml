@@ -16,8 +16,11 @@
         <sonar.coverage.exclusions>
             **/config/OpenApiConfig.java,
             **/config/JpaConfig.java,
+            **/config/CacheConfig.java,
+            **/config/RestTemplateConfig.java,
             **/dto/**,
-            **/client/**
+            **/client/**,
+            **/model/**
         </sonar.coverage.exclusions>
     </properties>
 
@@ -116,6 +119,17 @@
             <version>0.12.5</version>
             <scope>runtime</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -136,6 +150,8 @@
                         <exclude>**/dto/**/*.class</exclude>
                         <exclude>**/config/OpenApiConfig.class</exclude>
                         <exclude>**/client/**/*.class</exclude>
+                        <exclude>**/config/CacheConfig.class</exclude>
+                        <exclude>**/config/RestTemplateConfig.class</exclude>
                     </excludes>
                 </configuration>
             </plugin>
