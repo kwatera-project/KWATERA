@@ -15,23 +15,25 @@ import SettlementDetailsPage from "./pages/SettlementDetailsPage";
 import OccupancyCalendarPage from "./pages/OccupancyCalendarPage";
 import ProfilePage from "./pages/ProfilePage";
 import DashboardPage from "./pages/DashboardPage";
-import { CurrencyProvider } from "./contexts/CurrencyContext";
+import {CurrencyProvider} from "./contexts/CurrencyContext";
 import MeterReadingsPage from "./pages/MeterReadingsPage";
 import AdminMeterReadingsPage from "./pages/AdminMeterReadingsPage";
+import OwnerPropertiesPage from "./pages/OwnerPropertiesPage.tsx";
+import OwnerPropertyUnitsPage from "./pages/OwnerPropertyUnitsPage.tsx";
 
 function App() {
     return (
         <CurrencyProvider>
             <Navbar/>
             <Routes>
-                <Route path="/" element={<HomePage />} />
+                <Route path="/" element={<HomePage/>}/>
                 <Route path="/register" element={<RegisterForm/>}/>
                 <Route path="/login" element={<LoginForm/>}/>
                 <Route
                     path="/admin/dashboard"
                     element={
                         <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
-                            <DashboardPage />
+                            <DashboardPage/>
                         </ProtectedRoute>
                     }
                 />
@@ -39,7 +41,7 @@ function App() {
                     path="/admin/reservations"
                     element={
                         <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
-                            <AdminReservationList />
+                            <AdminReservationList/>
                         </ProtectedRoute>
                     }
                 />
@@ -47,7 +49,7 @@ function App() {
                     path="/admin/occupancy"
                     element={
                         <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
-                            <OccupancyCalendarPage />
+                            <OccupancyCalendarPage/>
                         </ProtectedRoute>
                     }
                 />
@@ -55,7 +57,7 @@ function App() {
                     path="/my-reservations"
                     element={
                         <ProtectedRoute allowedRoles={['ROLE_GUEST']}>
-                            <MyReservationsPage />
+                            <MyReservationsPage/>
                         </ProtectedRoute>
                     }
                 />
@@ -63,7 +65,7 @@ function App() {
                     path="/reservations/:id"
                     element={
                         <ProtectedRoute allowedRoles={[]}>
-                            <ReservationDetailsPage />
+                            <ReservationDetailsPage/>
                         </ProtectedRoute>
                     }
                 />
@@ -71,18 +73,18 @@ function App() {
                     path="/profile"
                     element={
                         <ProtectedRoute>
-                            <ProfilePage />
+                            <ProfilePage/>
                         </ProtectedRoute>
                     }
                 />
-                <Route path="/catalog" element={<PropertiesPage />} />
-                <Route path="/property/:id" element={<PropertyDetailsPage />} />
-                <Route path="/payment-cancel" element={<PaymentCancelPage />} />
+                <Route path="/catalog" element={<PropertiesPage/>}/>
+                <Route path="/property/:id" element={<PropertyDetailsPage/>}/>
+                <Route path="/payment-cancel" element={<PaymentCancelPage/>}/>
                 <Route
                     path="/settlements/:id"
                     element={
                         <ProtectedRoute allowedRoles={[]}>
-                            <SettlementDetailsPage />
+                            <SettlementDetailsPage/>
                         </ProtectedRoute>
                     }
                 />
@@ -90,7 +92,7 @@ function App() {
                     path="/settlements/:settlementId/meter-readings"
                     element={
                         <ProtectedRoute allowedRoles={['ROLE_GUEST']}>
-                            <MeterReadingsPage />
+                            <MeterReadingsPage/>
                         </ProtectedRoute>
                     }
                 />
@@ -98,7 +100,23 @@ function App() {
                     path="/admin/settlements/:settlementId/meter-readings"
                     element={
                         <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
-                            <AdminMeterReadingsPage />
+                            <AdminMeterReadingsPage/>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/owner/properties"
+                    element={
+                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                            <OwnerPropertiesPage/>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/owner/properties/:propertyId/units"
+                    element={
+                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                            <OwnerPropertyUnitsPage/>
                         </ProtectedRoute>
                     }
                 />

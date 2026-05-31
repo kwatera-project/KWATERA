@@ -35,6 +35,9 @@
 # OCR service.
 /services/ocr-service/ @ZuzannaAdamczyk @lukaszjecek
 
+# AI pricing and recommendation service.
+/services/ai-pricing-service/ @sinadzeya @lukaszjecek
+
 # Frontend.
 /frontend/ @ZuzannaAdamczyk @alicjaswiers @sinadzeya @lukaszjecek
 

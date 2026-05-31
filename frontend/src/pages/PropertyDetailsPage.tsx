@@ -237,7 +237,7 @@ export default function PropertyDetailsPage() {
             </div>
 
             <h1 className="text-3xl font-bold mt-4 text-[#1A1A1A]">{property.title}</h1>
-            <p className="text-[#7A7A7A]">{property.location}</p>
+            <p className="text-[#7A7A7A]">{property.city}</p>
 
             <div className="bg-[#F7F7F7] border border-[#DACDCA] rounded-xl p-6 mt-6 flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="max-w-xs text-center md:text-left">
