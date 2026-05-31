@@ -1,7 +1,7 @@
 import {useEffect, useState, useCallback} from "react";
 import {useParams, Link} from "react-router-dom";
 import {getSettlementDetails} from "../api/settlementApi";
-import type {SettlementDetails} from "../types/settlement";
+import type {SettlementDetails, SettlementItemDetails} from "../types/settlement";
 import {GATEWAY_BASE_URL} from "../api/apiConfig.ts";
 import {getReservationDetails} from "../api/reservationApi.ts";
 
@@ -265,8 +265,8 @@ export default function SettlementDetailsPage() {
                                     <div className="mt-2 pl-4 border-l-2 border-gray-200">
                                         <ul className="space-y-1">
                                             {settlement.items
-                                                .filter((item: any) => ["ELECTRICITY", "WATER", "CLEANING_FEE"].includes(item.type))
-                                                .map((item: any) => {
+                                                .filter((item: SettlementItemDetails) => ["ELECTRICITY", "WATER", "CLEANING_FEE"].includes(item.type))
+                                                .map((item: SettlementItemDetails) => {
                                                     const rate = settlement.currencyInfo?.exchangeRate || 1;
                                                     const convertedAmount = displayCurrency !== 'PLN'
                                                         ? Number((item.amount / rate).toFixed(2))

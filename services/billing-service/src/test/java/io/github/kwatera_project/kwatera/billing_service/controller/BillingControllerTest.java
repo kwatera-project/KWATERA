@@ -164,4 +164,120 @@ class BillingControllerTest {
                 .header("Authorization", "Bearer token"))
         .andExpect(status().isOk());
   }
+
+  @Test
+  void shouldReturnSettlementItemInfoWhenOwner() throws Exception {
+    UUID reservationId = UUID.randomUUID();
+    UUID guestId = UUID.randomUUID();
+
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setUserId(guestId);
+
+    when(stripeService.getReservation(reservationId, "Bearer token")).thenReturn(reservationDto);
+
+    io.github.kwatera_project.kwatera.billing_service.dto.SettlementItemDto dto =
+        mock(io.github.kwatera_project.kwatera.billing_service.dto.SettlementItemDto.class);
+
+    when(paymentService.getSettlementItemInfoByType(
+            reservationId, io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType.ACCOMMODATION, "Bearer token"))
+        .thenReturn(dto);
+
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(
+            "guest", null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+    auth.setDetails(guestId.toString());
+    SecurityContextHolder.getContext().setAuthentication(auth);
+
+    mockMvc
+        .perform(
+            get("/api/billing/settlements/" + reservationId + "/ACCOMMODATION")
+                .header("Authorization", "Bearer token"))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  void shouldReturnNotFoundWhenReservationNull() throws Exception {
+    UUID reservationId = UUID.randomUUID();
+
+    when(stripeService.getReservation(reservationId, "Bearer token")).thenReturn(null);
+
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(
+            "guest", null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+    SecurityContextHolder.getContext().setAuthentication(auth);
+
+    mockMvc
+        .perform(
+            get("/api/billing/settlements/" + reservationId)
+                .header("Authorization", "Bearer token"))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void shouldReturnForbiddenWhenNoAuthentication() throws Exception {
+    UUID reservationId = UUID.randomUUID();
+    UUID guestId = UUID.randomUUID();
+
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setUserId(guestId);
+
+    when(stripeService.getReservation(reservationId, "Bearer token")).thenReturn(reservationDto);
+
+    SecurityContextHolder.clearContext();
+
+    mockMvc
+        .perform(
+            get("/api/billing/settlements/" + reservationId)
+                .header("Authorization", "Bearer token"))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void shouldReturnForbiddenWhenReservationUserIdNull() throws Exception {
+    UUID reservationId = UUID.randomUUID();
+
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setUserId(null);
+
+    when(stripeService.getReservation(reservationId, "Bearer token")).thenReturn(reservationDto);
+
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(
+            "guest", null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+    auth.setDetails(UUID.randomUUID().toString());
+    SecurityContextHolder.getContext().setAuthentication(auth);
+
+    mockMvc
+        .perform(
+            get("/api/billing/settlements/" + reservationId)
+                .header("Authorization", "Bearer token"))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void shouldReturnForbiddenWhenAuthenticationDetailsNull() throws Exception {
+    UUID reservationId = UUID.randomUUID();
+    UUID guestId = UUID.randomUUID();
+
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setUserId(guestId);
+
+    when(stripeService.getReservation(reservationId, "Bearer token")).thenReturn(reservationDto);
+
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(
+            "guest", null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+    auth.setDetails(null);
+    SecurityContextHolder.getContext().setAuthentication(auth);
+
+    mockMvc
+        .perform(
+            get("/api/billing/settlements/" + reservationId)
+                .header("Authorization", "Bearer token"))
+        .andExpect(status().isForbidden());
+  }
 }
