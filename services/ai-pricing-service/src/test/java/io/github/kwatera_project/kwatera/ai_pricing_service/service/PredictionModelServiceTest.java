@@ -13,6 +13,7 @@ import io.github.kwatera_project.kwatera.ai_pricing_service.client.PropertyClien
 import io.github.kwatera_project.kwatera.ai_pricing_service.dto.PropertyDto;
 import io.github.kwatera_project.kwatera.ai_pricing_service.dto.UnitDto;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,11 +57,16 @@ class PredictionModelServiceTest {
 
     when(model.predict(any(float[].class), any(String[].class))).thenReturn(predictions);
 
-    when(predictions.get(0, 0)).thenReturn(1234.56);
+    when(predictions.get(0, 0)).thenReturn(8.56);
 
     BigDecimal result = service.predictPrice(propertyId, unitId, LocalDate.now().toString());
 
-    assertEquals(BigDecimal.valueOf(1234.56), result);
+    double expectedDouble = Math.expm1(8.56);
+
+    BigDecimal expectedResult =
+        BigDecimal.valueOf(expectedDouble).setScale(2, RoundingMode.HALF_UP);
+
+    assertEquals(expectedResult, result);
   }
 
   @Test

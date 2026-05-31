@@ -3,7 +3,6 @@ package io.github.kwatera_project.kwatera.ai_pricing_service.dto;
 import io.github.kwatera_project.kwatera.ai_pricing_service.model.UnitType;
 import java.math.BigDecimal;
 import java.util.UUID;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,5 +23,4 @@ public class UnitDto {
   private UnitType unitType;
   private String unitNumber;
   private Integer floor;
-
 }

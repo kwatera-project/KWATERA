@@ -1,5 +1,6 @@
 package io.github.kwatera_project.kwatera.ai_pricing_service.controller;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -25,16 +26,17 @@ class PredictionControllerTest {
   void shouldReturnPredictedPrice() throws Exception {
     UUID propertyId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
+    String date = "2025-01-01";
 
-    when(service.predictPrice(propertyId, unitId, "2025-01-01"))
-        .thenReturn(BigDecimal.valueOf(999.99));
+    when(service.predictPrice(propertyId, unitId, date)).thenReturn(BigDecimal.valueOf(999.99));
 
     mockMvc
         .perform(
-            get("/api/predict/price")
-                .param("propertyId", propertyId.toString())
-                .param("unitId", unitId.toString())
-                .param("date", "2025-01-01"))
+            get(
+                "/api/predict/price/property/{propertyId}/unit/{unitId}/date/{date}",
+                propertyId,
+                unitId,
+                date))
         .andExpect(status().isOk())
         .andExpect(content().string("999.99"));
   }
@@ -44,14 +46,12 @@ class PredictionControllerTest {
     UUID propertyId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
 
-    when(service.predictPrice(eq(propertyId), eq(unitId), eq("2025-01-01")))
-        .thenReturn(BigDecimal.valueOf(1000));
+    when(service.predictPrice(eq(propertyId), eq(unitId), any()))
+        .thenReturn(BigDecimal.valueOf(1000.0));
 
     mockMvc
-        .perform(
-            get("/api/predict/price")
-                .param("propertyId", propertyId.toString())
-                .param("unitId", unitId.toString()))
-        .andExpect(status().isOk());
+        .perform(get("/api/predict/price/property/{propertyId}/unit/{unitId}", propertyId, unitId))
+        .andExpect(status().isOk())
+        .andExpect(content().string("1000.0"));
   }
 }

@@ -61,10 +61,10 @@ public class PredictionModelService {
     double logPrediction = result.get(0, 0);
     double realPrediction = Math.expm1(logPrediction);
 
-      if (realPrediction < 0) {
-          realPrediction = 0;
-      }
+    if (realPrediction < 0) {
+      realPrediction = 0;
+    }
 
-      return BigDecimal.valueOf(realPrediction).setScale(2, RoundingMode.HALF_UP);
+    return BigDecimal.valueOf(realPrediction).setScale(2, RoundingMode.HALF_UP);
   }
 }
