@@ -127,6 +127,34 @@ The dashboard uses:
 
 The owner units page calls the AI Pricing Service through the API Gateway at `/api/predict/price/property/{propertyId}/unit/{unitId}`.
 
+### Try AI pricing directly through Swagger
+
+You can also test dynamic pricing directly through the AI Pricing Service Swagger UI.
+
+1. Open AI Pricing Service Swagger UI:
+
+    * http://localhost:8087/swagger-ui.html
+
+2. Find the prediction endpoint:
+
+    * `GET /api/predict/price/property/{propertyId}/unit/{unitId}`
+    * `GET /api/predict/price/property/{propertyId}/unit/{unitId}/date/{date}`
+
+3. Use a seeded or existing `propertyId` and `unitId`.
+
+4. First execute the endpoint without `date`. This uses the current local date on the backend.
+
+5. Then execute the endpoint with different `date` values in `YYYY-MM-DD` format, for example:
+
+    * `2026-06-15`
+    * `2026-07-15`
+    * `2026-08-15`
+
+6. Compare returned predicted prices and observe how the model output changes for different dates.
+
+The endpoint with `/date/{date}` is useful for demo purposes because it allows checking the same property/unit pair for different stay dates without changing frontend state or database data.
+
+
 ## Current Stage 3 gaps visible in the repository
 
 - Weather-related output is not exposed by the current frontend routes or backend controllers.
