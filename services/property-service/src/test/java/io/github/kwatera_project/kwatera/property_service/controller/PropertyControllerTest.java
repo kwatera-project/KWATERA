@@ -19,7 +19,8 @@ class PropertyControllerTest {
 
   @Test
   void getAllProperties_shouldReturnList() {
-    PropertyDto dto = new PropertyDto(UUID.randomUUID(), "Test", "Desc", "Warsaw", "img");
+    PropertyDto dto =
+        new PropertyDto(UUID.randomUUID(), UUID.randomUUID(), "Test", "Desc", "Warsaw", "img");
 
     when(service.getAll()).thenReturn(List.of(dto));
 
@@ -33,7 +34,7 @@ class PropertyControllerTest {
   void getPropertyById_shouldReturnProperty() {
     UUID id = UUID.randomUUID();
 
-    PropertyDto dto = new PropertyDto(id, "Test", "Desc", "Warsaw", "img");
+    PropertyDto dto = new PropertyDto(id, UUID.randomUUID(), "Test", "Desc", "Warsaw", "img");
 
     when(service.getById(id)).thenReturn(dto);
 

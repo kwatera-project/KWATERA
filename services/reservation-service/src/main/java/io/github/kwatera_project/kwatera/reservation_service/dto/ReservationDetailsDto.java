@@ -21,4 +21,9 @@ public class ReservationDetailsDto {
   private BigDecimal totalPrice;
   private BigDecimal convertedTotalPrice;
   private CurrencyMetadataDto currencyInfo;
+  private String guestName;
+  private String unitName;
+  private String city;
+  private String ownerName;
+  private String ownerEmail;
 }

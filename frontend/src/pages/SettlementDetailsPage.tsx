@@ -4,6 +4,7 @@ import {getSettlementDetails} from "../api/settlementApi";
 import type {SettlementDetails, SettlementItemDetails} from "../types/settlement";
 import {GATEWAY_BASE_URL} from "../api/apiConfig.ts";
 import {getReservationDetails} from "../api/reservationApi.ts";
+import {getUserRoles} from "../utils/jwtUtils";
 
 export default function SettlementDetailsPage() {
     const {id} = useParams();
@@ -178,35 +179,69 @@ export default function SettlementDetailsPage() {
         }
     };
 
+    const token = localStorage.getItem("token");
+    const roles = getUserRoles(token);
+    const isAdminOrOwner = roles.includes("ROLE_ADMIN") || roles.includes("ROLE_OWNER");
+    const returnPath = isAdminOrOwner ? "/admin/reservations" : "/my-reservations";
+    const returnLabel = isAdminOrOwner ? "Back to Reservations Overview" : "Back to My Reservations";
+
     if (loading) return <div className="p-6">Loading settlement details...</div>;
     if (error) {
         const isForbidden = error.toLowerCase().includes("forbidden") || error.toLowerCase().includes("access denied") || error.toLowerCase().includes("403");
 
         if (isForbidden) {
             return (
-                <div className="max-w-md mx-auto mt-12 p-8 bg-card rounded-2xl shadow-xl border border-red-100 text-center animate-fade-in">
-                    <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m0-6V9m0 12a9 9 0 110-18 9 9 0 010 18z" />
-                        </svg>
-                    </div>
-                    <h2 className="text-xl font-bold text-gray-900 mb-2">Access Denied</h2>
-                    <p className="text-gray-600 mb-6">
-                        You do not have permission to view this settlement billing page. If you believe this is an error, please contact support.
-                    </p>
+                <div className="max-w-3xl mx-auto p-8 min-h-screen text-[#1A1A1A] space-y-6 flex flex-col">
                     <Link
-                        to="/"
-                        className="inline-flex items-center justify-center px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow transition duration-150 ease-in-out"
+                        to={returnPath}
+                        className="px-4 py-2 text-xs font-bold text-[#42211D] bg-[#F7F7F7] border border-[#DACDCA] hover:bg-gray-100 rounded-lg transition-colors shadow-sm inline-flex items-center gap-1.5 w-fit"
                     >
-                        Return to Home
+                        &larr; {returnLabel}
                     </Link>
+                    <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-8 text-center space-y-4">
+                        <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m0-6V9m0 12a9 9 0 110-18 9 9 0 010 18z" />
+                            </svg>
+                        </div>
+                        <h2 className="text-xl font-bold text-gray-900">Access Denied</h2>
+                        <p className="text-sm text-[#7A7A7A] max-w-md mx-auto leading-relaxed">
+                            You do not have permission to view this settlement billing page. If you believe this is an error, please contact support.
+                        </p>
+                    </div>
                 </div>
             );
         }
 
-        return <div className="p-6 text-red-500">{error}</div>;
+        return (
+            <div className="max-w-3xl mx-auto p-8 min-h-screen text-[#1A1A1A] space-y-6 flex flex-col">
+                <Link
+                    to={returnPath}
+                    className="px-4 py-2 text-xs font-bold text-[#42211D] bg-[#F7F7F7] border border-[#DACDCA] hover:bg-gray-100 rounded-lg transition-colors shadow-sm inline-flex items-center gap-1.5 w-fit"
+                >
+                    &larr; {returnLabel}
+                </Link>
+                <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 text-red-600 font-semibold">
+                    {error}
+                </div>
+            </div>
+        );
     }
-    if (!settlement) return <div className="p-6">Settlement not found.</div>;
+    if (!settlement) {
+        return (
+            <div className="max-w-3xl mx-auto p-8 min-h-screen text-[#1A1A1A] space-y-6 flex flex-col">
+                <Link
+                    to={returnPath}
+                    className="px-4 py-2 text-xs font-bold text-[#42211D] bg-[#F7F7F7] border border-[#DACDCA] hover:bg-gray-100 rounded-lg transition-colors shadow-sm inline-flex items-center gap-1.5 w-fit"
+                >
+                    &larr; {returnLabel}
+                </Link>
+                <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 text-gray-500 font-semibold">
+                    Settlement not found.
+                </div>
+            </div>
+        );
+    }
 
     const displayCurrency = settlement.currencyInfo?.displayCurrency || 'PLN';
 
@@ -221,49 +256,71 @@ export default function SettlementDetailsPage() {
         return <span>{originalAmount} PLN</span>;
     };
 
+    const isPaidOrZero = settlement.status === "PAID" || settlement.balanceDue === 0;
+
     return (
-        <div className="max-w-3xl mx-auto p-6">
-            <div className="bg-card rounded-xl p-6 shadow border">
-                <div className="flex justify-between items-center mb-6 border-b pb-2">
-                    <h1 className="text-2xl font-bold">Settlement Details</h1>
+        <div className="max-w-3xl mx-auto p-8 min-h-screen text-[#1A1A1A] space-y-6 flex flex-col">
+            <Link
+                to={returnPath}
+                className="px-4 py-2 text-xs font-bold text-[#42211D] bg-[#F7F7F7] border border-[#DACDCA] hover:bg-gray-100 rounded-lg transition-colors shadow-sm inline-flex items-center gap-1.5 w-fit"
+            >
+                &larr; {returnLabel}
+            </Link>
+
+            <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-8 hover:shadow-md transition-all duration-300">
+                <div className="border-b border-[#DACDCA] pb-4 mb-6">
+                    <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">Settlement Details</h1>
+                    <p className="text-sm text-[#7A7A7A] mt-1">Detailed pricing breakdown and settlement transactions.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <p className="text-gray-500 text-sm">Settlement ID</p>
-                        <p className="font-mono text-sm break-all">{settlement.id}</p>
+                    <div className="space-y-1">
+                        <p className="text-sm font-semibold text-[#7A7A7A]">Settlement ID</p>
+                        <p className="font-mono text-base font-bold text-[#1A1A1A]" title={settlement.id}>
+                            #SET-{settlement.id.slice(-8)}
+                        </p>
                     </div>
-                    <div>
-                        <p className="text-gray-500 text-sm">Reservation ID</p>
-                        <p className="font-mono text-sm break-all">{settlement.reservationId}</p>
+                    <div className="space-y-1">
+                        <p className="text-sm font-semibold text-[#7A7A7A]">Reservation ID</p>
+                        <p className="font-mono text-base font-bold text-[#1A1A1A]" title={settlement.reservationId}>
+                            #RES-{settlement.reservationId.slice(-8)}
+                        </p>
                     </div>
-                    <div>
-                        <p className="text-gray-500 text-sm">Status</p>
-                        <p className="font-bold text-blue-600">{settlement.status}</p>
+                    <div className="space-y-1">
+                        <p className="text-sm font-semibold text-[#7A7A7A]">Status</p>
+                        <div className="pt-1">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                                settlement.status === 'PAID' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
+                                'bg-amber-50 border-amber-200 text-amber-800'
+                            }`}>
+                                {settlement.status}
+                            </span>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-gray-500 text-sm">Balance Due</p>
-                        <p className="font-bold text-red-600 text-lg">
+                    <div className="space-y-1">
+                        <p className="text-sm font-semibold text-[#7A7A7A]">Balance Due</p>
+                        <p className={`text-xl font-black ${isPaidOrZero ? "text-emerald-700" : "text-red-600 font-bold"}`}>
                             {renderAmount(settlement.convertedBalanceDue, settlement.balanceDue)}
                         </p>
                     </div>
-                    <div className="md:col-span-2 border-t mt-2 pt-4">
-                        <p className="font-semibold text-gray-700 mb-2">Price Breakdown</p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <p className="text-gray-500 text-sm">Accommodation Amount</p>
-                                <p className="font-medium">
+
+                    <div className="md:col-span-2 border-t border-[#DACDCA] mt-2 pt-6">
+                        <h3 className="text-lg font-bold text-[#1A1A1A] tracking-tight border-b border-[#DACDCA] pb-2 mb-4">Price Breakdown</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-1">
+                                <p className="text-sm font-semibold text-[#7A7A7A]">Accommodation Amount</p>
+                                <p className="font-bold text-base text-[#1A1A1A]">
                                     {renderAmount(settlement.convertedAccommodationAmount, settlement.accommodationAmount)}
                                 </p>
                             </div>
-                            <div>
-                                <p className="text-gray-500 text-sm">Utilities Amount</p>
-                                <p className="font-medium">
+                            <div className="space-y-2">
+                                <p className="text-sm font-semibold text-[#7A7A7A]">Utilities Amount</p>
+                                <p className="font-bold text-base text-[#1A1A1A]">
                                     {renderAmount(settlement.convertedUtilitiesAmount, settlement.utilitiesAmount)}
                                 </p>
                                 {settlement.items && settlement.items.length > 0 && (
-                                    <div className="mt-2 pl-4 border-l-2 border-gray-200">
-                                        <ul className="space-y-1">
+                                    <div className="pl-4 border-l-2 border-[#DACDCA] mt-2">
+                                        <ul className="space-y-1.5">
                                             {settlement.items
                                                 .filter((item: SettlementItemDetails) => ["ELECTRICITY", "WATER", "CLEANING_FEE"].includes(item.type))
                                                 .map((item: SettlementItemDetails) => {
@@ -273,11 +330,11 @@ export default function SettlementDetailsPage() {
                                                         : item.amount;
 
                                                     return (
-                                                        <li key={item.id} className="text-xs text-gray-600 flex justify-between gap-4">
+                                                        <li key={item.id} className="text-xs text-[#7A7A7A] flex justify-between gap-4 font-medium">
                                                             <span>
                                                                 {item.description || item.type} ({item.quantity} x {displayCurrency !== 'PLN' ? Number((item.unitPrice / rate).toFixed(2)) : item.unitPrice} {displayCurrency})
                                                             </span>
-                                                            <span className="font-semibold text-gray-700">
+                                                            <span className="font-bold text-[#1A1A1A]">
                                                                 {convertedAmount} {displayCurrency}
                                                             </span>
                                                         </li>
@@ -287,53 +344,48 @@ export default function SettlementDetailsPage() {
                                     </div>
                                 )}
                             </div>
-                            <div>
-                                <p className="text-gray-500 text-sm">Deposit Amount</p>
-                                <p className="font-medium">
+                            <div className="space-y-1">
+                                <p className="text-sm font-semibold text-[#7A7A7A]">Deposit Amount</p>
+                                <p className="font-bold text-base text-[#1A1A1A]">
                                     {renderAmount(settlement.convertedDepositAmount, settlement.depositAmount)}
                                 </p>
                             </div>
-                            <div>
-                                <p className="text-gray-500 text-sm">Total Amount</p>
-                                <p className="font-medium text-lg">
+                            <div className="space-y-1">
+                                <p className="text-sm font-semibold text-[#7A7A7A]">Total Amount</p>
+                                <p className="font-black text-lg text-[#1A1A1A]">
                                     {renderAmount(settlement.convertedTotalAmount, settlement.totalAmount)}
                                 </p>
                             </div>
-                            <div>
-                                <p className="text-gray-500 text-sm">Amount Paid</p>
-                                <p className="font-medium text-green-600">
+                            <div className="space-y-1 md:col-span-2">
+                                <p className="text-sm font-semibold text-[#7A7A7A]">Amount Paid</p>
+                                <p className="font-bold text-base text-emerald-700">
                                     {renderAmount(settlement.convertedAmountPaid, settlement.amountPaid)}
                                 </p>
                             </div>
                         </div>
                     </div>
-                    <div className="md:col-span-2 border-t mt-2 pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <p className="text-gray-500 text-sm">Issued At</p>
-                            <p className="font-medium">{settlement.issuedAt ? new Date(settlement.issuedAt).toLocaleString() : 'N/A'}</p>
+
+                    <div className="md:col-span-2 border-t border-[#DACDCA] mt-2 pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-1">
+                            <p className="text-sm font-semibold text-[#7A7A7A]">Issued At</p>
+                            <p className="font-bold text-base text-[#1A1A1A]">{settlement.issuedAt ? new Date(settlement.issuedAt).toLocaleString() : 'N/A'}</p>
                         </div>
-                        <div>
-                            <p className="text-gray-500 text-sm">Paid At</p>
-                            <p className="font-medium">{settlement.paidAt ? new Date(settlement.paidAt).toLocaleString() : 'N/A'}</p>
+                        <div className="space-y-1">
+                            <p className="text-sm font-semibold text-[#7A7A7A]">Paid At</p>
+                            <p className="font-bold text-base text-[#1A1A1A]">{settlement.paidAt ? new Date(settlement.paidAt).toLocaleString() : 'N/A'}</p>
                         </div>
                     </div>
                 </div>
-
-                <div className="mt-8 pt-4 border-t">
-                    <Link to="/" className="text-blue-500 hover:text-blue-700 hover:underline">
-                        &larr; Return to properties
-                    </Link>
-                </div>
             </div>
+
             {settlement.status !== "PAID" && (
-                <div className="mt-4 bg-gray-50 rounded-xl p-4 border border-gray-200">
-                    <p className="text-xs text-gray-500 mb-3">
+                <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 space-y-4">
+                    <p className="text-xs text-[#7A7A7A] leading-relaxed italic">
                         * Note: Despite the selected display currency, the payment transaction on the Stripe gateway will be processed in the system's base currency (PLN). Any potential foreign exchange conversion fees depend on your bank.
                         Exchange rate applied: {settlement.currencyInfo?.exchangeRate} {settlement.currencyInfo?.displayCurrency}/PLN.
                     </p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-3 border-t border-[#DACDCA] pt-4">
                         {paymentButtons.map((button) => {
-
                             const stateKey = `${settlement.id}-${button.type}`;
                             const state = settlementState[stateKey];
 
@@ -350,12 +402,12 @@ export default function SettlementDetailsPage() {
                                         )
                                     }
                                     disabled={state?.loading || state?.success}
-                                    className={`px-4 py-2 font-bold rounded shadow text-sm ${
+                                    className={`px-5 py-2.5 font-bold rounded-lg shadow-sm text-sm transition-all border cursor-pointer ${
                                         state?.success
-                                            ? "bg-green-500 text-white"
+                                            ? "bg-green-600 text-white border-green-600"
                                             : state?.loading
-                                                ? "bg-gray-400 text-white cursor-not-allowed"
-                                                : "bg-blue-600 text-white hover:bg-blue-700 transition"
+                                                ? "bg-gray-400 text-white border-gray-400 cursor-wait"
+                                                : "bg-[#42211D] text-white hover:bg-[#2a1412] border-[#DACDCA]"
                                     }`}
                                 >
                                     {state?.loading

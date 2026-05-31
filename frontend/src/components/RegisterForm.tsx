@@ -1,7 +1,7 @@
 import '../App.css'
 import { GATEWAY_BASE_URL } from '../api/apiConfig'
-import {useState} from "react"
-import {useNavigate} from "react-router-dom";
+import { useState } from "react"
+import { useNavigate, Link } from "react-router-dom"
 
 export default function RegisterForm() {
     const [formData, setFormData] = useState({
@@ -14,134 +14,108 @@ export default function RegisterForm() {
     })
 
     const navigate = useNavigate()
-
     const [message, setMessage] = useState('')
 
-    const handleSubmit = async (e: { preventDefault: () => void; }) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-
         try {
             const response = await fetch(`${GATEWAY_BASE_URL}/api/auth/register`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData),
             })
-
             if (response.ok) {
                 const loginRes = await fetch(`${GATEWAY_BASE_URL}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        email: formData.email,
-                        password: formData.password
-                    })
+                    body: JSON.stringify({ email: formData.email, password: formData.password })
                 })
-
                 const loginData = await loginRes.json()
                 localStorage.setItem("token", loginData.token)
-
-                setMessage('✔ Registered & logged in!')
                 navigate("/")
             } else {
-
-                let errorMessage
-
-                try {
-                    const errorData = await response.json()
-                    errorMessage = errorData.error
-                } catch {
-                    errorMessage = await response.text()
-                }
-
-                setMessage(`✘ ${errorMessage}`)
+                const errorData = await response.json().catch(() => ({ error: 'Registration failed' }))
+                setMessage(`✘ ${errorData.error || 'Registration failed'}`)
             }
         } catch (_error) {
-            console.error("Auth Error:", _error)
-            setMessage('✘ Error connecting to API server')
+            setMessage('✘ Error connecting to server')
         }
     }
 
     return (
-        <div className="flex h-screen items-center justify-center bg-main">
-            <div className="w-full max-w-md rounded-xl bg-card p-8 shadow-lg">
-                <h1 className="mb-6 text-3xl font-bold text-title text-center">
-                     Registration
-                </h1>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="flex gap-4">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="radio"
-                                value="OWNER"
-                                checked={formData.role === 'OWNER'}
-                                onChange={e => setFormData({...formData, role: e.target.value})}
-                                className="accent-[rgb(var(--color-burgundy))]"
-                            />
-                            Owner
-                        </label>
+        <div className="h-screen w-full flex flex-col bg-white">
+            <header className="flex-none bg-white border-b border-gray-100 px-8 py-9 flex items-center justify-between z-50 shadow-sm">
+            </header>
 
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="radio"
-                                value="GUEST"
-                                checked={formData.role === 'GUEST'}
-                                onChange={e => setFormData({...formData, role: e.target.value})}
-                                className="accent-[rgb(var(--color-burgundy))]"
-                            />
-                            Guest
-                        </label>
+            <div className="flex-1 w-full grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
+                <div className="lg:col-span-5 flex flex-col justify-center items-center overflow-y-auto p-4">
+                    <div className="w-full max-w-md bg-white border border-gray-100 rounded-2xl shadow-xl p-8 sm:p-10 space-y-6">
+                        <div className="text-center space-y-2">
+                            <h1 className="text-2xl font-bold text-gray-900">Create Account</h1>
+                            <p className="text-sm text-gray-500">Sign up to explore properties or list your own properties.</p>
+                        </div>
 
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="space-y-1.5">
+                                <label className="block text-sm font-medium text-gray-700">I want to register as:</label>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <label className={`flex items-center justify-center p-3 rounded-lg border cursor-pointer transition ${formData.role === 'OWNER' ? 'border-[#42211D] bg-orange-50 font-semibold' : 'border-gray-300 hover:bg-gray-50'}`}>
+                                        <input type="radio" value="OWNER" checked={formData.role === 'OWNER'} onChange={e => setFormData({...formData, role: e.target.value})} className="mr-2" />
+                                        Owner
+                                    </label>
+                                    <label className={`flex items-center justify-center p-3 rounded-lg border cursor-pointer transition ${formData.role === 'GUEST' ? 'border-[#42211D] bg-orange-50 font-semibold' : 'border-gray-300 hover:bg-gray-50'}`}>
+                                        <input type="radio" value="GUEST" checked={formData.role === 'GUEST'} onChange={e => setFormData({...formData, role: e.target.value})} className="mr-2" />
+                                        Guest
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-4">
+                                <div className="w-1/2 space-y-1.5">
+                                    <label className="block text-sm font-medium text-gray-700">First Name</label>
+                                    <input type="text" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42211D] outline-none" onChange={e => setFormData({...formData, firstName: e.target.value})} required />
+                                </div>
+                                <div className="w-1/2 space-y-1.5">
+                                    <label className="block text-sm font-medium text-gray-700">Last Name</label>
+                                    <input type="text" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42211D] outline-none" onChange={e => setFormData({...formData, lastName: e.target.value})} required />
+                                </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="block text-sm font-medium text-gray-700">Username</label>
+                                <input type="text" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42211D] outline-none" onChange={e => setFormData({...formData, username: e.target.value})} required />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                                <input type="email" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42211D] outline-none" onChange={e => setFormData({...formData, email: e.target.value})} required />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="block text-sm font-medium text-gray-700">Password</label>
+                                <input type="password" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42211D] outline-none" onChange={e => setFormData({...formData, password: e.target.value})} required />
+                            </div>
+
+                            <button type="submit" className="w-full py-3 bg-[#42211D] text-white font-bold rounded-lg hover:opacity-90 transition">
+                                Sign Up
+                            </button>
+                        </form>
+
+                        <p className="text-center text-sm text-gray-600">
+                            Already have an account? <Link to="/login" className="text-[#42211D] font-bold hover:underline">Sign In</Link>
+                        </p>
+
+                        {message && (
+                            <div className={`p-4 rounded-lg text-sm font-medium ${message.startsWith('✔') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                                {message}
+                            </div>
+                        )}
                     </div>
-                    <div className="flex gap-4">
-                        <input
-                            type="text"
-                            placeholder="First Name"
-                            className="w-1/2 p-2 border rounded"
-                            onChange={e => setFormData({...formData, firstName: e.target.value})}
-                            required
-                        />
-                        <input
-                            type="text"
-                            placeholder="Last Name"
-                            className="w-1/2 p-2 border rounded"
-                            onChange={e => setFormData({...formData, lastName: e.target.value})}
-                            required
-                        />
-                    </div>
-                    <input
-                        type="text"
-                        placeholder="Username"
-                        className="w-full p-2 border rounded"
-                        onChange={e => setFormData({...formData, username: e.target.value})}
-                        required
-                    />
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        className="w-full p-2 border rounded"
-                        onChange={e => setFormData({...formData, email: e.target.value})}
-                        required
-                    />
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        className="w-full p-2 border rounded"
-                        onChange={e => setFormData({...formData, password: e.target.value})}
-                        required
-                    />
-                    <button
-                        type="submit"
-                        className="w-full bg-button text-white py-2 rounded font-bold bg-button-hover transition"
-                    >
-                        Register
-                    </button>
-                </form>
+                </div>
 
-                {message && (
-                    <p className="mt-4 text-center font-medium text-details">{message}</p>
-                )}
+                <div className="hidden lg:block lg:col-span-7 relative overflow-hidden">
+                    <img src="https://images.pexels.com/photos/5358783/pexels-photo-5358783.jpeg" className="w-full h-full object-cover" alt="Villa" />
+                </div>
             </div>
         </div>
     )

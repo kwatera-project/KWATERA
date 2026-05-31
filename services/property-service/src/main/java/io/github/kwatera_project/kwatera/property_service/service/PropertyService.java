@@ -115,6 +115,7 @@ public class PropertyService {
 
     return new PropertyDto(
         property.getId(),
+        property.getOwnerId(),
         property.getTitle(),
         property.getDescription(),
         property.getLocation(),
@@ -162,15 +163,18 @@ public class PropertyService {
       }
     }
 
-    return new UnitDto(
-        unit.getId(),
-        unit.getName(),
-        unit.getDescription(),
-        unit.getPricePerNight(),
-        unit.getCapacity(),
-        imageUrl,
-        convertedPricePerNight,
-        currencyInfo);
+    UnitDto dto =
+        new UnitDto(
+            unit.getId(),
+            unit.getName(),
+            unit.getDescription(),
+            unit.getPricePerNight(),
+            unit.getCapacity(),
+            imageUrl,
+            convertedPricePerNight,
+            currencyInfo);
+    dto.setPropertyId(unit.getPropertyId());
+    return dto;
   }
 
   private UnitSettlementItemDto mapToDto(UnitSettlementItem item) {

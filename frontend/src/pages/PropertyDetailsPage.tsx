@@ -220,31 +220,39 @@ export default function PropertyDetailsPage() {
     }
 
     return (
-        <div className="max-w-5xl mx-auto p-6 text-[#1A1A1A]">
-            <img
-                src={mainImage || property.imageUrl}
-                className="w-full aspect-[16/9] object-cover rounded"
-            />
-            <div className="flex gap-2 mt-2">
-                {images.map((img, i) => (
-                    <img
-                        key={i}
-                        src={img}
-                        onClick={() => setMainImage(img)}
-                        className="w-20 aspect-square object-cover rounded cursor-pointer border border-[#DACDCA]"
-                    />
-                ))}
+        <div className="max-w-7xl mx-auto p-8 min-h-screen text-brand-main space-y-8">
+            <div>
+                <img
+                    src={mainImage || property.imageUrl}
+                    className="w-full aspect-[21/9] object-cover rounded-xl border border-brand-accent shadow-sm"
+                    alt={property.title}
+                />
+                <div className="flex flex-wrap gap-3 mt-4">
+                    {images.map((img, i) => (
+                        <img
+                            key={i}
+                            src={img}
+                            onClick={() => setMainImage(img)}
+                            className={`w-20 h-20 object-cover rounded-lg cursor-pointer border-2 transition-all hover:scale-105 ${
+                                mainImage === img ? "border-brand-primary shadow-md" : "border-brand-accent hover:border-gray-400"
+                            }`}
+                            alt={`Property thumbnail ${i + 1}`}
+                        />
+                    ))}
+                </div>
             </div>
 
-            <h1 className="text-3xl font-bold mt-4 text-[#1A1A1A]">{property.title}</h1>
-            <p className="text-[#7A7A7A]">{property.location}</p>
+            <div className="border-b border-brand-accent pb-6">
+                <h1 className="text-3xl font-bold text-brand-main tracking-tight">{property.title}</h1>
+                <p className="text-sm text-brand-muted mt-1 font-medium">{property.location}</p>
+            </div>
 
-            <div className="bg-[#F7F7F7] border border-[#DACDCA] rounded-xl p-6 mt-6 flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="max-w-xs text-center md:text-left">
-                    <h3 className="font-bold text-xl">Select Stay Dates</h3>
-                    <p className="text-sm text-[#7A7A7A] mt-1">Choose your preferred check-in and check-out window to check general availability across all options.</p>
+            <div className="bg-white border border-brand-accent rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="max-w-md text-center md:text-left space-y-1">
+                    <h3 className="font-bold text-xl text-brand-main tracking-tight">Select Stay Dates</h3>
+                    <p className="text-sm text-brand-muted leading-relaxed">Choose your preferred check-in and check-out window to check general availability across all options.</p>
                 </div>
-                <div className="flex justify-center w-full md:w-auto">
+                <div className="flex justify-center w-full md:w-auto bg-brand-bg p-4 rounded-xl border border-brand-accent">
                     <DatePicker
                         selected={globalDates[0]}
                         onChange={handleGlobalDateChange}
@@ -253,140 +261,143 @@ export default function PropertyDetailsPage() {
                         selectsRange
                         inline
                         minDate={new Date()}
-                        previousMonthButtonLabel={
-                            <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                        }
-                        nextMonthButtonLabel={
-                            <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                        }
                     />
                 </div>
             </div>
 
-            <h2 className="mt-8 text-xl font-bold text-[#1A1A1A]">Units & Availability</h2>
+            <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-brand-main tracking-tight">Units & Availability</h2>
 
-            {units.map((u) => {
-                const unitStart = selectedDates[u.id]?.[0];
-                const unitEnd = selectedDates[u.id]?.[1];
-                const nights = calculateNights(unitStart, unitEnd);
-                const totalPrice = nights * u.pricePerNight;
+                <div className="space-y-6">
+                    {units.map((u) => {
+                        const unitStart = selectedDates[u.id]?.[0];
+                        const unitEnd = selectedDates[u.id]?.[1];
+                        const nights = calculateNights(unitStart, unitEnd);
+                        const totalPrice = nights * u.pricePerNight;
 
-                return (
-                    <div key={u.id} className="bg-[#F7F7F7] rounded-xl mt-4 overflow-hidden p-4 border border-[#DACDCA] flex flex-col md:flex-row gap-6">
-                        <div className="flex-1">
-                            {u.imageUrl && (
-                                <img src={u.imageUrl} className="w-full h-48 object-cover rounded mb-4" />
-                            )}
-                            <h3 className="font-bold text-lg text-[#1A1A1A]">{u.name}</h3>
-                            <p className="text-[#7A7A7A]">{u.description}</p>
-                            <p className="mt-2 font-semibold text-[#42211D]">
-                                {u.convertedPricePerNight && u.currencyInfo && u.currencyInfo.displayCurrency !== 'PLN' 
-                                    ? `${u.convertedPricePerNight.toFixed(2)} ${u.currencyInfo.displayCurrency} / night` 
-                                    : `${u.pricePerNight} PLN / night`}
-                            </p>
-                            <p className="text-sm text-[#7A7A7A]">Capacity: {u.capacity} {u.capacity === 1 ? "person" : "people"}</p>
-                        </div>
-
-                        <div className="flex-1 flex flex-col items-center md:items-start justify-between">
-                            <div className="w-full flex flex-col items-center md:items-start">
-                                <button
-                                    onClick={() => toggleCalendar(u.id)}
-                                    className="text-sm font-semibold text-[#42211D] hover:underline mb-4 flex items-center gap-1 focus:outline-none"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 002-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                    {showCalendar[u.id] ? "Hide detailed occupancy calendar" : "Check detailed occupancy calendar"}
-                                </button>
-
-                                {showCalendar[u.id] && (
-                                    <div className="relative">
-                                        <DatePicker
-                                            selected={unitStart}
-                                            onChange={(dates) => handleDateChange(u.id, dates)}
-                                            startDate={unitStart || undefined}
-                                            endDate={unitEnd || undefined}
-                                            selectsRange
-                                            inline
-                                            minDate={new Date()}
-                                            filterDate={(date) => !isDateBlocked(date, u.id)}
-                                            dayClassName={(date) => getDayClass(date, u.id)}
-                                            previousMonthButtonLabel={
-                                                <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-                                            }
-                                            nextMonthButtonLabel={
-                                                <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                                            }
-                                            renderDayContents={(dayOfMonth, date) => {
-                                                const cls = getDayClass(date, u.id);
-                                                let tooltipTitle = undefined;
-                                                if (cls === "checkin-day") tooltipTitle = "Available for check-out only";
-                                                if (cls === "checkout-day") tooltipTitle = "Available for check-in only";
-                                                return <span title={tooltipTitle} className="w-full h-full block align-middle pt-0.5">{dayOfMonth}</span>;
-                                            }}
-                                        />
-                                        <div className="flex gap-4 items-center justify-center mt-4 text-xs text-[#7A7A7A] w-full mb-2">
-                                            <div className="flex items-center gap-1.5">
-                                                <div className="w-3 h-3 bg-[#FFFFFF] border border-[#DACDCA] rounded-sm"></div>
-                                                <span>Available</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5">
-                                                <div className="w-3 h-3 bg-[#e5e5e5] border border-[#DACDCA] rounded-sm"></div>
-                                                <span>Occupied</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5">
-                                                <div className="w-3 h-3 bg-[#DACDCA] border border-[#42211D] rounded-sm"></div>
-                                                <span>Selected</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {unitStart && unitEnd && nights > 0 && (
-                                <div className="w-full bg-white border border-[#DACDCA] rounded-xl p-4 mt-4 text-sm flex flex-col gap-1">
-                                    <p className="font-bold text-[#1A1A1A] border-b border-[#F7F7F7] pb-1 mb-1">Stay Details Summary</p>
-                                    <p><span className="text-[#7A7A7A]">Check-in:</span> <span className="font-medium">{format(unitStart, "EEEE, MMMM dd, yyyy")}</span></p>
-                                    <p><span className="text-[#7A7A7A]">Check-out:</span> <span className="font-medium">{format(unitEnd, "EEEE, MMMM dd, yyyy")}</span></p>
-                                    <p><span className="text-[#7A7A7A]">Duration:</span> <span className="font-medium">{nights} {nights === 1 ? "night" : "nights"}</span></p>
-                                    <div className="mt-1 pt-1 border-t border-[#F7F7F7] text-base font-bold text-[#42211D] flex justify-between items-center">
-                                        <span>Total price:</span>
-                                        <div className="text-right">
-                                            {u.convertedPricePerNight && u.currencyInfo && u.currencyInfo.displayCurrency !== 'PLN' ? (
-                                                <div>{(nights * u.convertedPricePerNight).toFixed(2)} {u.currencyInfo.displayCurrency}</div>
-                                            ) : (
-                                                <span>{totalPrice} PLN</span>
-                                            )}
+                        return (
+                            <div key={u.id} className="bg-white border border-brand-accent rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 flex flex-col lg:flex-row gap-8">
+                                <div className="flex-1 space-y-4">
+                                    {u.imageUrl && (
+                                        <img src={u.imageUrl} className="w-full h-64 object-cover rounded-lg border border-brand-accent" alt={u.name} />
+                                    )}
+                                    <div className="space-y-2">
+                                        <h3 className="font-bold text-xl text-brand-main">{u.name}</h3>
+                                        <p className="text-sm text-brand-muted leading-relaxed">{u.description}</p>
+                                        <div className="flex flex-wrap items-center gap-4 pt-2">
+                                            <p className="text-lg font-bold text-brand-primary">
+                                                {u.convertedPricePerNight && u.currencyInfo && u.currencyInfo.displayCurrency !== 'PLN' 
+                                                    ? `${u.convertedPricePerNight.toFixed(2)} ${u.currencyInfo.displayCurrency} / night` 
+                                                    : `${u.pricePerNight} PLN / night`}
+                                            </p>
+                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-brand-bg border border-brand-accent text-brand-muted">
+                                                Capacity: {u.capacity} {u.capacity === 1 ? "person" : "people"}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
-                            )}
 
-                            <div className="mt-4 w-full text-center md:text-left">
-                                <button
-                                    onClick={() => handleBook(u.id)}
-                                    disabled={bookingState[u.id]?.loading || bookingState[u.id]?.success || !unitStart || !unitEnd}
-                                    className={`px-6 py-2 font-bold rounded w-full md:w-auto transition-colors duration-200 ${
-                                        bookingState[u.id]?.success
-                                            ? "bg-green-600 text-white cursor-default"
-                                            : bookingState[u.id]?.loading
-                                                ? "bg-[#7A7A7A] text-white cursor-wait"
-                                                : (!unitStart || !unitEnd)
-                                                    ? "bg-[#DACDCA] text-[#7A7A7A] cursor-not-allowed"
-                                                    : "bg-[#42211D] text-[#FFFFFF] hover:bg-[#2a1412]"
-                                    }`}
-                                >
-                                    {bookingState[u.id]?.loading ? "Processing..." :
-                                        bookingState[u.id]?.success ? "Redirecting to payment..." :
-                                            (!unitStart || !unitEnd) ? "Select dates to book" : "Book these dates"}
-                                </button>
+                                <div className="flex-1 flex flex-col items-stretch justify-between border-t lg:border-t-0 lg:border-l border-brand-accent pt-6 lg:pt-0 lg:pl-8">
+                                    <div className="w-full flex flex-col items-center lg:items-start">
+                                        <button
+                                            onClick={() => toggleCalendar(u.id)}
+                                            className="text-sm font-bold text-brand-primary hover:text-brand-primary-hover hover:underline mb-4 flex items-center gap-1.5 focus:outline-none"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 002-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                            {showCalendar[u.id] ? "Hide Detailed Calendar" : "Check Detailed Occupancy Calendar"}
+                                        </button>
 
-                                {bookingState[u.id]?.error && (
-                                    <p className="text-red-500 text-sm mt-2">{bookingState[u.id].error}</p>
-                                )}
+                                        {showCalendar[u.id] && (
+                                            <div className="flex flex-col items-center lg:items-start bg-brand-bg p-4 rounded-xl border border-brand-accent w-full max-w-sm">
+                                                <DatePicker
+                                                    selected={unitStart}
+                                                    onChange={(dates) => handleDateChange(u.id, dates)}
+                                                    startDate={unitStart || undefined}
+                                                    endDate={unitEnd || undefined}
+                                                    selectsRange
+                                                    inline
+                                                    minDate={new Date()}
+                                                    filterDate={(date) => !isDateBlocked(date, u.id)}
+                                                    dayClassName={(date) => getDayClass(date, u.id)}
+                                                    renderDayContents={(dayOfMonth, date) => {
+                                                        const cls = getDayClass(date, u.id);
+                                                        let tooltipTitle = undefined;
+                                                        if (cls === "checkin-day") tooltipTitle = "Available for check-out only";
+                                                        if (cls === "checkout-day") tooltipTitle = "Available for check-in only";
+                                                        return <span title={tooltipTitle} className="w-full h-full block align-middle pt-0.5">{dayOfMonth}</span>;
+                                                    }}
+                                                />
+                                                <div className="flex gap-4 items-center justify-center mt-4 text-xs font-bold text-brand-muted w-full">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <div className="w-3 h-3 bg-white border border-brand-accent rounded-sm"></div>
+                                                        <span>Available</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <div className="w-3 h-3 bg-[#e5e5e5] border border-brand-accent rounded-sm"></div>
+                                                        <span>Occupied</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <div className="w-3 h-3 bg-brand-accent border border-brand-primary rounded-sm"></div>
+                                                        <span>Selected</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {unitStart && unitEnd && nights > 0 && (
+                                        <div className="w-full bg-brand-bg border border-brand-accent rounded-xl p-4 mt-6 text-sm flex flex-col gap-2">
+                                            <p className="text-xs font-bold text-brand-main tracking-wider border-b border-brand-accent pb-2 mb-1">Stay Details Summary</p>
+                                            <p className="flex justify-between"><span className="text-brand-muted font-medium">Check-in:</span> <span className="font-semibold text-brand-main">{format(unitStart, "EEEE, MMM dd, yyyy")}</span></p>
+                                            <p className="flex justify-between"><span className="text-brand-muted font-medium">Check-out:</span> <span className="font-semibold text-brand-main">{format(unitEnd, "EEEE, MMM dd, yyyy")}</span></p>
+                                            <p className="flex justify-between"><span className="text-brand-muted font-medium">Duration:</span> <span className="font-semibold text-brand-main">{nights} {nights === 1 ? "night" : "nights"}</span></p>
+                                            <div className="mt-2 pt-2 border-t border-brand-accent text-base font-bold text-brand-primary flex justify-between items-center">
+                                                <span>Total price:</span>
+                                                <div className="text-right">
+                                                    {u.convertedPricePerNight && u.currencyInfo && u.currencyInfo.displayCurrency !== 'PLN' ? (
+                                                        <div>{(nights * u.convertedPricePerNight).toFixed(2)} {u.currencyInfo.displayCurrency}</div>
+                                                    ) : (
+                                                        <span>{totalPrice} PLN</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="mt-6 w-full space-y-4">
+                                        <button
+                                            onClick={() => handleBook(u.id)}
+                                            disabled={bookingState[u.id]?.loading || bookingState[u.id]?.success || !unitStart || !unitEnd}
+                                            className={`w-full px-6 py-3 font-bold rounded-lg transition-all duration-200 shadow-sm cursor-pointer flex items-center justify-center gap-2 ${
+                                                bookingState[u.id]?.success
+                                                    ? "bg-green-600 text-white cursor-default"
+                                                    : bookingState[u.id]?.loading
+                                                        ? "bg-brand-muted text-white cursor-wait"
+                                                        : (!unitStart || !unitEnd)
+                                                            ? "bg-brand-accent text-brand-main opacity-50 cursor-not-allowed"
+                                                            : "bg-brand-primary text-white hover:bg-brand-primary-hover"
+                                            }`}
+                                        >
+                                            {bookingState[u.id]?.loading ? "Processing..." :
+                                                bookingState[u.id]?.success ? "Redirecting to payment..." :
+                                                    (!unitStart || !unitEnd) ? "Select dates to book" : "Book these dates"}
+                                        </button>
+
+                                        {bookingState[u.id]?.error && (
+                                            <div className="flex items-center gap-3 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl text-red-700 animate-fade-in shadow-sm">
+                                                <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
+                                                </svg>
+                                                <span className="text-xs font-semibold leading-relaxed">{bookingState[u.id].error}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                );
-            })}
+                        );
+                    })}
+                </div>
+            </div>
         </div>
     );
 }

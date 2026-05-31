@@ -35,6 +35,7 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   const hasFetched = useRef(false);
+  const dateToRef = useRef<any>(null);
 
   const [resMetrics, setResMetrics] = useState<ReservationMetrics>({
     totalReservations: 0,
@@ -147,7 +148,14 @@ export default function DashboardPage() {
               <div className="flex items-center bg-[#F7F7F7] border border-[#DACDCA] rounded-lg px-3 py-1.5 shadow-sm focus-within:ring-1 focus-within:ring-[#42211D] gap-2">
                 <SharedDatePicker
                   selected={startDate}
-                  onChange={(date) => setStartDate(date)}
+                  onChange={(date) => {
+                    setStartDate(date);
+                    if (date) {
+                      setTimeout(() => {
+                        dateToRef.current?.setOpen(true);
+                      }, 100);
+                    }
+                  }}
                   selectsStart
                   startDate={startDate}
                   endDate={endDate}
@@ -160,6 +168,7 @@ export default function DashboardPage() {
               <label className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">To</label>
               <div className="flex items-center bg-[#F7F7F7] border border-[#DACDCA] rounded-lg px-3 py-1.5 shadow-sm focus-within:ring-1 focus-within:ring-[#42211D] gap-2">
                 <SharedDatePicker
+                  datepickerRef={dateToRef}
                   selected={endDate}
                   onChange={(date) => setEndDate(date)}
                   selectsEnd

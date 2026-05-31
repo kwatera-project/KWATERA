@@ -18,10 +18,14 @@ export interface ReservationOverview {
 export interface ReservationDetails extends ReservationOverview {
     unitId: string;
     createdAt: string;
+    city?: string;
+    guestEmail?: string;
     pricePerNightSnapshot?: number;
     totalPrice?: number;
     convertedTotalPrice?: number;
     currencyInfo?: CurrencyMetadata;
+    ownerName?: string;
+    ownerEmail?: string;
 }
 
 export interface GuestReservation {
