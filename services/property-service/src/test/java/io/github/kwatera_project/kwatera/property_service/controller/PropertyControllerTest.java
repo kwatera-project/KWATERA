@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 import io.github.kwatera_project.kwatera.property_service.dto.PropertyDto;
 import io.github.kwatera_project.kwatera.property_service.dto.UnitDto;
 import io.github.kwatera_project.kwatera.property_service.dto.UnitSettlementItemDto;
+import io.github.kwatera_project.kwatera.property_service.model.UnitType;
 import io.github.kwatera_project.kwatera.property_service.service.PropertyService;
 import java.math.BigDecimal;
 import java.util.List;
@@ -20,7 +21,19 @@ class PropertyControllerTest {
   @Test
   void getAllProperties_shouldReturnList() {
     PropertyDto dto =
-        new PropertyDto(UUID.randomUUID(), UUID.randomUUID(), "Test", "Desc", "Warsaw", "img");
+        new PropertyDto(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            "Test",
+            "Desc",
+            "Warsaw",
+            "img",
+            BigDecimal.ZERO,
+            BigDecimal.ZERO,
+            "Poland",
+            "",
+            "",
+            "");
 
     when(service.getAll()).thenReturn(List.of(dto));
 
@@ -34,7 +47,20 @@ class PropertyControllerTest {
   void getPropertyById_shouldReturnProperty() {
     UUID id = UUID.randomUUID();
 
-    PropertyDto dto = new PropertyDto(id, UUID.randomUUID(), "Test", "Desc", "Warsaw", "img");
+    PropertyDto dto =
+        new PropertyDto(
+            id,
+            UUID.randomUUID(),
+            "Test",
+            "Desc",
+            "Warsaw",
+            "img",
+            BigDecimal.ZERO,
+            BigDecimal.ZERO,
+            "Poland",
+            "",
+            "",
+            "");
 
     when(service.getById(id)).thenReturn(dto);
 
@@ -55,6 +81,10 @@ class PropertyControllerTest {
             BigDecimal.valueOf(200),
             2,
             "img.jpg",
+            propertyId,
+            UnitType.ENTIRE_RENTAL_UNIT,
+            "10A",
+            4,
             BigDecimal.valueOf(200),
             new io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto(
                 "PLN", "PLN", BigDecimal.ONE, java.time.LocalDate.now()));
@@ -70,6 +100,7 @@ class PropertyControllerTest {
   @Test
   void getUnit_shouldReturnUnit() {
     UUID id = UUID.randomUUID();
+    UUID propertyId = UUID.randomUUID();
 
     UnitDto unit =
         new UnitDto(
@@ -79,6 +110,10 @@ class PropertyControllerTest {
             BigDecimal.valueOf(200),
             2,
             "img.jpg",
+            propertyId,
+            UnitType.ENTIRE_RENTAL_UNIT,
+            "10A",
+            4,
             BigDecimal.valueOf(200),
             new io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto(
                 "PLN", "PLN", BigDecimal.ONE, java.time.LocalDate.now()));

@@ -1,50 +1,60 @@
 [BACK TO README.MD](../../README.md)
+
 # CI Quality Pipeline
 
-This document describes the quality pipeline used in the KWATERA repository and explains what is executed in CI for both the frontend application and the backend modules.
+This document describes the current quality pipeline used in the KWATERA repository.
 
 ## Purpose
 
 The CI pipeline verifies code quality and build stability across the repository.
 
 Its goals are:
+
 - keep formatting and static analysis consistent across modules,
 - detect build or test regressions early,
-- run SonarCloud analysis for onboarded backend modules,
-- make test and analysis reports available as downloadable workflow artifacts where applicable.
+- run SonarCloud analysis where the workflow enables it,
+- make backend reports available as downloadable workflow artifacts where applicable.
 
-## Workflow scope
+## Workflow Scope
 
 The main CI workflow is defined in:
 
 - `.github/workflows/ci.yml`
 
 It runs on:
+
 - `push` to `main`
-- `pull_request` targeting `main` for:
-   - `opened`
-   - `synchronize`
-   - `reopened`
+- `pull_request` targeting `main` for `opened`, `synchronize`, and `reopened`
 
-The workflow currently contains two quality paths:
-- a dedicated frontend job for the application under `frontend/`,
-- a backend matrix job for Java modules under `services/`.
+The workflow currently contains three quality paths:
 
-The backend part of the workflow uses a matrix strategy, so each backend module is processed independently.
+- a frontend job for the application under `frontend/`,
+- a Python job for `services/ocr-service`,
+- a Java backend matrix job for Maven modules under `services/<module-name>`.
 
-## Components covered by CI
+## Components Covered By CI
 
-### Frontend application
+### Frontend Application
 
-The frontend quality job covers the application located in:
+The frontend quality job covers:
 
 ```text
 frontend/
 ```
 
-### Backend modules covered by the matrix
+### Python OCR Service
 
-At the moment, the backend CI matrix covers:
+The Python quality job covers:
+
+```text
+services/ocr-service/
+```
+
+`ocr-service` is not part of the Java backend matrix because it is a Python FastAPI service.
+
+### Java Backend Matrix
+
+The Java backend CI matrix covers:
 
 - `api-gateway`
 - `auth-service`
@@ -53,187 +63,124 @@ At the moment, the backend CI matrix covers:
 - `reservation-service`
 - `service-registry`
 - `db-migrations`
+- `billing-service`
+- `ai-pricing-service`
 
-Each backend module is executed from its own working directory:
+Each Java module is executed from:
 
 ```text
 services/<module-name>
 ```
 
-## What CI runs for the frontend
+## What CI Runs For The Frontend
 
-For the frontend job, CI executes the following steps:
+For the frontend job, CI executes:
 
-1. **Checkout repository**
+1. Checkout repository.
+2. Set up Bun with `oven-sh/setup-bun@v2`.
+3. Install dependencies:
 
-2. **Set up Bun**
-   - installs the Bun runtime used by the frontend toolchain
+   ```bash
+   bun install --frozen-lockfile
+   ```
 
-3. **Install dependencies**
-   - runs:
-     ```bash
-     bun install --frozen-lockfile
-     ```
-   - verifies that the lockfile is valid and dependencies install correctly
+4. Run lint:
 
-4. **Run lint**
-   - runs:
-     ```bash
-     bun run lint
-     ```
-   - checks frontend code quality against the configured linting rules
+   ```bash
+   bun run lint
+   ```
 
-5. **Build frontend**
-   - runs:
-     ```bash
-     bun run build
-     ```
-   - verifies that the frontend builds successfully for production
+5. Build frontend:
 
-## What CI runs for each backend module
+   ```bash
+   bun run build
+   ```
 
-For every backend module in the matrix, CI executes the following steps:
+The frontend job does not upload dedicated workflow report artifacts.
 
-1. **Checkout repository**
-   - uses full git history with `fetch-depth: 0`
-   - this is important for SonarCloud branch and pull request analysis
+## What CI Runs For OCR Service
 
-2. **Set up Java 25**
-   - installs Temurin JDK 25
-   - enables Maven dependency caching
+For `services/ocr-service`, CI executes:
 
-3. **Cache Sonar packages**
-   - caches Sonar scanner data in `~/.sonar/cache`
-   - reduces repeated download time between workflow runs
+1. Checkout repository with `fetch-depth: 0`.
+2. Set up Python 3.12 with pip caching.
+3. Install development dependencies:
 
-4. **Make Maven Wrapper executable**
-   - runs:
-     ```bash
-     chmod +x mvnw
-     ```
+   ```bash
+   python -m pip install --upgrade pip
+   pip install -r requirements-dev.txt
+   ```
 
-5. **Check formatting**
-   - runs:
-     ```bash
-     ./mvnw -B -ntp spotless:check
-     ```
-   - verifies whether the code follows the configured formatting rules
-   - does not modify files in CI
-   - fails the job if formatting is incorrect
+4. Run Ruff lint:
 
-6. **Build, test and generate coverage**
-   - runs:
-     ```bash
-     ./mvnw -B -ntp clean verify
-     ```
-   - performs a clean build
-   - runs tests included in the Maven lifecycle
-   - generates coverage and test outputs if configured in the module
+   ```bash
+   ruff check .
+   ```
 
-7. **Run SpotBugs**
-   - runs:
-     ```bash
-     ./mvnw -B -ntp spotbugs:check
-     ```
-   - performs static analysis for potential bug patterns in Java code
-   - fails the job if SpotBugs reports issues above the accepted threshold
+5. Check Ruff formatting:
 
-8. **Run SonarCloud analysis**
-   - executed only when `sonar_enabled: true` for the module
-   - runs:
-     ```bash
-     ./mvnw -B -ntp org.sonarsource.scanner.maven:sonar-maven-plugin:5.5.0.6356:sonar \
-       -Dsonar.organization=${SONAR_ORGANIZATION} \
-       -Dsonar.projectKey=<module-project-key> \
-       -Dsonar.host.url=https://sonarcloud.io \
-       -Dsonar.qualitygate.wait=true
-     ```
-   - publishes code analysis results to SonarCloud
-   - waits for the Quality Gate result before finishing the step
+   ```bash
+   ruff format --check .
+   ```
 
-9. **Upload reports**
-   - uploads workflow artifacts even if the job fails
-   - attempts to upload report files generated by the current module
-   - supported report paths include:
-      - JaCoCo reports
-      - Surefire reports
-      - Failsafe reports
-      - SpotBugs XML report
-   - some of these files may be missing if a module does not generate them
+6. Run pytest with coverage:
 
-## SonarCloud configuration
+   ```bash
+   pytest --cov=app --cov-report=xml:coverage.xml --cov-report=term-missing -q
+   ```
 
-KWATERA uses SonarCloud in monorepo mode for backend modules.
+7. Build the OCR Docker image:
 
-Each onboarded backend module must have:
-- its own SonarCloud project,
-- its own unique `sonar.projectKey`,
-- a matching entry in the CI matrix.
+   ```bash
+   docker build -f Dockerfile -t kwatera-ocr-service:ci ../..
+   ```
 
-Example key format used in this repository:
+8. Run SonarQube Cloud analysis with `projectBaseDir: services/ocr-service`.
 
-```text
-kwatera-project_KWATERA_<module-name>
-```
+## What CI Runs For Each Java Backend Module
 
-Examples:
-- `kwatera-project_KWATERA_api-gateway`
-- `kwatera-project_KWATERA_auth-service`
-- `kwatera-project_KWATERA_config-server`
-- `kwatera-project_KWATERA_property-service`
-- `kwatera-project_KWATERA_reservation-service`
-- `kwatera-project_KWATERA_service-registry`
-- `kwatera-project_KWATERA_db-migrations`
+For every Java module in the matrix, CI executes:
 
-## Meaning of matrix fields
+1. Checkout repository with `fetch-depth: 0`.
+2. Set up Temurin Java 25 with Maven dependency caching.
+3. Cache Sonar scanner packages under `~/.sonar/cache`.
+4. Make Maven Wrapper executable:
 
-Each backend matrix entry contains:
+   ```bash
+   chmod +x mvnw
+   ```
 
-- `service`
-   - module directory name under `services/`
+5. Check formatting:
 
-- `sonar_enabled`
-   - enables or disables SonarCloud analysis for the module
+   ```bash
+   ./mvnw -B -ntp spotless:check
+   ```
 
-- `sonar_project_key`
-   - SonarCloud project key used by the Maven Sonar scanner
+6. Build, test, and generate coverage:
 
-## Requirements for adding a new backend module to CI
+   ```bash
+   ./mvnw -B -ntp clean verify
+   ```
 
-A backend module should be added to the CI matrix only if it is independently buildable in its own directory.
+7. Run SpotBugs:
 
-Minimum requirements:
-- directory exists under `services/<module-name>`
-- contains its own `pom.xml`
-- contains its own `mvnw`
-- can successfully run:
-   - `spotless:check`
-   - `clean verify`
-   - `spotbugs:check`
+   ```bash
+   ./mvnw -B -ntp spotbugs:check
+   ```
 
-If SonarCloud should also be enabled, the module must first be onboarded in SonarCloud and assigned a valid unique project key.
+8. Run SonarQube Cloud analysis when `sonar_enabled: true`:
 
-## Recommended procedure for onboarding a new backend module
+   ```bash
+   ./mvnw -B -ntp org.sonarsource.scanner.maven:sonar-maven-plugin:5.5.0.6356:sonar \
+     -Dsonar.organization=${SONAR_ORGANIZATION} \
+     -Dsonar.projectKey=<module-project-key> \
+     -Dsonar.host.url=https://sonarcloud.io \
+     -Dsonar.qualitygate.wait=true
+   ```
 
-1. Create or verify the module under `services/<module-name>`.
-2. Ensure the module builds locally with Maven Wrapper.
-3. Add the module to the CI matrix with:
-   - `sonar_enabled: false`
-   - empty `sonar_project_key`
-4. Verify that non-Sonar quality checks pass in CI.
-5. Create a dedicated SonarCloud monorepo project for the module.
-6. Update the CI matrix:
-   - set `sonar_enabled: true`
-   - set the correct `sonar_project_key`
-7. Open a pull request and verify:
-   - workflow success,
-   - SonarCloud analysis,
-   - PR decoration,
-   - Quality Gate result.
+9. Upload reports with `actions/upload-artifact@v4`.
 
-## Reports produced by CI
-
-For backend modules, the workflow attempts to upload the following report locations when they are present:
+The report upload step uses these paths:
 
 ```text
 services/<module>/target/site/jacoco/**
@@ -242,16 +189,50 @@ services/<module>/target/failsafe-reports/**
 services/<module>/target/spotbugsXml.xml
 ```
 
-Not every backend module generates every report type. The uploaded artifacts may include:
-- test execution results,
-- integration test output,
-- coverage data,
-- SpotBugs findings.
+Not every module generates every report type.
 
-The frontend job currently verifies install, lint and build, but does not upload dedicated workflow report artifacts.
+## SonarCloud Configuration
+
+The current Java matrix sets `sonar_enabled: true` for every Java module listed below:
+
+| Module | SonarCloud project key |
+| --- | --- |
+| `api-gateway` | `kwatera-project_KWATERA_api-gateway` |
+| `auth-service` | `kwatera-project_KWATERA_auth-service` |
+| `config-server` | `kwatera-project_KWATERA_config-server` |
+| `property-service` | `kwatera-project_KWATERA_property-service` |
+| `reservation-service` | `kwatera-project_KWATERA_reservation-service` |
+| `service-registry` | `kwatera-project_KWATERA_service-registry` |
+| `db-migrations` | `kwatera-project_KWATERA_db-migrations` |
+| `billing-service` | `kwatera-project_KWATERA_billing-service` |
+| `ai-pricing-service` | `kwatera-project_KWATERA_ai-pricing-service` |
+
+The OCR service also runs SonarQube Cloud analysis through the Python quality job using the `services/ocr-service` project base directory.
+
+No Java matrix entry currently has `sonar_enabled: false`.
+
+## Meaning Of Java Matrix Fields
+
+Each Java backend matrix entry contains:
+
+- `service`: module directory name under `services/`.
+- `sonar_enabled`: controls whether the conditional SonarQube Cloud Maven step runs.
+- `sonar_project_key`: SonarCloud project key used by the Maven Sonar scanner.
+
+## Reports Produced By CI
+
+For Java backend modules, the workflow attempts to upload:
+
+- JaCoCo coverage reports,
+- Surefire test reports,
+- Failsafe integration test reports,
+- SpotBugs XML reports.
+
+For the OCR service, pytest generates `coverage.xml` inside `services/ocr-service`, but the current workflow does not upload it as an artifact.
 
 ## Notes
 
-- `db-migrations` is included in the quality pipeline as a technical module, even though it is not treated as a business microservice.
-- SonarCloud onboarding should be completed before enabling Sonar for a newly added backend module.
-- The quality pipeline is intentionally split into frontend and backend paths, while the backend path remains module-based so failures in one backend module do not automatically block analysis of all others.
+- `db-migrations` is included in the Java quality matrix as a technical Maven module.
+- `billing-service` and `ai-pricing-service` are Stage 3 Java services and are covered by the current Java matrix.
+- `ocr-service` has its own Python quality path instead of being listed as a Java backend module.
+- The backend matrix uses `fail-fast: false`, so one module failure does not stop the other matrix entries from running.

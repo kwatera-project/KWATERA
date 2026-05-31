@@ -114,6 +114,9 @@ jobs:
           - service: billing-service
             sonar_enabled: true
             sonar_project_key: kwatera-project_KWATERA_billing-service
+          - service: ai-pricing-service
+            sonar_enabled: true
+            sonar_project_key: kwatera-project_KWATERA_ai-pricing-service
 
     defaults:
       run:

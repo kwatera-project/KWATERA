@@ -244,7 +244,7 @@ export default function PropertyDetailsPage() {
 
             <div className="border-b border-brand-accent pb-6">
                 <h1 className="text-3xl font-bold text-brand-main tracking-tight">{property.title}</h1>
-                <p className="text-sm text-brand-muted mt-1 font-medium">{property.location}</p>
+                <p className="text-sm text-brand-muted mt-1 font-medium">{property.city}</p>
             </div>
 
             <div className="bg-white border border-brand-accent rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 flex flex-col md:flex-row items-center justify-between gap-6">

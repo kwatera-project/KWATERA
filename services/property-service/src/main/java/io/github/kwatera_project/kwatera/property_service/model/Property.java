@@ -1,6 +1,7 @@
 package io.github.kwatera_project.kwatera.property_service.model;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.Getter;
@@ -31,7 +32,7 @@ public class Property {
   private String description;
 
   @Column(nullable = false)
-  private String location;
+  private String city;
 
   @Column(name = "created_at", nullable = false, updatable = false)
   @CreatedDate // The field is set automatically when the record is created and cannot be changed
@@ -41,4 +42,22 @@ public class Property {
   @Column(name = "updated_at")
   @LastModifiedDate // Field updated automatically whenever a record changes.
   private Instant updatedAt;
+
+  @Column(nullable = false)
+  private String country;
+
+  @Column(name = "postal_code", nullable = false)
+  private String postalCode;
+
+  @Column(nullable = false)
+  private String street;
+
+  @Column(name = "street_number", nullable = false)
+  private String streetNumber;
+
+  @Column(nullable = false)
+  private BigDecimal latitude;
+
+  @Column(nullable = false)
+  private BigDecimal longitude;
 }

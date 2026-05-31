@@ -1,17 +1,17 @@
 package io.github.kwatera_project.kwatera.property_service.service;
 
-import io.github.kwatera_project.kwatera.property_service.dto.PropertyDto;
-import io.github.kwatera_project.kwatera.property_service.dto.UnitDto;
-import io.github.kwatera_project.kwatera.property_service.dto.UnitSettlementItemDto;
+import io.github.kwatera_project.kwatera.property_service.dto.*;
 import io.github.kwatera_project.kwatera.property_service.model.*;
 import io.github.kwatera_project.kwatera.property_service.repository.*;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
+@RequiredArgsConstructor
 public class PropertyService {
 
   private final PropertyRepository propertyRepository;
@@ -21,22 +21,6 @@ public class PropertyService {
   private final UnitSettlementItemRepository unitSettlementItemRepository;
   private final io.github.kwatera_project.kwatera.property_service.client.NbpExchangeRateClient
       nbpExchangeRateClient;
-
-  public PropertyService(
-      PropertyRepository propertyRepository,
-      UnitRepository unitRepository,
-      PropertyImageRepository propertyImageRepository,
-      UnitImageRepository unitImageRepository,
-      UnitSettlementItemRepository unitSettlementItemRepository,
-      io.github.kwatera_project.kwatera.property_service.client.NbpExchangeRateClient
-          nbpExchangeRateClient) {
-    this.propertyRepository = propertyRepository;
-    this.unitRepository = unitRepository;
-    this.propertyImageRepository = propertyImageRepository;
-    this.unitImageRepository = unitImageRepository;
-    this.unitSettlementItemRepository = unitSettlementItemRepository;
-    this.nbpExchangeRateClient = nbpExchangeRateClient;
-  }
 
   public List<UnitDto> getUnits(UUID propertyId, String currency) {
     if (!propertyRepository.existsById(propertyId)) {
@@ -89,6 +73,27 @@ public class PropertyService {
     return unitRepository.findByPropertyIdIn(propertyIds).stream().map(Unit::getId).toList();
   }
 
+  public List<PropertyDto> getPropertiesByOwner(UUID ownerId) {
+    return propertyRepository.findByOwnerId(ownerId).stream().map(this::mapToDto).toList();
+  }
+
+  public List<UnitDto> getUnitsForOwnerProperty(UUID ownerId, UUID propertyId, String currency) {
+
+    Property property =
+        propertyRepository
+            .findById(propertyId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+
+    if (!property.getOwnerId().equals(ownerId)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+    }
+
+    return unitRepository.findByPropertyId(propertyId).stream()
+        .map(unit -> mapToDto(unit, currency))
+        .toList();
+  }
+
   public List<UUID> getAllUnitIds() {
     return unitRepository.findAll().stream().map(Unit::getId).toList();
   }
@@ -118,8 +123,14 @@ public class PropertyService {
         property.getOwnerId(),
         property.getTitle(),
         property.getDescription(),
-        property.getLocation(),
-        imageUrl);
+        property.getCity(),
+        imageUrl,
+        property.getLatitude(),
+        property.getLongitude(),
+        property.getCountry(),
+        property.getPostalCode(),
+        property.getStreet(),
+        property.getStreetNumber());
   }
 
   private UnitDto mapToDto(Unit unit, String currency) {
@@ -163,18 +174,19 @@ public class PropertyService {
       }
     }
 
-    UnitDto dto =
-        new UnitDto(
-            unit.getId(),
-            unit.getName(),
-            unit.getDescription(),
-            unit.getPricePerNight(),
-            unit.getCapacity(),
-            imageUrl,
-            convertedPricePerNight,
-            currencyInfo);
-    dto.setPropertyId(unit.getPropertyId());
-    return dto;
+    return new UnitDto(
+        unit.getId(),
+        unit.getName(),
+        unit.getDescription(),
+        unit.getPricePerNight(),
+        unit.getCapacity(),
+        imageUrl,
+        unit.getPropertyId(),
+        unit.getUnitType(),
+        unit.getUnitNumber(),
+        unit.getFloor(),
+        convertedPricePerNight,
+        currencyInfo);
   }
 
   private UnitSettlementItemDto mapToDto(UnitSettlementItem item) {
