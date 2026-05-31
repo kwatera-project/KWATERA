@@ -89,6 +89,27 @@ public class PropertyService {
     return unitRepository.findByPropertyIdIn(propertyIds).stream().map(Unit::getId).toList();
   }
 
+  public List<PropertyDto> getPropertiesByOwner(UUID ownerId) {
+    return propertyRepository.findByOwnerId(ownerId).stream().map(this::mapToDto).toList();
+  }
+
+  public List<UnitDto> getUnitsForOwnerProperty(UUID ownerId, UUID propertyId, String currency) {
+
+    Property property =
+        propertyRepository
+            .findById(propertyId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+
+    if (!property.getOwnerId().equals(ownerId)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+    }
+
+    return unitRepository.findByPropertyId(propertyId).stream()
+        .map(unit -> mapToDto(unit, currency))
+        .toList();
+  }
+
   public List<UUID> getAllUnitIds() {
     return unitRepository.findAll().stream().map(Unit::getId).toList();
   }

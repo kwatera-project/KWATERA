@@ -38,6 +38,11 @@ spring:
               predicates:
                 - Path=/api/properties,/api/properties/**
 
+            - id: property-service-owner
+              uri: lb://property-service
+              predicates:
+                - Path=/api/owner/**
+
             - id: billing-service
               uri: lb://billing-service
               predicates:
