@@ -14,4 +14,4 @@ import org.junit.platform.suite.api.Suite;
     key = Constants.GLUE_PROPERTY_NAME,
     value = "io.github.kwatera_project.kwatera.billing_service.bdd")
 @ConfigurationParameter(key = Constants.PLUGIN_PROPERTY_NAME, value = "pretty")
-class CucumberRunner {}
+class CucumberRunnerTest {}
