@@ -33,25 +33,25 @@ ALTER TABLE units
     ADD COLUMN floor INTEGER;
 
 UPDATE units
-SET unit_type   = 'Entire apartment',
+SET unit_type   = 'ENTIRE_APARTMENT',
     unit_number = '17K',
     floor       = 7
 WHERE id = '11111111-1111-1111-1111-222222222222';
 
 UPDATE units
-SET unit_type   = 'Entire apartment',
+SET unit_type   = 'ENTIRE_APARTMENT',
     unit_number = '19K',
     floor       = 7
 WHERE id = '22222222-2222-2222-2222-333333333333';
 
 UPDATE units
-SET unit_type   = 'Private room in home',
+SET unit_type   = 'PRIVATE_ROOM_IN_HOME',
     unit_number = '10',
     floor       = 1
 WHERE id = '33333333-3333-3333-3333-444444444444';
 
 UPDATE units
-SET unit_type   = 'Entire guest suite',
+SET unit_type   = 'ENTIRE_GUEST_SUITE',
     unit_number = '10',
     floor       = 0
 WHERE id = '44444444-4444-4444-4444-555555555555';
