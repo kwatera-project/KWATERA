@@ -74,9 +74,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
         ? 'bg-white/90 backdrop-blur-md border-b border-gray-200 py-4'
         : 'bg-transparent py-5';
 
-    const containerClass = isFullScreenPage
-        ? "w-full px-4 sm:px-6 lg:px-8 flex justify-between items-center relative"
-        : "max-w-7xl mx-auto px-4 md:px-8 lg:px-16 flex justify-between items-center relative";
+    const containerClass = "max-w-7xl mx-auto px-4 md:px-8 lg:px-16 flex justify-between items-center relative";
 
     return (
         <nav className={`${positionClass} w-full z-[1000] transition-all duration-300 ease-in-out ${bgAndPaddingClass}`}>
