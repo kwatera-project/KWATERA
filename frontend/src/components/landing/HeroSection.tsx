@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Search, MapPin, CalendarDays, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import DatePicker from 'react-datepicker';
 import SharedDatePicker from "../SharedDatePicker";
 
 export default function HeroSection() {
@@ -9,6 +10,7 @@ export default function HeroSection() {
     const [checkOut, setCheckOut] = useState<Date | null>(null);
     const [guests, setGuests] = useState('2');
     const navigate = useNavigate();
+    const checkOutRef = useRef<DatePicker | null>(null);
 
     const handleSearch = () => {
         const params = new URLSearchParams();
@@ -64,7 +66,14 @@ export default function HeroSection() {
                             </label>
                             <SharedDatePicker
                                 selected={checkIn}
-                                onChange={(date: Date | null) => setCheckIn(date)}
+                                onChange={(date: Date | null) => {
+                                    setCheckIn(date);
+                                    if (date) {
+                                        setTimeout(() => {
+                                            checkOutRef.current?.setOpen(true);
+                                        }, 100);
+                                    }
+                                }}
                                 selectsStart
                                 startDate={checkIn}
                                 endDate={checkOut}
@@ -80,6 +89,7 @@ export default function HeroSection() {
                                 <CalendarDays size={14} className="text-[rgb(var(--color-burgundy))]" /> Check out
                             </label>
                             <SharedDatePicker
+                                datepickerRef={checkOutRef}
                                 selected={checkOut}
                                 onChange={(date: Date | null) => setCheckOut(date)}
                                 selectsEnd

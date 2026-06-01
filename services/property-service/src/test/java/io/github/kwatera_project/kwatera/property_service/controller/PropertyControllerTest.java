@@ -23,6 +23,7 @@ class PropertyControllerTest {
     PropertyDto dto =
         new PropertyDto(
             UUID.randomUUID(),
+            UUID.randomUUID(),
             "Test",
             "Desc",
             "Warsaw",
@@ -49,6 +50,7 @@ class PropertyControllerTest {
     PropertyDto dto =
         new PropertyDto(
             id,
+            UUID.randomUUID(),
             "Test",
             "Desc",
             "Warsaw",
@@ -79,6 +81,7 @@ class PropertyControllerTest {
             BigDecimal.valueOf(200),
             2,
             "img.jpg",
+            propertyId,
             UnitType.ENTIRE_RENTAL_UNIT,
             "10A",
             4,
@@ -97,6 +100,7 @@ class PropertyControllerTest {
   @Test
   void getUnit_shouldReturnUnit() {
     UUID id = UUID.randomUUID();
+    UUID propertyId = UUID.randomUUID();
 
     UnitDto unit =
         new UnitDto(
@@ -106,6 +110,7 @@ class PropertyControllerTest {
             BigDecimal.valueOf(200),
             2,
             "img.jpg",
+            propertyId,
             UnitType.ENTIRE_RENTAL_UNIT,
             "10A",
             4,

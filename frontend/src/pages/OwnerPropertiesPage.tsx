@@ -19,18 +19,26 @@ export default function OwnerPropertiesPage() {
 
 
     return (
-        <div className="p-6">
-            <div className="flex justify-between mb-6">
-                <h1 className="text-3xl font-bold">My Properties</h1>
-                <button className="px-4 py-2 bg-primary text-white rounded-lg">
+        <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
+            <div className="flex justify-between items-center border-b border-[#DACDCA] pb-4 mb-6">
+                <div>
+                    <h1 className="text-3xl font-black text-[#1A1A1A] tracking-tight">My Properties</h1>
+                    <p className="text-sm font-semibold text-[#7A7A7A] mt-1">Manage and configure your rental accommodations</p>
+                </div>
+                <button className="px-5 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm">
                     Add Property
                 </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
                 {properties.map(property => (
                     <PropertyCard key={property.id} property={property}/>
                 ))}
+                {properties.length === 0 && (
+                    <div className="text-gray-500 italic py-8 text-center bg-white border border-[#DACDCA] rounded-xl shadow-sm">
+                        No properties found. Click "Add Property" to create one.
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -50,36 +58,40 @@ function PropertyCard({ property }: { property: Property }) {
     }, [property.id]);
 
     return (
-        <div className="bg-card rounded-xl p-4 shadow flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex gap-4 items-start">
-                <div className="w-32 h-32 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center">
+        <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="flex flex-col sm:flex-row gap-6 items-start flex-grow w-full">
+                <div className="w-full sm:w-32 h-32 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center border border-[#DACDCA]/50 shadow-sm">
                     {mainImage ? (
                         <img src={mainImage} alt={property.title} className="w-full h-full object-cover" />
                     ) : (
-                        <span className="text-gray-400 text-sm">No Image</span>
+                        <span className="text-gray-400 text-xs font-semibold uppercase tracking-wider">No Image</span>
                     )}
                 </div>
 
-                <div>
-                    <h2 className="font-bold text-xl">{property.title}</h2>
-                    <p className="text-gray-600 text-sm mb-2">{property.description}</p>
-                    <div className="text-sm text-gray-500 space-y-0.5">
-                        <div>Address: {property.street} {property.streetNumber}, {property.postalCode} {property.city}, {property.country}</div>
+                <div className="space-y-2 flex-grow">
+                    <h2 className="font-black text-xl text-[#1A1A1A] tracking-tight">{property.title}</h2>
+                    <p className="text-[#7A7A7A] text-sm font-medium line-clamp-2">{property.description}</p>
+                    
+                    <div className="pt-2">
+                        <span className="block text-xxs font-bold text-[#7A7A7A] uppercase tracking-wider mb-1">Address</span>
+                        <p className="text-sm font-semibold text-[#1A1A1A]">
+                            {property.street} {property.streetNumber}, {property.postalCode} {property.city}, {property.country}
+                        </p>
                     </div>
                 </div>
             </div>
 
-            <div className="flex gap-3 self-end md:self-center">
+            <div className="flex gap-3 w-full md:w-auto justify-end border-t border-gray-100 md:border-none pt-4 md:pt-0 shrink-0">
                 <Link
                     to={`/owner/properties/${property.id}/units`}
-                    className="px-3 py-1.5 border rounded-lg text-sm hover:bg-gray-50"
+                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all inline-flex items-center"
                 >
                     Manage Units
                 </Link>
-                <button className="px-3 py-1.5 border rounded-lg text-sm hover:bg-gray-50">
+                <button className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all">
                     Edit
                 </button>
-                <button className="px-3 py-1.5 border rounded-lg text-sm bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                <button className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 text-sm rounded-lg shadow-sm transition-all">
                     Delete
                 </button>
             </div>

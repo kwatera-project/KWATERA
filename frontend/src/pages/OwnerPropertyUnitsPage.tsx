@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getProperty } from "../api/propertyApi.ts";
 import type { Property, Unit } from "../types/property";
@@ -20,19 +20,26 @@ export default function OwnerPropertyUnitsPage() {
     }, [propertyId]);
 
     return (
-        <div className="p-6">
-            <div className="flex justify-between mb-6 items-center">
+        <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
+            {/* Top Ghost Back Navigation Link */}
+            <div>
+                <Link to="/owner/properties" className="inline-flex items-center text-sm font-bold text-[#7A7A7A] hover:text-[#1A1A1A] transition-colors mb-4">
+                    ← Back to Properties
+                </Link>
+            </div>
+
+            <div className="flex justify-between items-center border-b border-[#DACDCA] pb-4 mb-6">
                 <div>
-                    <h1 className="text-3xl font-bold">{property?.title || "Loading..."}</h1>
-                    <p className="text-gray-500 text-sm">Manage Units</p>
+                    <h1 className="text-3xl font-black text-[#1A1A1A] tracking-tight">{property?.title || "Loading Accommodation..."}</h1>
+                    <p className="text-sm font-semibold text-[#7A7A7A] uppercase tracking-wider mt-1.5">Manage Accommodation Units</p>
                 </div>
 
-                <button className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium">
+                <button className="px-5 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm">
                     Add Unit
                 </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
                 {units.map(unit => (
                     <UnitCard
                         key={unit.id}
@@ -41,7 +48,9 @@ export default function OwnerPropertyUnitsPage() {
                     />
                 ))}
                 {units.length === 0 && (
-                    <div className="text-gray-500 italic py-4">No units found for this property.</div>
+                    <div className="text-gray-500 italic py-8 text-center bg-white border border-[#DACDCA] rounded-xl shadow-sm">
+                        No accommodation units found for this property. Click "Add Unit" to get started.
+                    </div>
                 )}
             </div>
         </div>
@@ -67,41 +76,62 @@ function UnitCard({ unit, propertyId }: { unit: Unit; propertyId: string }) {
     }, [propertyId, unit.id]);
 
     return (
-        <div className="border rounded-xl p-4 bg-card shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="space-y-1">
-                <h2 className="font-bold text-xl">{unit.name}</h2>
-                <p className="text-gray-600 text-sm">{unit.description}</p>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 pt-2 text-sm text-gray-500">
-                    <div><span className="font-medium text-gray-700">Type:</span> {unit.unitType}</div>
-                    <div><span className="font-medium text-gray-700">Unit #:</span> {unit.unitNumber}</div>
-                    <div><span className="font-medium text-gray-700">Floor:</span> {unit.floor}</div>
-                    <div><span className="font-medium text-gray-700">Capacity:</span> {unit.capacity} guests</div>
+        <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <div className="space-y-4 flex-grow w-full">
+                <div>
+                    <h2 className="font-black text-xl text-[#1A1A1A] tracking-tight">{unit.name}</h2>
+                    <p className="text-[#7A7A7A] text-sm font-medium mt-1">{unit.description}</p>
                 </div>
 
-                <div className="pt-2 flex flex-wrap gap-x-6 items-center">
-                    <div className="text-sm font-medium">
-                        Current Price: <span className="text-base font-semibold">{unit.pricePerNight} {currency}</span> / night
+                {/* Details Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2 text-xs font-bold text-gray-500 border-t border-gray-50/50">
+                    <div>
+                        <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-0.5">Unit Type</span>
+                        <span className="text-sm font-bold text-[#1A1A1A]">{unit.unitType}</span>
+                    </div>
+                    <div>
+                        <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-0.5">Unit Number</span>
+                        <span className="text-sm font-bold text-[#1A1A1A]">{unit.unitNumber}</span>
+                    </div>
+                    <div>
+                        <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-0.5">Floor Level</span>
+                        <span className="text-sm font-bold text-[#1A1A1A]">{unit.floor}</span>
+                    </div>
+                    <div>
+                        <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-0.5">Guest Capacity</span>
+                        <span className="text-sm font-bold text-[#1A1A1A]">{unit.capacity} guests</span>
+                    </div>
+                </div>
+
+                {/* Price Blocks */}
+                <div className="pt-4 flex flex-wrap gap-x-10 gap-y-4 items-center border-t border-gray-100 mt-4">
+                    <div>
+                        <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-1">Current Price</span>
+                        <div className="text-sm font-bold text-[#7A7A7A]">
+                            <span className="text-xl font-black text-[#1A1A1A]">{unit.pricePerNight} {currency}</span> / night
+                        </div>
                     </div>
 
-                    <div className="text-sm font-medium text-blue-600 flex items-center gap-1">
-                        Suggested price:{" "}
-                        {loadingPrediction ? (
-                            <span className="text-gray-400 text-xs animate-pulse">Calculating...</span>
-                        ) : predictedPrice !== null ? (
-                            <span className="text-base font-bold">{predictedPrice} {currency}</span>
-                        ) : (
-                            <span className="text-amber-600 text-xs">Unavailable</span>
-                        )}
+                    <div>
+                        <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-1">Suggested Price (AI)</span>
+                        <div className="text-sm font-bold text-[#7A7A7A] flex items-center gap-1.5">
+                            {loadingPrediction ? (
+                                <span className="text-gray-400 text-sm animate-pulse font-semibold">Calculating...</span>
+                            ) : predictedPrice !== null ? (
+                                <span className="text-xl font-black text-indigo-600">{predictedPrice} {currency}</span>
+                            ) : (
+                                <span className="text-amber-600 text-sm font-semibold">Unavailable</span>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div className="flex gap-2 self-end md:self-center">
-                <button className="px-3 py-1.5 border rounded-lg text-sm hover:bg-gray-50">
+            <div className="flex gap-3 w-full lg:w-auto justify-end border-t border-gray-100 lg:border-none pt-4 lg:pt-0 shrink-0">
+                <button className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all">
                     Edit
                 </button>
-                <button className="px-3 py-1.5 border rounded-lg text-sm bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                <button className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 text-sm rounded-lg shadow-sm transition-all">
                     Delete
                 </button>
             </div>

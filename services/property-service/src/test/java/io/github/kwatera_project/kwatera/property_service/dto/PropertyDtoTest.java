@@ -11,10 +11,12 @@ class PropertyDtoTest {
   @Test
   void propertyDto_shouldReturnValues() {
     UUID id = UUID.randomUUID();
+    UUID ownerId = UUID.randomUUID();
 
     PropertyDto dto =
         new PropertyDto(
             id,
+            ownerId,
             "Title",
             "Desc",
             "City",
@@ -27,6 +29,7 @@ class PropertyDtoTest {
             "12F");
 
     assertEquals(id, dto.getId());
+    assertEquals(ownerId, dto.getOwnerId());
     assertEquals("Title", dto.getTitle());
     assertEquals("Desc", dto.getDescription());
     assertEquals("City", dto.getCity());

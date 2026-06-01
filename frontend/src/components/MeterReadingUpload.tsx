@@ -128,32 +128,58 @@ export default function MeterReadingUpload({
         return "text-gray-600";
     };
 
+    const fileInputId = `file-input-${readingType.toLowerCase()}-${utilityType.toLowerCase()}`;
+    const utilityName = utilityType.charAt(0) + utilityType.slice(1).toLowerCase();
+
     return (
-        <div className="border rounded-xl p-4 bg-white shadow-sm">
-            <h3 className="font-semibold text-gray-700 mb-3">
-                {readingType === "INITIAL" ? "Check-in" : "Check-out"} Meter Reading ({utilityType})
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+            <h3 className="font-bold text-lg text-brand-main tracking-tight mb-3">
+                {readingType === "INITIAL" ? "Check-in" : "Check-out"} Meter Reading ({utilityName})
             </h3>
 
-            <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/heif,image/heic,.heif,.heic"
-                onChange={(e) => handleFileChange(e.target.files?.[0])}
-                className="block w-full text-sm text-gray-500 mb-3 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700"
-            />
+            <div className="flex items-center gap-3 mb-3">
+                <label
+                    htmlFor={fileInputId}
+                    className="border border-gray-300 bg-white text-brand-main px-4 py-2 rounded-md hover:bg-gray-50 cursor-pointer inline-flex items-center gap-2 font-medium text-sm transition shadow-sm"
+                >
+                    <svg className="w-4.5 h-4.5 text-brand-muted" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Choose file
+                </label>
+                <input
+                    id={fileInputId}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/heif,image/heic,.heif,.heic"
+                    onChange={(e) => handleFileChange(e.target.files?.[0])}
+                    className="hidden"
+                />
+                {file ? (
+                    <span className="text-sm font-medium text-brand-main bg-brand-bg px-2.5 py-1.5 rounded-lg border border-brand-accent truncate max-w-xs" title={file.name}>
+                        {file.name}
+                    </span>
+                ) : (
+                    <span className="text-sm text-brand-muted">No file chosen</span>
+                )}
+            </div>
 
-            <p className="text-xs text-gray-500 mb-3">
+            <p className="text-xs text-brand-muted mb-4">
                 Supported formats: JPG, PNG, WebP, HEIF, HEIC.
             </p>
 
             <button
                 onClick={handleUpload}
                 disabled={!file || loading}
-                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+                className={`text-sm font-semibold transition py-2 px-4 rounded-lg ${
+                    !file || loading
+                        ? "bg-brand-accent text-brand-main opacity-50 cursor-not-allowed"
+                        : "bg-brand-primary text-white hover:opacity-90 cursor-pointer"
+                }`}
             >
                 {loading ? "Uploading..." : "Upload Photo"}
             </button>
 
-            {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+            {error && <p className="mt-3 text-sm text-red-600 font-semibold">{error}</p>}
 
             {result && (
                 <div className={`mt-3 p-3 rounded border text-sm font-medium ${statusColor()}`}>

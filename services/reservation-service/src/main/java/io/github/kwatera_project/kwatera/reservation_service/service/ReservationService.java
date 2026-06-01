@@ -290,6 +290,51 @@ public class ReservationService {
     dto.setConvertedTotalPrice(convertedTotalPrice);
     dto.setCurrencyInfo(currencyInfo);
 
+    // Fetch unit name, property name and city from property-service
+    String guestName = "Guest " + reservation.getUserId().toString().substring(0, 8);
+    String unitName = "Unknown Room";
+    String city = "Unknown City";
+
+    try {
+      String unitUrl = "http://property-service/api/properties/units/" + reservation.getUnitId();
+      UnitDetailsDto unitDto = restTemplate.getForObject(unitUrl, UnitDetailsDto.class);
+      if (unitDto != null) {
+        if (unitDto.name() != null) {
+          unitName = unitDto.name();
+        }
+        if (unitDto.propertyId() != null) {
+          String propertyUrl = "http://property-service/api/properties/" + unitDto.propertyId();
+          PropertyDetailsDto propertyDto =
+              restTemplate.getForObject(propertyUrl, PropertyDetailsDto.class);
+          if (propertyDto != null) {
+            if (propertyDto.location() != null) {
+              city = propertyDto.location();
+            }
+            if (propertyDto.ownerId() != null) {
+              UUID ownerId = propertyDto.ownerId();
+              String ownerName = "Owner " + ownerId.toString().substring(0, 8);
+              String ownerEmail = "owner_" + ownerId.toString().substring(0, 8) + "@example.com";
+              if (ownerId.toString().equals("22222222-2222-2222-2222-222222222222")) {
+                ownerName = "John Owner";
+                ownerEmail = "owner1@example.com";
+              } else if (ownerId.toString().equals("33333333-3333-3333-3333-333333333333")) {
+                ownerName = "Jane Owner";
+                ownerEmail = "owner2@example.com";
+              }
+              dto.setOwnerName(ownerName);
+              dto.setOwnerEmail(ownerEmail);
+            }
+          }
+        }
+      }
+    } catch (Exception e) {
+      log.warn("Failed to fetch property details for reservation: {}", reservationId, e);
+    }
+
+    dto.setGuestName(guestName);
+    dto.setUnitName(unitName);
+    dto.setCity(city);
+
     return dto;
   }
 
@@ -423,4 +468,8 @@ public class ReservationService {
 
     return new ReservationMetricsDto(totalReservations, occupancyRate, occupiedNights);
   }
+
+  record UnitDetailsDto(UUID propertyId, String name) {}
+
+  record PropertyDetailsDto(String title, String location, UUID ownerId) {}
 }

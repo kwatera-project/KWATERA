@@ -1,5 +1,9 @@
+import { useState, useEffect, useMemo } from 'react';
 import { MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useCurrency } from '../../contexts/CurrencyContext';
+import { getUnits } from '../../api/propertyApi';
+import type { Unit } from '../../types/property';
 
 interface Property {
     id: string;
@@ -18,10 +22,46 @@ interface TopPropertiesProps {
     properties: Property[];
 }
 
+const FALLBACK_RATES: Record<string, number> = {
+  PLN: 1.0,
+  EUR: 4.3,
+  USD: 4.0
+};
+
 export default function TopPropertiesSection({ properties = [] }: TopPropertiesProps) {
-  const displayProperties = properties && properties.length > 0 
-    ? properties.slice(0, 4)
-    : [];
+  const displayProperties = useMemo(() => {
+    return properties && properties.length > 0 
+      ? properties.slice(0, 4)
+      : [];
+  }, [properties]);
+
+  const { currency } = useCurrency();
+  const [prices, setPrices] = useState<Record<string, { price: number; displayCurrency: string }>>({});
+
+  useEffect(() => {
+    if (!displayProperties || displayProperties.length === 0) return;
+
+    displayProperties.forEach((property) => {
+      getUnits(property.id, currency)
+        .then((units: Unit[]) => {
+          if (units && units.length > 0) {
+            // Find the minimum price or use the first unit's price
+            const unit = units[0];
+            const priceVal = unit.convertedPricePerNight && currency !== 'PLN'
+              ? unit.convertedPricePerNight
+              : unit.pricePerNight;
+            const displayCurr = unit.currencyInfo?.displayCurrency || currency;
+            setPrices(prev => ({
+              ...prev,
+              [property.id]: { price: priceVal, displayCurrency: displayCurr }
+            }));
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching units for property " + property.id, err);
+        });
+    });
+  }, [displayProperties, currency]);
 
   if (displayProperties.length === 0) {
       return null;
@@ -41,42 +81,52 @@ export default function TopPropertiesSection({ properties = [] }: TopPropertiesP
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {displayProperties.map((property) => (
-            <Link 
-              to={`/property/${property.id}`} 
-              key={property.id} 
-              className="group block bg-white rounded-[32px] p-3 border border-gray-100/50 shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl cursor-pointer"
-            >
+          {displayProperties.map((property) => {
+            const priceInfo = prices[property.id];
+            const rawPrice = property.price || property.pricePerNight || 250;
+            const displayPrice = priceInfo 
+              ? priceInfo.price 
+              : (rawPrice / (FALLBACK_RATES[currency] || 1.0));
+            const displayCurr = priceInfo
+              ? priceInfo.displayCurrency
+              : currency;
 
-              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-5 shadow-sm">
-                <img 
-                  src={property.imageUrl || 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} 
-                  alt={property.title || property.name || "Property image"} 
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                />
-              </div>
+            return (
+              <Link 
+                to={`/property/${property.id}`} 
+                key={property.id} 
+                className="group block bg-white rounded-[32px] p-3 border border-gray-100/50 shadow-md transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl cursor-pointer"
+              >
 
+                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-5 shadow-sm">
+                  <img 
+                    src={property.imageUrl || 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} 
+                    alt={property.title || property.name || "Property image"} 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
+                </div>
 
-              <div className="flex justify-between items-start gap-3 px-1.5">
-                <div className="flex-1">
-                  <h3 className="font-bold text-title text-lg mb-1.5 group-hover:text-[rgb(var(--color-burgundy))] transition-colors line-clamp-1">
-                    {property.title || property.name || 'Cozy Accommodation'}
-                  </h3>
-                  <div className="flex items-center gap-1.5 text-details font-medium">
-                    <MapPin size={15} />
-                    <span className="text-sm">{property.location || property.city || 'Poland'}</span>
+                <div className="flex justify-between items-start gap-3 px-1.5">
+                  <div className="flex-1">
+                    <h3 className="font-bold text-title text-lg mb-1.5 group-hover:text-[rgb(var(--color-burgundy))] transition-colors line-clamp-1">
+                      {property.title || property.name || 'Cozy Accommodation'}
+                    </h3>
+                    <div className="flex items-center gap-1.5 text-details font-medium">
+                      <MapPin size={15} />
+                      <span className="text-sm">{property.location || property.city || 'Poland'}</span>
+                    </div>
+                  </div>
+                  <div className="text-right whitespace-nowrap">
+                    <span className="font-black text-lg text-[rgb(var(--color-burgundy))]">
+                      {Math.round(displayPrice)}{' '}
+                      <span className="font-bold text-[10px] ml-0.5 text-[rgb(var(--color-burgundy))]/85">{displayCurr}</span>
+                    </span>
+                    <span className="text-[10px] text-details block font-semibold">/night</span>
                   </div>
                 </div>
-                <div className="text-right whitespace-nowrap">
-                  <span className="font-black text-lg text-[rgb(var(--color-burgundy))]">
-                    {property.price || property.pricePerNight || 250} 
-                    <span className="font-bold text-[10px] ml-0.5 text-[rgb(var(--color-burgundy))]/85">PLN</span>
-                  </span>
-                  <span className="text-[10px] text-details block font-semibold">/night</span>
-                </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
 
         <div className="flex justify-center gap-2 mt-12">

@@ -120,6 +120,7 @@ public class PropertyService {
 
     return new PropertyDto(
         property.getId(),
+        property.getOwnerId(),
         property.getTitle(),
         property.getDescription(),
         property.getCity(),
@@ -180,6 +181,7 @@ public class PropertyService {
         unit.getPricePerNight(),
         unit.getCapacity(),
         imageUrl,
+        unit.getPropertyId(),
         unit.getUnitType(),
         unit.getUnitNumber(),
         unit.getFloor(),

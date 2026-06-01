@@ -17,6 +17,8 @@ import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
 import io.github.kwatera_project.kwatera.reservation_service.model.SettlementStatus;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
+import io.github.kwatera_project.kwatera.reservation_service.service.ReservationService.PropertyDetailsDto;
+import io.github.kwatera_project.kwatera.reservation_service.service.ReservationService.UnitDetailsDto;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -1234,5 +1236,377 @@ class ReservationServiceTest {
     assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
     assertEquals("Unsupported currency", ex.getReason());
     verify(repository, never()).save(any());
+  }
+
+  @Test
+  void getDashboardReservationMetrics_shouldThrowIfStartAfterEnd() {
+    ReservationService service = reservationService(null, null, null);
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () ->
+                service.getDashboardReservationMetrics(
+                    LocalDate.now().plusDays(1), LocalDate.now(), UUID.randomUUID(), true));
+    assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+  }
+
+  @Test
+  void getDashboardReservationMetrics_shouldReturnZerosIfNoUnits() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = reservationService(repository, restTemplate, null);
+
+    when(restTemplate.getForObject(anyString(), eq(UUID[].class))).thenReturn(new UUID[0]);
+
+    io.github.kwatera_project.kwatera.reservation_service.dto.ReservationMetricsDto metrics =
+        service.getDashboardReservationMetrics(
+            LocalDate.now(), LocalDate.now().plusDays(10), UUID.randomUUID(), false);
+
+    assertEquals(0L, metrics.getTotalReservations());
+    assertEquals(0.0, metrics.getOccupancyRate());
+    assertEquals(0L, metrics.getOccupiedDays());
+  }
+
+  @Test
+  void getDashboardReservationMetrics_shouldCalculateMetricsForAdmin() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = reservationService(repository, restTemplate, null);
+
+    UUID unitId = UUID.randomUUID();
+    LocalDate start = LocalDate.now();
+    LocalDate end = start.plusDays(10);
+
+    when(restTemplate.getForObject(contains("/units/ids"), eq(UUID[].class)))
+        .thenReturn(new UUID[] {unitId});
+    when(repository.countReservationsInDateRange(start, end)).thenReturn(5L);
+
+    Reservation r = new Reservation();
+    r.setStartDate(start.plusDays(1));
+    r.setEndDate(start.plusDays(3));
+    when(repository.findActiveReservationsInDateRange(start, end)).thenReturn(List.of(r));
+
+    io.github.kwatera_project.kwatera.reservation_service.dto.ReservationMetricsDto metrics =
+        service.getDashboardReservationMetrics(start, end, UUID.randomUUID(), true);
+
+    assertEquals(5L, metrics.getTotalReservations());
+    assertEquals(2L, metrics.getOccupiedDays());
+    assertEquals(20.0, metrics.getOccupancyRate());
+  }
+
+  @Test
+  void getDashboardReservationMetrics_shouldCalculateMetricsForOwner() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = reservationService(repository, restTemplate, null);
+
+    UUID unitId = UUID.randomUUID();
+    UUID ownerId = UUID.randomUUID();
+    LocalDate start = LocalDate.now();
+    LocalDate end = start.plusDays(10);
+
+    when(restTemplate.getForObject(
+            eq("http://property-service/api/properties/units/ids/" + ownerId), eq(UUID[].class)))
+        .thenReturn(new UUID[] {unitId});
+
+    when(repository.countReservationsInDateRangeForUnits(List.of(unitId), start, end))
+        .thenReturn(3L);
+
+    Reservation r = new Reservation();
+    r.setStartDate(start.minusDays(5));
+    r.setEndDate(start.plusDays(5));
+    when(repository.findActiveReservationsInDateRangeForUnits(List.of(unitId), start, end))
+        .thenReturn(List.of(r));
+
+    io.github.kwatera_project.kwatera.reservation_service.dto.ReservationMetricsDto metrics =
+        service.getDashboardReservationMetrics(start, end, ownerId, false);
+
+    assertEquals(3L, metrics.getTotalReservations());
+    assertEquals(5L, metrics.getOccupiedDays());
+    assertEquals(50.0, metrics.getOccupancyRate());
+  }
+
+  @Test
+  void getReservationDetails_shouldPopulatePropertyAndOwnerDetails_JohnOwner() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service =
+        reservationService(repository, restTemplate, mock(NbpExchangeRateClient.class));
+
+    UUID reservationId = UUID.randomUUID();
+    UUID userId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    UUID propertyId = UUID.randomUUID();
+    UUID ownerId = UUID.fromString("22222222-2222-2222-2222-222222222222");
+
+    Reservation reservation = new Reservation();
+    reservation.setId(reservationId);
+    reservation.setUserId(userId);
+    reservation.setUnitId(unitId);
+    reservation.setStartDate(LocalDate.now());
+    reservation.setEndDate(LocalDate.now().plusDays(2));
+    reservation.setStatus(ReservationStatus.PENDING);
+    reservation.setCreatedAt(Instant.now());
+    reservation.setTotalPrice(BigDecimal.valueOf(100));
+    reservation.setPaymentCurrency("PLN");
+    reservation.setPaymentExchangeRate(BigDecimal.ONE);
+
+    when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
+
+    UnitDetailsDto mockUnit = new UnitDetailsDto(propertyId, "Luxury Villa");
+    PropertyDetailsDto mockProperty = new PropertyDetailsDto("My Villa", "Zakopane", ownerId);
+
+    when(restTemplate.getForObject(
+            eq("http://property-service/api/properties/units/" + unitId), eq(UnitDetailsDto.class)))
+        .thenReturn(mockUnit);
+    when(restTemplate.getForObject(
+            eq("http://property-service/api/properties/" + propertyId),
+            eq(PropertyDetailsDto.class)))
+        .thenReturn(mockProperty);
+
+    ReservationDetailsDto dto = service.getReservationDetails(reservationId, userId, false, false);
+
+    assertNotNull(dto);
+    assertEquals("Luxury Villa", dto.getUnitName());
+    assertEquals("Zakopane", dto.getCity());
+    assertEquals("John Owner", dto.getOwnerName());
+    assertEquals("owner1@example.com", dto.getOwnerEmail());
+  }
+
+  @Test
+  void getReservationDetails_shouldPopulatePropertyAndOwnerDetails_JaneOwner() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service =
+        reservationService(repository, restTemplate, mock(NbpExchangeRateClient.class));
+
+    UUID reservationId = UUID.randomUUID();
+    UUID userId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    UUID propertyId = UUID.randomUUID();
+    UUID ownerId = UUID.fromString("33333333-3333-3333-3333-333333333333");
+
+    Reservation reservation = new Reservation();
+    reservation.setId(reservationId);
+    reservation.setUserId(userId);
+    reservation.setUnitId(unitId);
+    reservation.setStartDate(LocalDate.now());
+    reservation.setEndDate(LocalDate.now().plusDays(2));
+    reservation.setStatus(ReservationStatus.PENDING);
+    reservation.setCreatedAt(Instant.now());
+    reservation.setTotalPrice(BigDecimal.valueOf(100));
+    reservation.setPaymentCurrency("PLN");
+    reservation.setPaymentExchangeRate(BigDecimal.ONE);
+
+    when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
+
+    UnitDetailsDto mockUnit = new UnitDetailsDto(propertyId, "Charming Cabin");
+    PropertyDetailsDto mockProperty = new PropertyDetailsDto("My Cabin", "Sopot", ownerId);
+
+    when(restTemplate.getForObject(
+            eq("http://property-service/api/properties/units/" + unitId), eq(UnitDetailsDto.class)))
+        .thenReturn(mockUnit);
+    when(restTemplate.getForObject(
+            eq("http://property-service/api/properties/" + propertyId),
+            eq(PropertyDetailsDto.class)))
+        .thenReturn(mockProperty);
+
+    ReservationDetailsDto dto = service.getReservationDetails(reservationId, userId, false, false);
+
+    assertNotNull(dto);
+    assertEquals("Charming Cabin", dto.getUnitName());
+    assertEquals("Sopot", dto.getCity());
+    assertEquals("Jane Owner", dto.getOwnerName());
+    assertEquals("owner2@example.com", dto.getOwnerEmail());
+  }
+
+  @Test
+  void getReservationDetails_shouldPopulatePropertyAndOwnerDetails_GenericOwner() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service =
+        reservationService(repository, restTemplate, mock(NbpExchangeRateClient.class));
+
+    UUID reservationId = UUID.randomUUID();
+    UUID userId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    UUID propertyId = UUID.randomUUID();
+    UUID ownerId = UUID.randomUUID();
+
+    Reservation reservation = new Reservation();
+    reservation.setId(reservationId);
+    reservation.setUserId(userId);
+    reservation.setUnitId(unitId);
+    reservation.setStartDate(LocalDate.now());
+    reservation.setEndDate(LocalDate.now().plusDays(2));
+    reservation.setStatus(ReservationStatus.PENDING);
+    reservation.setCreatedAt(Instant.now());
+    reservation.setTotalPrice(BigDecimal.valueOf(100));
+    reservation.setPaymentCurrency("PLN");
+    reservation.setPaymentExchangeRate(BigDecimal.ONE);
+
+    when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
+
+    UnitDetailsDto mockUnit = new UnitDetailsDto(propertyId, "Modern Apartment");
+    PropertyDetailsDto mockProperty = new PropertyDetailsDto("My Apt", "Warsaw", ownerId);
+
+    when(restTemplate.getForObject(
+            eq("http://property-service/api/properties/units/" + unitId), eq(UnitDetailsDto.class)))
+        .thenReturn(mockUnit);
+    when(restTemplate.getForObject(
+            eq("http://property-service/api/properties/" + propertyId),
+            eq(PropertyDetailsDto.class)))
+        .thenReturn(mockProperty);
+
+    ReservationDetailsDto dto = service.getReservationDetails(reservationId, userId, false, false);
+
+    assertNotNull(dto);
+    assertEquals("Modern Apartment", dto.getUnitName());
+    assertEquals("Warsaw", dto.getCity());
+    assertEquals("Owner " + ownerId.toString().substring(0, 8), dto.getOwnerName());
+    assertEquals(
+        "owner_" + ownerId.toString().substring(0, 8) + "@example.com", dto.getOwnerEmail());
+  }
+
+  @Test
+  void getReservationDetails_shouldHandleErrorsGracefullyWhenPropertyServiceFails() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service =
+        reservationService(repository, restTemplate, mock(NbpExchangeRateClient.class));
+
+    UUID reservationId = UUID.randomUUID();
+    UUID userId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    Reservation reservation = new Reservation();
+    reservation.setId(reservationId);
+    reservation.setUserId(userId);
+    reservation.setUnitId(unitId);
+    reservation.setStartDate(LocalDate.now());
+    reservation.setEndDate(LocalDate.now().plusDays(2));
+    reservation.setStatus(ReservationStatus.PENDING);
+    reservation.setCreatedAt(Instant.now());
+    reservation.setTotalPrice(BigDecimal.valueOf(100));
+    reservation.setPaymentCurrency("PLN");
+    reservation.setPaymentExchangeRate(BigDecimal.ONE);
+
+    when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
+
+    when(restTemplate.getForObject(anyString(), eq(UnitDetailsDto.class)))
+        .thenThrow(new RuntimeException("Service failure"));
+
+    ReservationDetailsDto dto = service.getReservationDetails(reservationId, userId, false, false);
+
+    assertNotNull(dto);
+    assertEquals("Unknown Room", dto.getUnitName());
+    assertEquals("Unknown City", dto.getCity());
+    assertNull(dto.getOwnerName());
+    assertNull(dto.getOwnerEmail());
+  }
+
+  @Test
+  void getDashboardReservationMetrics_shouldUseDefaultDatesWhenNull() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = reservationService(repository, restTemplate, null);
+
+    UUID unitId = UUID.randomUUID();
+    when(restTemplate.getForObject(contains("/units/ids"), eq(UUID[].class)))
+        .thenReturn(new UUID[] {unitId});
+
+    LocalDate start = LocalDate.now().withDayOfMonth(1);
+    LocalDate end = LocalDate.now().with(java.time.temporal.TemporalAdjusters.lastDayOfMonth());
+
+    when(repository.countReservationsInDateRange(start, end)).thenReturn(10L);
+    when(repository.findActiveReservationsInDateRange(start, end)).thenReturn(List.of());
+
+    io.github.kwatera_project.kwatera.reservation_service.dto.ReservationMetricsDto metrics =
+        service.getDashboardReservationMetrics(null, null, UUID.randomUUID(), true);
+
+    assertEquals(10L, metrics.getTotalReservations());
+    assertEquals(0L, metrics.getOccupiedDays());
+  }
+
+  @Test
+  void getDashboardReservationMetrics_shouldHandleSingleDayRange() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = reservationService(repository, restTemplate, null);
+
+    UUID unitId = UUID.randomUUID();
+    LocalDate singleDay = LocalDate.now();
+
+    when(restTemplate.getForObject(contains("/units/ids"), eq(UUID[].class)))
+        .thenReturn(new UUID[] {unitId});
+    when(repository.countReservationsInDateRange(singleDay, singleDay)).thenReturn(1L);
+
+    Reservation r = new Reservation();
+    r.setStartDate(singleDay);
+    r.setEndDate(singleDay.plusDays(1));
+    when(repository.findActiveReservationsInDateRange(singleDay, singleDay)).thenReturn(List.of(r));
+
+    io.github.kwatera_project.kwatera.reservation_service.dto.ReservationMetricsDto metrics =
+        service.getDashboardReservationMetrics(singleDay, singleDay, UUID.randomUUID(), true);
+
+    assertEquals(1L, metrics.getTotalReservations());
+    assertEquals(0L, metrics.getOccupiedDays());
+    assertEquals(0.0, metrics.getOccupancyRate());
+  }
+
+  @Test
+  void getDashboardReservationMetrics_shouldCapOccupancyRateAt100() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = reservationService(repository, restTemplate, null);
+
+    UUID unitId = UUID.randomUUID();
+    LocalDate start = LocalDate.now();
+    LocalDate end = start.plusDays(5);
+
+    when(restTemplate.getForObject(contains("/units/ids"), eq(UUID[].class)))
+        .thenReturn(new UUID[] {unitId});
+
+    Reservation r1 = new Reservation();
+    r1.setStartDate(start);
+    r1.setEndDate(end);
+
+    Reservation r2 = new Reservation();
+    r2.setStartDate(start);
+    r2.setEndDate(end);
+
+    when(repository.findActiveReservationsInDateRange(start, end)).thenReturn(List.of(r1, r2));
+
+    io.github.kwatera_project.kwatera.reservation_service.dto.ReservationMetricsDto metrics =
+        service.getDashboardReservationMetrics(start, end, UUID.randomUUID(), true);
+
+    assertEquals(10L, metrics.getOccupiedDays());
+    assertEquals(100.0, metrics.getOccupancyRate());
+  }
+
+  @Test
+  void getDashboardReservationMetrics_shouldIgnoreReservationsWithNoOverlap() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service = reservationService(repository, restTemplate, null);
+
+    UUID unitId = UUID.randomUUID();
+    LocalDate start = LocalDate.now();
+    LocalDate end = start.plusDays(5);
+
+    when(restTemplate.getForObject(contains("/units/ids"), eq(UUID[].class)))
+        .thenReturn(new UUID[] {unitId});
+
+    Reservation r = new Reservation();
+    r.setStartDate(start.minusDays(5));
+    r.setEndDate(start);
+
+    when(repository.findActiveReservationsInDateRange(start, end)).thenReturn(List.of(r));
+
+    io.github.kwatera_project.kwatera.reservation_service.dto.ReservationMetricsDto metrics =
+        service.getDashboardReservationMetrics(start, end, UUID.randomUUID(), true);
+
+    assertEquals(0L, metrics.getOccupiedDays());
+    assertEquals(0.0, metrics.getOccupancyRate());
   }
 }

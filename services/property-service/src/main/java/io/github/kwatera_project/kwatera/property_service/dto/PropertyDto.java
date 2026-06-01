@@ -14,6 +14,7 @@ import lombok.Setter;
 public class PropertyDto {
 
   private UUID id;
+  private UUID ownerId;
   private String title;
   private String description;
   private String city;

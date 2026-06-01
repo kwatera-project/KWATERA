@@ -13,6 +13,7 @@ interface SharedDatePickerProps {
     placeholderText?: string;
     className?: string;
     dateFormat?: string;
+    datepickerRef?: React.RefObject<DatePicker | null>;
 }
 
 const MONTHS = [
@@ -20,7 +21,7 @@ const MONTHS = [
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
 
-interface CustomCalendarHeaderProps {
+export interface CustomCalendarHeaderProps {
     date: Date;
     changeYear: (year: number) => void;
     changeMonth: (month: number) => void;
@@ -30,7 +31,7 @@ interface CustomCalendarHeaderProps {
     nextMonthButtonDisabled: boolean;
 }
 
-const CustomCalendarHeader = ({
+export const CustomCalendarHeader = ({
     date,
     changeYear,
     changeMonth,
@@ -156,10 +157,12 @@ export default function SharedDatePicker({
     minDate,
     placeholderText,
     className,
-    dateFormat
+    dateFormat,
+    datepickerRef
 }: SharedDatePickerProps) {
     return (
         <DatePicker
+            ref={datepickerRef}
             selected={selected ?? undefined}
             onChange={onChange}
             selectsStart={selectsStart}
@@ -171,7 +174,7 @@ export default function SharedDatePicker({
             dateFormat={dateFormat || "yyyy-MM-dd"}
             placeholderText={placeholderText}
             renderCustomHeader={(props) => <CustomCalendarHeader {...props} />}
-            calendarClassName="bg-white border border-gray-200 shadow-xl rounded-lg"
+            calendarClassName="bg-white border border-gray-200 shadow-xl rounded-lg custom-datepicker-has-header"
             popperClassName="z-[9999]"
             calendarStartDay={1}
         />

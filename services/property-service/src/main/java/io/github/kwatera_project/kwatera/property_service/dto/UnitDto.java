@@ -20,9 +20,10 @@ public class UnitDto {
   private BigDecimal pricePerNight;
   private Integer capacity;
   private String imageUrl;
+  private UUID propertyId;
   private UnitType unitType;
   private String unitNumber;
   private Integer floor;
   private BigDecimal convertedPricePerNight;
-  private io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto currencyInfo;
+  private CurrencyMetadataDto currencyInfo;
 }

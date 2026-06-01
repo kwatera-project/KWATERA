@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { getOccupancy } from "../api/adminApi";
-import { format, addDays, startOfToday, differenceInCalendarDays, isBefore, isAfter, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { format, addDays, startOfToday, isAfter, isBefore, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMonths } from "date-fns";
 import SharedDatePicker from "../components/SharedDatePicker";
 
 interface Occupancy {
@@ -18,42 +18,48 @@ interface Occupancy {
 export default function OccupancyCalendarPage() {
     const [occupancies, setOccupancies] = useState<Occupancy[]>([]);
     const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
-        startOfToday(),
-        addDays(startOfToday(), 27)
+        startOfMonth(startOfToday()),
+        endOfMonth(startOfToday())
     ]);
-    const [startDate, endDate] = dateRange;
+    const [startDate] = dateRange;
     const [selectedOcc, setSelectedOcc] = useState<Occupancy | null>(null);
+    const [quickAction, setQuickAction] = useState<{ date: Date } | null>(null);
+    const calendarRef = useRef<HTMLDivElement>(null);
+    const todayStr = format(startOfToday(), 'yyyy-MM-dd');
 
-    const isValidRange = !!(startDate && endDate && !isBefore(endDate, startDate));
-    const N = isValidRange && startDate && endDate ? differenceInCalendarDays(endDate, startDate) + 1 : 0;
-    const CHUNK_SIZE = 14;
+    const anchorDate = startDate || startOfToday();
+    const firstDayOfMonth = startOfMonth(anchorDate);
+    const lastDayOfMonth = endOfMonth(anchorDate);
+
+    const firstCalendarDay = startOfWeek(firstDayOfMonth, { weekStartsOn: 1 });
+    const lastCalendarDay = endOfWeek(lastDayOfMonth, { weekStartsOn: 1 });
 
     const dates: Date[] = [];
-    if (isValidRange && startDate && endDate) {
-        let current = startDate;
-        while (!isAfter(current, endDate)) {
-            dates.push(current);
-            current = addDays(current, 1);
-        }
+    let current = firstCalendarDay;
+    while (!isAfter(current, lastCalendarDay)) {
+        dates.push(current);
+        current = addDays(current, 1);
     }
 
-    const dateChunks: Date[][] = [];
-    for (let i = 0; i < dates.length; i += CHUNK_SIZE) {
-        dateChunks.push(dates.slice(i, i + CHUNK_SIZE));
+    const weeks: Date[][] = [];
+    for (let i = 0; i < dates.length; i += 7) {
+        weeks.push(dates.slice(i, i + 7));
     }
 
     useEffect(() => {
-        if (!isValidRange || !startDate || !endDate) {
-            return;
-        }
+        const anchor = startDate || startOfToday();
+        const firstDay = startOfMonth(anchor);
+        const lastDay = endOfMonth(anchor);
+        const firstCal = startOfWeek(firstDay, { weekStartsOn: 1 });
+        const lastCal = endOfWeek(lastDay, { weekStartsOn: 1 });
 
-        const startStr = format(startDate, 'yyyy-MM-dd');
-        const endStr = format(endDate, 'yyyy-MM-dd');
+        const startStr = format(firstCal, 'yyyy-MM-dd');
+        const endStr = format(lastCal, 'yyyy-MM-dd');
 
         getOccupancy(startStr, endStr)
             .then(setOccupancies)
             .catch(console.error);
-    }, [startDate, endDate, isValidRange]);
+    }, [startDate]);
 
     const unitMap = new Map<string, string>();
     occupancies.forEach(o => {
@@ -62,10 +68,14 @@ export default function OccupancyCalendarPage() {
         }
     });
 
-    const setPreset = (preset: 'week' | 'month') => {
-        const today = startOfToday();
-        if (preset === 'week') setDateRange([startOfWeek(today, { weekStartsOn: 1 }), endOfWeek(today, { weekStartsOn: 1 })]);
-        if (preset === 'month') setDateRange([startOfMonth(today), endOfMonth(today)]);
+    const handlePrevMonth = () => {
+        const prev = addMonths(anchorDate, -1);
+        setDateRange([startOfMonth(prev), endOfMonth(prev)]);
+    };
+
+    const handleNextMonth = () => {
+        const next = addMonths(anchorDate, 1);
+        setDateRange([startOfMonth(next), endOfMonth(next)]);
     };
 
     const getLanesForChunk = (chunkDates: Date[]) => {
@@ -78,14 +88,11 @@ export default function OccupancyCalendarPage() {
         );
 
         overlapping.sort((a, b) => {
-            if (a.startDate === b.startDate) {
-                return a.unitId.localeCompare(b.unitId);
-            }
+            if (a.startDate === b.startDate) return a.unitId.localeCompare(b.unitId);
             return a.startDate.localeCompare(b.startDate);
         });
 
         const lanes: Occupancy[][] = [];
-
         for (const occ of overlapping) {
             let placed = false;
             for (const lane of lanes) {
@@ -96,251 +103,283 @@ export default function OccupancyCalendarPage() {
                     break;
                 }
             }
-            if (!placed) {
-                lanes.push([occ]);
-            }
+            if (!placed) lanes.push([occ]);
         }
         return lanes;
     };
 
-    const renderLaneCells = (lane: Occupancy[], chunkDates: Date[]) => {
-        const cells = [];
-        let i = 0;
+    const renderLaneCellsForWeek = (lane: Occupancy[], weekDates: Date[]) => {
+        const elements = [];
+        const weekStartStr = format(weekDates[0], 'yyyy-MM-dd');
+        const weekEndStr = format(weekDates[6], 'yyyy-MM-dd');
 
-        while (i < chunkDates.length) {
-            const d = chunkDates[i];
+        let i = 0;
+        while (i < weekDates.length) {
+            const d = weekDates[i];
             const dateStr = format(d, 'yyyy-MM-dd');
             const occ = lane.find(o => o.startDate <= dateStr && o.endDate >= dateStr);
 
             if (occ) {
-                const visibleEndIndex = chunkDates.findIndex(date => format(date, 'yyyy-MM-dd') === occ.endDate);
-                const endIdx = visibleEndIndex !== -1 ? visibleEndIndex : chunkDates.length - 1;
+                const visibleEndIndex = weekDates.findIndex(date => format(date, 'yyyy-MM-dd') === occ.endDate);
+                const endIdx = visibleEndIndex !== -1 ? visibleEndIndex : weekDates.length - 1;
                 const span = endIdx - i + 1;
 
-                const isStart = occ.startDate >= format(chunkDates[0], 'yyyy-MM-dd') && occ.startDate === dateStr;
-                const isEnd = occ.endDate <= format(chunkDates[chunkDates.length - 1], 'yyyy-MM-dd') && occ.endDate === format(chunkDates[endIdx], 'yyyy-MM-dd');
+                const isStart = occ.startDate >= weekStartStr && occ.startDate === dateStr;
+                const isEnd = occ.endDate <= weekEndStr && occ.endDate === format(weekDates[endIdx], 'yyyy-MM-dd');
 
-                const roundedClass = `${isStart ? 'rounded-l-full pl-4' : 'rounded-l-sm pl-2 border-l border-white/40'} ${isEnd ? 'rounded-r-full pr-4' : 'rounded-r-sm pr-2 border-r border-white/40'}`;
+                const roundedClass = `${isStart ? 'rounded-l-full pl-3' : 'rounded-l pl-1 border-l border-white/20'} ${isEnd ? 'rounded-r-full pr-3' : 'rounded-r pr-1 border-r border-white/20'}`;
 
-                let bgColor = "bg-[#7A7A7A] hover:bg-[#5A5A5A]";
+                let bgColor = "bg-brand-muted hover:bg-[#5A5A5A]";
                 let textColor = "text-white";
                 if (occ.status === 'CONFIRMED') {
                     bgColor = "bg-emerald-600 hover:bg-emerald-700";
                 } else if (occ.status === 'PENDING') {
                     bgColor = "bg-amber-500 hover:bg-amber-600";
-                    textColor = "text-[#1A1A1A]";
+                    textColor = "text-brand-main";
                 }
 
                 const unitName = unitMap.get(occ.unitId) || occ.unitId;
                 const displayText = `${unitName} - ${occ.guestName || occ.status}`;
 
-                cells.push(
-                    <td key={dateStr} colSpan={span} className="p-1.5 border-b border-r border-[#DACDCA] bg-[#FFFFFF]">
-                        <button
-                            onClick={() => setSelectedOcc(occ)}
-                            className={`w-full h-10 ${roundedClass} ${bgColor} ${textColor} text-xs font-semibold flex items-center shadow-sm transition-colors truncate cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#42211D]`}
-                        >
-                            <span className="truncate">{displayText}</span>
-                        </button>
-                    </td>
+                elements.push(
+                    <button
+                        key={occ.reservationId || occ.unitId + dateStr}
+                        onClick={() => setSelectedOcc(occ)}
+                        style={{ gridColumn: `${i + 1} / span ${span}` }}
+                        className={`h-8 ${roundedClass} ${bgColor} ${textColor} text-[10px] sm:text-xs font-bold flex items-center shadow-sm transition-colors truncate cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-primary`}
+                    >
+                        <span className="truncate">{displayText}</span>
+                    </button>
                 );
                 i += span;
             } else {
-                cells.push(
-                    <td key={dateStr} className="p-1.5 border-b border-r border-[#DACDCA] bg-[#FFFFFF] min-w-[60px] w-[calc(100%/14)] group">
-                        <div className="w-full h-10 rounded flex items-center justify-center bg-transparent group-hover:bg-[#F7F7F7] transition-colors"></div>
-                    </td>
-                );
                 i++;
             }
         }
-        return cells;
+        return elements;
+    };
+
+    const formatGuestLabel = (name?: string) => {
+        if (!name || name === 'N/A') return 'Unassigned Guest';
+        if (name.startsWith('Guest ') && name.length > 15) return `#GST-${name.slice(-8)}`;
+        return name;
     };
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A]">
-            <div className="flex justify-between items-center mb-6 relative z-[100]">
-                <h1 className="text-3xl font-bold text-[#1A1A1A]">Occupancy Dashboard</h1>
-                <div className="flex bg-[#F7F7F7] p-1 rounded-lg border border-[#DACDCA] shadow-sm">
-                    <Link to="/admin/reservations" className="px-4 py-2 text-sm font-medium rounded-md text-[#7A7A7A] hover:bg-[#FFFFFF] hover:text-[#1A1A1A] hover:shadow-sm transition-all">
+        <div className="p-8 max-w-7xl mx-auto min-h-screen text-brand-main space-y-6">
+            <div className="flex justify-between items-center relative z-[100]">
+                <h1 className="text-3xl font-bold text-brand-main">Occupancy Dashboard</h1>
+                <div className="flex bg-brand-bg p-1 rounded-lg border border-brand-accent shadow-sm">
+                    <Link to="/admin/reservations" className="px-4 py-2 text-sm font-medium rounded-md text-brand-muted hover:bg-[#FFFFFF] hover:text-brand-main hover:shadow-sm transition-all">
                         List View
                     </Link>
-                    <span className="px-4 py-2 text-sm font-bold rounded-md bg-[#FFFFFF] text-[#1A1A1A] shadow border border-[#DACDCA] cursor-default">
+                    <span className="px-4 py-2 text-sm font-bold rounded-md bg-[#FFFFFF] text-brand-main shadow border border-brand-accent cursor-default">
                         Calendar View
                     </span>
                 </div>
             </div>
 
-            <div className="mb-8 flex gap-4 p-6 bg-[#FFFFFF] rounded-xl shadow-sm flex-col border border-[#DACDCA] relative z-[90]">
+            <div className="flex flex-col gap-4 relative z-[90] bg-[#FFFFFF] border border-brand-accent p-6 rounded-xl shadow-sm">
                 <div className="flex gap-6 items-center flex-wrap justify-between">
                     <div className="flex gap-4 items-center flex-wrap">
-                        <span className="text-sm font-bold text-[#7A7A7A] uppercase tracking-wider">Date Range</span>
-                        <div className="flex gap-3 items-center flex-wrap">
-                            <div className="flex items-center bg-[#F7F7F7] border border-[#DACDCA] rounded-lg px-3 py-2 shadow-sm focus-within:ring-1 focus-within:ring-[#42211D] z-[100] gap-2">
-                                <svg className="w-4 h-4 text-[#7A7A7A] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                                <SharedDatePicker
-                                    selected={startDate}
-                                    onChange={(date: Date | null) => { if (date) setDateRange([date, endDate]) }}
-                                    selectsStart
-                                    startDate={startDate}
-                                    endDate={endDate}
-                                    placeholderText="Start"
-                                />
-                                <span className="text-[#7A7A7A] font-bold">-</span>
-                                <SharedDatePicker
-                                    selected={endDate}
-                                    onChange={(date: Date | null) => { if (date) setDateRange([startDate, date]) }}
-                                    selectsEnd
-                                    startDate={startDate}
-                                    endDate={endDate}
-                                    minDate={startDate}
-                                    placeholderText="End"
-                                />
-                            </div>
-                            <div className="flex gap-2">
-                                <button onClick={() => setPreset('week')} className="px-4 py-2 bg-[#F7F7F7] text-[#1A1A1A] font-bold hover:bg-[#e8e8e8] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm">This Week</button>
-                                <button onClick={() => setPreset('month')} className="px-4 py-2 bg-[#F7F7F7] text-[#1A1A1A] font-bold hover:bg-[#e8e8e8] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm">This Month</button>
-                            </div>
+                        <span className="text-sm font-bold text-brand-muted">Date Anchor</span>
+                        <div className="flex items-center bg-brand-bg border border-brand-accent rounded-lg px-3 py-2 shadow-sm focus-within:ring-1 focus-within:ring-brand-primary z-[100] gap-2">
+                            <svg className="w-4 h-4 text-brand-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <SharedDatePicker
+                                selected={startDate}
+                                onChange={(date: Date | null) => { if (date) setDateRange([date, endOfMonth(date)]) }}
+                                placeholderText="Select Month"
+                            />
                         </div>
-                    </div>
-                    {isValidRange && N > 0 && (
-                        <div className="text-xs font-bold bg-[#F7F7F7] text-[#42211D] px-4 py-2 rounded-full border border-[#DACDCA] shadow-sm mt-2 sm:mt-0 uppercase tracking-wider">
-                            {N} {N === 1 ? 'Day' : 'Days'} selected
-                        </div>
-                    )}
-                </div>
-
-                <div className="flex items-center gap-6 mt-2 pt-4 border-t border-[#DACDCA]">
-                    <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Legend:</span>
-                    <div className="flex gap-5">
-                        <div className="flex items-center gap-2"><span className="w-3.5 h-3.5 rounded-full bg-emerald-600 shadow-sm border border-black/10"></span><span className="text-sm font-semibold text-[#1A1A1A]">Confirmed</span></div>
-                        <div className="flex items-center gap-2"><span className="w-3.5 h-3.5 rounded-full bg-amber-500 shadow-sm border border-black/10"></span><span className="text-sm font-semibold text-[#1A1A1A]">Pending</span></div>
-                        <div className="flex items-center gap-2"><span className="w-3.5 h-3.5 rounded-full bg-[#7A7A7A] shadow-sm border border-black/10"></span><span className="text-sm font-semibold text-[#1A1A1A]">Other</span></div>
                     </div>
                 </div>
             </div>
 
-            {isValidRange && (
-                <div className="w-full flex flex-col gap-8 relative z-10">
-                    {dateChunks.map((chunkDates, chunkIdx) => {
-                        const lanes = getLanesForChunk(chunkDates);
+            <div className="flex justify-between items-center bg-white border border-brand-accent p-4 rounded-xl shadow-sm mb-6">
+                <button onClick={handlePrevMonth} className="p-2 border border-brand-accent rounded-lg hover:bg-gray-50 transition">
+                    <svg className="w-6 h-6 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+                </button>
+                <h2 className="text-xl font-black text-brand-main tracking-tight">
+                    {format(anchorDate, 'MMMM yyyy')}
+                </h2>
+                <button onClick={handleNextMonth} className="p-2 border border-brand-accent rounded-lg hover:bg-gray-50 transition">
+                    <svg className="w-6 h-6 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                </button>
+            </div>
 
-                        return (
-                            <div key={chunkIdx} className="w-full border border-[#DACDCA] rounded-xl shadow-sm bg-[#FFFFFF] overflow-hidden">
-                                <div className="w-full overflow-x-auto">
-                                    <table className="w-full border-collapse text-sm table-fixed min-w-max">
-                                        <thead>
-                                        <tr>
-                                            {chunkDates.map(d => (
-                                                <th key={d.toISOString()} className="border-b border-r border-[#DACDCA] bg-[#F7F7F7] p-3 text-center text-[#1A1A1A] font-medium w-[calc(100%/14)] last:border-r-0">
-                                                    <div className="flex flex-col items-center">
-                                                        <span className="text-[10px] text-[#7A7A7A] font-bold uppercase tracking-wider">{format(d, 'eee')}</span>
-                                                        <span className="font-bold text-base my-0.5">{format(d, 'dd')}</span>
-                                                        <span className="text-[10px] text-[#7A7A7A] font-bold">{format(d, 'MMM')}</span>
-                                                    </div>
-                                                </th>
-                                            ))}
-                                            {chunkDates.length < CHUNK_SIZE && Array.from({ length: CHUNK_SIZE - chunkDates.length }).map((_, idx) => (
-                                                <th key={`empty-th-${idx}`} className="border-b border-r border-[#DACDCA] bg-[#F7F7F7] w-[calc(100%/14)] last:border-r-0"></th>
-                                            ))}
-                                        </tr>
-                                        </thead>
-                                        <tbody>
-                                        {lanes.length > 0 ? (
-                                            lanes.map((lane, laneIdx) => (
-                                                <tr key={`lane-${laneIdx}`} className="hover:bg-[#F7F7F7] transition-colors">
-                                                    {renderLaneCells(lane, chunkDates)}
-                                                    {chunkDates.length < CHUNK_SIZE && Array.from({ length: CHUNK_SIZE - chunkDates.length }).map((_, idx) => (
-                                                        <td key={`empty-td-${idx}`} className="p-1.5 border-b border-r border-[#DACDCA] bg-[#F7F7F7] opacity-50 last:border-r-0"></td>
-                                                    ))}
-                                                </tr>
-                                            ))
-                                        ) : (
-                                            <tr>
-                                                {chunkDates.map(d => (
-                                                    <td key={`empty-row-${d.toISOString()}`} className="p-1.5 border-b border-r border-[#DACDCA] bg-[#FFFFFF] h-14 w-[calc(100%/14)] last:border-r-0"></td>
-                                                ))}
-                                                {chunkDates.length < CHUNK_SIZE && Array.from({ length: CHUNK_SIZE - chunkDates.length }).map((_, idx) => (
-                                                    <td key={`empty-row-fill-${idx}`} className="p-1.5 border-b border-r border-[#DACDCA] bg-[#FFFFFF] h-14 w-[calc(100%/14)] last:border-r-0"></td>
-                                                ))}
-                                            </tr>
-                                        )}
-                                        </tbody>
-                                    </table>
+            <div className="w-full relative z-10 flex flex-col" ref={calendarRef}>
+                <div className="grid grid-cols-7 border border-brand-accent rounded-t-xl bg-brand-bg text-center py-3 font-bold text-xs uppercase tracking-wider border-b-0">
+                    <div className="text-brand-muted">Mon</div>
+                    <div className="text-brand-muted">Tue</div>
+                    <div className="text-brand-muted">Wed</div>
+                    <div className="text-brand-muted">Thu</div>
+                    <div className="text-brand-muted">Fri</div>
+                    <div className="text-brand-muted bg-gray-50/60">Sat</div>
+                    <div className="text-brand-muted bg-gray-50/60">Sun</div>
+                </div>
+
+                <div className="w-full border border-brand-accent rounded-b-xl shadow-sm bg-white overflow-hidden divide-y divide-brand-accent/20">
+                    {weeks.map((weekDates, weekIdx) => (
+                        <div key={weekIdx} className="min-h-[110px] flex flex-col justify-between hover:bg-[#F7F7F7]/30 transition-colors">
+                            <div className="grid grid-cols-7 border-b border-brand-accent/10 bg-brand-bg/10">
+                                {weekDates.map((d, dayIdx) => {
+                                    const dateStr = format(d, 'yyyy-MM-dd');
+                                    const isCurrentMonth = format(d, 'MM') === format(anchorDate, 'MM');
+                                    const isToday = dateStr === todayStr;
+                                    const isPast = isBefore(d, startOfToday()) && !isToday;
+                                    const isWeekend = dayIdx >= 5;
+                                    return (
+                                        <div key={d.toISOString()} className={`p-1.5 pr-2.5 text-right font-semibold text-xs border-r border-brand-accent/10 last:border-r-0 ${isWeekend ? 'bg-gray-50/60' : ''} ${isToday ? 'ring-1 ring-inset ring-brand-primary bg-brand-accent/15' : ''}`}>
+                                            <span className={`${isPast ? 'text-gray-300' : isCurrentMonth ? 'text-brand-main' : 'text-gray-300'} ${isToday ? 'font-black text-brand-primary' : ''}`}>
+                                                {format(d, 'd')}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <div className="flex-1 relative min-h-[70px]">
+                                <div className="absolute inset-0 grid grid-cols-7">
+                                    {weekDates.map((d, dayIdx) => {
+                                        const dateStr = format(d, 'yyyy-MM-dd');
+                                        const isPast = isBefore(d, startOfToday());
+                                        const hasOcc = occupancies.some(o => o.startDate <= dateStr && o.endDate >= dateStr);
+                                        const isWeekend = dayIdx >= 5;
+                                        return (
+                                            <div key={d.toISOString()} onClick={() => { if (!isPast && !hasOcc) setQuickAction({ date: d }); }} className={`h-full border-r border-brand-accent/5 last:border-r-0 ${isWeekend ? 'bg-gray-50/40' : ''} ${!isPast && !hasOcc ? 'cursor-pointer hover:bg-brand-accent/10 transition-colors' : ''}`} />
+                                        );
+                                    })}
+                                </div>
+                                <div className="relative z-[1] p-2 space-y-1">
+                                    {getLanesForChunk(weekDates).map((lane, laneIdx) => (
+                                        <div key={laneIdx} className="grid grid-cols-7 gap-1">
+                                            {renderLaneCellsForWeek(lane, weekDates)}
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
-                        );
-                    })}
+                        </div>
+                    ))}
                 </div>
+            </div>
+
+            {quickAction && (
+                <>
+                    <div className="fixed inset-0 bg-black/50 z-[9998] backdrop-blur-sm" onClick={() => setQuickAction(null)} />
+                    <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] bg-white rounded-2xl shadow-2xl border border-brand-accent p-8 w-full max-w-sm space-y-6">
+                        <div className="text-center space-y-1">
+                            <h3 className="text-lg font-bold text-brand-main">Quick Action</h3>
+                            <p className="text-sm text-brand-muted">Date: <span className="font-bold text-brand-main">{format(quickAction.date, 'EEEE, d MMMM yyyy')}</span></p>
+                        </div>
+                        <button onClick={() => setQuickAction(null)} className="w-full py-3 bg-brand-primary text-white font-bold rounded-lg hover:opacity-90 transition">New Booking</button>
+                        <button onClick={() => setQuickAction(null)} className="w-full py-3 border border-brand-accent rounded-lg text-brand-main font-bold hover:bg-gray-50 transition">Cancel</button>
+                    </div>
+                </>
             )}
 
             {selectedOcc && (
                 <>
-                    <div className="fixed inset-0 bg-[#1A1A1A]/50 z-[9998] backdrop-blur-sm transition-opacity" onClick={() => setSelectedOcc(null)}></div>
-                    <div className="fixed top-0 right-0 w-full sm:w-96 h-full bg-[#FFFFFF] opacity-100 shadow-2xl z-[9999] transform transition-transform duration-300 flex flex-col border-l border-[#DACDCA]">
-
-                        <div className="p-6 border-b border-[#DACDCA] flex justify-between items-center bg-[#FFFFFF]">
-                            <h2 className="text-xl font-bold text-[#1A1A1A]">Reservation Details</h2>
-                            <button onClick={() => setSelectedOcc(null)} className="text-[#7A7A7A] hover:text-[#1A1A1A] hover:bg-[#F7F7F7] p-1.5 rounded-md transition-colors">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <div className="fixed inset-0 bg-black/50 z-[9998] backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setSelectedOcc(null)}></div>
+                    <div className="fixed top-0 right-0 w-full sm:w-[420px] h-full bg-[#FFFFFF] shadow-2xl z-[9999] border-l border-brand-accent flex flex-col justify-between animate-in slide-in-from-right duration-300">
+                        
+                        {/* Header */}
+                        <div className="p-6 border-b border-brand-accent flex items-center justify-between">
+                            <div>
+                                <span className="text-[10px] font-bold text-brand-muted uppercase tracking-widest block mb-1">Reservation Info</span>
+                                <h2 className="text-xl font-black text-brand-main tracking-tight">
+                                    #RES-{selectedOcc.reservationId.slice(-8)}
+                                </h2>
+                            </div>
+                            <button 
+                                onClick={() => setSelectedOcc(null)}
+                                className="p-2 text-brand-muted hover:text-brand-main hover:bg-brand-bg rounded-full transition-colors cursor-pointer"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
                             </button>
                         </div>
 
-                        <div className="p-6 flex-1 overflow-y-auto bg-[#FFFFFF]">
-                            <div className="mb-6">
-                                <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider block mb-2">Status</span>
-                                <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold border ${selectedOcc.status === 'CONFIRMED' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
-                                    selectedOcc.status === 'PENDING' ? 'bg-amber-50 border-amber-200 text-amber-800' :
-                                        'bg-gray-50 border-gray-200 text-gray-800'
-                                }`}>
-                                    {selectedOcc.status}
-                                </span>
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-4">
-                                <div className="bg-[#FFFFFF] border border-[#DACDCA] rounded-xl p-4 shadow-sm">
-                                    <span className="text-[10px] font-bold text-[#7A7A7A] uppercase tracking-wider block">Reservation ID</span>
-                                    <p className="text-[#1A1A1A] font-semibold mt-1 text-sm break-all">{selectedOcc.reservationId}</p>
-                                </div>
-                                <div className="bg-[#FFFFFF] border border-[#DACDCA] rounded-xl p-4 shadow-sm">
-                                    <span className="text-[10px] font-bold text-[#7A7A7A] uppercase tracking-wider block">Unit / Property</span>
-                                    <p className="text-[#1A1A1A] font-semibold mt-1 text-base">{unitMap.get(selectedOcc.unitId) || selectedOcc.unitId}</p>
-                                </div>
-                                <div className="bg-[#FFFFFF] border border-[#DACDCA] rounded-xl p-4 shadow-sm">
-                                    <span className="text-[10px] font-bold text-[#7A7A7A] uppercase tracking-wider block">Guest Name</span>
-                                    <p className="text-[#1A1A1A] font-semibold mt-1 text-base">{selectedOcc.guestName || "Not provided"}</p>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-[#FFFFFF] p-4 rounded-xl border border-[#DACDCA] shadow-sm">
-                                        <span className="text-[10px] font-bold text-[#7A7A7A] uppercase tracking-wider block">Check-in</span>
-                                        <p className="text-[#1A1A1A] font-bold mt-1">{selectedOcc.startDate}</p>
-                                    </div>
-                                    <div className="bg-[#FFFFFF] p-4 rounded-xl border border-[#DACDCA] shadow-sm">
-                                        <span className="text-[10px] font-bold text-[#7A7A7A] uppercase tracking-wider block">Check-out</span>
-                                        <p className="text-[#1A1A1A] font-bold mt-1">{selectedOcc.endDate}</p>
-                                    </div>
-                                </div>
-
-                                {selectedOcc.totalPrice && (
-                                    <div className="bg-[#FFFFFF] border border-[#DACDCA] rounded-xl p-4 mt-2 shadow-sm">
-                                        <span className="text-[10px] font-bold text-[#7A7A7A] uppercase tracking-wider block">Total Price</span>
-                                        <p className="text-2xl text-[#1A1A1A] font-bold mt-1 tracking-tight">{selectedOcc.totalPrice} <span className="text-base font-semibold text-[#7A7A7A]">PLN</span></p>
-                                    </div>
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                            
+                            {/* Status Badge */}
+                            <div>
+                                <span className="block text-xs font-bold text-brand-muted uppercase tracking-wider mb-2">Reservation Status</span>
+                                {selectedOcc.status === 'CONFIRMED' ? (
+                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider bg-emerald-50 border-emerald-200 text-emerald-800 animate-fade-in">
+                                        Confirmed
+                                    </span>
+                                ) : selectedOcc.status === 'PENDING' ? (
+                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider bg-amber-50 border-amber-200 text-amber-800 animate-fade-in">
+                                        Pending
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider bg-gray-50 border-gray-200 text-gray-800 animate-fade-in">
+                                        {selectedOcc.status}
+                                    </span>
                                 )}
                             </div>
+
+                            {/* Accommodation Details */}
+                            <div className="space-y-4">
+                                <span className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Stay & Accommodation</span>
+                                
+                                <div className="bg-white border border-brand-accent rounded-xl p-5 shadow-sm space-y-4">
+                                    <div>
+                                        <span className="block text-[10px] font-bold text-brand-muted uppercase tracking-wider">Accommodation</span>
+                                        <p className="text-base font-bold text-brand-main mt-0.5">
+                                            {unitMap.get(selectedOcc.unitId) || selectedOcc.unitName || selectedOcc.unitId}
+                                        </p>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-4 pt-3 border-t border-brand-accent/20">
+                                        <div>
+                                            <span className="block text-[10px] font-bold text-brand-muted uppercase tracking-wider">Guest</span>
+                                            <p className="text-sm font-bold text-brand-main mt-0.5">
+                                                {formatGuestLabel(selectedOcc.guestName)}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <span className="block text-[10px] font-bold text-brand-muted uppercase tracking-wider">Dates</span>
+                                            <p className="text-xs font-semibold text-brand-main mt-1 whitespace-nowrap">
+                                                {selectedOcc.startDate} <span className="text-brand-primary font-bold">→</span> {selectedOcc.endDate}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Total Price */}
+                            {selectedOcc.totalPrice !== undefined && selectedOcc.totalPrice !== null && (
+                                <div className="space-y-2">
+                                    <span className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Financial Summary</span>
+                                    <div className="bg-white border border-brand-accent rounded-xl p-5 shadow-sm">
+                                        <span className="text-[10px] font-bold text-brand-muted uppercase tracking-wider block">Total Price</span>
+                                        <p className="text-2xl text-brand-primary font-black mt-1 tracking-tight">
+                                            {selectedOcc.totalPrice.toLocaleString('pl-PL', { style: 'currency', currency: 'PLN' })}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
                         </div>
 
-                        <div className="p-6 border-t border-[#DACDCA] bg-[#FFFFFF]">
+                        {/* Footer Action Buttons */}
+                        <div className="p-6 border-t border-brand-accent bg-brand-bg/10 flex flex-col gap-3">
                             <Link
                                 to={`/reservations/${selectedOcc.reservationId}`}
-                                className="w-full flex justify-center items-center py-3.5 px-4 rounded-lg shadow-sm text-sm font-bold text-[#FFFFFF] bg-[#42211D] hover:bg-[#2a1412] transition-colors"
+                                className="w-full py-3.5 px-4 bg-brand-primary text-white font-bold text-center hover:bg-brand-primary-hover text-sm rounded-lg transition-colors border border-brand-accent shadow-sm flex items-center justify-center gap-2 cursor-pointer"
                             >
                                 View Full Details
                             </Link>
+                            <button
+                                onClick={() => setSelectedOcc(null)}
+                                className="w-full py-3 px-4 border border-brand-accent bg-white text-brand-main font-bold hover:bg-gray-50 text-sm rounded-lg transition-colors cursor-pointer"
+                            >
+                                Close
+                            </button>
                         </div>
+
                     </div>
                 </>
             )}
