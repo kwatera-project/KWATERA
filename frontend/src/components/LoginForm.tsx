@@ -24,7 +24,7 @@ export default function LoginForm() {
                 const errorData = await response.json().catch(() => ({ error: 'Login failed' }))
                 setMessage(`✘ ${errorData.error || 'Login failed'}`)
             }
-        } catch (_error) {
+        } catch {
             setMessage('✘ Error connecting to server')
         }
     }

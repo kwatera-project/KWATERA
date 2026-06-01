@@ -4,7 +4,7 @@ import {useLogout} from "./Logout.tsx"
 import {getUserRoles, decodeJwt} from "../utils/jwtUtils.ts"
 import {useState, useEffect, useRef} from "react"
 import {useCurrency} from "../contexts/CurrencyContext"
-import {User, LogOut, LayoutDashboard, Calendar, Settings} from 'lucide-react'
+import {User, LogOut, LayoutDashboard, Calendar, Settings, Home} from 'lucide-react'
 
 interface NavbarProps {
     isSubpage?: boolean;
@@ -50,8 +50,11 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
 
     // Auto-close all dropdowns when the route changes
     useEffect(() => {
-        setIsProfileDropdownOpen(false);
-        setIsCurrencyDropdownOpen(false);
+        const timer = setTimeout(() => {
+            setIsProfileDropdownOpen(false);
+            setIsCurrencyDropdownOpen(false);
+        }, 0);
+        return () => clearTimeout(timer);
     }, [location.pathname]);
 
     const navLinks = [
@@ -185,7 +188,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                                         </Link>
                                         <Link to="/owner/properties"
                                             className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
-                                            <LayoutDashboard size={16} />
+                                            <Home size={16} />
                                             Manage properties
                                         </Link>
                                         </>

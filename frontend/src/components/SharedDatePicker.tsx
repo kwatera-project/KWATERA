@@ -13,7 +13,7 @@ interface SharedDatePickerProps {
     placeholderText?: string;
     className?: string;
     dateFormat?: string;
-    datepickerRef?: React.RefObject<any>;
+    datepickerRef?: React.RefObject<DatePicker | null>;
 }
 
 const MONTHS = [
@@ -21,7 +21,7 @@ const MONTHS = [
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
 
-interface CustomCalendarHeaderProps {
+export interface CustomCalendarHeaderProps {
     date: Date;
     changeYear: (year: number) => void;
     changeMonth: (month: number) => void;
@@ -31,7 +31,7 @@ interface CustomCalendarHeaderProps {
     nextMonthButtonDisabled: boolean;
 }
 
-const CustomCalendarHeader = ({
+export const CustomCalendarHeader = ({
     date,
     changeYear,
     changeMonth,

@@ -41,6 +41,7 @@ class OwnerPropertyControllerTest {
     // Given
     PropertyDto dto =
         new PropertyDto(
+            UUID.randomUUID(),
             mockOwnerId,
             "Test Property",
             "Desc",
@@ -84,7 +85,19 @@ class OwnerPropertyControllerTest {
   void getUnits_ShouldPassParametersToService_WithDefaultCurrency() {
     // Given
     UnitDto unitDto =
-        new UnitDto(UUID.randomUUID(), "Unit 1", "Desc", null, 2, null, null, "10", 1, null, null);
+        new UnitDto(
+            UUID.randomUUID(),
+            "Unit 1",
+            "Desc",
+            null,
+            2,
+            null,
+            propertyId,
+            null,
+            "10",
+            1,
+            null,
+            null);
     when(authentication.getDetails()).thenReturn(mockOwnerId.toString());
     when(propertyService.getUnitsForOwnerProperty(mockOwnerId, propertyId, "PLN"))
         .thenReturn(List.of(unitDto));

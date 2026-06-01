@@ -37,7 +37,7 @@ export default function RegisterForm() {
                 const errorData = await response.json().catch(() => ({ error: 'Registration failed' }))
                 setMessage(`✘ ${errorData.error || 'Registration failed'}`)
             }
-        } catch (_error) {
+        } catch {
             setMessage('✘ Error connecting to server')
         }
     }

@@ -21,6 +21,7 @@ class UnitDtoTest {
             BigDecimal.valueOf(100),
             2,
             "img.jpg",
+            UUID.randomUUID(),
             UnitType.ENTIRE_RENTAL_UNIT,
             "10A",
             4,

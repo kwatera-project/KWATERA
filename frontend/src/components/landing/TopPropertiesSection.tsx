@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCurrency } from '../../contexts/CurrencyContext';
@@ -29,9 +29,11 @@ const FALLBACK_RATES: Record<string, number> = {
 };
 
 export default function TopPropertiesSection({ properties = [] }: TopPropertiesProps) {
-  const displayProperties = properties && properties.length > 0 
-    ? properties.slice(0, 4)
-    : [];
+  const displayProperties = useMemo(() => {
+    return properties && properties.length > 0 
+      ? properties.slice(0, 4)
+      : [];
+  }, [properties]);
 
   const { currency } = useCurrency();
   const [prices, setPrices] = useState<Record<string, { price: number; displayCurrency: string }>>({});
@@ -59,7 +61,7 @@ export default function TopPropertiesSection({ properties = [] }: TopPropertiesP
           console.error("Error fetching units for property " + property.id, err);
         });
     });
-  }, [properties, currency]);
+  }, [displayProperties, currency]);
 
   if (displayProperties.length === 0) {
       return null;

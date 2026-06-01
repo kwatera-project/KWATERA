@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { format } from "date-fns";
 import { getDashboardReservationMetrics, getDashboardBillingMetrics } from "../api/adminApi";
 import SharedDatePicker from "../components/SharedDatePicker";
+import DatePicker from "react-datepicker";
 
 interface ReservationMetrics {
   totalReservations: number;
@@ -35,7 +36,7 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   const hasFetched = useRef(false);
-  const dateToRef = useRef<any>(null);
+  const dateToRef = useRef<DatePicker | null>(null);
 
   const [resMetrics, setResMetrics] = useState<ReservationMetrics>({
     totalReservations: 0,

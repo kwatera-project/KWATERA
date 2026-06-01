@@ -328,7 +328,7 @@ public class ReservationService {
         }
       }
     } catch (Exception e) {
-      log.warn("Failed to fetch property details for reservation: {}", e.getMessage());
+      log.warn("Failed to fetch property details for reservation: {}", reservationId, e);
     }
 
     dto.setGuestName(guestName);
@@ -469,7 +469,7 @@ public class ReservationService {
     return new ReservationMetricsDto(totalReservations, occupancyRate, occupiedNights);
   }
 
-  private record UnitDetailsDto(UUID propertyId, String name) {}
+  record UnitDetailsDto(UUID propertyId, String name) {}
 
-  private record PropertyDetailsDto(String title, String location, UUID ownerId) {}
+  record PropertyDetailsDto(String title, String location, UUID ownerId) {}
 }

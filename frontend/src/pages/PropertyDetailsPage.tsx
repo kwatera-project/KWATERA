@@ -9,6 +9,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format } from "date-fns";
 import { useCurrency } from "../contexts/CurrencyContext";
+import { CustomCalendarHeader } from "../components/SharedDatePicker";
 
 export default function PropertyDetailsPage() {
     const { id } = useParams();
@@ -252,7 +253,7 @@ export default function PropertyDetailsPage() {
                     <h3 className="font-bold text-xl text-brand-main tracking-tight">Select Stay Dates</h3>
                     <p className="text-sm text-brand-muted leading-relaxed">Choose your preferred check-in and check-out window to check general availability across all options.</p>
                 </div>
-                <div className="flex justify-center w-full md:w-auto bg-brand-bg p-4 rounded-xl border border-brand-accent">
+                <div className="flex justify-center w-full md:w-auto mt-4 md:mt-0">
                     <DatePicker
                         selected={globalDates[0]}
                         onChange={handleGlobalDateChange}
@@ -261,6 +262,8 @@ export default function PropertyDetailsPage() {
                         selectsRange
                         inline
                         minDate={new Date()}
+                        calendarClassName="custom-datepicker-has-header"
+                        renderCustomHeader={(props) => <CustomCalendarHeader {...props} />}
                     />
                 </div>
             </div>
@@ -308,7 +311,7 @@ export default function PropertyDetailsPage() {
                                         </button>
 
                                         {showCalendar[u.id] && (
-                                            <div className="flex flex-col items-center lg:items-start bg-brand-bg p-4 rounded-xl border border-brand-accent w-full max-w-sm">
+                                            <div className="flex flex-col items-center lg:items-start w-full max-w-sm mt-2">
                                                 <DatePicker
                                                     selected={unitStart}
                                                     onChange={(dates) => handleDateChange(u.id, dates)}
@@ -319,6 +322,8 @@ export default function PropertyDetailsPage() {
                                                     minDate={new Date()}
                                                     filterDate={(date) => !isDateBlocked(date, u.id)}
                                                     dayClassName={(date) => getDayClass(date, u.id)}
+                                                    calendarClassName="custom-datepicker-has-header"
+                                                    renderCustomHeader={(props) => <CustomCalendarHeader {...props} />}
                                                     renderDayContents={(dayOfMonth, date) => {
                                                         const cls = getDayClass(date, u.id);
                                                         let tooltipTitle = undefined;

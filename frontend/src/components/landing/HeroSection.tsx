@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Search, MapPin, CalendarDays, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import DatePicker from 'react-datepicker';
 import SharedDatePicker from "../SharedDatePicker";
 
 export default function HeroSection() {
@@ -9,7 +10,7 @@ export default function HeroSection() {
     const [checkOut, setCheckOut] = useState<Date | null>(null);
     const [guests, setGuests] = useState('2');
     const navigate = useNavigate();
-    const checkOutRef = useRef<any>(null);
+    const checkOutRef = useRef<DatePicker | null>(null);
 
     const handleSearch = () => {
         const params = new URLSearchParams();
