@@ -198,6 +198,7 @@ export default function AdminReservationList() {
                     <tbody className="divide-y divide-[#DACDCA]/60 bg-white">
                         {filteredReservations.map((res) => {
                             const isMeterReadingsEnabled = !!settlementIds[res.id] && !!unitIds[res.id] && (res.status === "CONFIRMED" || res.status === "COMPLETED");
+                            const isConfirmEnabled = res.status === "PENDING";
                             const isCompleteEnabled = res.status === "CONFIRMED";
                             const isCancelEnabled = res.status === "PENDING" || res.status === "CONFIRMED";
 
@@ -227,7 +228,6 @@ export default function AdminReservationList() {
                                     </td>
                                     <td className="px-6 py-4 text-sm text-center">
                                         <div className="flex flex-wrap justify-center items-center gap-2">
-                                            {/* 1. View Details (always active, solid primary styling) */}
                                             <Link
                                                 to={`/reservations/${res.id}`}
                                                 className="px-3 py-1.5 text-xs font-semibold text-white bg-[#42211D] hover:bg-[#321815] rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1 shrink-0 cursor-pointer"
@@ -235,7 +235,6 @@ export default function AdminReservationList() {
                                                 View Details
                                             </Link>
 
-                                            {/* 2. Meter Readings (always rendered, conditionally disabled with Tailwind classes) */}
                                             {isMeterReadingsEnabled ? (
                                                 <Link
                                                     to={`/admin/settlements/${settlementIds[res.id]}/meter-readings?unitId=${unitIds[res.id]}`}
@@ -252,7 +251,14 @@ export default function AdminReservationList() {
                                                 </button>
                                             )}
 
-                                            {/* 3. Complete (always rendered, conditionally disabled with Tailwind classes) */}
+                                            <button
+                                                disabled={!isConfirmEnabled}
+                                                onClick={() => handleStatusChange(res.id, 'CONFIRMED')}
+                                                className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
+                                            >
+                                                Confirm
+                                            </button>
+
                                             <button
                                                 disabled={!isCompleteEnabled}
                                                 onClick={() => handleStatusChange(res.id, 'COMPLETED')}
@@ -261,7 +267,6 @@ export default function AdminReservationList() {
                                                 Complete
                                             </button>
 
-                                            {/* 4. Cancel (always rendered, conditionally disabled with Tailwind classes) */}
                                             <button
                                                 disabled={!isCancelEnabled}
                                                 onClick={() => handleStatusChange(res.id, 'CANCELLED')}
