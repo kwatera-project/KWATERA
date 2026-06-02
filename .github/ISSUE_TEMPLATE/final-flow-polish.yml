@@ -1,0 +1,34 @@
+name: Final flow polish
+description: Small issue for closing missing or broken application flows
+title: "[Polish] "
+body:
+  - type: textarea
+    id: what_to_complete
+    attributes:
+      label: What needs to be completed?
+      description: Briefly describe what is missing, broken, or unfinished.
+    validations:
+      required: true
+
+  - type: textarea
+    id: where
+    attributes:
+      label: Where?
+      description: Role, screen, route, or flow, e.g. OWNER -> Manage properties.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected behavior
+      description: Optional. What should happen after the fix?
+
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: Definition of Done
+      description: Optional. Add only what is useful.
+      value: |
+        - [ ] Fixed
+        - [ ] Manually verified
