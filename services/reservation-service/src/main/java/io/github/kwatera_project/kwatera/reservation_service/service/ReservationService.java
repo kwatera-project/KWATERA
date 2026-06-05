@@ -307,8 +307,8 @@ public class ReservationService {
           PropertyDetailsDto propertyDto =
               restTemplate.getForObject(propertyUrl, PropertyDetailsDto.class);
           if (propertyDto != null) {
-            if (propertyDto.location() != null) {
-              city = propertyDto.location();
+            if (propertyDto.city() != null) {
+              city = propertyDto.city();
             }
             if (propertyDto.ownerId() != null) {
               UUID ownerId = propertyDto.ownerId();
@@ -471,5 +471,5 @@ public class ReservationService {
 
   record UnitDetailsDto(UUID propertyId, String name) {}
 
-  record PropertyDetailsDto(String title, String location, UUID ownerId) {}
+  record PropertyDetailsDto(String title, String city, UUID ownerId) {}
 }

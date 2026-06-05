@@ -5,7 +5,7 @@ import DatePicker from 'react-datepicker';
 import SharedDatePicker from "../SharedDatePicker";
 
 export default function HeroSection() {
-    const [location, setLocation] = useState('');
+    const [city, setCity] = useState('');
     const [checkIn, setCheckIn] = useState<Date | null>(null);
     const [checkOut, setCheckOut] = useState<Date | null>(null);
     const [guests, setGuests] = useState('2');
@@ -14,7 +14,7 @@ export default function HeroSection() {
 
     const handleSearch = () => {
         const params = new URLSearchParams();
-        if (location) params.append('location', location);
+        if (city) params.append('city', city);
         if (checkIn) params.append('checkIn', checkIn.toISOString().split('T')[0]);
         if (checkOut) params.append('checkOut', checkOut.toISOString().split('T')[0]);
         if (guests) params.append('guests', guests);
@@ -46,14 +46,14 @@ export default function HeroSection() {
                     <div className="relative z-[9999] w-full max-w-5xl bg-white rounded-3xl md:rounded-full shadow-xl border border-[#DACDCA] p-3 flex flex-col md:flex-row items-center divide-y md:divide-y-0 md:divide-x divide-gray-200 gap-y-2 md:gap-y-0">
 
                         <div className="flex-1 w-full px-6 py-3 flex flex-col items-start hover:bg-gray-50 rounded-full transition-colors relative group z-[100]">
-                            <label htmlFor="location" className="text-xs font-bold text-title uppercase tracking-wider mb-1 cursor-pointer flex items-center gap-1.5">
+                            <label htmlFor="city" className="text-xs font-bold text-title uppercase tracking-wider mb-1 cursor-pointer flex items-center gap-1.5">
                                 <MapPin size={14} className="text-[rgb(var(--color-burgundy))]" /> Location
                             </label>
                             <input
                                 type="text"
-                                id="location"
-                                value={location}
-                                onChange={(e) => setLocation(e.target.value)}
+                                id="city"
+                                value={city}
+                                onChange={(e) => setCity(e.target.value)}
                                 className="w-full bg-transparent text-title placeholder-gray-400 focus:outline-none font-medium text-lg"
                                 placeholder="Warszawa, Zakopane..."
                                 autoComplete="off"
