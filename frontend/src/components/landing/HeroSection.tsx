@@ -47,7 +47,7 @@ export default function HeroSection() {
 
                         <div className="flex-1 w-full px-6 py-3 flex flex-col items-start hover:bg-gray-50 rounded-full transition-colors relative group z-[100]">
                             <label htmlFor="city" className="text-xs font-bold text-title uppercase tracking-wider mb-1 cursor-pointer flex items-center gap-1.5">
-                                <MapPin size={14} className="text-[rgb(var(--color-burgundy))]" /> Location
+                                <MapPin size={14} className="text-[rgb(var(--color-burgundy))]" /> City
                             </label>
                             <input
                                 type="text"

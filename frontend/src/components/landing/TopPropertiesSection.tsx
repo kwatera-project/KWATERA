@@ -118,7 +118,7 @@ export default function TopPropertiesSection({ properties = [] }: TopPropertiesP
                     </h3>
                     <div className="flex items-center gap-1.5 text-details font-medium">
                       <MapPin size={15} />
-                      <span className="text-sm">{property.country || property.city || 'Poland'}</span>
+                      <span className="text-sm">{property.city || property.country || 'Poland'}</span>
                     </div>
                   </div>
                   <div className="text-right whitespace-nowrap">
