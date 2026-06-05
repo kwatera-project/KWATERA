@@ -5,11 +5,12 @@ import { formatSearchDate } from "../../utils/searchDates";
 export default function HeroSection() {
     const navigate = useNavigate();
 
-    const handleSearch = ({ location, checkIn, checkOut }: PropertySearchValues) => {
+    const handleSearch = ({ location, checkIn, checkOut, guests }: PropertySearchValues) => {
         const params = new URLSearchParams();
         if (location) params.append('location', location);
         if (checkIn) params.append('checkIn', formatSearchDate(checkIn));
         if (checkOut) params.append('checkOut', formatSearchDate(checkOut));
+        if (guests) params.append('guests', guests);
 
         navigate(`/properties${params.toString() ? `?${params.toString()}` : ''}`);
     };
@@ -35,7 +36,10 @@ export default function HeroSection() {
                         Explore beautiful places in the world with Kwatera
                     </p>
 
-                    <PropertySearchBar onSearch={handleSearch} />
+                    <PropertySearchBar
+                        initialValues={{ guests: "2" }}
+                        onSearch={handleSearch}
+                    />
                 </div>
             </div>
         </section>

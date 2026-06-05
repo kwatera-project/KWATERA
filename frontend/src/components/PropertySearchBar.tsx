@@ -1,13 +1,14 @@
 import { useRef, useState } from "react";
 import type { FormEvent } from "react";
 import DatePicker from "react-datepicker";
-import { CalendarDays, MapPin, Search } from "lucide-react";
+import { CalendarDays, MapPin, Search, Users } from "lucide-react";
 import SharedDatePicker from "./SharedDatePicker";
 
 export interface PropertySearchValues {
     location: string;
     checkIn: Date | null;
     checkOut: Date | null;
+    guests: string;
 }
 
 interface PropertySearchBarProps {
@@ -24,6 +25,7 @@ export default function PropertySearchBar({
     const [location, setLocation] = useState(initialValues?.location ?? "");
     const [checkIn, setCheckIn] = useState<Date | null>(initialValues?.checkIn ?? null);
     const [checkOut, setCheckOut] = useState<Date | null>(initialValues?.checkOut ?? null);
+    const [guests, setGuests] = useState(initialValues?.guests ?? "");
     const checkOutRef = useRef<DatePicker | null>(null);
 
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -32,6 +34,7 @@ export default function PropertySearchBar({
             location: location.trim(),
             checkIn,
             checkOut,
+            guests: guests.trim(),
         });
     };
 
@@ -100,11 +103,25 @@ export default function PropertySearchBar({
                 />
             </div>
 
-            <div className="w-full md:w-auto pl-6 pr-3 py-3 flex items-center justify-end hover:bg-gray-50 rounded-full transition-colors">
+            <div className="flex-1 w-full pl-6 pr-3 py-3 flex items-center justify-between hover:bg-gray-50 rounded-full transition-colors">
+                <div className="flex flex-col items-start">
+                    <label htmlFor="property-search-guests" className="text-xs font-bold text-title uppercase tracking-wider mb-1 cursor-pointer flex items-center gap-1.5">
+                        <Users size={14} className="text-[rgb(var(--color-burgundy))]" /> Guests
+                    </label>
+                    <input
+                        id="property-search-guests"
+                        type="number"
+                        min="1"
+                        placeholder="Add guests"
+                        value={guests}
+                        onChange={(event) => setGuests(event.target.value)}
+                        className="w-full text-sm text-primary bg-transparent focus:outline-none placeholder-gray-400 font-medium"
+                    />
+                </div>
                 <button
                     type="submit"
                     aria-label="Search properties"
-                    className="bg-[rgb(var(--color-burgundy))] text-white p-5 rounded-full hover:bg-[rgb(var(--color-burgundy-hover))] transition-all shadow-lg flex-shrink-0"
+                    className="bg-[rgb(var(--color-burgundy))] text-white p-5 rounded-full hover:bg-[rgb(var(--color-burgundy-hover))] transition-all shadow-lg flex-shrink-0 ml-4"
                 >
                     <Search size={24} />
                 </button>

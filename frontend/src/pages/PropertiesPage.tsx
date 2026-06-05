@@ -49,6 +49,7 @@ export default function PropertiesPage() {
         location: searchParams.get("location") ?? "",
         checkIn: parseSearchDate(searchParams.get("checkIn")),
         checkOut: parseSearchDate(searchParams.get("checkOut")),
+        guests: searchParams.get("guests") ?? "",
     }), [searchParams]);
 
     const hasCompleteDateRange = !!searchValues.checkIn && !!searchValues.checkOut && searchValues.checkIn < searchValues.checkOut;
@@ -120,11 +121,12 @@ export default function PropertiesPage() {
         };
     }, [properties, searchValues.location, searchValues.checkIn, searchValues.checkOut, hasCompleteDateRange]);
 
-    const handleSearch = ({ location, checkIn, checkOut }: PropertySearchValues) => {
+    const handleSearch = ({ location, checkIn, checkOut, guests }: PropertySearchValues) => {
         const params = new URLSearchParams();
         if (location) params.set("location", location);
         if (checkIn) params.set("checkIn", formatSearchDate(checkIn));
         if (checkOut) params.set("checkOut", formatSearchDate(checkOut));
+        if (guests) params.set("guests", guests);
         setSearchParams(params);
     };
 
