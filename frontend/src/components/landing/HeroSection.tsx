@@ -1,9 +1,26 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PropertySearchBar, { type PropertySearchValues } from "../PropertySearchBar";
 import { formatSearchDate } from "../../utils/searchDates";
+import { getProperties } from "../../api/propertyApi";
+import type { Property } from "../../types/property";
+import { getLocationSuggestions } from "../../utils/locationSuggestions";
 
 export default function HeroSection() {
     const navigate = useNavigate();
+    const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
+
+    useEffect(() => {
+        getProperties()
+            .then((properties: Property[]) => {
+                if (Array.isArray(properties)) {
+                    setLocationSuggestions(getLocationSuggestions(properties));
+                }
+            })
+            .catch(() => {
+                setLocationSuggestions([]);
+            });
+    }, []);
 
     const handleSearch = ({ location, checkIn, checkOut, guests }: PropertySearchValues) => {
         const params = new URLSearchParams();
@@ -39,6 +56,7 @@ export default function HeroSection() {
                     <PropertySearchBar
                         initialValues={{ guests: "2" }}
                         onSearch={handleSearch}
+                        locationSuggestions={locationSuggestions}
                     />
                 </div>
             </div>

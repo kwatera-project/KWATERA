@@ -5,6 +5,7 @@ import type { Property, Unit } from "../types/property";
 import { Link, useSearchParams } from "react-router-dom";
 import PropertySearchBar, { type PropertySearchValues } from "../components/PropertySearchBar";
 import { formatSearchDate, parseGuests, parseSearchDate } from "../utils/searchDates";
+import { getLocationSuggestions } from "../utils/locationSuggestions";
 
 interface AvailabilityResponse {
     available: boolean;
@@ -16,7 +17,8 @@ const UNITS_FILTER_ERROR = "Could not load units for filtering. Please try again
 const AVAILABILITY_FILTER_ERROR = "Could not verify availability. Please try again or adjust your filters.";
 
 function propertyMatchesLocation(property: Property, location: string) {
-    const normalizedLocation = location.trim().toLowerCase();
+    const normalizeLocationText = (value: string) => value.toLowerCase().replace(/[,\s]+/g, " ").trim();
+    const normalizedLocation = normalizeLocationText(location);
     if (!normalizedLocation) return true;
 
     const searchableText = [
@@ -31,7 +33,7 @@ function propertyMatchesLocation(property: Property, location: string) {
         .join(" ")
         .toLowerCase();
 
-    return searchableText.includes(normalizedLocation);
+    return normalizeLocationText(searchableText).includes(normalizedLocation);
 }
 
 export default function PropertiesPage() {
@@ -52,6 +54,7 @@ export default function PropertiesPage() {
 
     const hasCompleteDateRange = !!searchValues.checkIn && !!searchValues.checkOut && searchValues.checkIn < searchValues.checkOut;
     const requestedGuests = parseGuests(searchValues.guests);
+    const locationSuggestions = useMemo(() => getLocationSuggestions(properties), [properties]);
     const propertyDetailsSearch = useMemo(() => {
         const params = new URLSearchParams();
         const checkIn = searchParams.get("checkIn");
@@ -184,6 +187,7 @@ export default function PropertiesPage() {
                     key={searchParams.toString()}
                     initialValues={searchValues}
                     onSearch={handleSearch}
+                    locationSuggestions={locationSuggestions}
                     className="max-w-none"
                 />
             </div>

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import DatePicker from "react-datepicker";
 import { CalendarDays, MapPin, Search, Users } from "lucide-react";
@@ -15,18 +15,44 @@ interface PropertySearchBarProps {
     initialValues?: Partial<PropertySearchValues>;
     onSearch: (values: PropertySearchValues) => void;
     className?: string;
+    locationSuggestions?: string[];
 }
 
 export default function PropertySearchBar({
     initialValues,
     onSearch,
     className = "",
+    locationSuggestions = [],
 }: PropertySearchBarProps) {
     const [location, setLocation] = useState(initialValues?.location ?? "");
+    const [isLocationSuggestionsOpen, setIsLocationSuggestionsOpen] = useState(false);
     const [checkIn, setCheckIn] = useState<Date | null>(initialValues?.checkIn ?? null);
     const [checkOut, setCheckOut] = useState<Date | null>(initialValues?.checkOut ?? null);
     const [guests, setGuests] = useState(initialValues?.guests ?? "");
     const checkOutRef = useRef<DatePicker | null>(null);
+    const locationWrapperRef = useRef<HTMLDivElement>(null);
+
+    const filteredLocationSuggestions = useMemo(() => {
+        const normalizedLocation = location.trim().toLowerCase();
+        if (!normalizedLocation) {
+            return locationSuggestions;
+        }
+
+        return locationSuggestions.filter((suggestion) =>
+            suggestion.toLowerCase().includes(normalizedLocation)
+        );
+    }, [location, locationSuggestions]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (locationWrapperRef.current && !locationWrapperRef.current.contains(event.target as Node)) {
+                setIsLocationSuggestionsOpen(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -43,7 +69,7 @@ export default function PropertySearchBar({
             onSubmit={handleSubmit}
             className={`relative z-[9999] w-full max-w-5xl bg-white rounded-3xl md:rounded-full shadow-xl border border-[#DACDCA] p-3 flex flex-col md:flex-row items-center divide-y md:divide-y-0 md:divide-x divide-gray-200 gap-y-2 md:gap-y-0 ${className}`}
         >
-            <div className="flex-1 w-full px-6 py-3 flex flex-col items-start hover:bg-gray-50 rounded-full transition-colors relative group z-[100]">
+            <div ref={locationWrapperRef} className="flex-1 w-full px-6 py-3 flex flex-col items-start hover:bg-gray-50 rounded-full transition-colors relative group z-[100]">
                 <label htmlFor="property-search-location" className="text-xs font-bold text-title uppercase tracking-wider mb-1 cursor-pointer flex items-center gap-1.5">
                     <MapPin size={14} className="text-[rgb(var(--color-burgundy))]" /> Location
                 </label>
@@ -51,11 +77,38 @@ export default function PropertySearchBar({
                     type="text"
                     id="property-search-location"
                     value={location}
-                    onChange={(event) => setLocation(event.target.value)}
+                    onChange={(event) => {
+                        setLocation(event.target.value);
+                        setIsLocationSuggestionsOpen(true);
+                    }}
+                    onFocus={() => setIsLocationSuggestionsOpen(true)}
+                    onKeyDown={(event) => {
+                        if (event.key === "Escape") {
+                            setIsLocationSuggestionsOpen(false);
+                        }
+                    }}
                     className="w-full bg-transparent text-title placeholder-gray-400 focus:outline-none font-medium text-lg"
                     placeholder="Warszawa, Zakopane..."
                     autoComplete="off"
                 />
+                {isLocationSuggestionsOpen && filteredLocationSuggestions.length > 0 && (
+                    <div className="absolute left-3 right-3 top-full mt-2 bg-white border border-[#DACDCA] rounded-2xl shadow-xl overflow-hidden z-[10000] py-1">
+                        {filteredLocationSuggestions.map((suggestion) => (
+                            <button
+                                key={suggestion}
+                                type="button"
+                                onMouseDown={(event) => event.preventDefault()}
+                                onClick={() => {
+                                    setLocation(suggestion);
+                                    setIsLocationSuggestionsOpen(false);
+                                }}
+                                className="w-full text-left px-4 py-2.5 text-sm font-semibold text-title hover:bg-gray-50 transition-colors"
+                            >
+                                {suggestion}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             <div className="flex-1 w-full px-6 py-3 flex flex-col items-start hover:bg-gray-50 rounded-full transition-colors relative z-50">
