@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getProperty, getUnits, getPropertyImages } from "../api/propertyApi";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import type { Unit, Property } from "../types/property";
-import { getOccupiedDates } from "../api/availabilityApi";
+import { checkAvailability, getOccupiedDates } from "../api/availabilityApi";
 import { createReservation } from "../api/reservationApi";
 import { GATEWAY_BASE_URL } from "../api/apiConfig";
 import DatePicker from "react-datepicker";
@@ -10,16 +10,29 @@ import "react-datepicker/dist/react-datepicker.css";
 import { format } from "date-fns";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { CustomCalendarHeader } from "../components/SharedDatePicker";
+import { formatSearchDate, parseGuests, parseSearchDate } from "../utils/searchDates";
+
+interface AvailabilityResponse {
+    available: boolean;
+    message: string;
+}
 
 export default function PropertyDetailsPage() {
     const { id } = useParams();
+    const [searchParams] = useSearchParams();
+    const initialSearch = useMemo(() => ({
+        checkIn: parseSearchDate(searchParams.get("checkIn")),
+        checkOut: parseSearchDate(searchParams.get("checkOut")),
+        guests: parseGuests(searchParams.get("guests")),
+    }), [searchParams]);
+    const hasInitialDateRange = !!initialSearch.checkIn && !!initialSearch.checkOut && initialSearch.checkIn < initialSearch.checkOut;
     const [property, setProperty] = useState<Property | null>(null);
     const [units, setUnits] = useState<Unit[]>([]);
     const [images, setImages] = useState<string[]>([]);
     const [mainImage, setMainImage] = useState("");
     const [occupiedIntervals, setOccupiedIntervals] = useState<Record<string, { start: Date, end: Date }[]>>({});
     const [selectedDates, setSelectedDates] = useState<Record<string, [Date | null, Date | null]>>({});
-    const [globalDates, setGlobalDates] = useState<[Date | null, Date | null]>([null, null]);
+    const [globalDates, setGlobalDates] = useState<[Date | null, Date | null]>([initialSearch.checkIn, initialSearch.checkOut]);
     const [showCalendar, setShowCalendar] = useState<Record<string, boolean>>({});
 
     const [bookingState, setBookingState] = useState<
@@ -30,7 +43,7 @@ export default function PropertyDetailsPage() {
     useEffect(() => {
         if (!id) return;
         getProperty(id).then(setProperty);
-        getUnits(id, currency).then((fetchedUnits: Unit[]) => {
+        getUnits(id, currency).then(async (fetchedUnits: Unit[]) => {
             setUnits(fetchedUnits);
             fetchedUnits.forEach((u: Unit) => {
                 getOccupiedDates(u.id).then((dates: { startDate: string, endDate: string }[]) => {
@@ -41,6 +54,54 @@ export default function PropertyDetailsPage() {
                     setOccupiedIntervals(prev => ({ ...prev, [u.id]: intervals }));
                 });
             });
+
+            if (!initialSearch.guests && !hasInitialDateRange) {
+                return;
+            }
+
+            const nextSelectedDates: Record<string, [Date | null, Date | null]> = {};
+            const nextBookingState: Record<string, { loading: boolean; success?: boolean; error?: string }> = {};
+            const checkIn = initialSearch.checkIn ? formatSearchDate(initialSearch.checkIn) : null;
+            const checkOut = initialSearch.checkOut ? formatSearchDate(initialSearch.checkOut) : null;
+
+            await Promise.all(fetchedUnits.map(async (unit) => {
+                if (initialSearch.guests && unit.capacity < initialSearch.guests) {
+                    nextSelectedDates[unit.id] = [null, null];
+                    nextBookingState[unit.id] = {
+                        loading: false,
+                        error: `This unit hosts up to ${unit.capacity} ${unit.capacity === 1 ? "person" : "people"}.`,
+                    };
+                    return;
+                }
+
+                if (!hasInitialDateRange || !initialSearch.checkIn || !initialSearch.checkOut || !checkIn || !checkOut) {
+                    nextBookingState[unit.id] = { loading: false, error: undefined };
+                    return;
+                }
+
+                try {
+                    const availability: AvailabilityResponse = await checkAvailability(unit.id, checkIn, checkOut);
+                    if (availability.available) {
+                        nextSelectedDates[unit.id] = [initialSearch.checkIn, initialSearch.checkOut];
+                        nextBookingState[unit.id] = { loading: false, error: undefined };
+                    } else {
+                        nextSelectedDates[unit.id] = [null, null];
+                        nextBookingState[unit.id] = {
+                            loading: false,
+                            error: "Room not available for the selected search dates.",
+                        };
+                    }
+                } catch {
+                    nextSelectedDates[unit.id] = [null, null];
+                    nextBookingState[unit.id] = {
+                        loading: false,
+                        error: "Unable to confirm availability for the selected search dates.",
+                    };
+                }
+            }));
+
+            setSelectedDates(prev => ({ ...prev, ...nextSelectedDates }));
+            setBookingState(prev => ({ ...prev, ...nextBookingState }));
         });
 
         getPropertyImages(id).then((data) => {
@@ -49,12 +110,24 @@ export default function PropertyDetailsPage() {
                 setMainImage(data[0]);
             }
         });
-    }, [id, currency]);
+    }, [id, currency, initialSearch.checkIn, initialSearch.checkOut, initialSearch.guests, hasInitialDateRange]);
 
     const handleGlobalDateChange = (dates: [Date | null, Date | null]) => {
         setGlobalDates(dates);
         const [start, end] = dates;
         units.forEach((u) => {
+            if (initialSearch.guests && u.capacity < initialSearch.guests) {
+                setSelectedDates(prev => ({ ...prev, [u.id]: [null, null] }));
+                setBookingState(prev => ({
+                    ...prev,
+                    [u.id]: {
+                        loading: false,
+                        error: `This unit hosts up to ${u.capacity} ${u.capacity === 1 ? "person" : "people"}.`
+                    }
+                }));
+                return;
+            }
+
             if (start && end) {
                 let hasOverlap = false;
                 const startStr = format(start, 'yyyy-MM-dd');
@@ -119,6 +192,19 @@ export default function PropertyDetailsPage() {
     };
 
     const handleDateChange = (unitId: string, dates: [Date | null, Date | null]) => {
+        const unit = units.find((u) => u.id === unitId);
+        if (unit && initialSearch.guests && unit.capacity < initialSearch.guests) {
+            setSelectedDates(prev => ({ ...prev, [unitId]: [null, null] }));
+            setBookingState(prev => ({
+                ...prev,
+                [unitId]: {
+                    loading: false,
+                    error: `This unit hosts up to ${unit.capacity} ${unit.capacity === 1 ? "person" : "people"}.`
+                }
+            }));
+            return;
+        }
+
         const [start, end] = dates;
         if (start && end) {
             if (start.getTime() === end.getTime()) {
@@ -155,6 +241,18 @@ export default function PropertyDetailsPage() {
     };
 
     const handleBook = async (unitId: string) => {
+        const unit = units.find((u) => u.id === unitId);
+        if (unit && initialSearch.guests && unit.capacity < initialSearch.guests) {
+            setBookingState(prev => ({
+                ...prev,
+                [unitId]: {
+                    loading: false,
+                    error: `This unit hosts up to ${unit.capacity} ${unit.capacity === 1 ? "person" : "people"}.`
+                }
+            }));
+            return;
+        }
+
         const dates = selectedDates[unitId];
         if (!dates || !dates[0] || !dates[1]) {
             setBookingState(prev => ({
@@ -277,6 +375,7 @@ export default function PropertyDetailsPage() {
                         const unitEnd = selectedDates[u.id]?.[1];
                         const nights = calculateNights(unitStart, unitEnd);
                         const totalPrice = nights * u.pricePerNight;
+                        const lacksRequestedCapacity = !!initialSearch.guests && u.capacity < initialSearch.guests;
 
                         return (
                             <div key={u.id} className="bg-white border border-brand-accent rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 flex flex-col lg:flex-row gap-8">
@@ -372,20 +471,21 @@ export default function PropertyDetailsPage() {
                                     <div className="mt-6 w-full space-y-4">
                                         <button
                                             onClick={() => handleBook(u.id)}
-                                            disabled={bookingState[u.id]?.loading || bookingState[u.id]?.success || !unitStart || !unitEnd}
+                                            disabled={bookingState[u.id]?.loading || bookingState[u.id]?.success || lacksRequestedCapacity || !unitStart || !unitEnd}
                                             className={`w-full px-6 py-3 font-bold rounded-lg transition-all duration-200 shadow-sm cursor-pointer flex items-center justify-center gap-2 ${
                                                 bookingState[u.id]?.success
                                                     ? "bg-green-600 text-white cursor-default"
                                                     : bookingState[u.id]?.loading
                                                         ? "bg-brand-muted text-white cursor-wait"
-                                                        : (!unitStart || !unitEnd)
+                                                        : (lacksRequestedCapacity || !unitStart || !unitEnd)
                                                             ? "bg-brand-accent text-brand-main opacity-50 cursor-not-allowed"
                                                             : "bg-brand-primary text-white hover:bg-brand-primary-hover"
                                             }`}
                                         >
                                             {bookingState[u.id]?.loading ? "Processing..." :
                                                 bookingState[u.id]?.success ? "Redirecting to payment..." :
-                                                    (!unitStart || !unitEnd) ? "Select dates to book" : "Book these dates"}
+                                                    lacksRequestedCapacity ? "Capacity too low" :
+                                                        (!unitStart || !unitEnd) ? "Select dates to book" : "Book these dates"}
                                         </button>
 
                                         {bookingState[u.id]?.error && (

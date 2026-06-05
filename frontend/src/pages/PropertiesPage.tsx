@@ -3,20 +3,17 @@ import { getProperties, getUnits } from "../api/propertyApi";
 import { checkAvailability } from "../api/availabilityApi";
 import type { Property, Unit } from "../types/property";
 import { Link, useSearchParams } from "react-router-dom";
-import { isValid, parseISO } from "date-fns";
 import PropertySearchBar, { type PropertySearchValues } from "../components/PropertySearchBar";
-import { formatSearchDate } from "../utils/searchDates";
+import { formatSearchDate, parseGuests, parseSearchDate } from "../utils/searchDates";
 
 interface AvailabilityResponse {
     available: boolean;
     message: string;
 }
 
-function parseSearchDate(value: string | null) {
-    if (!value) return null;
-    const parsed = parseISO(value);
-    return isValid(parsed) ? parsed : null;
-}
+const PROPERTIES_LOAD_ERROR = "Could not load properties. Please try again later.";
+const UNITS_FILTER_ERROR = "Could not load units for filtering. Please try again later.";
+const AVAILABILITY_FILTER_ERROR = "Could not verify availability. Please try again or adjust your filters.";
 
 function propertyMatchesLocation(property: Property, location: string) {
     const normalizedLocation = location.trim().toLowerCase();
@@ -37,17 +34,13 @@ function propertyMatchesLocation(property: Property, location: string) {
     return searchableText.includes(normalizedLocation);
 }
 
-function parseGuests(value: string) {
-    const guests = Number(value);
-    return Number.isInteger(guests) && guests >= 1 ? guests : null;
-}
-
 export default function PropertiesPage() {
     const [properties, setProperties] = useState<Property[]>([]);
     const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isFilteringAvailability, setIsFilteringAvailability] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [propertiesError, setPropertiesError] = useState<string | null>(null);
+    const [filterError, setFilterError] = useState<string | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
 
     const searchValues = useMemo(() => ({
@@ -59,16 +52,33 @@ export default function PropertiesPage() {
 
     const hasCompleteDateRange = !!searchValues.checkIn && !!searchValues.checkOut && searchValues.checkIn < searchValues.checkOut;
     const requestedGuests = parseGuests(searchValues.guests);
+    const propertyDetailsSearch = useMemo(() => {
+        const params = new URLSearchParams();
+        const checkIn = searchParams.get("checkIn");
+        const checkOut = searchParams.get("checkOut");
+        const guests = searchParams.get("guests");
+
+        if (checkIn) params.set("checkIn", checkIn);
+        if (checkOut) params.set("checkOut", checkOut);
+        if (guests) params.set("guests", guests);
+
+        const serialized = params.toString();
+        return serialized ? `?${serialized}` : "";
+    }, [searchParams]);
 
     useEffect(() => {
         getProperties()
             .then((data: Property[]) => {
+                if (!Array.isArray(data)) {
+                    throw new Error(PROPERTIES_LOAD_ERROR);
+                }
                 setProperties(data);
-                setError(null);
+                setPropertiesError(null);
             })
-            .catch((err: unknown) => {
-                const message = err instanceof Error ? err.message : "Unable to load properties.";
-                setError(message);
+            .catch(() => {
+                setProperties([]);
+                setFilteredProperties([]);
+                setPropertiesError(PROPERTIES_LOAD_ERROR);
             })
             .finally(() => setIsLoading(false));
     }, []);
@@ -81,6 +91,7 @@ export default function PropertiesPage() {
 
             if (!requestedGuests && (!hasCompleteDateRange || !searchValues.checkIn || !searchValues.checkOut)) {
                 setIsFilteringAvailability(false);
+                setFilterError(null);
                 setFilteredProperties(locationFiltered);
                 return;
             }
@@ -92,35 +103,54 @@ export default function PropertiesPage() {
 
                 const filteredResults = await Promise.all(
                     locationFiltered.map(async (property) => {
+                        let units: Unit[];
                         try {
-                            const units: Unit[] = await getUnits(property.id);
-                            const matchingUnits = requestedGuests
-                                ? units.filter((unit) => unit.capacity >= requestedGuests)
-                                : units;
-
-                            if (matchingUnits.length === 0) return null;
-
-                            if (!hasCompleteDateRange || !checkIn || !checkOut) {
-                                return property;
+                            units = await getUnits(property.id);
+                            if (!Array.isArray(units)) {
+                                throw new Error(UNITS_FILTER_ERROR);
                             }
-
-                            const unitResults = await Promise.all(
-                                matchingUnits.map((unit) =>
-                                    checkAvailability(unit.id, checkIn, checkOut)
-                                        .then((availability: AvailabilityResponse) => availability.available)
-                                        .catch(() => false)
-                                )
-                            );
-
-                            return unitResults.some(Boolean) ? property : null;
                         } catch {
-                            return null;
+                            throw new Error(UNITS_FILTER_ERROR);
                         }
+
+                        const matchingUnits = requestedGuests
+                            ? units.filter((unit) => unit.capacity >= requestedGuests)
+                            : units;
+
+                        if (matchingUnits.length === 0) return null;
+
+                        if (!hasCompleteDateRange || !checkIn || !checkOut) {
+                            return property;
+                        }
+
+                        const unitResults = await Promise.all(
+                            matchingUnits.map((unit) =>
+                                checkAvailability(unit.id, checkIn, checkOut)
+                                    .then((availability: AvailabilityResponse) => {
+                                        if (typeof availability.available !== "boolean") {
+                                            throw new Error(AVAILABILITY_FILTER_ERROR);
+                                        }
+                                        return availability.available;
+                                    })
+                                    .catch(() => {
+                                        throw new Error(AVAILABILITY_FILTER_ERROR);
+                                    })
+                            )
+                        );
+
+                        return unitResults.some(Boolean) ? property : null;
                     })
                 );
 
                 if (!cancelled) {
+                    setFilterError(null);
                     setFilteredProperties(filteredResults.filter((property): property is Property => property !== null));
+                }
+            } catch (err: unknown) {
+                if (!cancelled) {
+                    const message = err instanceof Error ? err.message : UNITS_FILTER_ERROR;
+                    setFilterError(message === AVAILABILITY_FILTER_ERROR ? AVAILABILITY_FILTER_ERROR : UNITS_FILTER_ERROR);
+                    setFilteredProperties([]);
                 }
             } finally {
                 if (!cancelled) {
@@ -164,13 +194,13 @@ export default function PropertiesPage() {
                 </div>
             )}
 
-            {error && (
+            {(propertiesError || filterError) && (
                 <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700 font-semibold mb-8">
-                    {error}
+                    {propertiesError || filterError}
                 </div>
             )}
 
-            {!isLoading && !isFilteringAvailability && !error && filteredProperties.length === 0 && (
+            {!isLoading && !isFilteringAvailability && !propertiesError && !filterError && filteredProperties.length === 0 && (
                 <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-8 text-center mb-8">
                     <h2 className="text-xl font-bold text-[#1A1A1A] tracking-tight">No properties found</h2>
                     <p className="text-sm text-[#7A7A7A] mt-2">
@@ -181,7 +211,7 @@ export default function PropertiesPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {filteredProperties.map(p => (
-                    <Link key={p.id} to={`/property/${p.id}`} className="group block">
+                    <Link key={p.id} to={`/property/${p.id}${propertyDetailsSearch}`} className="group block">
                         <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
                             <img src={p.imageUrl} className="w-full h-100 object-cover rounded-lg" alt={p.title} />
                             <h2 className="text-2xl font-bold text-[#1A1A1A] tracking-tight mt-4 group-hover:text-[#42211D] transition-colors">{p.title}</h2>
