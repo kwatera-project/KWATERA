@@ -37,6 +37,11 @@ function propertyMatchesLocation(property: Property, location: string) {
     return searchableText.includes(normalizedLocation);
 }
 
+function parseGuests(value: string) {
+    const guests = Number(value);
+    return Number.isInteger(guests) && guests >= 1 ? guests : null;
+}
+
 export default function PropertiesPage() {
     const [properties, setProperties] = useState<Property[]>([]);
     const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
@@ -53,6 +58,7 @@ export default function PropertiesPage() {
     }), [searchParams]);
 
     const hasCompleteDateRange = !!searchValues.checkIn && !!searchValues.checkOut && searchValues.checkIn < searchValues.checkOut;
+    const requestedGuests = parseGuests(searchValues.guests);
 
     useEffect(() => {
         getProperties()
@@ -73,24 +79,33 @@ export default function PropertiesPage() {
         async function filterProperties() {
             const locationFiltered = properties.filter((property) => propertyMatchesLocation(property, searchValues.location));
 
-            if (!hasCompleteDateRange || !searchValues.checkIn || !searchValues.checkOut) {
+            if (!requestedGuests && (!hasCompleteDateRange || !searchValues.checkIn || !searchValues.checkOut)) {
+                setIsFilteringAvailability(false);
                 setFilteredProperties(locationFiltered);
                 return;
             }
 
             setIsFilteringAvailability(true);
             try {
-                const checkIn = formatSearchDate(searchValues.checkIn);
-                const checkOut = formatSearchDate(searchValues.checkOut);
+                const checkIn = searchValues.checkIn ? formatSearchDate(searchValues.checkIn) : null;
+                const checkOut = searchValues.checkOut ? formatSearchDate(searchValues.checkOut) : null;
 
-                const availabilityResults = await Promise.all(
+                const filteredResults = await Promise.all(
                     locationFiltered.map(async (property) => {
                         try {
                             const units: Unit[] = await getUnits(property.id);
-                            if (units.length === 0) return null;
+                            const matchingUnits = requestedGuests
+                                ? units.filter((unit) => unit.capacity >= requestedGuests)
+                                : units;
+
+                            if (matchingUnits.length === 0) return null;
+
+                            if (!hasCompleteDateRange || !checkIn || !checkOut) {
+                                return property;
+                            }
 
                             const unitResults = await Promise.all(
-                                units.map((unit) =>
+                                matchingUnits.map((unit) =>
                                     checkAvailability(unit.id, checkIn, checkOut)
                                         .then((availability: AvailabilityResponse) => availability.available)
                                         .catch(() => false)
@@ -105,7 +120,7 @@ export default function PropertiesPage() {
                 );
 
                 if (!cancelled) {
-                    setFilteredProperties(availabilityResults.filter((property): property is Property => property !== null));
+                    setFilteredProperties(filteredResults.filter((property): property is Property => property !== null));
                 }
             } finally {
                 if (!cancelled) {
@@ -119,7 +134,7 @@ export default function PropertiesPage() {
         return () => {
             cancelled = true;
         };
-    }, [properties, searchValues.location, searchValues.checkIn, searchValues.checkOut, hasCompleteDateRange]);
+    }, [properties, searchValues.location, searchValues.checkIn, searchValues.checkOut, searchValues.guests, hasCompleteDateRange, requestedGuests]);
 
     const handleSearch = ({ location, checkIn, checkOut, guests }: PropertySearchValues) => {
         const params = new URLSearchParams();
