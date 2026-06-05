@@ -9,6 +9,7 @@ import io.github.kwatera_project.kwatera.reservation_service.repository.Reservat
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -37,7 +38,11 @@ public class ReservationService {
     if (from == null || to == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Dates are required");
     }
-    if (from.isBefore(LocalDate.now())) {
+
+    ZoneId userTimeZone = ZoneId.of("UTC");
+    LocalDate today = LocalDate.now(userTimeZone);
+
+    if (from.isBefore(today)) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Date is in the past");
     }
     if (!from.isBefore(to)) {
@@ -412,11 +417,14 @@ public class ReservationService {
   public ReservationMetricsDto getDashboardReservationMetrics(
       LocalDate startDate, LocalDate endDate, UUID ownerId, boolean isAdmin) {
 
-    LocalDate start = (startDate != null) ? startDate : LocalDate.now().withDayOfMonth(1);
+    ZoneId userTimeZone = ZoneId.of("UTC");
+    LocalDate today = LocalDate.now(userTimeZone);
+
+    LocalDate start = (startDate != null) ? startDate : today.withDayOfMonth(1);
     LocalDate end =
         (endDate != null)
             ? endDate
-            : LocalDate.now().with(java.time.temporal.TemporalAdjusters.lastDayOfMonth());
+            : today.with(java.time.temporal.TemporalAdjusters.lastDayOfMonth());
 
     if (start.isAfter(end)) {
       throw new ResponseStatusException(
