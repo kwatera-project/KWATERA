@@ -58,7 +58,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
     }, [location.pathname]);
 
     const navLinks = [
-        {name: 'Catalog', path: '/catalog'},
+        {name: 'Catalog', path: '/properties'},
         {name: 'About', path: '/about'},
     ];
 

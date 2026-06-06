@@ -80,7 +80,7 @@ export default function TopPropertiesSection({ properties = [] }: TopPropertiesP
             <span className="block text-xs md:text-sm font-bold uppercase tracking-widest mb-2.5" style={{ color: 'rgb(var(--color-burgundy))' }}>TOP BOOK NOW</span>
             <h2 className="text-3xl md:text-5xl font-bold text-title">Featured Properties</h2>
           </div>
-          <Link to="/catalog" className="mt-6 md:mt-0 text-title font-semibold hover:text-[rgb(var(--color-burgundy))] transition-colors text-lg">
+          <Link to="/properties" className="mt-6 md:mt-0 text-title font-semibold hover:text-[rgb(var(--color-burgundy))] transition-colors text-lg">
             View All Properties &rarr;
           </Link>
         </div>

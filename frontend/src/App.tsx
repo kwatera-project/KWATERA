@@ -77,6 +77,7 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
+                <Route path="/properties" element={<PropertiesPage/>}/>
                 <Route path="/catalog" element={<PropertiesPage/>}/>
                 <Route path="/property/:id" element={<PropertyDetailsPage/>}/>
                 <Route path="/payment-cancel" element={<PaymentCancelPage/>}/>
