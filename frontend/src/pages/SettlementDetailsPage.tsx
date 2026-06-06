@@ -247,6 +247,13 @@ export default function SettlementDetailsPage() {
 
     const renderAmount = (convertedAmount?: number, originalAmount?: number) => {
         if (displayCurrency !== 'PLN' && convertedAmount !== undefined) {
+            if (isAdminOrOwner) {
+                return (
+                    <span>
+                        {originalAmount} PLN <span className="text-xs font-semibold text-[#7A7A7A]">({convertedAmount} {displayCurrency})</span>
+                    </span>
+                );
+            }
             return (
                 <span>
                     {convertedAmount} {displayCurrency}
@@ -303,6 +310,22 @@ export default function SettlementDetailsPage() {
                             {renderAmount(settlement.convertedBalanceDue, settlement.balanceDue)}
                         </p>
                     </div>
+
+                    {isAdminOrOwner && displayCurrency !== 'PLN' && settlement.currencyInfo && (
+                        <div className="space-y-1 md:col-span-2 bg-[#F7F7F7] border border-[#DACDCA] rounded-xl p-4 mt-2">
+                            <p className="text-xs font-bold text-[#42211D] uppercase tracking-wider">Currency Snapshot Info (Admin/Owner)</p>
+                            <div className="grid grid-cols-2 gap-4 mt-2">
+                                <div>
+                                    <span className="block text-[10px] font-bold text-[#7A7A7A] uppercase tracking-wider">Guest Selected Currency</span>
+                                    <p className="text-sm font-bold text-[#1A1A1A] mt-0.5">{displayCurrency}</p>
+                                </div>
+                                <div>
+                                    <span className="block text-[10px] font-bold text-[#7A7A7A] uppercase tracking-wider">Exchange Rate Snapshot</span>
+                                    <p className="text-sm font-bold text-[#1A1A1A] mt-0.5">{settlement.currencyInfo.exchangeRate.toFixed(4)} {displayCurrency}/PLN</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="md:col-span-2 border-t border-[#DACDCA] mt-2 pt-6">
                         <h3 className="text-lg font-bold text-[#1A1A1A] tracking-tight border-b border-[#DACDCA] pb-2 mb-4">Price Breakdown</h3>
