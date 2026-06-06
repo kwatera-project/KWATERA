@@ -41,7 +41,24 @@ class ReservationServiceTest {
       RestTemplate restTemplate,
       NbpExchangeRateClient nbpExchangeRateClient) {
     return new ReservationService(
-        repository, restTemplate, nbpExchangeRateClient, mock(EmailNotificationService.class));
+        repository,
+        restTemplate,
+        nbpExchangeRateClient,
+        mock(EmailNotificationService.class),
+        new BusinessDateProvider("Europe/Warsaw"));
+  }
+
+  private ReservationService reservationService(
+      ReservationRepository repository,
+      RestTemplate restTemplate,
+      NbpExchangeRateClient nbpExchangeRateClient,
+      BusinessDateProvider businessDateProvider) {
+    return new ReservationService(
+        repository,
+        restTemplate,
+        nbpExchangeRateClient,
+        mock(EmailNotificationService.class),
+        businessDateProvider);
   }
 
   @Test
@@ -876,7 +893,8 @@ class ReservationServiceTest {
             repository,
             mock(RestTemplate.class),
             mock(NbpExchangeRateClient.class),
-            emailNotificationService);
+            emailNotificationService,
+            new BusinessDateProvider("Europe/Warsaw"));
 
     UUID reservationId = UUID.randomUUID();
 
@@ -1608,5 +1626,66 @@ class ReservationServiceTest {
 
     assertEquals(0L, metrics.getOccupiedDays());
     assertEquals(0.0, metrics.getOccupancyRate());
+  }
+
+  @Test
+  void shouldRejectDateThatIsYesterdayInBusinessZoneEvenWhenUtcStillPreviousDay() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    BusinessDateProvider businessDateProvider = mock(BusinessDateProvider.class);
+    ReservationService service =
+        reservationService(
+            repository,
+            mock(RestTemplate.class),
+            mock(NbpExchangeRateClient.class),
+            businessDateProvider);
+
+    UUID unitId = UUID.randomUUID();
+
+    LocalDate businessTodayInWarsaw = LocalDate.of(2026, 6, 6);
+    LocalDate businessYesterdayInWarsaw = businessTodayInWarsaw.minusDays(1);
+    LocalDate checkoutDate = businessTodayInWarsaw.plusDays(1);
+
+    when(businessDateProvider.today()).thenReturn(businessTodayInWarsaw);
+
+    ResponseStatusException exception =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> service.checkAvailability(unitId, businessYesterdayInWarsaw, checkoutDate));
+
+    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+    assertEquals("Date is in the past", exception.getReason());
+
+    verify(repository, never()).findByUnitId(unitId);
+  }
+
+  @Test
+  void shouldUseBusinessMonthForDashboardMetricsWhenWarsawIsAlreadyNextMonthButUtcIsNot() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    BusinessDateProvider businessDateProvider = mock(BusinessDateProvider.class);
+    ReservationService service =
+        reservationService(
+            repository, restTemplate, mock(NbpExchangeRateClient.class), businessDateProvider);
+
+    UUID unitId = UUID.randomUUID();
+
+    LocalDate expectedBusinessMonthStart = LocalDate.of(2026, 6, 1);
+    LocalDate expectedBusinessMonthEnd = LocalDate.of(2026, 6, 30);
+
+    when(businessDateProvider.today()).thenReturn(expectedBusinessMonthStart);
+    when(restTemplate.getForObject(
+            eq("http://property-service/api/properties/units/ids"), eq(UUID[].class)))
+        .thenReturn(new UUID[] {unitId});
+    when(repository.countReservationsInDateRange(any(LocalDate.class), any(LocalDate.class)))
+        .thenReturn(0L);
+    when(repository.findActiveReservationsInDateRange(any(LocalDate.class), any(LocalDate.class)))
+        .thenReturn(List.of());
+
+    service.getDashboardReservationMetrics(null, null, null, true);
+
+    verify(repository)
+        .countReservationsInDateRange(expectedBusinessMonthStart, expectedBusinessMonthEnd);
+    verify(repository)
+        .findActiveReservationsInDateRange(expectedBusinessMonthStart, expectedBusinessMonthEnd);
   }
 }
