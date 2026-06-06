@@ -31,11 +31,11 @@ import {
   DollarSign,
   Percent,
   Activity,
-  FileText,
   Shield,
   Loader2,
   AlertCircle
 } from "lucide-react";
+import ReportExportButtons from "../components/ReportExportButtons";
 
 interface ReservationOverview {
   id: string;
@@ -477,46 +477,7 @@ export default function DashboardPage() {
     fetchData(startDate, endDate);
   };
 
-  const handleDownloadReport = () => {
-    if (!startDate || !endDate) return;
-    const startStr = format(startDate, "yyyy-MM-dd");
-    const endStr = format(endDate, "yyyy-MM-dd");
 
-    const csvRows = [
-      ["KWATERA PROPERTY MANAGEMENT - SYSTEM REPORT"],
-      [`Generated on: ${new Date().toLocaleString()}`],
-      [`Period: ${startStr} to ${endStr}`],
-      [`Role Scoping: ${userRole}`],
-      [],
-      ["RESERVATION METRICS"],
-      ["Metric", "Value"],
-      ["Total Reservations", String(totalReservations)],
-      ["Occupancy Rate", `${occupancyRate}%`],
-      ["Occupied Days", String(occupiedDays)],
-      ["Total Scoped Properties/Units", String(totalUnitsCount)],
-      [],
-      ["BILLING METRICS"],
-      ["Metric", "Value (PLN)"],
-      ["Total Collected Revenue", String(revenueFromSettlements)],
-      ["Unpaid Receivables Balance", String(unpaidBalance)],
-      ["Paid Invoices Count", String(paidSettlementsCount)],
-      ["Unpaid Invoices Count", String(unpaidSettlementsCount)]
-    ];
-
-    const csvContent = csvRows
-      .map(row => row.map(val => val.includes(",") ? `"${val}"` : val).join(","))
-      .join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `kwatera-${userRole.toLowerCase()}-report-${startStr}-to-${endStr}.csv`);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   const totalSettlements = paidSettlementsCount + unpaidSettlementsCount;
   const paidPct = totalSettlements > 0 ? (paidSettlementsCount / totalSettlements) * 100 : 0;
@@ -592,14 +553,14 @@ export default function DashboardPage() {
           >
             Filter
           </button>
-          <button
-            type="button"
-            onClick={handleDownloadReport}
-            className="px-4 py-2 text-sm font-bold text-[#42211D] bg-[#F7F7F7] border border-[#DACDCA] hover:bg-gray-100 rounded-lg transition-colors shadow-sm cursor-pointer flex items-center gap-2"
-          >
-            <FileText className="w-4 h-4" />
-            Export CSV
-          </button>
+          <ReportExportButtons
+            startDate={startDate}
+            endDate={endDate}
+            userRole={userRole}
+            resMetrics={resMetrics}
+            billMetrics={billMetrics}
+            totalUnitsCount={totalUnitsCount}
+          />
         </form>
       </div>
 
@@ -734,7 +695,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
             {/* Chart 1: Occupancy Trend (Area Chart) */}
-            <div className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4">
+            <div id="occupancy-chart" className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4">
               <div>
                 <h3 className="text-lg font-bold text-[#1A1A1A]">
                   Occupancy Trend
@@ -800,7 +761,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Chart 3: Net Profit & Utility Expenses (Composed Chart) */}
-            <div className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4">
+            <div id="revenue-chart" className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4">
               <div>
                 <h3 className="text-lg font-bold text-[#1A1A1A]">
                   Net Profit & Utility Expenses
