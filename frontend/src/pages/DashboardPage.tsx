@@ -510,6 +510,14 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 md:justify-end ml-auto">
+          <ReportExportButtons
+            startDate={startDate}
+            endDate={endDate}
+            userRole={userRole}
+            resMetrics={resMetrics}
+            billMetrics={billMetrics}
+            totalUnitsCount={totalUnitsCount}
+          />
           <form onSubmit={handleFilterSubmit} className="flex flex-wrap items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-[#DACDCA]">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">From</span>
@@ -555,14 +563,6 @@ export default function DashboardPage() {
               Filter
             </button>
           </form>
-          <ReportExportButtons
-            startDate={startDate}
-            endDate={endDate}
-            userRole={userRole}
-            resMetrics={resMetrics}
-            billMetrics={billMetrics}
-            totalUnitsCount={totalUnitsCount}
-          />
         </div>
       </div>
 
