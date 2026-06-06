@@ -509,50 +509,52 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <form onSubmit={handleFilterSubmit} className="flex flex-wrap items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-[#DACDCA]">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">From</span>
-            <div className="flex items-center bg-[#F7F7F7] border border-[#DACDCA] rounded-lg px-3 py-1.5 shadow-sm focus-within:ring-1 focus-within:ring-[#42211D]">
-              <SharedDatePicker
-                selected={startDate}
-                onChange={(date) => {
-                  setStartDate(date);
-                  if (date) {
-                    setTimeout(() => {
-                      dateToRef.current?.setOpen(true);
-                    }, 100);
-                  }
-                }}
-                selectsStart
-                startDate={startDate}
-                endDate={endDate}
-                placeholderText="Start"
-                className="bg-transparent text-sm font-bold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center"
-              />
+        <div className="flex flex-wrap items-center gap-3">
+          <form onSubmit={handleFilterSubmit} className="flex flex-wrap items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-[#DACDCA]">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">From</span>
+              <div className="flex items-center bg-[#F7F7F7] border border-[#DACDCA] rounded-lg px-3 py-1.5 shadow-sm focus-within:ring-1 focus-within:ring-[#42211D]">
+                <SharedDatePicker
+                  selected={startDate}
+                  onChange={(date) => {
+                    setStartDate(date);
+                    if (date) {
+                      setTimeout(() => {
+                        dateToRef.current?.setOpen(true);
+                      }, 100);
+                    }
+                  }}
+                  selectsStart
+                  startDate={startDate}
+                  endDate={endDate}
+                  placeholderText="Start"
+                  className="bg-transparent text-sm font-bold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center"
+                />
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">To</span>
-            <div className="flex items-center bg-[#F7F7F7] border border-[#DACDCA] rounded-lg px-3 py-1.5 shadow-sm focus-within:ring-1 focus-within:ring-[#42211D]">
-              <SharedDatePicker
-                datepickerRef={dateToRef}
-                selected={endDate}
-                onChange={(date) => setEndDate(date)}
-                selectsEnd
-                startDate={startDate}
-                endDate={endDate}
-                minDate={startDate}
-                placeholderText="End"
-                className="bg-transparent text-sm font-bold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center"
-              />
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">To</span>
+              <div className="flex items-center bg-[#F7F7F7] border border-[#DACDCA] rounded-lg px-3 py-1.5 shadow-sm focus-within:ring-1 focus-within:ring-[#42211D]">
+                <SharedDatePicker
+                  datepickerRef={dateToRef}
+                  selected={endDate}
+                  onChange={(date) => setEndDate(date)}
+                  selectsEnd
+                  startDate={startDate}
+                  endDate={endDate}
+                  minDate={startDate}
+                  placeholderText="End"
+                  className="bg-transparent text-sm font-bold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center"
+                />
+              </div>
             </div>
-          </div>
-          <button
-            type="submit"
-            className="px-5 py-2 bg-[#42211D] text-white font-bold hover:bg-[#2a1412] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm cursor-pointer"
-          >
-            Filter
-          </button>
+            <button
+              type="submit"
+              className="px-5 py-2 bg-[#42211D] text-white font-bold hover:bg-[#2a1412] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm cursor-pointer"
+            >
+              Filter
+            </button>
+          </form>
           <ReportExportButtons
             startDate={startDate}
             endDate={endDate}
@@ -561,7 +563,7 @@ export default function DashboardPage() {
             billMetrics={billMetrics}
             totalUnitsCount={totalUnitsCount}
           />
-        </form>
+        </div>
       </div>
 
       {error && (

@@ -37,8 +37,6 @@ export default function ReportExportButtons({
 }: ReportExportButtonsProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
-  const [occupancyImgSrc, setOccupancyImgSrc] = useState<string>("");
-  const [revenueImgSrc, setRevenueImgSrc] = useState<string>("");
 
   const totalReservations = resMetrics?.totalReservations ?? 0;
   const occupancyRate = resMetrics?.occupancyRate ?? 0;
@@ -116,13 +114,25 @@ export default function ReportExportButtons({
   const handleDownloadPDF = async () => {
     if (!startDate || !endDate) return;
     setIsGenerating(true);
-    setStatusMessage("Capturing occupancy and revenue charts...");
+    setStatusMessage("Loading brand assets...");
 
     try {
+      const logoEl = await new Promise<HTMLImageElement | null>((resolve) => {
+        const img = new Image();
+        img.src = "/kwatera.png";
+        img.onload = () => resolve(img);
+        img.onerror = () => {
+          console.warn("Failed to load /kwatera.png");
+          resolve(null);
+        };
+      });
+
+      setStatusMessage("Capturing occupancy and revenue charts...");
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       const occupancyChartEl = document.getElementById("occupancy-chart");
       let occupancyImg = "";
+      let occupancyAspect = 1.6;
       if (occupancyChartEl) {
         const canvas = await html2canvas(occupancyChartEl, {
           scale: 2,
@@ -131,10 +141,12 @@ export default function ReportExportButtons({
           logging: false,
         });
         occupancyImg = canvas.toDataURL("image/png");
+        occupancyAspect = occupancyChartEl.offsetWidth / occupancyChartEl.offsetHeight;
       }
 
       const revenueChartEl = document.getElementById("revenue-chart");
       let revenueImg = "";
+      let revenueAspect = 1.6;
       if (revenueChartEl) {
         const canvas = await html2canvas(revenueChartEl, {
           scale: 2,
@@ -143,44 +155,291 @@ export default function ReportExportButtons({
           logging: false,
         });
         revenueImg = canvas.toDataURL("image/png");
+        revenueAspect = revenueChartEl.offsetWidth / revenueChartEl.offsetHeight;
       }
 
-      setOccupancyImgSrc(occupancyImg);
-      setRevenueImgSrc(revenueImg);
-      setStatusMessage("Preparing print layout templates...");
-
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      const page1El = document.getElementById("pdf-report-page-1");
-      if (!page1El) throw new Error("Report page 1 element not found.");
-      const page1Canvas = await html2canvas(page1El, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-      });
-      const page1Img = page1Canvas.toDataURL("image/png");
-
-      const page2El = document.getElementById("pdf-report-page-2");
-      if (!page2El) throw new Error("Report page 2 element not found.");
-      const page2Canvas = await html2canvas(page2El, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-      });
-      const page2Img = page2Canvas.toDataURL("image/png");
-
-      setStatusMessage("Generating final PDF file...");
+      setStatusMessage("Generating report PDF...");
 
       const pdf = new jsPDF("p", "mm", "a4");
-      const imgWidth = 210;
-      const imgHeight = 297;
 
-      pdf.addImage(page1Img, "PNG", 0, 0, imgWidth, imgHeight);
+      if (logoEl) {
+        pdf.addImage(logoEl, "PNG", 15, 14, 14, 14);
+      }
+
+      pdf.setFont("Helvetica", "bold");
+      pdf.setFontSize(22);
+      pdf.setTextColor(66, 33, 29);
+      pdf.text("KWATERA", logoEl ? 32 : 15, 21);
+
+      pdf.setFont("Helvetica", "bold");
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(122, 122, 122);
+      pdf.text("PROPERTY MANAGEMENT PLATFORM", logoEl ? 32 : 15, 26);
+
+      pdf.setFont("Helvetica", "bold");
+      pdf.setFontSize(14);
+      pdf.setTextColor(26, 26, 26);
+      pdf.text("PERFORMANCE REPORT", 195, 21, { align: "right" });
+
+      pdf.setFont("Helvetica", "normal");
+      pdf.setFontSize(9);
+      pdf.setTextColor(122, 122, 122);
+      pdf.text("System-Generated Summary", 195, 26, { align: "right" });
+
+      pdf.setDrawColor(66, 33, 29);
+      pdf.setLineWidth(0.8);
+      pdf.line(15, 32, 195, 32);
+
+      pdf.setFillColor(253, 253, 253);
+      pdf.setDrawColor(218, 205, 202);
+      pdf.setLineWidth(0.3);
+      pdf.roundedRect(15, 38, 180, 24, 3, 3, "FD");
+
+      pdf.setFont("Helvetica", "bold");
+      pdf.setFontSize(9);
+      pdf.setTextColor(66, 33, 29);
+      pdf.text("Date Range:", 20, 46);
+      pdf.setFont("Helvetica", "normal");
+      pdf.setTextColor(26, 26, 26);
+      pdf.text(`${formatDate(startDate)} to ${formatDate(endDate)}`, 52, 46);
+
+      pdf.setFont("Helvetica", "bold");
+      pdf.setTextColor(66, 33, 29);
+      pdf.text("Monitored Units:", 20, 54);
+      pdf.setFont("Helvetica", "normal");
+      pdf.setTextColor(26, 26, 26);
+      pdf.text(`${totalUnitsCount} units`, 52, 54);
+
+      pdf.setFont("Helvetica", "bold");
+      pdf.setTextColor(66, 33, 29);
+      pdf.text("Generated By:", 110, 46);
+      pdf.setFont("Helvetica", "normal");
+      pdf.setTextColor(26, 26, 26);
+      pdf.text(displayName, 138, 46);
+
+      pdf.setFont("Helvetica", "bold");
+      pdf.setTextColor(66, 33, 29);
+      pdf.text("Access Role:", 110, 54);
+      pdf.setFont("Helvetica", "normal");
+      pdf.setTextColor(26, 26, 26);
+      pdf.text(userRole === "ADMIN" ? "Global Administrator" : "Property Owner", 138, 54);
+
+      pdf.setFont("Helvetica", "bold");
+      pdf.setFontSize(11);
+      pdf.setTextColor(66, 33, 29);
+      pdf.text("KEY PERFORMANCE INDICATORS (KPIS)", 15, 74);
+
+      pdf.setDrawColor(218, 205, 202);
+      pdf.setLineWidth(0.4);
+      pdf.line(15, 77, 195, 77);
+
+      pdf.setFillColor(66, 33, 29);
+      pdf.rect(15, 82, 180, 10, "F");
+
+      pdf.setFont("Helvetica", "bold");
+      pdf.setFontSize(9);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text("Category", 20, 88.5);
+      pdf.text("Metric Name", 65, 88.5);
+      pdf.text("Value", 190, 88.5, { align: "right" });
+
+      pdf.setDrawColor(218, 205, 202);
+      pdf.setLineWidth(0.3);
+
+      pdf.setFillColor(247, 247, 247);
+      pdf.rect(15, 92, 45, 27, "F");
+      pdf.setFont("Helvetica", "bold");
+      pdf.setTextColor(66, 33, 29);
+      pdf.text("Reservations", 37.5, 107.5, { align: "center" });
+
+      pdf.setFillColor(247, 247, 247);
+      pdf.rect(15, 119, 45, 36, "F");
+      pdf.text("Financials & Bills", 37.5, 139.5, { align: "center" });
+
+      pdf.line(15, 92, 195, 92);
+      pdf.line(15, 101, 195, 101);
+      pdf.line(15, 110, 195, 110);
+      pdf.line(15, 119, 195, 119);
+      pdf.line(15, 128, 195, 128);
+      pdf.line(15, 137, 195, 137);
+      pdf.line(15, 146, 195, 146);
+      pdf.line(15, 155, 195, 155);
+
+      pdf.line(15, 82, 15, 155);
+      pdf.line(60, 82, 60, 155);
+      pdf.line(145, 82, 145, 155);
+      pdf.line(195, 82, 195, 155);
+
+      pdf.setFont("Helvetica", "normal");
+      pdf.setTextColor(85, 85, 85);
+      pdf.text("Total Booking Orders", 65, 97.5);
+      pdf.setFont("Helvetica", "bold");
+      pdf.setTextColor(26, 26, 26);
+      pdf.text(String(totalReservations), 190, 97.5, { align: "right" });
+
+      pdf.setFont("Helvetica", "normal");
+      pdf.setTextColor(85, 85, 85);
+      pdf.text("Occupancy Rate", 65, 106.5);
+      pdf.setFont("Helvetica", "bold");
+      pdf.setTextColor(16, 185, 129);
+      pdf.text(`${occupancyRate}%`, 190, 106.5, { align: "right" });
+
+      pdf.setFont("Helvetica", "normal");
+      pdf.setTextColor(85, 85, 85);
+      pdf.text("Occupied Nights Total", 65, 115.5);
+      pdf.setFont("Helvetica", "bold");
+      pdf.setTextColor(26, 26, 26);
+      pdf.text(`${occupiedDays} nights`, 190, 115.5, { align: "right" });
+
+      pdf.setFont("Helvetica", "normal");
+      pdf.setTextColor(85, 85, 85);
+      pdf.text("Collected Settlement Revenue", 65, 124.5);
+      pdf.setFont("Helvetica", "bold");
+      pdf.setTextColor(59, 130, 246);
+      pdf.text(
+        revenueFromSettlements.toLocaleString("pl-PL", {
+          style: "currency",
+          currency: "PLN",
+        }),
+        190,
+        124.5,
+        { align: "right" }
+      );
+
+      pdf.setFont("Helvetica", "normal");
+      pdf.setTextColor(85, 85, 85);
+      pdf.text("Outstanding Receivables Balance", 65, 133.5);
+      pdf.setFont("Helvetica", "bold");
+      pdf.setTextColor(245, 158, 11);
+      pdf.text(
+        unpaidBalance.toLocaleString("pl-PL", {
+          style: "currency",
+          currency: "PLN",
+        }),
+        190,
+        133.5,
+        { align: "right" }
+      );
+
+      pdf.setFont("Helvetica", "normal");
+      pdf.setTextColor(85, 85, 85);
+      pdf.text("Paid Settlements Count", 65, 142.5);
+      pdf.setFont("Helvetica", "bold");
+      pdf.setTextColor(26, 26, 26);
+      pdf.text(String(paidSettlementsCount), 190, 142.5, { align: "right" });
+
+      pdf.setFont("Helvetica", "normal");
+      pdf.setTextColor(85, 85, 85);
+      pdf.text("Unpaid/Issued Invoices Count", 65, 151.5);
+      pdf.setFont("Helvetica", "bold");
+      pdf.setTextColor(26, 26, 26);
+      pdf.text(String(unpaidSettlementsCount), 190, 151.5, { align: "right" });
+
+      pdf.setDrawColor(218, 205, 202);
+      pdf.setLineWidth(0.3);
+      pdf.line(15, 280, 195, 280);
+
+      pdf.setFont("Helvetica", "normal");
+      pdf.setFontSize(8);
+      pdf.setTextColor(122, 122, 122);
+      pdf.text(
+        `Kwatera Property Management Report \u00a9 ${new Date().getFullYear()}`,
+        15,
+        286
+      );
+      pdf.text(`Generated on ${new Date().toLocaleDateString()}`, 105, 286, {
+        align: "center",
+      });
+      pdf.setFont("Helvetica", "bold");
+      pdf.setTextColor(26, 26, 26);
+      pdf.text("Page 1 of 2", 195, 286, { align: "right" });
 
       pdf.addPage();
-      pdf.addImage(page2Img, "PNG", 0, 0, imgWidth, imgHeight);
+
+      if (logoEl) {
+        pdf.addImage(logoEl, "PNG", 15, 14, 10, 10);
+      }
+
+      pdf.setFont("Helvetica", "bold");
+      pdf.setFontSize(14);
+      pdf.setTextColor(66, 33, 29);
+      pdf.text("KWATERA", logoEl ? 28 : 15, 21);
+
+      pdf.setFont("Helvetica", "bold");
+      pdf.setFontSize(9);
+      pdf.setTextColor(122, 122, 122);
+      pdf.text("CHART ANALYTICS & TRENDS", 195, 21, { align: "right" });
+
+      pdf.setDrawColor(218, 205, 202);
+      pdf.setLineWidth(0.4);
+      pdf.line(15, 28, 195, 28);
+
+      pdf.setFont("Helvetica", "bold");
+      pdf.setFontSize(11);
+      pdf.setTextColor(66, 33, 29);
+      pdf.text("Occupancy Trend Snapshot", 15, 36);
+
+      pdf.setFillColor(255, 255, 255);
+      pdf.setDrawColor(218, 205, 202);
+      pdf.setLineWidth(0.3);
+      pdf.roundedRect(15, 40, 180, 105, 3, 3, "FD");
+
+      if (occupancyImg) {
+        const cardW = 170;
+        const cardH = 95;
+        let w = cardW;
+        let h = w / occupancyAspect;
+        if (h > cardH) {
+          h = cardH;
+          w = h * occupancyAspect;
+        }
+        const x = 20 + (cardW - w) / 2;
+        const y = 45 + (cardH - h) / 2;
+        pdf.addImage(occupancyImg, "PNG", x, y, w, h);
+      }
+
+      pdf.setFont("Helvetica", "bold");
+      pdf.setFontSize(11);
+      pdf.setTextColor(66, 33, 29);
+      pdf.text("Revenue & Media Expense Breakdown", 15, 156);
+
+      pdf.setFillColor(255, 255, 255);
+      pdf.setDrawColor(218, 205, 202);
+      pdf.setLineWidth(0.3);
+      pdf.roundedRect(15, 160, 180, 105, 3, 3, "FD");
+
+      if (revenueImg) {
+        const cardW = 170;
+        const cardH = 95;
+        let w = cardW;
+        let h = w / revenueAspect;
+        if (h > cardH) {
+          h = cardH;
+          w = h * revenueAspect;
+        }
+        const x = 20 + (cardW - w) / 2;
+        const y = 165 + (cardH - h) / 2;
+        pdf.addImage(revenueImg, "PNG", x, y, w, h);
+      }
+
+      pdf.setDrawColor(218, 205, 202);
+      pdf.setLineWidth(0.3);
+      pdf.line(15, 280, 195, 280);
+
+      pdf.setFont("Helvetica", "normal");
+      pdf.setFontSize(8);
+      pdf.setTextColor(122, 122, 122);
+      pdf.text(
+        `Kwatera Property Management Report \u00a9 ${new Date().getFullYear()}`,
+        15,
+        286
+      );
+      pdf.text(`Generated on ${new Date().toLocaleDateString()}`, 105, 286, {
+        align: "center",
+      });
+      pdf.setFont("Helvetica", "bold");
+      pdf.setTextColor(26, 26, 26);
+      pdf.text("Page 2 of 2", 195, 286, { align: "right" });
 
       const startStr = formatDate(startDate);
       const endStr = formatDate(endDate);
@@ -191,8 +450,6 @@ export default function ReportExportButtons({
       console.error("Failed to generate PDF report:", error);
       alert("An error occurred while generating the PDF report. Please try again.");
     } finally {
-      setOccupancyImgSrc("");
-      setRevenueImgSrc("");
       setIsGenerating(false);
       setStatusMessage("");
     }
@@ -231,364 +488,6 @@ export default function ReportExportButtons({
             <Loader2 className="w-8 h-8 text-[#42211D] animate-spin" />
             <h3 className="text-lg font-extrabold text-[#1A1A1A]">Generating Report</h3>
             <p className="text-sm text-[#7A7A7A] font-medium">{statusMessage}</p>
-          </div>
-        </div>
-      )}
-
-      {isGenerating && (
-        <div
-          style={{
-            position: "absolute",
-            left: "-9999px",
-            top: "-9999px",
-            width: "800px",
-            background: "#F7F7F7",
-          }}
-        >
-          <div
-            id="pdf-report-page-1"
-            style={{
-              width: "800px",
-              height: "1130px",
-              backgroundColor: "#ffffff",
-              padding: "50px",
-              boxSizing: "border-box",
-              display: "flex",
-              flexDirection: "column",
-              fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-              color: "#1A1A1A",
-              position: "relative",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                borderBottom: "3px solid #42211D",
-                paddingBottom: "20px",
-                marginBottom: "30px",
-              }}
-            >
-              <div>
-                <span
-                  style={{
-                    fontSize: "32px",
-                    fontWeight: "900",
-                    color: "#42211D",
-                    letterSpacing: "0.15em",
-                  }}
-                >
-                  KWATERA
-                </span>
-                <p style={{ margin: "4px 0 0 0", fontSize: "11px", color: "#7A7A7A", fontWeight: "bold", letterSpacing: "0.05em" }}>
-                  PROPERTY MANAGEMENT PLATFORM
-                </p>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <span
-                  style={{
-                    fontSize: "18px",
-                    fontWeight: "800",
-                    color: "#1A1A1A",
-                    letterSpacing: "0.05em",
-                  }}
-                >
-                  PERFORMANCE REPORT
-                </span>
-                <p style={{ margin: "4px 0 0 0", fontSize: "11px", color: "#7A7A7A" }}>
-                  System-Generated Summary
-                </p>
-              </div>
-            </div>
-
-            <div
-              style={{
-                backgroundColor: "#FDFDFD",
-                border: "1px solid #DACDCA",
-                borderRadius: "10px",
-                padding: "20px",
-                marginBottom: "40px",
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "20px",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
-              }}
-            >
-              <div>
-                <p style={{ margin: "6px 0", fontSize: "13px", color: "#7A7A7A" }}>
-                  <strong style={{ color: "#42211D", fontSize: "12px", display: "inline-block", width: "120px" }}>Date Range:</strong>
-                  <span style={{ color: "#1A1A1A", fontWeight: "700" }}>{formatDate(startDate)} to {formatDate(endDate)}</span>
-                </p>
-                <p style={{ margin: "6px 0", fontSize: "13px", color: "#7A7A7A" }}>
-                  <strong style={{ color: "#42211D", fontSize: "12px", display: "inline-block", width: "120px" }}>Monitored Units:</strong>
-                  <span style={{ color: "#1A1A1A", fontWeight: "700" }}>{totalUnitsCount} units</span>
-                </p>
-              </div>
-              <div>
-                <p style={{ margin: "6px 0", fontSize: "13px", color: "#7A7A7A" }}>
-                  <strong style={{ color: "#42211D", fontSize: "12px", display: "inline-block", width: "120px" }}>Generated By:</strong>
-                  <span style={{ color: "#1A1A1A", fontWeight: "700" }}>{displayName}</span>
-                </p>
-                <p style={{ margin: "6px 0", fontSize: "13px", color: "#7A7A7A" }}>
-                  <strong style={{ color: "#42211D", fontSize: "12px", display: "inline-block", width: "120px" }}>Access Role:</strong>
-                  <span style={{ color: "#1A1A1A", fontWeight: "700" }}>
-                    {userRole === "ADMIN" ? "Global Administrator" : "Property Owner"}
-                  </span>
-                </p>
-              </div>
-            </div>
-
-            <div style={{ flexGrow: 1 }}>
-              <h3
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "800",
-                  color: "#42211D",
-                  borderBottom: "1.5px solid #DACDCA",
-                  paddingBottom: "8px",
-                  marginBottom: "15px",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                }}
-              >
-                Key Performance Indicators (KPIs)
-              </h3>
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  fontSize: "13px",
-                  lineHeight: "1.5",
-                }}
-              >
-                <thead>
-                  <tr style={{ backgroundColor: "#42211D", color: "#ffffff" }}>
-                    <th style={{ padding: "12px 16px", border: "1px solid #DACDCA", textAlign: "left", fontWeight: "800" }}>Category</th>
-                    <th style={{ padding: "12px 16px", border: "1px solid #DACDCA", textAlign: "left", fontWeight: "800" }}>Metric Name</th>
-                    <th style={{ padding: "12px 16px", border: "1px solid #DACDCA", textAlign: "right", fontWeight: "800", width: "180px" }}>Value</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td
-                      rowSpan={3}
-                      style={{
-                        padding: "12px 16px",
-                        border: "1px solid #DACDCA",
-                        fontWeight: "800",
-                        backgroundColor: "#F7F7F7",
-                        color: "#42211D",
-                        verticalAlign: "middle",
-                      }}
-                    >
-                      Reservations
-                    </td>
-                    <td style={{ padding: "12px 16px", border: "1px solid #DACDCA", color: "#555" }}>Total Booking Orders</td>
-                    <td style={{ padding: "12px 16px", border: "1px solid #DACDCA", textAlign: "right", fontWeight: "800", color: "#1A1A1A" }}>
-                      {totalReservations}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: "12px 16px", border: "1px solid #DACDCA", color: "#555" }}>Occupancy Rate</td>
-                    <td style={{ padding: "12px 16px", border: "1px solid #DACDCA", textAlign: "right", fontWeight: "800", color: "#10B981" }}>
-                      {occupancyRate}%
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: "12px 16px", border: "1px solid #DACDCA", color: "#555" }}>Occupied Nights Total</td>
-                    <td style={{ padding: "12px 16px", border: "1px solid #DACDCA", textAlign: "right", fontWeight: "700", color: "#1A1A1A" }}>
-                      {occupiedDays} nights
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td
-                      rowSpan={4}
-                      style={{
-                        padding: "12px 16px",
-                        border: "1px solid #DACDCA",
-                        fontWeight: "800",
-                        backgroundColor: "#F7F7F7",
-                        color: "#42211D",
-                        verticalAlign: "middle",
-                      }}
-                    >
-                      Financials & Bills
-                    </td>
-                    <td style={{ padding: "12px 16px", border: "1px solid #DACDCA", color: "#555" }}>Collected Settlement Revenue</td>
-                    <td style={{ padding: "12px 16px", border: "1px solid #DACDCA", textAlign: "right", fontWeight: "800", color: "#3B82F6" }}>
-                      {revenueFromSettlements.toLocaleString("pl-PL", {
-                        style: "currency",
-                        currency: "PLN",
-                      })}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: "12px 16px", border: "1px solid #DACDCA", color: "#555" }}>Outstanding Receivables Balance</td>
-                    <td style={{ padding: "12px 16px", border: "1px solid #DACDCA", textAlign: "right", fontWeight: "800", color: "#F59E0B" }}>
-                      {unpaidBalance.toLocaleString("pl-PL", {
-                        style: "currency",
-                        currency: "PLN",
-                      })}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: "12px 16px", border: "1px solid #DACDCA", color: "#555" }}>Paid Settlements Count</td>
-                    <td style={{ padding: "12px 16px", border: "1px solid #DACDCA", textAlign: "right", fontWeight: "700" }}>
-                      {paidSettlementsCount}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: "12px 16px", border: "1px solid #DACDCA", color: "#555" }}>Unpaid/Issued Invoices Count</td>
-                    <td style={{ padding: "12px 16px", border: "1px solid #DACDCA", textAlign: "right", fontWeight: "700" }}>
-                      {unpaidSettlementsCount}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div
-              style={{
-                borderTop: "1px solid #DACDCA",
-                paddingTop: "15px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                fontSize: "11px",
-                color: "#7A7A7A",
-              }}
-            >
-              <span>Kwatera Property Management Report &copy; {new Date().getFullYear()}</span>
-              <span>Generated on {new Date().toLocaleDateString()}</span>
-              <span style={{ fontWeight: "bold" }}>Page 1 of 2</span>
-            </div>
-          </div>
-
-          <div
-            id="pdf-report-page-2"
-            style={{
-              width: "800px",
-              height: "1130px",
-              backgroundColor: "#ffffff",
-              padding: "50px",
-              boxSizing: "border-box",
-              display: "flex",
-              flexDirection: "column",
-              fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-              color: "#1A1A1A",
-              position: "relative",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                borderBottom: "1.5px solid #DACDCA",
-                paddingBottom: "10px",
-                marginBottom: "30px",
-              }}
-            >
-              <span
-                style={{
-                  fontSize: "18px",
-                  fontWeight: "900",
-                  color: "#42211D",
-                  letterSpacing: "0.15em",
-                }}
-              >
-                KWATERA
-              </span>
-              <span style={{ fontSize: "11px", color: "#7A7A7A", fontWeight: "bold" }}>
-                CHART ANALYTICS & TRENDS
-              </span>
-            </div>
-
-            <div style={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: "25px" }}>
-              <div
-                style={{
-                  border: "1px solid #DACDCA",
-                  borderRadius: "10px",
-                  padding: "20px",
-                  backgroundColor: "#ffffff",
-                }}
-              >
-                <h4
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: "800",
-                    color: "#42211D",
-                    margin: "0 0 12px 0",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                  }}
-                >
-                  Occupancy Trend Snapshot
-                </h4>
-                <div style={{ width: "100%", height: "300px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {occupancyImgSrc ? (
-                    <img
-                      src={occupancyImgSrc}
-                      alt="Occupancy Trend"
-                      style={{ width: "100%", height: "100%", objectFit: "contain" }}
-                    />
-                  ) : (
-                    <span style={{ fontSize: "12px", color: "#7A7A7A" }}>Rendering chart snapshot...</span>
-                  )}
-                </div>
-              </div>
-
-              <div
-                style={{
-                  border: "1px solid #DACDCA",
-                  borderRadius: "10px",
-                  padding: "20px",
-                  backgroundColor: "#ffffff",
-                }}
-              >
-                <h4
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: "800",
-                    color: "#42211D",
-                    margin: "0 0 12px 0",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                  }}
-                >
-                  Revenue & Media Expense Breakdown
-                </h4>
-                <div style={{ width: "100%", height: "300px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {revenueImgSrc ? (
-                    <img
-                      src={revenueImgSrc}
-                      alt="Revenue Flow Composed"
-                      style={{ width: "100%", height: "100%", objectFit: "contain" }}
-                    />
-                  ) : (
-                    <span style={{ fontSize: "12px", color: "#7A7A7A" }}>Rendering chart snapshot...</span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div
-              style={{
-                borderTop: "1px solid #DACDCA",
-                paddingTop: "15px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                fontSize: "11px",
-                color: "#7A7A7A",
-              }}
-            >
-              <span>Kwatera Property Management Report &copy; {new Date().getFullYear()}</span>
-              <span>Generated on {new Date().toLocaleDateString()}</span>
-              <span style={{ fontWeight: "bold" }}>Page 2 of 2</span>
-            </div>
           </div>
         </div>
       )}
