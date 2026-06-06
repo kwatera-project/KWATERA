@@ -14,3 +14,7 @@ spring:
     url: jdbc:postgresql://postgres:5432/database
     username: user
     password: secret123!
+
+eureka:
+  instance:
+    prefer-ip-address: true
