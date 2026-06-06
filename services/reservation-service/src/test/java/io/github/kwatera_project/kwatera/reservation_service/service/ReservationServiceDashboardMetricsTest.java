@@ -30,6 +30,7 @@ class ReservationServiceDashboardMetricsTest {
   @Mock private ReservationRepository reservationRepository;
   @Mock private RestTemplate restTemplate;
   @Mock private NbpExchangeRateClient nbpExchangeRateClient;
+  @Mock private BusinessDateProvider businessDateProvider;
 
   @InjectMocks private ReservationService reservationService;
 
@@ -40,6 +41,7 @@ class ReservationServiceDashboardMetricsTest {
   void setUp() {
     ownerId = UUID.randomUUID();
     unitId = UUID.randomUUID();
+    when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 5, 15));
   }
 
   @Test

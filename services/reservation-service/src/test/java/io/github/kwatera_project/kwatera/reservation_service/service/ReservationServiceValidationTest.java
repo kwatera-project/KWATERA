@@ -21,7 +21,8 @@ class ReservationServiceValidationTest {
           mock(
               io.github.kwatera_project.kwatera.reservation_service.client.NbpExchangeRateClient
                   .class),
-          mock(EmailNotificationService.class));
+          mock(EmailNotificationService.class),
+          new BusinessDateProvider("Europe/Warsaw"));
 
   @Test
   void shouldThrow_whenDatesAreNull() {
