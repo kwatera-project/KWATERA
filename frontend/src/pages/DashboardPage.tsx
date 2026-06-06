@@ -125,15 +125,28 @@ export default function DashboardPage() {
   const unpaidSettlementsCount = billMetrics?.unpaidSettlementsCount ?? 0;
 
 
-  const fetchAllReservations = async (): Promise<ReservationOverview[]> => {
-    const token = localStorage.getItem("token");
-    const res = await fetch(`${GATEWAY_BASE_URL}/api/v1/admin/reservations`, {
-      headers: {
-        Authorization: `Bearer ${token}`
+  const fetchAllReservations = async (isAdmin: boolean): Promise<ReservationOverview[]> => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return [];
+      const res = await fetch(`${GATEWAY_BASE_URL}/api/v1/admin/reservations`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (!res.ok) {
+        if (isAdmin) {
+          console.error(`Admin failed to fetch reservations: ${res.status}`);
+        } else {
+          console.warn(`Owner/non-admin reservation loading bypassed or failed with status ${res.status}. Returning empty list.`);
+        }
+        return [];
       }
-    });
-    if (!res.ok) throw new Error("Failed to fetch reservations list");
-    return res.json();
+      return await res.json();
+    } catch (err) {
+      console.error("Error in fetchAllReservations:", err);
+      return [];
+    }
   };
 
   const fetchTotalUnits = async (isAdminRole: boolean): Promise<Unit[]> => {
@@ -192,7 +205,7 @@ export default function DashboardPage() {
       const [resData, billData, rawReservations, unitsList] = await Promise.all([
         getDashboardReservationMetrics(startStr, endStr),
         getDashboardBillingMetrics(startStr, endStr),
-        fetchAllReservations(),
+        fetchAllReservations(isAdminRole),
         fetchTotalUnits(isAdminRole)
       ]);
 
@@ -755,14 +768,14 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Chart 2: AI Pricing Effectiveness (Line Chart) */}
+            {/* Chart 2: Base vs. Sold Price Analysis (Line Chart) */}
             <div className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4">
               <div>
                 <h3 className="text-lg font-bold text-[#1A1A1A]">
-                  AI Pricing Effectiveness
+                  Base vs. Sold Price Analysis
                 </h3>
                 <p className="text-xs text-[#7A7A7A]">
-                  Comparison between the Unit Base Price and actual AI-dynamic price sold.
+                  Comparison between the base property price and the actual price sold (ADR).
                 </p>
               </div>
               <div className="h-80 w-full">
@@ -775,7 +788,7 @@ export default function DashboardPage() {
                       <Tooltip content={<CustomPricingTooltip />} wrapperStyle={{ backgroundColor: 'transparent', border: 'none', outline: 'none' }} />
                       <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, fontWeight: "bold" }} />
                       <Line type="monotone" dataKey="staticAdr" name="Static Base Price" stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" dot={false} activeDot={{ r: 4 }} />
-                      <Line type="monotone" dataKey="aiAdr" name="AI-Predicted Price" stroke="#6366F1" strokeWidth={2.5} dot={{ r: 3, strokeWidth: 1 }} activeDot={{ r: 6 }} />
+                      <Line type="monotone" dataKey="aiAdr" name="Actual Price (ADR)" stroke="#6366F1" strokeWidth={2.5} dot={{ r: 3, strokeWidth: 1 }} activeDot={{ r: 6 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 ) : (
@@ -786,14 +799,14 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Chart 3: Net Profit & OCR Integration (Composed Chart) */}
+            {/* Chart 3: Net Profit & Utility Expenses (Composed Chart) */}
             <div className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4">
               <div>
                 <h3 className="text-lg font-bold text-[#1A1A1A]">
-                  Net Profit & OCR billing
+                  Net Profit & Utility Expenses
                 </h3>
                 <p className="text-xs text-[#7A7A7A]">
-                  Gross revenue mapped against OCR-extracted media and utility expenses.
+                  Gross revenue mapped against media and utility expenses.
                 </p>
               </div>
               <div className="h-80 w-full">
@@ -1065,12 +1078,12 @@ const CustomPricingTooltip = ({ active, payload, label }: CustomTooltipProps) =>
           <p className="flex items-center justify-between gap-4 font-semibold text-indigo-600">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
-              AI Sold Price (ADR):
+              Actual Sold Price (ADR):
             </span>
             <span>zł{Number(aiVal).toLocaleString("pl-PL", { minimumFractionDigits: 2 })}</span>
           </p>
           <div className="border-t border-gray-100 pt-1.5 mt-1.5 flex items-center justify-between gap-4 font-bold text-emerald-600">
-            <span>AI Premium Margin:</span>
+            <span>Pricing Margin:</span>
             <span>+zł{diff.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} ({pct.toFixed(1)}%)</span>
           </div>
         </div>
@@ -1099,7 +1112,7 @@ const CustomProfitTooltip = ({ active, payload, label }: CustomTooltipProps) => 
           <p className="flex items-center justify-between gap-4 font-semibold text-red-600">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
-              Utility Costs (OCR):
+              Utility Costs:
             </span>
             <span>zł{Number(utilities).toLocaleString("pl-PL")}</span>
           </p>
