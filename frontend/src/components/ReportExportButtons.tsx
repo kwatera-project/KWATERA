@@ -5,6 +5,17 @@ import html2canvas from "html2canvas";
 import { FileText, Download, Loader2 } from "lucide-react";
 import { decodeJwt } from "../utils/jwtUtils";
 
+interface ReservationOverview {
+  id: string;
+  guestName: string;
+  unitName: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  pricePerNightSnapshot?: number;
+  totalPrice?: number;
+}
+
 interface ReservationMetrics {
   totalReservations: number;
   occupancyRate: number;
@@ -25,6 +36,7 @@ interface ReportExportButtonsProps {
   resMetrics: ReservationMetrics;
   billMetrics: BillingMetrics;
   totalUnitsCount: number;
+  activeReservations: ReservationOverview[];
 }
 
 export default function ReportExportButtons({
@@ -34,6 +46,7 @@ export default function ReportExportButtons({
   resMetrics,
   billMetrics,
   totalUnitsCount,
+  activeReservations,
 }: ReportExportButtonsProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
@@ -291,7 +304,14 @@ export default function ReportExportButtons({
       pdf.setFontSize(8);
       pdf.setTextColor(26, 26, 26);
       pdf.text("1", 18.5, 111, { align: "center" });
-      pdf.text("Accommodation Services (Lodging & Stay Management)", 24, 111);
+      const desc1 = "Accommodation Services (Lodging & Stay Management)";
+      const lines1 = pdf.splitTextToSize(desc1, 58);
+      if (lines1.length === 1) {
+        pdf.text(lines1[0], 24, 111);
+      } else if (lines1.length >= 2) {
+        pdf.text(lines1[0], 24, 110);
+        pdf.text(lines1[1], 24, 113.5);
+      }
       pdf.text(String(occupiedDays), 95, 111, { align: "center" });
       pdf.text(formatCurrency(unitAccommodation), 127.5, 111, { align: "right" });
       pdf.text(formatCurrency(netAccommodation), 152.5, 111, { align: "right" });
@@ -302,7 +322,14 @@ export default function ReportExportButtons({
       const vatReceivables = unpaidBalance - netReceivables;
 
       pdf.text("2", 18.5, 121, { align: "center" });
-      pdf.text("Outstanding Accounts Receivable Balance", 24, 121);
+      const desc2 = "Outstanding Accounts Receivable Balance";
+      const lines2 = pdf.splitTextToSize(desc2, 58);
+      if (lines2.length === 1) {
+        pdf.text(lines2[0], 24, 121);
+      } else if (lines2.length >= 2) {
+        pdf.text(lines2[0], 24, 120);
+        pdf.text(lines2[1], 24, 123.5);
+      }
       pdf.text("—", 95, 121, { align: "center" });
       pdf.text("—", 127.5, 121, { align: "right" });
       pdf.text(formatCurrency(netReceivables), 152.5, 121, { align: "right" });
@@ -363,25 +390,6 @@ export default function ReportExportButtons({
       pdf.setFontSize(7.5);
       pdf.setTextColor(122, 122, 122);
       pdf.text("Authorized Signature & Stamp", 165, 181, { align: "center" });
-
-      pdf.setDrawColor(218, 205, 202);
-      pdf.setLineWidth(0.3);
-      pdf.line(15, 280, 195, 280);
-
-      pdf.setFont("Helvetica", "normal");
-      pdf.setFontSize(8);
-      pdf.setTextColor(122, 122, 122);
-      pdf.text(
-        `Kwatera Property Management Report \u00a9 ${new Date().getFullYear()}`,
-        15,
-        286
-      );
-      pdf.text(`Generated on ${new Date().toLocaleDateString()}`, 105, 286, {
-        align: "center",
-      });
-      pdf.setFont("Helvetica", "bold");
-      pdf.setTextColor(26, 26, 26);
-      pdf.text("Page 1 of 2", 195, 286, { align: "right" });
 
       pdf.addPage();
 
@@ -451,24 +459,189 @@ export default function ReportExportButtons({
         pdf.addImage(revenueImg, "PNG", x, y, w, h);
       }
 
+      pdf.addPage();
+
+      if (logoEl) {
+        pdf.addImage(logoEl, "PNG", 15, 14, 10, 10);
+      }
+      
+      pdf.setFont("Helvetica", "bold");
+      pdf.setFontSize(14);
+      pdf.setTextColor(66, 33, 29);
+      pdf.text("KWATERA", logoEl ? 28 : 15, 21);
+      
+      pdf.setFont("Helvetica", "bold");
+      pdf.setFontSize(9);
+      pdf.setTextColor(122, 122, 122);
+      pdf.text("DETAILED RESERVATIONS REGISTER", 195, 21, { align: "right" });
+      
+      pdf.setDrawColor(218, 205, 202);
+      pdf.setLineWidth(0.4);
+      pdf.line(15, 28, 195, 28);
+
+      // Add Register Summary Cards
+      pdf.setFillColor(253, 253, 253);
       pdf.setDrawColor(218, 205, 202);
       pdf.setLineWidth(0.3);
-      pdf.line(15, 280, 195, 280);
+      pdf.roundedRect(15, 34, 180, 18, 2, 2, "FD");
 
-      pdf.setFont("Helvetica", "normal");
-      pdf.setFontSize(8);
-      pdf.setTextColor(122, 122, 122);
-      pdf.text(
-        `Kwatera Property Management Report \u00a9 ${new Date().getFullYear()}`,
-        15,
-        286
-      );
-      pdf.text(`Generated on ${new Date().toLocaleDateString()}`, 105, 286, {
-        align: "center",
-      });
+      // Draw vertical separators in the summary card
+      pdf.line(75, 34, 75, 52);
+      pdf.line(135, 34, 135, 52);
+
+      // Card 1: Total Stays
       pdf.setFont("Helvetica", "bold");
+      pdf.setFontSize(8);
+      pdf.setTextColor(66, 33, 29);
+      pdf.text("TOTAL REGISTERED STAYS", 20, 40);
+      pdf.setFont("Helvetica", "bold");
+      pdf.setFontSize(10);
       pdf.setTextColor(26, 26, 26);
-      pdf.text("Page 2 of 2", 195, 286, { align: "right" });
+      pdf.text(`${activeReservations.length} reservations`, 20, 47);
+
+      // Card 2: Total Bookings Value
+      pdf.setFont("Helvetica", "bold");
+      pdf.setFontSize(8);
+      pdf.setTextColor(66, 33, 29);
+      pdf.text("TOTAL REGISTER VALUE", 80, 40);
+      pdf.setFont("Helvetica", "bold");
+      pdf.setFontSize(10);
+      pdf.setTextColor(26, 26, 26);
+      const totalRegisterValue = activeReservations.reduce((sum, r) => sum + (r.totalPrice ?? 0), 0);
+      pdf.text(formatCurrency(totalRegisterValue), 80, 47);
+
+      // Card 3: Avg Booking Value
+      pdf.setFont("Helvetica", "bold");
+      pdf.setFontSize(8);
+      pdf.setTextColor(66, 33, 29);
+      pdf.text("AVERAGE STAY VALUE", 140, 40);
+      pdf.setFont("Helvetica", "bold");
+      pdf.setFontSize(10);
+      pdf.setTextColor(26, 26, 26);
+      const avgVal = activeReservations.length > 0 ? totalRegisterValue / activeReservations.length : 0;
+      pdf.text(formatCurrency(avgVal), 140, 47);
+
+      pdf.setFont("Helvetica", "bold");
+      pdf.setFontSize(10);
+      pdf.setTextColor(66, 33, 29);
+      pdf.text("RESERVATIONS LOG", 15, 60);
+
+      pdf.setDrawColor(218, 205, 202);
+      pdf.setLineWidth(0.4);
+      pdf.line(15, 63, 195, 63);
+
+      pdf.setFillColor(66, 33, 29);
+      pdf.rect(15, 66, 180, 8, "F");
+
+      pdf.setFont("Helvetica", "bold");
+      pdf.setFontSize(8);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text("Lp.", 18.5, 71.5, { align: "center" });
+      pdf.text("Guest Name", 24, 71.5);
+      pdf.text("Unit Name", 57, 71.5);
+      pdf.text("Check-in", 90, 71.5);
+      pdf.text("Check-out", 112, 71.5);
+      pdf.text("Nights", 137, 71.5, { align: "center" });
+      pdf.text("Price/Night", 160, 71.5, { align: "right" });
+      pdf.text("Status", 164, 71.5);
+      pdf.text("Total Price", 193, 71.5, { align: "right" });
+
+      let y = 74;
+
+      activeReservations.forEach((res, index) => {
+        if (y > 265) {
+          pdf.addPage();
+          y = 32;
+
+          if (logoEl) {
+            pdf.addImage(logoEl, "PNG", 15, 14, 10, 10);
+          }
+          pdf.setFont("Helvetica", "bold");
+          pdf.setFontSize(14);
+          pdf.setTextColor(66, 33, 29);
+          pdf.text("KWATERA", logoEl ? 28 : 15, 21);
+          pdf.setFont("Helvetica", "bold");
+          pdf.setFontSize(9);
+          pdf.setTextColor(122, 122, 122);
+          pdf.text("DETAILED RESERVATIONS REGISTER (CONT.)", 195, 21, { align: "right" });
+          pdf.setDrawColor(218, 205, 202);
+          pdf.setLineWidth(0.4);
+          pdf.line(15, 28, 195, 28);
+
+          pdf.setFillColor(66, 33, 29);
+          pdf.rect(15, 32, 180, 8, "F");
+          pdf.setFont("Helvetica", "bold");
+          pdf.setFontSize(8);
+          pdf.setTextColor(255, 255, 255);
+          pdf.text("Lp.", 18.5, 37.5, { align: "center" });
+          pdf.text("Guest Name", 24, 37.5);
+          pdf.text("Unit Name", 57, 37.5);
+          pdf.text("Check-in", 90, 37.5);
+          pdf.text("Check-out", 112, 37.5);
+          pdf.text("Nights", 137, 37.5, { align: "center" });
+          pdf.text("Price/Night", 160, 37.5, { align: "right" });
+          pdf.text("Status", 164, 37.5);
+          pdf.text("Total Price", 193, 37.5, { align: "right" });
+
+          y = 40;
+        }
+
+        pdf.setDrawColor(218, 205, 202);
+        pdf.setLineWidth(0.2);
+        pdf.line(15, y, 195, y);
+        pdf.line(15, y + 8, 195, y + 8);
+
+        pdf.line(15, y, 15, y + 8);
+        pdf.line(22, y, 22, y + 8);
+        pdf.line(55, y, 55, y + 8);
+        pdf.line(88, y, 88, y + 8);
+        pdf.line(110, y, 110, y + 8);
+        pdf.line(132, y, 132, y + 8);
+        pdf.line(142, y, 142, y + 8);
+        pdf.line(162, y, 162, y + 8);
+        pdf.line(177, y, 177, y + 8);
+        pdf.line(195, y, 195, y + 8);
+
+        const start = new Date(res.startDate);
+        const end = new Date(res.endDate);
+        const nights = Math.round((end.getTime() - start.getTime()) / (1000 * 3600 * 24));
+        const pricePerNight = res.pricePerNightSnapshot || (res.totalPrice && nights > 0 ? res.totalPrice / nights : 0);
+
+        pdf.setFont("Helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.setTextColor(26, 26, 26);
+        pdf.text(String(index + 1), 18.5, y + 5, { align: "center" });
+        pdf.text(res.guestName || "—", 24, y + 5);
+        pdf.text(res.unitName || "—", 57, y + 5);
+        pdf.text(res.startDate || "—", 90, y + 5);
+        pdf.text(res.endDate || "—", 112, y + 5);
+        pdf.text(String(nights), 137, y + 5, { align: "center" });
+        pdf.text(pricePerNight ? formatCurrency(pricePerNight) : "—", 160, y + 5, { align: "right" });
+        pdf.text(res.status || "—", 164, y + 5);
+        pdf.setFont("Helvetica", "bold");
+        pdf.text(res.totalPrice ? formatCurrency(res.totalPrice) : "—", 193, y + 5, { align: "right" });
+
+        y += 8;
+      });
+
+      const totalPages = pdf.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        
+        pdf.setDrawColor(218, 205, 202);
+        pdf.setLineWidth(0.3);
+        pdf.line(15, 280, 195, 280);
+
+        pdf.setFont("Helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.setTextColor(122, 122, 122);
+        pdf.text(`Kwatera Property Management Report \u00a9 ${new Date().getFullYear()}`, 15, 286);
+        pdf.text(`Generated on ${new Date().toLocaleDateString()}`, 105, 286, { align: "center" });
+        
+        pdf.setFont("Helvetica", "bold");
+        pdf.setTextColor(26, 26, 26);
+        pdf.text(`Page ${i} of ${totalPages}`, 195, 286, { align: "right" });
+      }
 
       const startStr = formatDate(startDate);
       const endStr = formatDate(endDate);
