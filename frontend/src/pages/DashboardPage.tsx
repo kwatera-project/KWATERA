@@ -29,16 +29,12 @@ import type { Unit } from "../types/property";
 import {
   Calendar,
   DollarSign,
-  TrendingUp,
   Percent,
   Activity,
   FileText,
   Shield,
   Loader2,
-  AlertCircle,
-  BarChart3,
-  Flame,
-  Award
+  AlertCircle
 } from "lucide-react";
 
 interface ReservationOverview {
@@ -727,8 +723,7 @@ export default function DashboardPage() {
             {/* Chart 1: Occupancy Trend (Area Chart) */}
             <div className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4">
               <div>
-                <h3 className="text-lg font-bold text-[#1A1A1A] flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-emerald-600" />
+                <h3 className="text-lg font-bold text-[#1A1A1A]">
                   Occupancy Trend
                 </h3>
                 <p className="text-xs text-[#7A7A7A]">
@@ -748,7 +743,7 @@ export default function DashboardPage() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#F1F1F1" vertical={false} />
                       <XAxis dataKey="label" stroke="#7A7A7A" fontSize={10} tickLine={false} axisLine={false} dy={8} />
                       <YAxis stroke="#7A7A7A" fontSize={10} tickLine={false} axisLine={false} domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
-                      <Tooltip content={<CustomOccupancyTooltip />} />
+                      <Tooltip content={<CustomOccupancyTooltip />} wrapperStyle={{ backgroundColor: 'transparent', border: 'none', outline: 'none' }} />
                       <Area type="monotone" dataKey="occupancy" stroke="#10B981" strokeWidth={2.5} fillOpacity={1} fill="url(#occupancyGrad)" />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -763,8 +758,7 @@ export default function DashboardPage() {
             {/* Chart 2: AI Pricing Effectiveness (Line Chart) */}
             <div className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4">
               <div>
-                <h3 className="text-lg font-bold text-[#1A1A1A] flex items-center gap-2">
-                  <Flame className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-lg font-bold text-[#1A1A1A]">
                   AI Pricing Effectiveness
                 </h3>
                 <p className="text-xs text-[#7A7A7A]">
@@ -778,7 +772,7 @@ export default function DashboardPage() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#F1F1F1" vertical={false} />
                       <XAxis dataKey="label" stroke="#7A7A7A" fontSize={10} tickLine={false} axisLine={false} dy={8} />
                       <YAxis stroke="#7A7A7A" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `zł${v}`} />
-                      <Tooltip content={<CustomPricingTooltip />} />
+                      <Tooltip content={<CustomPricingTooltip />} wrapperStyle={{ backgroundColor: 'transparent', border: 'none', outline: 'none' }} />
                       <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, fontWeight: "bold" }} />
                       <Line type="monotone" dataKey="staticAdr" name="Static Base Price" stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" dot={false} activeDot={{ r: 4 }} />
                       <Line type="monotone" dataKey="aiAdr" name="AI-Predicted Price" stroke="#6366F1" strokeWidth={2.5} dot={{ r: 3, strokeWidth: 1 }} activeDot={{ r: 6 }} />
@@ -795,8 +789,7 @@ export default function DashboardPage() {
             {/* Chart 3: Net Profit & OCR Integration (Composed Chart) */}
             <div className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4">
               <div>
-                <h3 className="text-lg font-bold text-[#1A1A1A] flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-blue-600" />
+                <h3 className="text-lg font-bold text-[#1A1A1A]">
                   Net Profit & OCR billing
                 </h3>
                 <p className="text-xs text-[#7A7A7A]">
@@ -810,7 +803,7 @@ export default function DashboardPage() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#F1F1F1" vertical={false} />
                       <XAxis dataKey="label" stroke="#7A7A7A" fontSize={10} tickLine={false} axisLine={false} dy={8} />
                       <YAxis stroke="#7A7A7A" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `zł${v}`} />
-                      <Tooltip content={<CustomProfitTooltip />} />
+                      <Tooltip content={<CustomProfitTooltip />} wrapperStyle={{ backgroundColor: 'transparent', border: 'none', outline: 'none' }} />
                       <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, fontWeight: "bold" }} />
                       <Bar dataKey="grossRevenue" name="Gross Revenue" fill="#3B82F6" radius={[4, 4, 0, 0]} barSize={20} />
                       <Bar dataKey="utilityCosts" name="Utility Expenses" fill="#EF4444" radius={[4, 4, 0, 0]} barSize={20} />
@@ -828,8 +821,7 @@ export default function DashboardPage() {
             {/* Chart 4: Unit Performance Ranking (Horizontal Bar Chart) */}
             <div className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4">
               <div>
-                <h3 className="text-lg font-bold text-[#1A1A1A] flex items-center gap-2">
-                  <Award className="w-5 h-5 text-amber-500" />
+                <h3 className="text-lg font-bold text-[#1A1A1A]">
                   Unit Profitability Ranking
                 </h3>
                 <p className="text-xs text-[#7A7A7A]">
@@ -847,7 +839,7 @@ export default function DashboardPage() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#F1F1F1" horizontal={false} />
                       <XAxis type="number" stroke="#7A7A7A" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `zł${v}`} />
                       <YAxis type="category" dataKey="name" stroke="#7A7A7A" fontSize={10} tickLine={false} axisLine={false} width={80} />
-                      <Tooltip content={<CustomRankingTooltip />} />
+                      <Tooltip content={<CustomRankingTooltip />} wrapperStyle={{ backgroundColor: 'transparent', border: 'none', outline: 'none' }} />
                       <Bar dataKey="revenue" name="Total Revenue" fill="#42211D" radius={[0, 4, 4, 0]} barSize={14} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -1041,7 +1033,7 @@ interface CustomTooltipProps {
 const CustomOccupancyTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white p-3.5 rounded-xl shadow-lg border border-gray-100 text-xs font-semibold space-y-1">
+      <div className="bg-white p-3.5 rounded-xl shadow-lg border border-gray-100 text-xs font-semibold space-y-1" style={{ backgroundColor: '#ffffff' }}>
         <p className="text-gray-400 font-bold uppercase tracking-wider text-[9px]">{label}</p>
         <p className="text-sm flex items-center gap-1.5 font-bold text-gray-900">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
@@ -1060,7 +1052,7 @@ const CustomPricingTooltip = ({ active, payload, label }: CustomTooltipProps) =>
     const diff = Number(aiVal) - Number(staticVal);
     const pct = Number(staticVal) > 0 ? (diff / Number(staticVal)) * 100 : 0;
     return (
-      <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100 text-xs font-semibold space-y-2">
+      <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100 text-xs font-semibold space-y-2" style={{ backgroundColor: '#ffffff' }}>
         <p className="text-gray-400 font-bold uppercase tracking-wider text-[9px]">{label}</p>
         <div className="space-y-1.5">
           <p className="flex items-center justify-between gap-4 font-semibold text-gray-600">
@@ -1094,7 +1086,7 @@ const CustomProfitTooltip = ({ active, payload, label }: CustomTooltipProps) => 
     const utilities = payload.find(p => p.dataKey === 'utilityCosts')?.value ?? 0;
     const net = Number(gross) - Number(utilities);
     return (
-      <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100 text-xs font-semibold space-y-2">
+      <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100 text-xs font-semibold space-y-2" style={{ backgroundColor: '#ffffff' }}>
         <p className="text-gray-400 font-bold uppercase tracking-wider text-[9px]">{label}</p>
         <div className="space-y-1.5">
           <p className="flex items-center justify-between gap-4 font-semibold text-blue-600">
@@ -1129,7 +1121,7 @@ const CustomRankingTooltip = ({ active, payload }: CustomTooltipProps) => {
     const uName = itemPayload.name || "Unknown Unit";
     const bookings = itemPayload.bookings || 0;
     return (
-      <div className="bg-white p-3.5 rounded-xl shadow-lg border border-gray-100 text-xs font-semibold space-y-1.5">
+      <div className="bg-white p-3.5 rounded-xl shadow-lg border border-gray-100 text-xs font-semibold space-y-1.5" style={{ backgroundColor: '#ffffff' }}>
         <p className="text-gray-900 font-extrabold">{uName}</p>
         <p className="text-sm font-bold text-gray-700 flex justify-between gap-4">
           <span>Total Revenue:</span>
