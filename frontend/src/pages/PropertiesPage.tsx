@@ -5,7 +5,7 @@ import type { Property, Unit } from "../types/property";
 import { Link, useSearchParams } from "react-router-dom";
 import PropertySearchBar, { type PropertySearchValues } from "../components/PropertySearchBar";
 import { formatSearchDate, parseGuests, parseSearchDate } from "../utils/searchDates";
-import { getLocationSuggestions } from "../utils/locationSuggestions";
+import { getCitySuggestions } from "../utils/citySuggestions";
 
 interface AvailabilityResponse {
     available: boolean;
@@ -16,24 +16,20 @@ const PROPERTIES_LOAD_ERROR = "Could not load properties. Please try again later
 const UNITS_FILTER_ERROR = "Could not load units for filtering. Please try again later.";
 const AVAILABILITY_FILTER_ERROR = "Could not verify availability. Please try again or adjust your filters.";
 
-function propertyMatchesLocation(property: Property, location: string) {
-    const normalizeLocationText = (value: string) => value.toLowerCase().replace(/[,\s]+/g, " ").trim();
-    const normalizedLocation = normalizeLocationText(location);
-    if (!normalizedLocation) return true;
+function propertyMatchesCity(property: Property, city: string) {
+    const normalizeCityText = (value: string) => value.toLowerCase().replace(/[,\s]+/g, " ").trim();
+    const normalizedCity = normalizeCityText(city);
+    if (!normalizedCity) return true;
 
     const searchableText = [
-        property.title,
         property.city,
         property.country,
-        property.postalCode,
-        property.street,
-        property.streetNumber,
     ]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
 
-    return normalizeLocationText(searchableText).includes(normalizedLocation);
+    return normalizeCityText(searchableText).includes(normalizedCity);
 }
 
 export default function PropertiesPage() {
@@ -46,7 +42,7 @@ export default function PropertiesPage() {
     const [searchParams, setSearchParams] = useSearchParams();
 
     const searchValues = useMemo(() => ({
-        location: searchParams.get("location") ?? "",
+        city: searchParams.get("city") ?? "",
         checkIn: parseSearchDate(searchParams.get("checkIn")),
         checkOut: parseSearchDate(searchParams.get("checkOut")),
         guests: searchParams.get("guests") ?? "",
@@ -54,7 +50,7 @@ export default function PropertiesPage() {
 
     const hasCompleteDateRange = !!searchValues.checkIn && !!searchValues.checkOut && searchValues.checkIn < searchValues.checkOut;
     const requestedGuests = parseGuests(searchValues.guests);
-    const locationSuggestions = useMemo(() => getLocationSuggestions(properties), [properties]);
+    const citySuggestions = useMemo(() => getCitySuggestions(properties), [properties]);
     const propertyDetailsSearch = useMemo(() => {
         const params = new URLSearchParams();
         const checkIn = searchParams.get("checkIn");
@@ -90,12 +86,12 @@ export default function PropertiesPage() {
         let cancelled = false;
 
         async function filterProperties() {
-            const locationFiltered = properties.filter((property) => propertyMatchesLocation(property, searchValues.location));
+            const cityFiltered = properties.filter((property) => propertyMatchesCity(property, searchValues.city));
 
             if (!requestedGuests && (!hasCompleteDateRange || !searchValues.checkIn || !searchValues.checkOut)) {
                 setIsFilteringAvailability(false);
                 setFilterError(null);
-                setFilteredProperties(locationFiltered);
+                setFilteredProperties(cityFiltered);
                 return;
             }
 
@@ -105,7 +101,7 @@ export default function PropertiesPage() {
                 const checkOut = searchValues.checkOut ? formatSearchDate(searchValues.checkOut) : null;
 
                 const filteredResults = await Promise.all(
-                    locationFiltered.map(async (property) => {
+                    cityFiltered.map(async (property) => {
                         let units: Unit[];
                         try {
                             units = await getUnits(property.id);
@@ -167,11 +163,11 @@ export default function PropertiesPage() {
         return () => {
             cancelled = true;
         };
-    }, [properties, searchValues.location, searchValues.checkIn, searchValues.checkOut, searchValues.guests, hasCompleteDateRange, requestedGuests]);
+    }, [properties, searchValues.city, searchValues.checkIn, searchValues.checkOut, searchValues.guests, hasCompleteDateRange, requestedGuests]);
 
-    const handleSearch = ({ location, checkIn, checkOut, guests }: PropertySearchValues) => {
+    const handleSearch = ({ city, checkIn, checkOut, guests }: PropertySearchValues) => {
         const params = new URLSearchParams();
-        if (location) params.set("location", location);
+        if (city) params.set("city", city);
         if (checkIn) params.set("checkIn", formatSearchDate(checkIn));
         if (checkOut) params.set("checkOut", formatSearchDate(checkOut));
         if (guests) params.set("guests", guests);
@@ -187,7 +183,7 @@ export default function PropertiesPage() {
                     key={searchParams.toString()}
                     initialValues={searchValues}
                     onSearch={handleSearch}
-                    locationSuggestions={locationSuggestions}
+                    citySuggestions={citySuggestions}
                     className="max-w-none"
                 />
             </div>
@@ -208,7 +204,7 @@ export default function PropertiesPage() {
                 <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-8 text-center mb-8">
                     <h2 className="text-xl font-bold text-[#1A1A1A] tracking-tight">No properties found</h2>
                     <p className="text-sm text-[#7A7A7A] mt-2">
-                        Try a different location or date range.
+                        Try a different city or date range.
                     </p>
                 </div>
             )}

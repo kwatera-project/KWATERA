@@ -5,7 +5,7 @@ import { CalendarDays, MapPin, Search, Users } from "lucide-react";
 import SharedDatePicker from "./SharedDatePicker";
 
 export interface PropertySearchValues {
-    location: string;
+    city: string;
     checkIn: Date | null;
     checkOut: Date | null;
     guests: string;
@@ -15,38 +15,38 @@ interface PropertySearchBarProps {
     initialValues?: Partial<PropertySearchValues>;
     onSearch: (values: PropertySearchValues) => void;
     className?: string;
-    locationSuggestions?: string[];
+    citySuggestions?: string[];
 }
 
 export default function PropertySearchBar({
     initialValues,
     onSearch,
     className = "",
-    locationSuggestions = [],
+    citySuggestions = [],
 }: PropertySearchBarProps) {
-    const [location, setLocation] = useState(initialValues?.location ?? "");
-    const [isLocationSuggestionsOpen, setIsLocationSuggestionsOpen] = useState(false);
+    const [city, setCity] = useState(initialValues?.city ?? "");
+    const [isCitySuggestionsOpen, setIsCitySuggestionsOpen] = useState(false);
     const [checkIn, setCheckIn] = useState<Date | null>(initialValues?.checkIn ?? null);
     const [checkOut, setCheckOut] = useState<Date | null>(initialValues?.checkOut ?? null);
     const [guests, setGuests] = useState(initialValues?.guests ?? "");
     const checkOutRef = useRef<DatePicker | null>(null);
-    const locationWrapperRef = useRef<HTMLDivElement>(null);
+    const cityWrapperRef = useRef<HTMLDivElement>(null);
 
-    const filteredLocationSuggestions = useMemo(() => {
-        const normalizedLocation = location.trim().toLowerCase();
-        if (!normalizedLocation) {
-            return locationSuggestions;
+    const filteredCitySuggestions = useMemo(() => {
+        const normalizedCity = city.trim().toLowerCase();
+        if (!normalizedCity) {
+            return citySuggestions;
         }
 
-        return locationSuggestions.filter((suggestion) =>
-            suggestion.toLowerCase().includes(normalizedLocation)
+        return citySuggestions.filter((suggestion) =>
+            suggestion.toLowerCase().includes(normalizedCity)
         );
-    }, [location, locationSuggestions]);
+    }, [city, citySuggestions]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (locationWrapperRef.current && !locationWrapperRef.current.contains(event.target as Node)) {
-                setIsLocationSuggestionsOpen(false);
+            if (cityWrapperRef.current && !cityWrapperRef.current.contains(event.target as Node)) {
+                setIsCitySuggestionsOpen(false);
             }
         };
 
@@ -57,7 +57,7 @@ export default function PropertySearchBar({
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         onSearch({
-            location: location.trim(),
+            city: city.trim(),
             checkIn,
             checkOut,
             guests: guests.trim(),
@@ -69,38 +69,38 @@ export default function PropertySearchBar({
             onSubmit={handleSubmit}
             className={`relative z-[9999] w-full max-w-5xl bg-white rounded-3xl md:rounded-full shadow-xl border border-[#DACDCA] p-3 flex flex-col md:flex-row items-center divide-y md:divide-y-0 md:divide-x divide-gray-200 gap-y-2 md:gap-y-0 ${className}`}
         >
-            <div ref={locationWrapperRef} className="flex-1 w-full px-6 py-3 flex flex-col items-start hover:bg-gray-50 rounded-full transition-colors relative group z-[100]">
-                <label htmlFor="property-search-location" className="text-xs font-bold text-title uppercase tracking-wider mb-1 cursor-pointer flex items-center gap-1.5">
-                    <MapPin size={14} className="text-[rgb(var(--color-burgundy))]" /> Location
+            <div ref={cityWrapperRef} className="flex-1 w-full px-6 py-3 flex flex-col items-start hover:bg-gray-50 rounded-full transition-colors relative group z-[100]">
+                <label htmlFor="property-search-city" className="text-xs font-bold text-title uppercase tracking-wider mb-1 cursor-pointer flex items-center gap-1.5">
+                    <MapPin size={14} className="text-[rgb(var(--color-burgundy))]" /> City
                 </label>
                 <input
                     type="text"
-                    id="property-search-location"
-                    value={location}
+                    id="property-search-city"
+                    value={city}
                     onChange={(event) => {
-                        setLocation(event.target.value);
-                        setIsLocationSuggestionsOpen(true);
+                        setCity(event.target.value);
+                        setIsCitySuggestionsOpen(true);
                     }}
-                    onFocus={() => setIsLocationSuggestionsOpen(true)}
+                    onFocus={() => setIsCitySuggestionsOpen(true)}
                     onKeyDown={(event) => {
                         if (event.key === "Escape") {
-                            setIsLocationSuggestionsOpen(false);
+                            setIsCitySuggestionsOpen(false);
                         }
                     }}
                     className="w-full bg-transparent text-title placeholder-gray-400 focus:outline-none font-medium text-lg"
                     placeholder="Warszawa, Zakopane..."
                     autoComplete="off"
                 />
-                {isLocationSuggestionsOpen && filteredLocationSuggestions.length > 0 && (
+                {isCitySuggestionsOpen && filteredCitySuggestions.length > 0 && (
                     <div className="absolute left-3 right-3 top-full mt-2 bg-white border border-[#DACDCA] rounded-2xl shadow-xl overflow-hidden z-[10000] py-1">
-                        {filteredLocationSuggestions.map((suggestion) => (
+                        {filteredCitySuggestions.map((suggestion) => (
                             <button
                                 key={suggestion}
                                 type="button"
                                 onMouseDown={(event) => event.preventDefault()}
                                 onClick={() => {
-                                    setLocation(suggestion);
-                                    setIsLocationSuggestionsOpen(false);
+                                    setCity(suggestion);
+                                    setIsCitySuggestionsOpen(false);
                                 }}
                                 className="w-full text-left px-4 py-2.5 text-sm font-semibold text-title hover:bg-gray-50 transition-colors"
                             >

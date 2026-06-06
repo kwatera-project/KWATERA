@@ -4,28 +4,28 @@ import PropertySearchBar, { type PropertySearchValues } from "../PropertySearchB
 import { formatSearchDate } from "../../utils/searchDates";
 import { getProperties } from "../../api/propertyApi";
 import type { Property } from "../../types/property";
-import { getLocationSuggestions } from "../../utils/locationSuggestions";
+import { getCitySuggestions } from "../../utils/citySuggestions";
 
 export default function HeroSection() {
     const navigate = useNavigate();
-    const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
+    const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
 
     useEffect(() => {
         getProperties()
             .then((properties: Property[]) => {
                 if (Array.isArray(properties)) {
-                    setLocationSuggestions(getLocationSuggestions(properties));
+                    setCitySuggestions(getCitySuggestions(properties));
                 }
             })
             .catch(() => {
-                setLocationSuggestions([]);
+                setCitySuggestions([]);
             });
     }, []);
 
-    const handleSearch = ({ location, checkIn, checkOut, guests }: PropertySearchValues) => {
+    const handleSearch = ({ city, checkIn, checkOut, guests }: PropertySearchValues) => {
         const params = new URLSearchParams();
 
-        if (location) params.append('city', location);
+        if (city) params.append('city', city);
         if (checkIn) params.append('checkIn', formatSearchDate(checkIn));
         if (checkOut) params.append('checkOut', formatSearchDate(checkOut));
         if (guests) params.append('guests', guests);
@@ -62,7 +62,7 @@ export default function HeroSection() {
                     <PropertySearchBar
                         initialValues={{ guests: "2" }}
                         onSearch={handleSearch}
-                        locationSuggestions={locationSuggestions}
+                        citySuggestions={citySuggestions}
                     />
                 </div>
             </div>
