@@ -536,14 +536,14 @@ export default function ReportExportButtons({
       pdf.setFont("Helvetica", "bold");
       pdf.setFontSize(8);
       pdf.setTextColor(255, 255, 255);
-      pdf.text("Lp.", 18.5, 71.5, { align: "center" });
-      pdf.text("Guest Name", 24, 71.5);
-      pdf.text("Unit Name", 57, 71.5);
-      pdf.text("Check-in", 90, 71.5);
-      pdf.text("Check-out", 112, 71.5);
-      pdf.text("Nights", 137, 71.5, { align: "center" });
-      pdf.text("Price/Night", 160, 71.5, { align: "right" });
-      pdf.text("Status", 164, 71.5);
+      pdf.text("Lp.", 18, 71.5, { align: "center" });
+      pdf.text("Guest Name", 23, 71.5);
+      pdf.text("Unit Name", 53, 71.5);
+      pdf.text("Check-in", 83, 71.5);
+      pdf.text("Check-out", 102, 71.5);
+      pdf.text("Nights", 123, 71.5, { align: "center" });
+      pdf.text("Price/Night", 146, 71.5, { align: "right" });
+      pdf.text("Status", 150, 71.5);
       pdf.text("Total Price", 193, 71.5, { align: "right" });
 
       let y = 74;
@@ -573,14 +573,14 @@ export default function ReportExportButtons({
           pdf.setFont("Helvetica", "bold");
           pdf.setFontSize(8);
           pdf.setTextColor(255, 255, 255);
-          pdf.text("Lp.", 18.5, 37.5, { align: "center" });
-          pdf.text("Guest Name", 24, 37.5);
-          pdf.text("Unit Name", 57, 37.5);
-          pdf.text("Check-in", 90, 37.5);
-          pdf.text("Check-out", 112, 37.5);
-          pdf.text("Nights", 137, 37.5, { align: "center" });
-          pdf.text("Price/Night", 160, 37.5, { align: "right" });
-          pdf.text("Status", 164, 37.5);
+          pdf.text("Lp.", 18, 37.5, { align: "center" });
+          pdf.text("Guest Name", 23, 37.5);
+          pdf.text("Unit Name", 53, 37.5);
+          pdf.text("Check-in", 83, 37.5);
+          pdf.text("Check-out", 102, 37.5);
+          pdf.text("Nights", 123, 37.5, { align: "center" });
+          pdf.text("Price/Night", 146, 37.5, { align: "right" });
+          pdf.text("Status", 150, 37.5);
           pdf.text("Total Price", 193, 37.5, { align: "right" });
 
           y = 40;
@@ -592,14 +592,14 @@ export default function ReportExportButtons({
         pdf.line(15, y + 8, 195, y + 8);
 
         pdf.line(15, y, 15, y + 8);
-        pdf.line(22, y, 22, y + 8);
-        pdf.line(55, y, 55, y + 8);
-        pdf.line(88, y, 88, y + 8);
-        pdf.line(110, y, 110, y + 8);
-        pdf.line(132, y, 132, y + 8);
-        pdf.line(142, y, 142, y + 8);
-        pdf.line(162, y, 162, y + 8);
-        pdf.line(177, y, 177, y + 8);
+        pdf.line(21, y, 21, y + 8);
+        pdf.line(51, y, 51, y + 8);
+        pdf.line(81, y, 81, y + 8);
+        pdf.line(100, y, 100, y + 8);
+        pdf.line(119, y, 119, y + 8);
+        pdf.line(127, y, 127, y + 8);
+        pdf.line(148, y, 148, y + 8);
+        pdf.line(169, y, 169, y + 8);
         pdf.line(195, y, 195, y + 8);
 
         const start = new Date(res.startDate);
@@ -610,14 +610,14 @@ export default function ReportExportButtons({
         pdf.setFont("Helvetica", "normal");
         pdf.setFontSize(8);
         pdf.setTextColor(26, 26, 26);
-        pdf.text(String(index + 1), 18.5, y + 5, { align: "center" });
-        pdf.text(res.guestName || "—", 24, y + 5);
-        pdf.text(res.unitName || "—", 57, y + 5);
-        pdf.text(res.startDate || "—", 90, y + 5);
-        pdf.text(res.endDate || "—", 112, y + 5);
-        pdf.text(String(nights), 137, y + 5, { align: "center" });
-        pdf.text(pricePerNight ? formatCurrency(pricePerNight) : "—", 160, y + 5, { align: "right" });
-        pdf.text(res.status || "—", 164, y + 5);
+        pdf.text(String(index + 1), 18, y + 5, { align: "center" });
+        pdf.text(res.guestName || "—", 23, y + 5);
+        pdf.text(res.unitName || "—", 53, y + 5);
+        pdf.text(res.startDate || "—", 83, y + 5);
+        pdf.text(res.endDate || "—", 102, y + 5);
+        pdf.text(String(nights), 123, y + 5, { align: "center" });
+        pdf.text(pricePerNight ? formatCurrency(pricePerNight) : "—", 146, y + 5, { align: "right" });
+        pdf.text(res.status || "—", 150, y + 5);
         pdf.setFont("Helvetica", "bold");
         pdf.text(res.totalPrice ? formatCurrency(res.totalPrice) : "—", 193, y + 5, { align: "right" });
 
