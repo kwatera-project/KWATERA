@@ -509,7 +509,7 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 md:justify-end ml-auto">
           <form onSubmit={handleFilterSubmit} className="flex flex-wrap items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-[#DACDCA]">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">From</span>

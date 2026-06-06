@@ -64,6 +64,15 @@ export default function ReportExportButtons({
     return format(date, "yyyy-MM-dd");
   };
 
+  const formatCurrency = (value: number) => {
+    const rawString = value.toLocaleString("pl-PL", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    const cleanNumber = rawString.replace(/[\s\u00A0\u202F\u2007\u2008\u2009\u200A]/g, " ").trim();
+    return `${cleanNumber} PLN`;
+  };
+
   const handleDownloadCSV = () => {
     if (!startDate || !endDate) return;
     const startStr = formatDate(startDate);
@@ -122,7 +131,6 @@ export default function ReportExportButtons({
         img.src = "/kwatera.png";
         img.onload = () => resolve(img);
         img.onerror = () => {
-          console.warn("Failed to load /kwatera.png");
           resolve(null);
         };
       });
@@ -296,30 +304,14 @@ export default function ReportExportButtons({
       pdf.text("Collected Settlement Revenue", 65, 124.5);
       pdf.setFont("Helvetica", "bold");
       pdf.setTextColor(59, 130, 246);
-      pdf.text(
-        revenueFromSettlements.toLocaleString("pl-PL", {
-          style: "currency",
-          currency: "PLN",
-        }),
-        190,
-        124.5,
-        { align: "right" }
-      );
+      pdf.text(formatCurrency(revenueFromSettlements), 190, 124.5, { align: "right" });
 
       pdf.setFont("Helvetica", "normal");
       pdf.setTextColor(85, 85, 85);
       pdf.text("Outstanding Receivables Balance", 65, 133.5);
       pdf.setFont("Helvetica", "bold");
       pdf.setTextColor(245, 158, 11);
-      pdf.text(
-        unpaidBalance.toLocaleString("pl-PL", {
-          style: "currency",
-          currency: "PLN",
-        }),
-        190,
-        133.5,
-        { align: "right" }
-      );
+      pdf.text(formatCurrency(unpaidBalance), 190, 133.5, { align: "right" });
 
       pdf.setFont("Helvetica", "normal");
       pdf.setTextColor(85, 85, 85);
@@ -457,30 +449,28 @@ export default function ReportExportButtons({
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={handleDownloadCSV}
-          className="px-4 py-2 text-sm font-bold text-[#42211D] bg-[#F7F7F7] border border-[#DACDCA] hover:bg-gray-100 rounded-lg transition-all shadow-sm cursor-pointer flex items-center gap-2 active:scale-[0.98]"
-        >
-          <FileText className="w-4 h-4" />
-          Download CSV
-        </button>
+      <button
+        type="button"
+        onClick={handleDownloadCSV}
+        className="px-4 py-2 text-sm font-bold text-[#42211D] bg-[#F7F7F7] border border-[#DACDCA] hover:bg-gray-100 rounded-lg transition-all shadow-sm cursor-pointer flex items-center gap-2 active:scale-[0.98]"
+      >
+        <FileText className="w-4 h-4" />
+        Download CSV
+      </button>
 
-        <button
-          type="button"
-          disabled={isGenerating}
-          onClick={handleDownloadPDF}
-          className="px-5 py-2 text-sm font-bold text-white bg-[#42211D] hover:bg-[#341a17] rounded-lg transition-all shadow-md cursor-pointer flex items-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isGenerating ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Download className="w-4 h-4" />
-          )}
-          Download Report (PDF)
-        </button>
-      </div>
+      <button
+        type="button"
+        disabled={isGenerating}
+        onClick={handleDownloadPDF}
+        className="px-5 py-2 text-sm font-bold text-white bg-[#42211D] hover:bg-[#341a17] rounded-lg transition-all shadow-md cursor-pointer flex items-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isGenerating ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <Download className="w-4 h-4" />
+        )}
+        Download Report (PDF)
+      </button>
 
       {isGenerating && (
         <div className="fixed inset-0 bg-black/45 backdrop-blur-sm z-[9999] flex flex-col items-center justify-center text-white">
