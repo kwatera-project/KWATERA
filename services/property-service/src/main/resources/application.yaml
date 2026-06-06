@@ -17,6 +17,10 @@ spring:
 jwt:
   secret: ${JWT_SECRET}
 
+services:
+  reservation:
+    url: http://reservation-service
+
 eureka:
   client:
     serviceUrl:

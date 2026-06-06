@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {getMyProperties} from "../api/ownerPropertyApi.ts";
+import {deleteProperty, getMyProperties} from "../api/ownerPropertyApi.ts";
 import type {Property} from "../types/property";
 import {Link} from "react-router-dom";
 import {getPropertyImages} from "../api/propertyApi.ts";
@@ -17,6 +17,24 @@ export default function OwnerPropertiesPage() {
             .catch(console.error);
     }, []);
 
+    const handleDelete = async (propertyId: string) => {
+        const confirmed = window.confirm(
+            "Are you sure you want to delete this property?"
+        );
+
+        if (!confirmed) return;
+
+        try {
+            await deleteProperty(propertyId);
+
+            setProperties(prev =>
+                prev.filter(p => p.id !== propertyId)
+            );
+        } catch (error) {
+            console.error(error);
+            alert("Failed to delete property");
+        }
+    };
 
     return (
         <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
@@ -25,14 +43,21 @@ export default function OwnerPropertiesPage() {
                     <h1 className="text-3xl font-black text-[#1A1A1A] tracking-tight">My Properties</h1>
                     <p className="text-sm font-semibold text-[#7A7A7A] mt-1">Manage and configure your rental accommodations</p>
                 </div>
-                <button className="px-5 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm">
+                <Link
+                    to="/owner/properties/new"
+                    className="px-5 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm"
+                >
                     Add Property
-                </button>
+                </Link>
             </div>
 
             <div className="space-y-6">
                 {properties.map(property => (
-                    <PropertyCard key={property.id} property={property}/>
+                    <PropertyCard
+                        key={property.id}
+                        property={property}
+                        onDelete={handleDelete}
+                    />
                 ))}
                 {properties.length === 0 && (
                     <div className="text-gray-500 italic py-8 text-center bg-white border border-[#DACDCA] rounded-xl shadow-sm">
@@ -44,7 +69,7 @@ export default function OwnerPropertiesPage() {
     );
 }
 
-function PropertyCard({ property }: { property: Property }) {
+function PropertyCard({ property, onDelete }: { property: Property, onDelete: (id: string) => void; }) {
     const [mainImage, setMainImage] = useState<string>("");
 
     useEffect(() => {
@@ -88,10 +113,16 @@ function PropertyCard({ property }: { property: Property }) {
                 >
                     Manage Units
                 </Link>
-                <button className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all">
+                <Link
+                    to={`/owner/properties/${property.id}/edit`}
+                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all"
+                >
                     Edit
-                </button>
-                <button className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 text-sm rounded-lg shadow-sm transition-all">
+                </Link>
+                <button
+                    onClick={() => onDelete(property.id)}
+                    className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 text-sm rounded-lg shadow-sm transition-all"
+                >
                     Delete
                 </button>
             </div>

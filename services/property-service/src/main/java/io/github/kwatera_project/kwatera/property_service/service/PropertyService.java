@@ -1,10 +1,14 @@
 package io.github.kwatera_project.kwatera.property_service.service;
 
+import io.github.kwatera_project.kwatera.property_service.client.ReservationClient;
 import io.github.kwatera_project.kwatera.property_service.dto.*;
 import io.github.kwatera_project.kwatera.property_service.model.*;
 import io.github.kwatera_project.kwatera.property_service.repository.*;
+import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,6 +25,8 @@ public class PropertyService {
   private final UnitSettlementItemRepository unitSettlementItemRepository;
   private final io.github.kwatera_project.kwatera.property_service.client.NbpExchangeRateClient
       nbpExchangeRateClient;
+  private final ReservationClient reservationClient;
+  private final GeocodingService geocodingService;
 
   public List<UnitDto> getUnits(UUID propertyId, String currency) {
     if (!propertyRepository.existsById(propertyId)) {
@@ -197,5 +203,192 @@ public class PropertyService {
         item.getPricePerUnit(),
         item.getMeasurementUnit(),
         item.getBillingType());
+  }
+
+  private <T> void applyIfPresent(Optional<T> optionalValue, Consumer<T> setter) {
+    optionalValue.ifPresent(setter);
+  }
+
+  @Transactional
+  public UnitDto updateUnit(
+      UUID ownerId, UUID propertyId, UUID unitId, String currency, UnitUpdateRequest request) {
+
+    Property property =
+        propertyRepository
+            .findById(propertyId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+
+    if (!property.getOwnerId().equals(ownerId)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+    }
+
+    Unit unit =
+        unitRepository
+            .findByIdAndPropertyId(unitId, propertyId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found"));
+
+    applyIfPresent(request.name(), unit::setName);
+    applyIfPresent(request.description(), unit::setDescription);
+    applyIfPresent(request.pricePerNight(), unit::setPricePerNight);
+    applyIfPresent(request.capacity(), unit::setCapacity);
+    applyIfPresent(request.unitType(), unit::setUnitType);
+    applyIfPresent(request.unitNumber(), unit::setUnitNumber);
+    applyIfPresent(request.floor(), unit::setFloor);
+
+    unitRepository.save(unit);
+
+    return mapToDto(unit, currency);
+  }
+
+  @Transactional
+  public PropertyDto updateProperty(UUID ownerId, UUID propertyId, PropertyUpdateRequest request) {
+    Property property =
+        propertyRepository
+            .findById(propertyId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+
+    if (!property.getOwnerId().equals(ownerId)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+    }
+
+    boolean addressChanged =
+        request.city().isPresent()
+            || request.country().isPresent()
+            || request.postalCode().isPresent()
+            || request.street().isPresent()
+            || request.streetNumber().isPresent();
+
+    applyIfPresent(request.title(), property::setTitle);
+    applyIfPresent(request.description(), property::setDescription);
+    applyIfPresent(request.city(), property::setCity);
+    applyIfPresent(request.country(), property::setCountry);
+    applyIfPresent(request.postalCode(), property::setPostalCode);
+    applyIfPresent(request.street(), property::setStreet);
+    applyIfPresent(request.streetNumber(), property::setStreetNumber);
+
+    if (addressChanged) {
+      Coordinates coordinates =
+          geocodingService.getCoordinates(
+              property.getStreet(),
+              property.getStreetNumber(),
+              property.getPostalCode(),
+              property.getCity(),
+              property.getCountry());
+
+      property.setLatitude(coordinates.latitude());
+      property.setLongitude(coordinates.longitude());
+    }
+
+    propertyRepository.save(property);
+
+    return mapToDto(property);
+  }
+
+  @Transactional
+  public void deleteUnit(UUID ownerId, UUID propertyId, UUID unitId, String token) {
+
+    Property property =
+        propertyRepository
+            .findById(propertyId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+
+    if (!property.getOwnerId().equals(ownerId)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+    }
+
+    Unit unit =
+        unitRepository
+            .findByIdAndPropertyId(unitId, propertyId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found"));
+
+    if (reservationClient.hasReservationsForUnit(unitId, token)) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Unit has reservations");
+    }
+
+    unitRepository.delete(unit);
+  }
+
+  @Transactional
+  public void deleteProperty(UUID ownerId, UUID propertyId, String token) {
+    Property property =
+        propertyRepository
+            .findById(propertyId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+
+    if (!property.getOwnerId().equals(ownerId)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+    }
+
+    List<Unit> units = unitRepository.findByPropertyId(propertyId);
+
+    for (Unit unit : units) {
+      if (reservationClient.hasReservationsForUnit(unit.getId(), token)) {
+        throw new ResponseStatusException(
+            HttpStatus.CONFLICT, "Property contains units with reservations");
+      }
+    }
+
+    unitRepository.deleteByPropertyId(propertyId);
+    propertyRepository.delete(property);
+  }
+
+  @Transactional
+  public PropertyDto createProperty(UUID ownerId, PropertyCreateRequest request) {
+    Property newProperty = new Property();
+
+    newProperty.setOwnerId(ownerId);
+    newProperty.setTitle(request.title());
+    newProperty.setDescription(request.description());
+    newProperty.setCity(request.city());
+    newProperty.setCountry(request.country());
+    newProperty.setPostalCode(request.postalCode());
+    newProperty.setStreet(request.street());
+    newProperty.setStreetNumber(request.streetNumber());
+
+    Coordinates coordinates =
+        geocodingService.getCoordinates(
+            request.street(),
+            request.streetNumber(),
+            request.postalCode(),
+            request.city(),
+            request.country());
+
+    newProperty.setLatitude(coordinates.latitude());
+    newProperty.setLongitude(coordinates.longitude());
+
+    Property savedProperty = propertyRepository.save(newProperty);
+
+    return mapToDto(savedProperty);
+  }
+
+  @Transactional
+  public UnitDto createUnit(UUID ownerId, UUID propertyId, UnitCreateRequest request) {
+    Property property =
+        propertyRepository
+            .findById(propertyId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+
+    if (!property.getOwnerId().equals(ownerId)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+    }
+
+    Unit newUnit = new Unit();
+    newUnit.setPropertyId(propertyId);
+    newUnit.setName(request.name());
+    newUnit.setDescription(request.description());
+    newUnit.setPricePerNight(request.pricePerNight());
+    newUnit.setCapacity(request.capacity());
+    newUnit.setUnitType(request.unitType());
+    newUnit.setUnitNumber(request.unitNumber());
+    newUnit.setFloor(request.floor());
+
+    Unit saved = unitRepository.save(newUnit);
+
+    return mapToDto(saved, "PLN");
   }
 }

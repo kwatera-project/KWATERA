@@ -2,7 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getProperty } from "../api/propertyApi.ts";
 import type { Property, Unit } from "../types/property";
-import { getPropertyUnits } from "../api/ownerUnitApi.ts";
+import {deleteUnit, getPropertyUnits} from "../api/ownerUnitApi.ts";
 import { getPredictedPrice } from "../api/predictionApi.ts";
 import { useCurrency } from "../contexts/CurrencyContext";
 
@@ -19,6 +19,25 @@ export default function OwnerPropertyUnitsPage() {
         getPropertyUnits(propertyId).then(setUnits).catch(console.error);
     }, [propertyId]);
 
+    const handleDelete = async (propetryId: string, unitId: string) => {
+        const confirmed = window.confirm(
+            "Are you sure you want to delete this unit?"
+        );
+
+        if (!confirmed) return;
+
+        try {
+            await deleteUnit(propetryId, unitId);
+
+            setUnits(prev =>
+                prev.filter(p => p.id !== unitId)
+            );
+        } catch (error) {
+            console.error(error);
+            alert("Failed to delete unit");
+        }
+    };
+
     return (
         <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
             {/* Top Ghost Back Navigation Link */}
@@ -34,9 +53,12 @@ export default function OwnerPropertyUnitsPage() {
                     <p className="text-sm font-semibold text-[#7A7A7A] uppercase tracking-wider mt-1.5">Manage Accommodation Units</p>
                 </div>
 
-                <button className="px-5 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm">
+                <Link
+                    to={`/owner/properties/${propertyId}/units/new`}
+                    className="px-5 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm"
+                >
                     Add Unit
-                </button>
+                </Link>
             </div>
 
             <div className="space-y-6">
@@ -45,6 +67,7 @@ export default function OwnerPropertyUnitsPage() {
                         key={unit.id}
                         unit={unit}
                         propertyId={propertyId!}
+                        onDelete={handleDelete}
                     />
                 ))}
                 {units.length === 0 && (
@@ -57,7 +80,7 @@ export default function OwnerPropertyUnitsPage() {
     );
 }
 
-function UnitCard({ unit, propertyId }: { unit: Unit; propertyId: string }) {
+function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: string, onDelete: (propertyId: string, unitId: string) => void }) {
     const { currency } = useCurrency();
     const [predictedPrice, setPredictedPrice] = useState<number | null>(null);
     const [loadingPrediction, setLoadingPrediction] = useState(true);
@@ -128,10 +151,16 @@ function UnitCard({ unit, propertyId }: { unit: Unit; propertyId: string }) {
             </div>
 
             <div className="flex gap-3 w-full lg:w-auto justify-end border-t border-gray-100 lg:border-none pt-4 lg:pt-0 shrink-0">
-                <button className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all">
+                <Link
+                    to={`/owner/properties/${propertyId}/units/${unit.id}/edit`}
+                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all"
+                >
                     Edit
-                </button>
-                <button className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 text-sm rounded-lg shadow-sm transition-all">
+                </Link>
+                <button
+                    onClick={() => onDelete(propertyId, unit.id)}
+                    className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 text-sm rounded-lg shadow-sm transition-all"
+                >
                     Delete
                 </button>
             </div>

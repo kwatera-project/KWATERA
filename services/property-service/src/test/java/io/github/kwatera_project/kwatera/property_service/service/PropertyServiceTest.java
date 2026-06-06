@@ -3,8 +3,8 @@ package io.github.kwatera_project.kwatera.property_service.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import io.github.kwatera_project.kwatera.property_service.dto.UnitDto;
-import io.github.kwatera_project.kwatera.property_service.dto.UnitSettlementItemDto;
+import io.github.kwatera_project.kwatera.property_service.client.ReservationClient;
+import io.github.kwatera_project.kwatera.property_service.dto.*;
 import io.github.kwatera_project.kwatera.property_service.model.*;
 import io.github.kwatera_project.kwatera.property_service.repository.*;
 import java.math.BigDecimal;
@@ -26,6 +26,8 @@ class PropertyServiceTest {
   private UnitSettlementItemRepository unitSettlementItemRepository;
   private io.github.kwatera_project.kwatera.property_service.client.NbpExchangeRateClient
       nbpExchangeRateClient;
+  private ReservationClient reservationClient;
+  private GeocodingService geocodingService;
 
   @BeforeEach
   void setUp() {
@@ -36,6 +38,8 @@ class PropertyServiceTest {
     unitSettlementItemRepository = mock(UnitSettlementItemRepository.class);
     nbpExchangeRateClient =
         mock(io.github.kwatera_project.kwatera.property_service.client.NbpExchangeRateClient.class);
+    reservationClient = mock(ReservationClient.class);
+    geocodingService = mock(GeocodingService.class);
 
     propertyService =
         new PropertyService(
@@ -44,7 +48,9 @@ class PropertyServiceTest {
             propertyImageRepository,
             unitImageRepository,
             unitSettlementItemRepository,
-            nbpExchangeRateClient);
+            nbpExchangeRateClient,
+            reservationClient,
+            geocodingService);
   }
 
   @Test
@@ -392,5 +398,191 @@ class PropertyServiceTest {
             ResponseStatusException.class,
             () -> propertyService.getUnitsForOwnerProperty(UUID.randomUUID(), propertyId, "PLN"));
     assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+  }
+
+  @Test
+  void updateUnit_shouldUpdateFields_whenValidRequest() {
+    UUID ownerId = UUID.randomUUID();
+    UUID propertyId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    Property property = new Property();
+    property.setOwnerId(ownerId);
+
+    Unit unit = new Unit();
+    unit.setId(unitId);
+
+    UnitUpdateRequest request = mock(UnitUpdateRequest.class);
+    when(request.name()).thenReturn(Optional.of("New name"));
+    when(request.description()).thenReturn(Optional.empty());
+    when(request.pricePerNight()).thenReturn(Optional.of(BigDecimal.valueOf(200)));
+
+    when(propertyRepository.findById(propertyId)).thenReturn(Optional.of(property));
+    when(unitRepository.findByIdAndPropertyId(unitId, propertyId)).thenReturn(Optional.of(unit));
+    when(unitRepository.save(any())).thenReturn(unit);
+
+    UnitDto result = propertyService.updateUnit(ownerId, propertyId, unitId, "PLN", request);
+
+    assertEquals("New name", unit.getName());
+    assertEquals(BigDecimal.valueOf(200), unit.getPricePerNight());
+    assertNotNull(result);
+
+    verify(unitRepository).save(unit);
+  }
+
+  @Test
+  void updateUnit_shouldThrow404_whenPropertyNotFound() {
+    when(propertyRepository.findById(any())).thenReturn(Optional.empty());
+
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () ->
+                propertyService.updateUnit(
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
+                    "PLN",
+                    mock(UnitUpdateRequest.class)));
+
+    assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+  }
+
+  @Test
+  void updateUnit_shouldThrow403_whenNotOwner() {
+    Property property = new Property();
+    property.setOwnerId(UUID.randomUUID());
+
+    when(propertyRepository.findById(any())).thenReturn(Optional.of(property));
+
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () ->
+                propertyService.updateUnit(
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
+                    "PLN",
+                    mock(UnitUpdateRequest.class)));
+
+    assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+  }
+
+  @Test
+  void updateProperty_shouldCallGeocoding_whenAddressChanged() {
+    UUID ownerId = UUID.randomUUID();
+
+    Property property = new Property();
+    property.setOwnerId(ownerId);
+
+    PropertyUpdateRequest request = mock(PropertyUpdateRequest.class);
+
+    when(request.city()).thenReturn(Optional.of("Warsaw"));
+    when(request.country()).thenReturn(Optional.empty());
+    when(request.postalCode()).thenReturn(Optional.empty());
+    when(request.street()).thenReturn(Optional.empty());
+    when(request.streetNumber()).thenReturn(Optional.empty());
+
+    when(propertyRepository.findById(any())).thenReturn(Optional.of(property));
+    when(geocodingService.getCoordinates(any(), any(), any(), any(), any()))
+        .thenReturn(new Coordinates(new BigDecimal("52.1"), new BigDecimal("21.0")));
+
+    propertyService.updateProperty(ownerId, UUID.randomUUID(), request);
+
+    verify(geocodingService).getCoordinates(any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void deleteUnit_shouldThrow409_whenHasReservations() {
+    UUID ownerId = UUID.randomUUID();
+    UUID propertyId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    Property property = new Property();
+    property.setOwnerId(ownerId);
+
+    Unit unit = new Unit();
+    unit.setId(unitId);
+
+    when(propertyRepository.findById(propertyId)).thenReturn(Optional.of(property));
+    when(unitRepository.findByIdAndPropertyId(unitId, propertyId)).thenReturn(Optional.of(unit));
+    when(reservationClient.hasReservationsForUnit(unitId, "token")).thenReturn(true);
+
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> propertyService.deleteUnit(ownerId, propertyId, unitId, "token"));
+
+    assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
+  }
+
+  @Test
+  void deleteProperty_shouldThrow409_whenAnyUnitHasReservations() {
+    UUID ownerId = UUID.randomUUID();
+    UUID propertyId = UUID.randomUUID();
+
+    Property property = new Property();
+    property.setOwnerId(ownerId);
+
+    Unit unit = new Unit();
+    unit.setId(UUID.randomUUID());
+
+    when(propertyRepository.findById(propertyId)).thenReturn(Optional.of(property));
+    when(unitRepository.findByPropertyId(propertyId)).thenReturn(List.of(unit));
+    when(reservationClient.hasReservationsForUnit(unit.getId(), "token")).thenReturn(true);
+
+    ResponseStatusException ex =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> propertyService.deleteProperty(ownerId, propertyId, "token"));
+
+    assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
+  }
+
+  @Test
+  void createProperty_shouldSaveAndReturnDto() {
+    UUID ownerId = UUID.randomUUID();
+
+    PropertyCreateRequest request = mock(PropertyCreateRequest.class);
+    when(request.street()).thenReturn("Main");
+    when(request.streetNumber()).thenReturn("1");
+    when(request.postalCode()).thenReturn("00-001");
+    when(request.city()).thenReturn("Warsaw");
+    when(request.country()).thenReturn("PL");
+    when(request.title()).thenReturn("Test");
+
+    when(geocodingService.getCoordinates(any(), any(), any(), any(), any()))
+        .thenReturn(new Coordinates(new BigDecimal("10.0"), new BigDecimal("20.0")));
+
+    when(propertyRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    PropertyDto result = propertyService.createProperty(ownerId, request);
+
+    assertNotNull(result);
+    verify(geocodingService).getCoordinates(any(), any(), any(), any(), any());
+    verify(propertyRepository).save(any(Property.class));
+  }
+
+  @Test
+  void createUnit_shouldSaveUnit_whenValidData() {
+    UUID ownerId = UUID.randomUUID();
+    UUID propertyId = UUID.randomUUID();
+
+    Property property = new Property();
+    property.setOwnerId(ownerId);
+
+    UnitCreateRequest request = mock(UnitCreateRequest.class);
+
+    when(request.name()).thenReturn("Room");
+    when(request.pricePerNight()).thenReturn(BigDecimal.TEN);
+
+    when(propertyRepository.findById(propertyId)).thenReturn(Optional.of(property));
+    when(unitRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    UnitDto result = propertyService.createUnit(ownerId, propertyId, request);
+
+    assertNotNull(result);
+    verify(unitRepository).save(any(Unit.class));
   }
 }

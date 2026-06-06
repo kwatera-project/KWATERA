@@ -11,6 +11,10 @@ eureka:
   client:
     enabled: false
 
+services:
+  reservation:
+    url: http://localhost:9999
+
 app:
   jpa:
     auditing:

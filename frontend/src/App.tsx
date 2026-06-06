@@ -20,6 +20,10 @@ import MeterReadingsPage from "./pages/MeterReadingsPage";
 import AdminMeterReadingsPage from "./pages/AdminMeterReadingsPage";
 import OwnerPropertiesPage from "./pages/OwnerPropertiesPage.tsx";
 import OwnerPropertyUnitsPage from "./pages/OwnerPropertyUnitsPage.tsx";
+import EditPropertyPage from "./pages/EditPropertyPage.tsx";
+import CreatePropertyPage from "./pages/CreatePropertyPage.tsx";
+import CreateUnitPage from "./pages/CreateUnitPage.tsx";
+import EditUnitPage from "./pages/EditUnitPage.tsx";
 
 function App() {
     return (
@@ -119,6 +123,22 @@ function App() {
                             <OwnerPropertyUnitsPage/>
                         </ProtectedRoute>
                     }
+                />
+                <Route
+                    path="/owner/properties/new"
+                    element={<CreatePropertyPage />}
+                />
+                <Route
+                    path="/owner/properties/:propertyId/edit"
+                    element={<EditPropertyPage />}
+                />
+                <Route
+                    path="/owner/properties/:propertyId/units/new"
+                    element={<CreateUnitPage />}
+                />
+                <Route
+                    path="/owner/properties/:propertyId/units/:unitId/edit"
+                    element={<EditUnitPage />}
                 />
             </Routes>
         </CurrencyProvider>
