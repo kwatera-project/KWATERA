@@ -24,11 +24,10 @@ export default function ReservationDetailsPage() {
     if (error) return <div className="p-8 text-center text-red-600 font-semibold">{error}</div>;
     if (!reservation) return <div className="p-8 text-center text-gray-500 font-semibold">Reservation not found.</div>;
 
-    const displayCurrency = reservation.currencyInfo?.displayCurrency || 'PLN';
-
     const token = localStorage.getItem("token");
     const roles = getUserRoles(token);
     const isAdminOrOwner = roles.includes("ROLE_ADMIN") || roles.includes("ROLE_OWNER");
+    const displayCurrency = reservation.currencyInfo?.displayCurrency || 'PLN';
     const returnPath = isAdminOrOwner ? "/admin/reservations" : "/my-reservations";
     const returnLabel = isAdminOrOwner ? "Back to Reservations Overview" : "Back to My Reservations";
 

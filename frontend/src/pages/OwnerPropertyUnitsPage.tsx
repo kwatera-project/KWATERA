@@ -4,7 +4,6 @@ import { getProperty } from "../api/propertyApi.ts";
 import type { Property, Unit } from "../types/property";
 import { getPropertyUnits } from "../api/ownerUnitApi.ts";
 import { getPredictedPrice } from "../api/predictionApi.ts";
-import { useCurrency } from "../contexts/CurrencyContext";
 
 export default function OwnerPropertyUnitsPage() {
     const { propertyId } = useParams();
@@ -58,7 +57,6 @@ export default function OwnerPropertyUnitsPage() {
 }
 
 function UnitCard({ unit, propertyId }: { unit: Unit; propertyId: string }) {
-    const { currency } = useCurrency();
     const [predictedPrice, setPredictedPrice] = useState<number | null>(null);
     const [loadingPrediction, setLoadingPrediction] = useState(true);
 
@@ -108,7 +106,7 @@ function UnitCard({ unit, propertyId }: { unit: Unit; propertyId: string }) {
                     <div>
                         <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-1">Current Price</span>
                         <div className="text-sm font-bold text-[#7A7A7A]">
-                            <span className="text-xl font-black text-[#1A1A1A]">{unit.pricePerNight} {currency}</span> / night
+                            <span className="text-xl font-black text-[#1A1A1A]">{unit.pricePerNight.toFixed(2)} PLN</span> / night
                         </div>
                     </div>
 
@@ -118,7 +116,7 @@ function UnitCard({ unit, propertyId }: { unit: Unit; propertyId: string }) {
                             {loadingPrediction ? (
                                 <span className="text-gray-400 text-sm animate-pulse font-semibold">Calculating...</span>
                             ) : predictedPrice !== null ? (
-                                <span className="text-xl font-black text-indigo-600">{predictedPrice} {currency}</span>
+                                <span className="text-xl font-black text-indigo-600">{predictedPrice.toFixed(2)} PLN</span>
                             ) : (
                                 <span className="text-amber-600 text-sm font-semibold">Unavailable</span>
                             )}
