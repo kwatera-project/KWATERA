@@ -32,12 +32,16 @@ public class ReservationService {
   private final RestTemplate restTemplate;
   private final NbpExchangeRateClient nbpExchangeRateClient;
   private final EmailNotificationService emailNotificationService;
+  private final BusinessDateProvider businessDateProvider;
 
   public AvailabilityDto checkAvailability(UUID unitId, LocalDate from, LocalDate to) {
     if (from == null || to == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Dates are required");
     }
-    if (from.isBefore(LocalDate.now())) {
+
+    LocalDate today = businessDateProvider.today();
+
+    if (from.isBefore(today)) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Date is in the past");
     }
     if (!from.isBefore(to)) {
@@ -307,8 +311,8 @@ public class ReservationService {
           PropertyDetailsDto propertyDto =
               restTemplate.getForObject(propertyUrl, PropertyDetailsDto.class);
           if (propertyDto != null) {
-            if (propertyDto.location() != null) {
-              city = propertyDto.location();
+            if (propertyDto.city() != null) {
+              city = propertyDto.city();
             }
             if (propertyDto.ownerId() != null) {
               UUID ownerId = propertyDto.ownerId();
@@ -412,11 +416,13 @@ public class ReservationService {
   public ReservationMetricsDto getDashboardReservationMetrics(
       LocalDate startDate, LocalDate endDate, UUID ownerId, boolean isAdmin) {
 
-    LocalDate start = (startDate != null) ? startDate : LocalDate.now().withDayOfMonth(1);
+    LocalDate today = businessDateProvider.today();
+
+    LocalDate start = (startDate != null) ? startDate : today.withDayOfMonth(1);
     LocalDate end =
         (endDate != null)
             ? endDate
-            : LocalDate.now().with(java.time.temporal.TemporalAdjusters.lastDayOfMonth());
+            : today.with(java.time.temporal.TemporalAdjusters.lastDayOfMonth());
 
     if (start.isAfter(end)) {
       throw new ResponseStatusException(
@@ -471,5 +477,5 @@ public class ReservationService {
 
   record UnitDetailsDto(UUID propertyId, String name) {}
 
-  record PropertyDetailsDto(String title, String location, UUID ownerId) {}
+  record PropertyDetailsDto(String title, String city, UUID ownerId) {}
 }

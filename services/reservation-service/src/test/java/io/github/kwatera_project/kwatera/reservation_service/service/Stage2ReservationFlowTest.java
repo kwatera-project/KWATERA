@@ -56,7 +56,8 @@ class Stage2ReservationFlowTest {
             mock(
                 io.github.kwatera_project.kwatera.reservation_service.client.NbpExchangeRateClient
                     .class),
-            emailNotificationService);
+            emailNotificationService,
+            new BusinessDateProvider("Europe/Warsaw"));
     adminReservationService =
         new AdminReservationService(
             reservationRepository,

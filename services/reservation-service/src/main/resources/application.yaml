@@ -41,6 +41,7 @@ management:
         include: health,info
 
 kwatera:
+  business-zone: ${KWATERA_BUSINESS_ZONE:Europe/Warsaw}
   mail:
     from: ${KWATERA_MAIL_FROM:no-reply@kwatera.local}
     test-recipient: ${KWATERA_MAIL_TEST_RECIPIENT:guest@kwatera.local}

@@ -104,7 +104,7 @@ export default function ReservationDetailsPage() {
                                 </p>
                                 {reservation.city && (
                                     <p className="text-sm font-semibold text-gray-600 mt-1 flex items-center gap-1">
-                                        <span>Location:</span>
+                                        <span>City:</span>
                                         <span className="text-[#1A1A1A]">{reservation.city}</span>
                                     </p>
                                 )}
