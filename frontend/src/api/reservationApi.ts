@@ -2,7 +2,13 @@ import { GATEWAY_BASE_URL } from "./apiConfig";
 
 const API_URL = `${GATEWAY_BASE_URL}/api/v1/reservations`;
 
-export async function createReservation(unitId: string, from: string, to: string, currency: string) {
+export async function createReservation(
+    unitId: string,
+    from: string,
+    to: string,
+    currency: string,
+    extraDetails?: Record<string, unknown>
+) {
     const token = localStorage.getItem("token");
 
     if (!token) {
@@ -19,7 +25,8 @@ export async function createReservation(unitId: string, from: string, to: string
             unitId: unitId,
             startDate: from,
             endDate: to,
-            currency: currency
+            currency: currency,
+            ...extraDetails
         })
     });
 
