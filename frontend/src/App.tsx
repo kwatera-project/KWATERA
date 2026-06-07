@@ -5,6 +5,7 @@ import RegisterForm from "./components/RegisterForm"
 import LoginForm from "./components/LoginForm.tsx";
 import PropertyDetailsPage from "./pages/PropertyDetailsPage";
 import PropertiesPage from "./pages/PropertiesPage.tsx";
+import CheckoutPage from "./pages/CheckoutPage";
 import AdminReservationList from "./components/AdminReservationList"
 import ProtectedRoute from "./components/ProtectedRoute"
 import HomePage from "./pages/HomePage";
@@ -80,6 +81,14 @@ function App() {
                 <Route path="/properties" element={<PropertiesPage/>}/>
                 <Route path="/catalog" element={<PropertiesPage/>}/>
                 <Route path="/property/:id" element={<PropertyDetailsPage/>}/>
+                <Route
+                    path="/checkout"
+                    element={
+                        <ProtectedRoute>
+                            <CheckoutPage/>
+                        </ProtectedRoute>
+                    }
+                />
                 <Route path="/payment-cancel" element={<PaymentCancelPage/>}/>
                 <Route
                     path="/settlements/:id"
