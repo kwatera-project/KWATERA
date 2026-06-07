@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { getProperty, getUnits, getPropertyImages } from "../api/propertyApi";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import type { Unit, Property } from "../types/property";
 import { checkAvailability, getOccupiedDates } from "../api/availabilityApi";
-import { createReservation } from "../api/reservationApi";
-import { GATEWAY_BASE_URL } from "../api/apiConfig";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { format } from "date-fns";
@@ -20,6 +18,7 @@ interface AvailabilityResponse {
 export default function PropertyDetailsPage() {
     const { id } = useParams();
     const [searchParams] = useSearchParams();
+    const navigate = useNavigate();
     const initialSearch = useMemo(() => ({
         checkIn: parseSearchDate(searchParams.get("checkIn")),
         checkOut: parseSearchDate(searchParams.get("checkOut")),
@@ -240,9 +239,11 @@ export default function PropertyDetailsPage() {
         setBookingState(prev => ({ ...prev, [unitId]: { loading: false, error: undefined } }));
     };
 
-    const handleBook = async (unitId: string) => {
+    const handleBook = (unitId: string) => {
         const unit = units.find((u) => u.id === unitId);
-        if (unit && initialSearch.guests && unit.capacity < initialSearch.guests) {
+        if (!unit) return;
+
+        if (initialSearch.guests && unit.capacity < initialSearch.guests) {
             setBookingState(prev => ({
                 ...prev,
                 [unitId]: {
@@ -261,48 +262,32 @@ export default function PropertyDetailsPage() {
             }));
             return;
         }
+
+        const token = localStorage.getItem("token");
+        if (!token) {
+            setBookingState(prev => ({
+                ...prev,
+                [unitId]: { loading: false, error: "Log in to book this unit" }
+            }));
+            return;
+        }
+
         const from = format(dates[0], 'yyyy-MM-dd');
         const to = format(dates[1], 'yyyy-MM-dd');
-        setBookingState(prev => ({ ...prev, [unitId]: { loading: true } }));
-        try {
-            const res = await createReservation(unitId, from, to, currency);
-            setBookingState(prev => ({ ...prev, [unitId]: { loading: false, success: true } }));
-            const token = localStorage.getItem("token");
-            const checkoutRes = await fetch(
-                `${GATEWAY_BASE_URL}/api/billing/checkout/${res.id}`,
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        type: "ACCOMMODATION",
-                        description: "Accommodation fee",
-                        quantity: 1,
-                        unitPrice: res.totalPrice
-                    })
-                }
-            );
+        const nights = calculateNights(dates[0], dates[1]);
+        const totalPrice = nights * unit.pricePerNight;
 
-            if (!checkoutRes.ok) {
-                throw new Error(`Checkout failed: ${checkoutRes.status}`);
+        navigate("/checkout", {
+            state: {
+                property,
+                unit,
+                checkIn: from,
+                checkOut: to,
+                nights,
+                totalPrice,
+                currency
             }
-
-            const checkoutUrl = await checkoutRes.text();
-
-            try {
-                new URL(checkoutUrl);
-            } catch {
-                throw new Error("Invalid checkout URL received");
-            }
-
-            window.location.assign(checkoutUrl);
-
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : "An error occurred";
-            setBookingState(prev => ({ ...prev, [unitId]: { loading: false, error: message } }));
-        }
+        });
     };
 
     const calculateNights = (start: Date | null, end: Date | null) => {
