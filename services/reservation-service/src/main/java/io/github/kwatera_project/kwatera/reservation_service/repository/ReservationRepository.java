@@ -52,4 +52,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
       @Param("unitIds") List<UUID> unitIds,
       @Param("startDate") LocalDate startDate,
       @Param("endDate") LocalDate endDate);
+
+  List<Reservation> findByStatusAndCreatedAtBefore(
+      ReservationStatus status, java.time.Instant threshold);
 }
