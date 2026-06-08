@@ -54,7 +54,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
       @Param("endDate") LocalDate endDate);
 
   boolean existsByUnitId(UUID unitId);
-  
+
   List<Reservation> findByStatusAndCreatedAtBefore(
       ReservationStatus status, java.time.Instant threshold);
 }
