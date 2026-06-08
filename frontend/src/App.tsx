@@ -20,6 +20,7 @@ import MeterReadingsPage from "./pages/MeterReadingsPage";
 import AdminMeterReadingsPage from "./pages/AdminMeterReadingsPage";
 import OwnerPropertiesPage from "./pages/OwnerPropertiesPage.tsx";
 import OwnerPropertyUnitsPage from "./pages/OwnerPropertyUnitsPage.tsx";
+import AboutPage from "./pages/AboutPage";
 
 function App() {
     return (
@@ -27,6 +28,7 @@ function App() {
             <Navbar/>
             <Routes>
                 <Route path="/" element={<HomePage/>}/>
+                <Route path="/about" element={<AboutPage/>}/>
                 <Route path="/register" element={<RegisterForm/>}/>
                 <Route path="/login" element={<LoginForm/>}/>
                 <Route
