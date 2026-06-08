@@ -119,10 +119,9 @@ public class PropertyService {
 
   public List<UnitImage> getUnitImages(UUID propertyId, UUID unitId) {
 
-    Unit unit =
-        unitRepository
-            .findByIdAndPropertyId(unitId, propertyId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found"));
+    unitRepository
+        .findByIdAndPropertyId(unitId, propertyId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found"));
 
     return unitImageRepository.findByUnitId(unitId);
   }
@@ -475,10 +474,9 @@ public class PropertyService {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
     }
 
-    Unit unit =
-        unitRepository
-            .findByIdAndPropertyId(unitId, propertyId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found"));
+    unitRepository
+        .findByIdAndPropertyId(unitId, propertyId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found"));
 
     String extension = FilenameUtils.getExtension(file.getOriginalFilename());
 
@@ -557,10 +555,9 @@ public class PropertyService {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
     }
 
-    Unit unit =
-        unitRepository
-            .findByIdAndPropertyId(unitId, propertyId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found"));
+    unitRepository
+        .findByIdAndPropertyId(unitId, propertyId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found"));
 
     UnitImage unitImage =
         unitImageRepository
@@ -628,10 +625,9 @@ public class PropertyService {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
     }
 
-    Unit unit =
-        unitRepository
-            .findByIdAndPropertyId(unitId, propertyId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found"));
+    unitRepository
+        .findByIdAndPropertyId(unitId, propertyId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found"));
 
     UnitImage unitImage =
         unitImageRepository
