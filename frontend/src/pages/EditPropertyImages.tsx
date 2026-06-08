@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import {useCallback, useEffect, useState} from "react";
 import { getPropertyImages } from "../api/propertyApi.ts";
 import { deletePropertyImage, setPropertyImageAsMain, uploadPropertyImage } from "../api/ownerPropertyApi.ts";
 import ImageUploadForm from "../contexts/ImageUploadForm.tsx";
@@ -17,7 +17,7 @@ export default function EditPropertyImages() {
     const [loading, setLoading] = useState(true);
     const [images, setImages] = useState<PropertyImage[]>([]);
 
-    const fetchImages = () => {
+    const fetchImages = useCallback(() => {
         if (!propertyId) return;
 
         setLoading(true);
@@ -33,11 +33,11 @@ export default function EditPropertyImages() {
                 console.error("Failed to fetch property images", error);
             })
             .finally(() => setLoading(false));
-    };
+    }, [propertyId]);
 
     useEffect(() => {
         fetchImages();
-    }, [propertyId]);
+    }, [fetchImages]);
 
     const handleImageSubmit = async (data: { file: File; isMain: boolean }) => {
         if (!propertyId) return;

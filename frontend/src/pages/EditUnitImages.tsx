@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import {useCallback, useEffect, useState} from "react";
 import ImageUploadForm from "../contexts/ImageUploadForm.tsx";
 import { deleteUnitImage, setUnitImageAsMain, uploadUnitImage } from "../api/ownerUnitApi.ts";
 import { getUnitImages } from "../api/propertyApi.ts";
@@ -17,7 +17,7 @@ export default function EditUnitImages() {
     const [loading, setLoading] = useState(true);
     const [images, setImages] = useState<UnitImage[]>([]);
 
-    const fetchImages = () => {
+    const fetchImages = useCallback(() => {
         if (!unitId || !propertyId) return;
 
         setLoading(true);
@@ -33,11 +33,12 @@ export default function EditUnitImages() {
                 console.error("Failed to fetch unit images", error);
             })
             .finally(() => setLoading(false));
-    };
+
+    }, [propertyId, unitId]);
 
     useEffect(() => {
         fetchImages();
-    }, [propertyId, unitId]);
+    }, [fetchImages]);
 
     const handleImageSubmit = async (data: { file: File; isMain: boolean }) => {
         if (!unitId || !propertyId) return;
