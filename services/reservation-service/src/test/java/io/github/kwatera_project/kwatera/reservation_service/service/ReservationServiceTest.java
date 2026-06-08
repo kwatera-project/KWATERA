@@ -1688,4 +1688,71 @@ class ReservationServiceTest {
     verify(repository)
         .findActiveReservationsInDateRange(expectedBusinessMonthStart, expectedBusinessMonthEnd);
   }
+
+  @Test
+  void shouldCancelExpiredPendingReservationsAndSendEmail() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    EmailNotificationService emailService = mock(EmailNotificationService.class);
+    ReservationService service =
+        new ReservationService(
+            repository,
+            mock(RestTemplate.class),
+            mock(NbpExchangeRateClient.class),
+            emailService,
+            new BusinessDateProvider("Europe/Warsaw"));
+
+    UUID resId = UUID.randomUUID();
+    Reservation reservation = new Reservation();
+    reservation.setId(resId);
+    reservation.setStatus(ReservationStatus.PENDING);
+    reservation.setGuestEmail("test@example.com");
+
+    Instant threshold = Instant.now().minusSeconds(60);
+
+    when(repository.findByStatusAndCreatedAtBefore(ReservationStatus.PENDING, threshold))
+        .thenReturn(List.of(reservation));
+
+    service.cancelExpiredPendingReservations(threshold);
+
+    assertEquals(ReservationStatus.CANCELLED, reservation.getStatus());
+    verify(repository).save(reservation);
+    verify(emailService)
+        .sendReservationStatusChanged(
+            reservation,
+            ReservationStatus.PENDING,
+            ReservationStatus.CANCELLED,
+            "test@example.com");
+  }
+
+  @Test
+  void shouldProceedWithCancellationEvenIfEmailFails() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    EmailNotificationService emailService = mock(EmailNotificationService.class);
+    ReservationService service =
+        new ReservationService(
+            repository,
+            mock(RestTemplate.class),
+            mock(NbpExchangeRateClient.class),
+            emailService,
+            new BusinessDateProvider("Europe/Warsaw"));
+
+    UUID resId = UUID.randomUUID();
+    Reservation reservation = new Reservation();
+    reservation.setId(resId);
+    reservation.setStatus(ReservationStatus.PENDING);
+    reservation.setGuestEmail("test@example.com");
+
+    Instant threshold = Instant.now().minusSeconds(60);
+
+    when(repository.findByStatusAndCreatedAtBefore(ReservationStatus.PENDING, threshold))
+        .thenReturn(List.of(reservation));
+    doThrow(new RuntimeException("Email service down"))
+        .when(emailService)
+        .sendReservationStatusChanged(any(), any(), any(), any());
+
+    service.cancelExpiredPendingReservations(threshold);
+
+    assertEquals(ReservationStatus.CANCELLED, reservation.getStatus());
+    verify(repository).save(reservation);
+  }
 }

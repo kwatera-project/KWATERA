@@ -14,3 +14,9 @@ spring:
 eureka:
   client:
     enabled: false
+
+kwatera:
+  reservation:
+    cleanup:
+      cron: "0 */5 * * * *"
+      expiration-minutes: 15
