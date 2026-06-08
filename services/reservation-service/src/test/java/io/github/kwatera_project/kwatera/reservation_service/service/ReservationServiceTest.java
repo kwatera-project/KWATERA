@@ -1755,4 +1755,114 @@ class ReservationServiceTest {
     assertEquals(ReservationStatus.CANCELLED, reservation.getStatus());
     verify(repository).save(reservation);
   }
+
+  @Test
+  void getReservationDetailsInternal_shouldReturnDtoSuccessfully() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    EmailNotificationService emailService = mock(EmailNotificationService.class);
+    ReservationService service =
+        new ReservationService(
+            repository,
+            restTemplate,
+            mock(NbpExchangeRateClient.class),
+            emailService,
+            new BusinessDateProvider("Europe/Warsaw"));
+
+    UUID reservationId = UUID.randomUUID();
+    UUID userId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    Reservation reservation = new Reservation();
+    reservation.setId(reservationId);
+    reservation.setUserId(userId);
+    reservation.setUnitId(unitId);
+    reservation.setStartDate(LocalDate.now());
+    reservation.setEndDate(LocalDate.now().plusDays(2));
+    reservation.setStatus(ReservationStatus.CONFIRMED);
+    reservation.setCreatedAt(Instant.now());
+    reservation.setTotalPrice(BigDecimal.valueOf(100));
+    reservation.setPaymentCurrency("USD");
+    reservation.setPaymentExchangeRate(BigDecimal.valueOf(4.0));
+
+    when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
+
+    UUID propertyId = UUID.randomUUID();
+    when(restTemplate.getForObject(
+            contains("/units/"), eq(ReservationService.UnitDetailsDto.class)))
+        .thenReturn(new ReservationService.UnitDetailsDto(propertyId, "Unit Name"));
+    when(restTemplate.getForObject(
+            contains("/properties/"), eq(ReservationService.PropertyDetailsDto.class)))
+        .thenReturn(
+            new ReservationService.PropertyDetailsDto(
+                "Property Title",
+                "Warsaw",
+                UUID.fromString("22222222-2222-2222-2222-222222222222")));
+
+    ReservationDetailsDto dto = service.getReservationDetailsInternal(reservationId);
+
+    assertNotNull(dto);
+    assertEquals("Unit Name", dto.getUnitName());
+    assertEquals("Warsaw", dto.getCity());
+    assertEquals("John Owner", dto.getOwnerName());
+    assertEquals("owner1@example.com", dto.getOwnerEmail());
+    assertEquals(BigDecimal.valueOf(25).setScale(2), dto.getConvertedTotalPrice());
+  }
+
+  @Test
+  void notifyUpcomingReservations_shouldSendUpcomingEmails() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    EmailNotificationService emailService = mock(EmailNotificationService.class);
+    BusinessDateProvider businessDateProvider = mock(BusinessDateProvider.class);
+    ReservationService service =
+        new ReservationService(
+            repository,
+            mock(RestTemplate.class),
+            mock(NbpExchangeRateClient.class),
+            emailService,
+            businessDateProvider);
+
+    LocalDate today = LocalDate.of(2026, 6, 6);
+    when(businessDateProvider.today()).thenReturn(today);
+
+    Reservation r = new Reservation();
+    r.setId(UUID.randomUUID());
+    r.setStatus(ReservationStatus.CONFIRMED);
+
+    when(repository.findByStartDateAndStatus(today.plusDays(1), ReservationStatus.CONFIRMED))
+        .thenReturn(List.of(r));
+
+    service.notifyUpcomingReservations();
+
+    verify(emailService).sendOwnerReservationUpcoming(r);
+  }
+
+  @Test
+  void notifyUpcomingReservations_shouldProceedEvenIfEmailFails() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    EmailNotificationService emailService = mock(EmailNotificationService.class);
+    BusinessDateProvider businessDateProvider = mock(BusinessDateProvider.class);
+    ReservationService service =
+        new ReservationService(
+            repository,
+            mock(RestTemplate.class),
+            mock(NbpExchangeRateClient.class),
+            emailService,
+            businessDateProvider);
+
+    LocalDate today = LocalDate.of(2026, 6, 6);
+    when(businessDateProvider.today()).thenReturn(today);
+
+    Reservation r = new Reservation();
+    r.setId(UUID.randomUUID());
+    r.setStatus(ReservationStatus.CONFIRMED);
+
+    when(repository.findByStartDateAndStatus(today.plusDays(1), ReservationStatus.CONFIRMED))
+        .thenReturn(List.of(r));
+    doThrow(new RuntimeException("Email service down"))
+        .when(emailService)
+        .sendOwnerReservationUpcoming(any());
+
+    assertDoesNotThrow(() -> service.notifyUpcomingReservations());
+  }
 }

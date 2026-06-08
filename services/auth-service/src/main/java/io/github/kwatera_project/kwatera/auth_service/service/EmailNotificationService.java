@@ -56,10 +56,9 @@ public class EmailNotificationService {
       helper.setText(htmlBody, true);
 
       mailSender.send(message);
-      log.info("Sent email notification '{}' to {}", subject, recipient);
+      log.info("Sent email notification '{}'", subject);
     } catch (MailException | MessagingException e) {
-      log.warn(
-          "Failed to send email notification '{}' to {}: {}", subject, recipient, e.getMessage());
+      log.warn("Failed to send email notification '{}': {}", subject, e.getMessage());
     }
   }
 

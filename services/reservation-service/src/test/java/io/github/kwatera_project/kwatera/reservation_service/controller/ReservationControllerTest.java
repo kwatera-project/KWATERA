@@ -265,4 +265,19 @@ class ReservationControllerTest {
 
     verifyNoInteractions(reservationService);
   }
+
+  @Test
+  void shouldGetReservationDetailsInternal_withoutAuth() throws Exception {
+    UUID reservationId = UUID.randomUUID();
+    ReservationDetailsDto dto = new ReservationDetailsDto();
+    dto.setId(reservationId);
+
+    when(reservationService.getReservationDetailsInternal(eq(reservationId))).thenReturn(dto);
+
+    mockMvc
+        .perform(get("/api/v1/reservations/internal/" + reservationId))
+        .andExpect(status().isOk());
+
+    verify(reservationService).getReservationDetailsInternal(eq(reservationId));
+  }
 }

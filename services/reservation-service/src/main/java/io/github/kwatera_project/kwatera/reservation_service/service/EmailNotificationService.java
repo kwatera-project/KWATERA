@@ -43,33 +43,35 @@ public class EmailNotificationService {
     this.testRecipient = testRecipient;
   }
 
-  public void sendReservationCreated(Reservation reservation, String recipientEmail) {
-    String subject = "Reservation created";
+  private Context createBaseContext(Reservation reservation, String subject) {
     String propertyName = fetchPropertyName(reservation.getUnitId());
     long numberOfNights =
         ChronoUnit.DAYS.between(reservation.getStartDate(), reservation.getEndDate());
 
     Context context = new Context();
     context.setVariable("subject", subject);
-    context.setVariable("title", "Reservation Created");
-    context.setVariable(
-        "message",
-        "Your reservation has been successfully created. Here are the details of your upcoming stay:");
     context.setVariable("reservation", reservation);
     context.setVariable("propertyName", propertyName);
     context.setVariable("numberOfNights", numberOfNights);
-    context.setVariable("statusLabel", reservation.getStatus().name());
-    context.setVariable("statusStyle", getStatusStyle(reservation.getStatus()));
-    context.setVariable("oldStatus", null);
     context.setVariable(
         "formattedPrice",
         formatPrice(
             reservation.getTotalPrice(),
             reservation.getPaymentCurrency(),
             reservation.getPaymentExchangeRate()));
+    return context;
+  }
 
-    String htmlBody = templateEngine.process("reservation-confirmation", context);
-    send(recipientEmail, subject, htmlBody, String.valueOf(reservation.getId()));
+  public void sendReservationCreated(Reservation reservation, String recipientEmail) {
+    sendGuestNotification(
+        reservation,
+        recipientEmail,
+        "Reservation created",
+        "Reservation Created",
+        "Your reservation has been successfully created. Here are the details of your upcoming stay:",
+        reservation.getStatus(),
+        null,
+        null);
   }
 
   public void sendReservationStatusChanged(
@@ -77,127 +79,69 @@ public class EmailNotificationService {
       ReservationStatus oldStatus,
       ReservationStatus newStatus,
       String recipientEmail) {
-    String subject = "Reservation status changed";
-    String propertyName = fetchPropertyName(reservation.getUnitId());
-    long numberOfNights =
-        ChronoUnit.DAYS.between(reservation.getStartDate(), reservation.getEndDate());
-
-    Context context = new Context();
-    context.setVariable("subject", subject);
-    context.setVariable("title", "Reservation Status Updated");
-    context.setVariable(
-        "message",
-        "Your reservation status was updated. Please review the details of the change below:");
-    context.setVariable("reservation", reservation);
-    context.setVariable("propertyName", propertyName);
-    context.setVariable("numberOfNights", numberOfNights);
-    context.setVariable("statusLabel", newStatus.name());
-    context.setVariable("statusStyle", getStatusStyle(newStatus));
-    context.setVariable("oldStatus", oldStatus.name());
-    context.setVariable("newStatus", newStatus.name());
-    context.setVariable(
-        "formattedPrice",
-        formatPrice(
-            reservation.getTotalPrice(),
-            reservation.getPaymentCurrency(),
-            reservation.getPaymentExchangeRate()));
-
-    String htmlBody = templateEngine.process("reservation-confirmation", context);
-    send(recipientEmail, subject, htmlBody, String.valueOf(reservation.getId()));
+    sendGuestNotification(
+        reservation,
+        recipientEmail,
+        "Reservation status changed",
+        "Reservation Status Updated",
+        "Your reservation status was updated. Please review the details of the change below:",
+        newStatus,
+        oldStatus != null ? oldStatus.name() : null,
+        newStatus.name());
   }
 
   public void sendOwnerReservationCreated(Reservation reservation) {
     String subject = "New booking Alert";
-    String ownerEmail = fetchOwnerEmail(reservation.getUnitId());
-    String propertyName = fetchPropertyName(reservation.getUnitId());
-    long numberOfNights =
-        ChronoUnit.DAYS.between(reservation.getStartDate(), reservation.getEndDate());
-
-    Context context = new Context();
-    context.setVariable("subject", subject);
-    context.setVariable("reservation", reservation);
-    context.setVariable("propertyName", propertyName);
-    context.setVariable("numberOfNights", numberOfNights);
-    context.setVariable(
-        "formattedPrice",
-        formatPrice(
-            reservation.getTotalPrice(),
-            reservation.getPaymentCurrency(),
-            reservation.getPaymentExchangeRate()));
-
-    String htmlBody = templateEngine.process("owner-reservation-created", context);
-    send(ownerEmail, subject, htmlBody, String.valueOf(reservation.getId()));
+    Context context = createBaseContext(reservation, subject);
+    sendOwnerNotification(reservation, subject, "owner-reservation-created", context);
   }
 
   public void sendOwnerReservationCancelled(Reservation reservation) {
     String subject = "Reservation Cancelled Alert";
-    String ownerEmail = fetchOwnerEmail(reservation.getUnitId());
-    String propertyName = fetchPropertyName(reservation.getUnitId());
-    long numberOfNights =
-        ChronoUnit.DAYS.between(reservation.getStartDate(), reservation.getEndDate());
-
-    Context context = new Context();
-    context.setVariable("subject", subject);
-    context.setVariable("reservation", reservation);
-    context.setVariable("propertyName", propertyName);
-    context.setVariable("numberOfNights", numberOfNights);
-    context.setVariable(
-        "formattedPrice",
-        formatPrice(
-            reservation.getTotalPrice(),
-            reservation.getPaymentCurrency(),
-            reservation.getPaymentExchangeRate()));
-
-    String htmlBody = templateEngine.process("owner-reservation-cancelled", context);
-    send(ownerEmail, subject, htmlBody, String.valueOf(reservation.getId()));
+    Context context = createBaseContext(reservation, subject);
+    sendOwnerNotification(reservation, subject, "owner-reservation-cancelled", context);
   }
 
   public void sendOwnerReservationUpcoming(Reservation reservation) {
     String subject = "Stay Starting Tomorrow Alert";
-    String ownerEmail = fetchOwnerEmail(reservation.getUnitId());
-    String propertyName = fetchPropertyName(reservation.getUnitId());
-    long numberOfNights =
-        ChronoUnit.DAYS.between(reservation.getStartDate(), reservation.getEndDate());
-
-    Context context = new Context();
-    context.setVariable("subject", subject);
-    context.setVariable("reservation", reservation);
-    context.setVariable("propertyName", propertyName);
-    context.setVariable("numberOfNights", numberOfNights);
-    context.setVariable(
-        "formattedPrice",
-        formatPrice(
-            reservation.getTotalPrice(),
-            reservation.getPaymentCurrency(),
-            reservation.getPaymentExchangeRate()));
-
-    String htmlBody = templateEngine.process("owner-reservation-upcoming", context);
-    send(ownerEmail, subject, htmlBody, String.valueOf(reservation.getId()));
+    Context context = createBaseContext(reservation, subject);
+    sendOwnerNotification(reservation, subject, "owner-reservation-upcoming", context);
   }
 
   public void sendOwnerReservationStatusChanged(
       Reservation reservation, ReservationStatus oldStatus, ReservationStatus newStatus) {
     String subject = "Reservation Status Changed Alert";
-    String ownerEmail = fetchOwnerEmail(reservation.getUnitId());
-    String propertyName = fetchPropertyName(reservation.getUnitId());
-    long numberOfNights =
-        ChronoUnit.DAYS.between(reservation.getStartDate(), reservation.getEndDate());
-
-    Context context = new Context();
-    context.setVariable("subject", subject);
-    context.setVariable("reservation", reservation);
-    context.setVariable("propertyName", propertyName);
-    context.setVariable("numberOfNights", numberOfNights);
+    Context context = createBaseContext(reservation, subject);
     context.setVariable("oldStatus", oldStatus.name());
     context.setVariable("newStatus", newStatus.name());
-    context.setVariable(
-        "formattedPrice",
-        formatPrice(
-            reservation.getTotalPrice(),
-            reservation.getPaymentCurrency(),
-            reservation.getPaymentExchangeRate()));
+    sendOwnerNotification(reservation, subject, "owner-reservation-status-changed", context);
+  }
 
-    String htmlBody = templateEngine.process("owner-reservation-status-changed", context);
+  private void sendGuestNotification(
+      Reservation reservation,
+      String recipientEmail,
+      String subject,
+      String title,
+      String message,
+      ReservationStatus status,
+      String oldStatusStr,
+      String newStatusStr) {
+    Context context = createBaseContext(reservation, subject);
+    context.setVariable("title", title);
+    context.setVariable("message", message);
+    context.setVariable("statusLabel", status.name());
+    context.setVariable("statusStyle", getStatusStyle(status));
+    context.setVariable("oldStatus", oldStatusStr);
+    context.setVariable("newStatus", newStatusStr);
+
+    String htmlBody = templateEngine.process("reservation-confirmation", context);
+    send(recipientEmail, subject, htmlBody, String.valueOf(reservation.getId()));
+  }
+
+  private void sendOwnerNotification(
+      Reservation reservation, String subject, String templateName, Context context) {
+    String ownerEmail = fetchOwnerEmail(reservation.getUnitId());
+    String htmlBody = templateEngine.process(templateName, context);
     send(ownerEmail, subject, htmlBody, String.valueOf(reservation.getId()));
   }
 

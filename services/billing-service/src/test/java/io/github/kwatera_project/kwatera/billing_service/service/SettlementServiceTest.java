@@ -840,4 +840,81 @@ class SettlementServiceTest {
     verify(settlementRepository, never()).findById(any());
     verify(settlementItemRepository, never()).save(any(SettlementItem.class));
   }
+
+  @Test
+  void shouldNotThrowWhenEmailNotificationFailsOnUtilityChargesAdded() {
+    UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    Settlement settlement = baseSettlement(settlementId);
+    settlement.setReservationId(UUID.randomUUID());
+
+    when(settlementItemRepository.findBySettlementIdAndType(settlementId, SettlementItemType.WATER))
+        .thenReturn(Optional.empty());
+
+    when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
+
+    when(settlementItemRepository.save(any(SettlementItem.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    when(settlementItemRepository.existsBySettlementIdAndTypeIn(any(), any())).thenReturn(true);
+
+    org.mockito.Mockito.doThrow(new RuntimeException("Email failed"))
+        .when(emailNotificationService)
+        .sendUtilityChargesAdded(any(), any());
+
+    assertDoesNotThrow(
+        () ->
+            settlementService.addUtilitySettlementItem(
+                settlementId,
+                unitId,
+                SettlementItemType.WATER,
+                "Water usage",
+                BigDecimal.valueOf(5),
+                BigDecimal.valueOf(20)));
+
+    verify(settlementRepository).save(settlement);
+  }
+
+  @Test
+  void shouldNotThrowWhenOwnerEmailNotificationFailsOnStatusChange() {
+    UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    Settlement settlement = new Settlement();
+    settlement.setId(settlementId);
+    settlement.setAccommodationAmount(BigDecimal.valueOf(500));
+    settlement.setUtilitiesAmount(BigDecimal.ZERO);
+    settlement.setDepositAmount(BigDecimal.ZERO);
+    settlement.setDiscountAmount(BigDecimal.ZERO);
+    settlement.setTotalAmount(BigDecimal.valueOf(500));
+    settlement.setAmountPaid(BigDecimal.valueOf(400));
+    settlement.setStatus(SettlementStatus.ISSUED);
+
+    when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
+
+    when(settlementItemRepository.save(any(SettlementItem.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    when(propertyClient.getUnitSettlementItems(unitId)).thenReturn(List.of());
+
+    when(settlementItemRepository.findBySettlementId(settlementId)).thenReturn(List.of());
+
+    org.mockito.Mockito.doThrow(new RuntimeException("Owner email failed"))
+        .when(emailNotificationService)
+        .sendOwnerPaymentStatusChanged(any(), any(), any(), any());
+
+    assertDoesNotThrow(
+        () ->
+            settlementService.registerPayment(
+                settlementId,
+                unitId,
+                SettlementItemType.ACCOMMODATION,
+                "Accommodation fee",
+                BigDecimal.ONE,
+                BigDecimal.valueOf(100)));
+
+    assertEquals(SettlementStatus.PAID, settlement.getStatus());
+    verify(settlementRepository).save(settlement);
+  }
 }

@@ -271,80 +271,7 @@ public class ReservationService {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
     }
 
-    ReservationDetailsDto dto = new ReservationDetailsDto();
-    dto.setId(reservation.getId());
-    dto.setUserId(reservation.getUserId());
-    dto.setGuestEmail(reservation.getGuestEmail());
-    dto.setUnitId(reservation.getUnitId());
-    dto.setStartDate(reservation.getStartDate());
-    dto.setEndDate(reservation.getEndDate());
-    dto.setStatus(reservation.getStatus());
-    dto.setCreatedAt(reservation.getCreatedAt());
-    dto.setPricePerNightSnapshot(reservation.getPricePerNightSnapshot());
-    dto.setTotalPrice(reservation.getTotalPrice());
-
-    CurrencyMetadataDto currencyInfo =
-        new CurrencyMetadataDto(
-            "PLN",
-            reservation.getPaymentCurrency(),
-            reservation.getPaymentExchangeRate(),
-            reservation.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
-    BigDecimal convertedTotalPrice = reservation.getTotalPrice();
-
-    if (!"PLN".equalsIgnoreCase(reservation.getPaymentCurrency())) {
-      convertedTotalPrice =
-          convertedTotalPrice.divide(reservation.getPaymentExchangeRate(), 2, RoundingMode.HALF_UP);
-    }
-
-    dto.setConvertedTotalPrice(convertedTotalPrice);
-    dto.setCurrencyInfo(currencyInfo);
-
-    // Fetch unit name, property name and city from property-service
-    String guestName = "Guest " + reservation.getUserId().toString().substring(0, 8);
-    String unitName = "Unknown Room";
-    String city = "Unknown City";
-
-    try {
-      String unitUrl = "http://property-service/api/properties/units/" + reservation.getUnitId();
-      UnitDetailsDto unitDto = restTemplate.getForObject(unitUrl, UnitDetailsDto.class);
-      if (unitDto != null) {
-        if (unitDto.name() != null) {
-          unitName = unitDto.name();
-        }
-        if (unitDto.propertyId() != null) {
-          String propertyUrl = "http://property-service/api/properties/" + unitDto.propertyId();
-          PropertyDetailsDto propertyDto =
-              restTemplate.getForObject(propertyUrl, PropertyDetailsDto.class);
-          if (propertyDto != null) {
-            if (propertyDto.city() != null) {
-              city = propertyDto.city();
-            }
-            if (propertyDto.ownerId() != null) {
-              UUID ownerId = propertyDto.ownerId();
-              String ownerName = "Owner " + ownerId.toString().substring(0, 8);
-              String ownerEmail = "owner_" + ownerId.toString().substring(0, 8) + "@example.com";
-              if (ownerId.toString().equals("22222222-2222-2222-2222-222222222222")) {
-                ownerName = "John Owner";
-                ownerEmail = "owner1@example.com";
-              } else if (ownerId.toString().equals("33333333-3333-3333-3333-333333333333")) {
-                ownerName = "Jane Owner";
-                ownerEmail = "owner2@example.com";
-              }
-              dto.setOwnerName(ownerName);
-              dto.setOwnerEmail(ownerEmail);
-            }
-          }
-        }
-      }
-    } catch (Exception e) {
-      log.warn("Failed to fetch property details for reservation: {}", reservationId, e);
-    }
-
-    dto.setGuestName(guestName);
-    dto.setUnitName(unitName);
-    dto.setCity(city);
-
-    return dto;
+    return mapAndEnrichReservationDetails(reservation);
   }
 
   public ReservationDetailsDto getReservationDetailsInternal(UUID reservationId) {
@@ -354,6 +281,10 @@ public class ReservationService {
             .orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reservation not found"));
 
+    return mapAndEnrichReservationDetails(reservation);
+  }
+
+  private ReservationDetailsDto mapAndEnrichReservationDetails(Reservation reservation) {
     ReservationDetailsDto dto = new ReservationDetailsDto();
     dto.setId(reservation.getId());
     dto.setUserId(reservation.getUserId());
@@ -367,21 +298,18 @@ public class ReservationService {
     dto.setTotalPrice(reservation.getTotalPrice());
 
     CurrencyMetadataDto currencyInfo =
-        new CurrencyMetadataDto(
-            "PLN",
+        createCurrencyInfo(
             reservation.getPaymentCurrency(),
             reservation.getPaymentExchangeRate(),
-            reservation.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
-    BigDecimal convertedTotalPrice = reservation.getTotalPrice();
-
-    if (!"PLN".equalsIgnoreCase(reservation.getPaymentCurrency())) {
-      convertedTotalPrice =
-          convertedTotalPrice.divide(reservation.getPaymentExchangeRate(), 2, RoundingMode.HALF_UP);
-    }
+            reservation.getCreatedAt());
+    BigDecimal convertedTotalPrice =
+        calculateConvertedTotalPrice(
+            reservation.getTotalPrice(),
+            reservation.getPaymentCurrency(),
+            reservation.getPaymentExchangeRate());
 
     dto.setConvertedTotalPrice(convertedTotalPrice);
     dto.setCurrencyInfo(currencyInfo);
-
     String guestName = "Guest " + reservation.getUserId().toString().substring(0, 8);
     String unitName = "Unknown Room";
     String city = "Unknown City";
@@ -419,7 +347,7 @@ public class ReservationService {
         }
       }
     } catch (Exception e) {
-      log.warn("Failed to fetch property details for reservation: {}", reservationId, e);
+      log.warn("Failed to fetch property details for reservation: {}", reservation.getId(), e);
     }
 
     dto.setGuestName(guestName);
@@ -434,17 +362,11 @@ public class ReservationService {
         .map(
             r -> {
               CurrencyMetadataDto currencyInfo =
-                  new CurrencyMetadataDto(
-                      "PLN",
-                      r.getPaymentCurrency(),
-                      r.getPaymentExchangeRate(),
-                      r.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
-              BigDecimal convertedTotalPrice = r.getTotalPrice();
-
-              if (!"PLN".equalsIgnoreCase(r.getPaymentCurrency())) {
-                convertedTotalPrice =
-                    convertedTotalPrice.divide(r.getPaymentExchangeRate(), 2, RoundingMode.HALF_UP);
-              }
+                  createCurrencyInfo(
+                      r.getPaymentCurrency(), r.getPaymentExchangeRate(), r.getCreatedAt());
+              BigDecimal convertedTotalPrice =
+                  calculateConvertedTotalPrice(
+                      r.getTotalPrice(), r.getPaymentCurrency(), r.getPaymentExchangeRate());
 
               return new GuestReservationDto(
                   r.getId(),
@@ -612,6 +534,23 @@ public class ReservationService {
             e.getMessage());
       }
     }
+  }
+
+  private CurrencyMetadataDto createCurrencyInfo(
+      String currency, BigDecimal exchangeRate, java.time.Instant createdAt) {
+    return new CurrencyMetadataDto(
+        "PLN",
+        currency,
+        exchangeRate,
+        createdAt.atZone(java.time.ZoneId.systemDefault()).toLocalDate());
+  }
+
+  private BigDecimal calculateConvertedTotalPrice(
+      BigDecimal totalPrice, String currency, BigDecimal exchangeRate) {
+    if (!"PLN".equalsIgnoreCase(currency)) {
+      return totalPrice.divide(exchangeRate, 2, RoundingMode.HALF_UP);
+    }
+    return totalPrice;
   }
 
   record UnitDetailsDto(UUID propertyId, String name) {}

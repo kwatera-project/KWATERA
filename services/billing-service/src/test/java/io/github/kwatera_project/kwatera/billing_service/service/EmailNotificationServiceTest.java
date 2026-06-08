@@ -7,6 +7,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.github.kwatera_project.kwatera.billing_service.dto.CurrencyMetadataDto;
 import io.github.kwatera_project.kwatera.billing_service.model.Settlement;
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementItem;
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementStatus;
@@ -137,6 +138,153 @@ class EmailNotificationServiceTest {
 
     assertDoesNotThrow(
         () -> service.sendSettlementCreated(settlement(), "actual.guest@example.com"));
+  }
+
+  @Test
+  void shouldFetchReservationSuccessfullyWithPlnAndEur() throws Exception {
+    UUID reservationId = UUID.randomUUID();
+    Settlement settlement = settlement();
+    settlement.setReservationId(reservationId);
+
+    io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto reservationDtoPln =
+        new io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto();
+    reservationDtoPln.setId(reservationId);
+    reservationDtoPln.setGuestEmail("guest.pln@example.com");
+    reservationDtoPln.setCurrencyInfo(new CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, null));
+
+    when(restTemplate.getForObject(
+            "http://reservation-service/api/v1/reservations/internal/" + reservationId,
+            io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto.class))
+        .thenReturn(reservationDtoPln);
+
+    service.sendSettlementCreated(settlement, "original.guest@example.com");
+
+    ArgumentCaptor<MimeMessage> captor = ArgumentCaptor.forClass(MimeMessage.class);
+    verify(mailSender, org.mockito.Mockito.atLeastOnce()).send(captor.capture());
+    assertEquals(
+        "guest.pln@example.com",
+        captor.getValue().getRecipients(Message.RecipientType.TO)[0].toString());
+
+    io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto reservationDtoEur =
+        new io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto();
+    reservationDtoEur.setId(reservationId);
+    reservationDtoEur.setGuestEmail("guest.eur@example.com");
+    reservationDtoEur.setCurrencyInfo(
+        new CurrencyMetadataDto("PLN", "EUR", new BigDecimal("4.50"), null));
+
+    when(restTemplate.getForObject(
+            "http://reservation-service/api/v1/reservations/internal/" + reservationId,
+            io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto.class))
+        .thenReturn(reservationDtoEur);
+
+    service.sendSettlementCreated(settlement, "original.guest@example.com");
+  }
+
+  @Test
+  void shouldHandleExceptionWhenFetchingReservation() {
+    UUID reservationId = UUID.randomUUID();
+    Settlement settlement = settlement();
+    settlement.setReservationId(reservationId);
+
+    when(restTemplate.getForObject(
+            "http://reservation-service/api/v1/reservations/internal/" + reservationId,
+            io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto.class))
+        .thenThrow(new RuntimeException("Service down"));
+
+    assertDoesNotThrow(() -> service.sendSettlementCreated(settlement, "actual.guest@example.com"));
+  }
+
+  @Test
+  void shouldFetchOwnerEmailSuccessfullyFromPropertyService() throws Exception {
+    UUID unitId = UUID.randomUUID();
+    Settlement settlement = settlement();
+
+    java.util.Map<String, Object> unitResponse = new java.util.HashMap<>();
+    unitResponse.put("propertyId", UUID.randomUUID());
+
+    java.util.Map<String, Object> propertyResponse = new java.util.HashMap<>();
+    propertyResponse.put("ownerId", "22222222-2222-2222-2222-222222222222");
+
+    when(restTemplate.getForObject(
+            "http://property-service/api/properties/units/" + unitId, java.util.Map.class))
+        .thenReturn(unitResponse);
+    when(restTemplate.getForObject(
+            "http://property-service/api/properties/" + unitResponse.get("propertyId"),
+            java.util.Map.class))
+        .thenReturn(propertyResponse);
+
+    service.sendOwnerPaymentStatusChanged(
+        settlement, SettlementStatus.ISSUED, SettlementStatus.PAID, unitId);
+
+    ArgumentCaptor<MimeMessage> captor = ArgumentCaptor.forClass(MimeMessage.class);
+    verify(mailSender, org.mockito.Mockito.atLeastOnce()).send(captor.capture());
+    assertEquals(
+        "owner1@example.com",
+        captor.getValue().getRecipients(Message.RecipientType.TO)[0].toString());
+
+    propertyResponse.put("ownerId", "33333333-3333-3333-3333-333333333333");
+    service.sendOwnerPaymentStatusChanged(
+        settlement, SettlementStatus.ISSUED, SettlementStatus.PAID, unitId);
+
+    verify(mailSender, org.mockito.Mockito.atLeastOnce()).send(captor.capture());
+    assertEquals(
+        "owner2@example.com",
+        captor.getValue().getRecipients(Message.RecipientType.TO)[0].toString());
+
+    propertyResponse.put("ownerId", "44444444-4444-4444-4444-444444444444");
+    service.sendOwnerPaymentStatusChanged(
+        settlement, SettlementStatus.ISSUED, SettlementStatus.PAID, unitId);
+
+    verify(mailSender, org.mockito.Mockito.atLeastOnce()).send(captor.capture());
+    assertEquals(
+        "owner_44444444@example.com",
+        captor.getValue().getRecipients(Message.RecipientType.TO)[0].toString());
+  }
+
+  @Test
+  void shouldHandleExceptionWhenFetchingOwnerEmail() {
+    UUID unitId = UUID.randomUUID();
+    Settlement settlement = settlement();
+
+    when(restTemplate.getForObject(
+            "http://property-service/api/properties/units/" + unitId, java.util.Map.class))
+        .thenThrow(new RuntimeException("Property Service down"));
+
+    assertDoesNotThrow(
+        () ->
+            service.sendOwnerPaymentStatusChanged(
+                settlement, SettlementStatus.ISSUED, SettlementStatus.PAID, unitId));
+  }
+
+  @Test
+  void shouldHandlePriceFormattingEdgeCases() throws Exception {
+    UUID reservationId = UUID.randomUUID();
+    Settlement settlement = settlement();
+    settlement.setReservationId(reservationId);
+    settlement.setAccommodationAmount(null);
+    settlement.setUtilitiesAmount(null);
+    settlement.setDepositAmount(null);
+    settlement.setDiscountAmount(null);
+    settlement.setTotalAmount(null);
+    settlement.setAmountPaid(null);
+    settlement.setBalanceDue(null);
+
+    io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto reservationDtoZeroRate =
+        new io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto();
+    reservationDtoZeroRate.setId(reservationId);
+    reservationDtoZeroRate.setGuestEmail("guest.zero@example.com");
+    reservationDtoZeroRate.setCurrencyInfo(
+        new CurrencyMetadataDto("PLN", "EUR", BigDecimal.ZERO, null));
+
+    when(restTemplate.getForObject(
+            "http://reservation-service/api/v1/reservations/internal/" + reservationId,
+            io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto.class))
+        .thenReturn(reservationDtoZeroRate);
+
+    service.sendSettlementCreated(settlement, "original.guest@example.com");
+
+    ArgumentCaptor<MimeMessage> captor = ArgumentCaptor.forClass(MimeMessage.class);
+    verify(mailSender, org.mockito.Mockito.atLeastOnce()).send(captor.capture());
   }
 
   private Settlement settlement() {

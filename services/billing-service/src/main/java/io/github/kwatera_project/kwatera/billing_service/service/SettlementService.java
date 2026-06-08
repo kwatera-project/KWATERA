@@ -139,9 +139,7 @@ public class SettlementService {
       case ELECTRICITY, WATER, CLEANING_FEE ->
           settlement.setUtilitiesAmount(settlement.getUtilitiesAmount().add(amount));
 
-      case ACCOMMODATION -> {
-        // usually already known at settlement creation
-      }
+      case ACCOMMODATION -> {}
     }
   }
 
