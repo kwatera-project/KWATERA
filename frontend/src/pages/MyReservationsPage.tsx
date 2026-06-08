@@ -52,7 +52,7 @@ export default function MyReservationsPage() {
             {reservations.length === 0 ? (
                 <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-8 text-center space-y-4">
                     <p className="text-[#7A7A7A] font-medium">You don't have any reservations yet.</p>
-                    <Link to="/catalog" className="inline-block px-6 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#2a1412] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm">
+                    <Link to="/properties" className="inline-block px-6 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#2a1412] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm">
                         Browse Catalog
                     </Link>
                 </div>

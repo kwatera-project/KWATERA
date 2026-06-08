@@ -2,9 +2,8 @@ import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getProperty } from "../api/propertyApi.ts";
 import type { Property, Unit } from "../types/property";
-import {deleteUnit, getPropertyUnits} from "../api/ownerUnitApi.ts";
+import { deleteUnit, getPropertyUnits } from "../api/ownerUnitApi.ts";
 import { getPredictedPrice } from "../api/predictionApi.ts";
-import { useCurrency } from "../contexts/CurrencyContext";
 
 export default function OwnerPropertyUnitsPage() {
     const { propertyId } = useParams();
@@ -80,7 +79,6 @@ export default function OwnerPropertyUnitsPage() {
 }
 
 function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: string, onDelete: (propertyId: string, unitId: string) => void }) {
-    const { currency } = useCurrency();
     const [predictedPrice, setPredictedPrice] = useState<number | null>(null);
     const [loadingPrediction, setLoadingPrediction] = useState(true);
 
@@ -105,7 +103,6 @@ function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: stri
                     <p className="text-[#7A7A7A] text-sm font-medium mt-1">{unit.description}</p>
                 </div>
 
-                {/* Details Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2 text-xs font-bold text-gray-500 border-t border-gray-50/50">
                     <div>
                         <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-0.5">Unit Type</span>
@@ -125,12 +122,11 @@ function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: stri
                     </div>
                 </div>
 
-
                 <div className="pt-4 flex flex-wrap gap-x-10 gap-y-4 items-center border-t border-gray-100 mt-4">
                     <div>
                         <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-1">Current Price</span>
                         <div className="text-sm font-bold text-[#7A7A7A]">
-                            <span className="text-xl font-black text-[#1A1A1A]">{unit.pricePerNight} {currency}</span> / night
+                            <span className="text-xl font-black text-[#1A1A1A]">{unit.pricePerNight.toFixed(2)} PLN</span> / night
                         </div>
                     </div>
 
@@ -140,7 +136,7 @@ function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: stri
                             {loadingPrediction ? (
                                 <span className="text-gray-400 text-sm animate-pulse font-semibold">Calculating...</span>
                             ) : predictedPrice !== null ? (
-                                <span className="text-xl font-black text-indigo-600">{predictedPrice} {currency}</span>
+                                <span className="text-xl font-black text-indigo-600">{predictedPrice.toFixed(2)} PLN</span>
                             ) : (
                                 <span className="text-amber-600 text-sm font-semibold">Unavailable</span>
                             )}
