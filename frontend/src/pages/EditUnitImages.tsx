@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
-import {useCallback, useEffect, useState} from "react";
+import {useEffect, useState} from "react";
 import ImageUploadForm from "../contexts/ImageUploadForm.tsx";
 import { deleteUnitImage, setUnitImageAsMain, uploadUnitImage } from "../api/ownerUnitApi.ts";
 import { getUnitImages } from "../api/propertyApi.ts";
@@ -16,8 +16,9 @@ export default function EditUnitImages() {
 
     const [loading, setLoading] = useState(true);
     const [images, setImages] = useState<UnitImage[]>([]);
+    const [refreshKey, setRefreshKey] = useState(0);
 
-    const fetchImages = useCallback(() => {
+    useEffect(() => {
         if (!unitId || !propertyId) return;
 
         setLoading(true);
@@ -34,11 +35,9 @@ export default function EditUnitImages() {
             })
             .finally(() => setLoading(false));
 
-    }, [propertyId, unitId]);
+    }, [propertyId, unitId, refreshKey]);
 
-    useEffect(() => {
-        fetchImages();
-    }, [fetchImages]);
+    const triggerRefresh = () => setRefreshKey(prev => prev + 1);
 
     const handleImageSubmit = async (data: { file: File; isMain: boolean }) => {
         if (!unitId || !propertyId) return;
@@ -63,7 +62,7 @@ export default function EditUnitImages() {
         try {
             await deleteUnitImage(propertyId, unitId, imageId);
             alert("Image deleted successfully!");
-            fetchImages();
+            triggerRefresh();
         } catch (error) {
             console.error(error);
             alert("Failed to delete image");
@@ -76,7 +75,7 @@ export default function EditUnitImages() {
         try {
             await setUnitImageAsMain(propertyId, unitId, imageId, true);
             alert("Main image updated successfully!");
-            fetchImages();
+            triggerRefresh();
         } catch (error) {
             console.error(error);
             alert("Failed to update main image");

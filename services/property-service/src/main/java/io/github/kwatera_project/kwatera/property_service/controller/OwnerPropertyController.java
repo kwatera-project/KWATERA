@@ -25,13 +25,6 @@ public class OwnerPropertyController {
   @PreAuthorize("hasRole('ROLE_OWNER')")
   public List<PropertyDto> getMyProperties(Authentication authentication) {
 
-    if (authentication != null) {
-      System.out.println("Principal class: " + authentication.getPrincipal().getClass().getName());
-      System.out.println("Principal value: " + authentication.getPrincipal());
-    } else {
-      System.out.println("Authentication is NULL!");
-    }
-
     UUID ownerId = validateAndGetUserId(authentication);
 
     return propertyService.getPropertiesByOwner(ownerId);

@@ -189,4 +189,31 @@ class PropertyControllerTest {
     assertEquals(1, result.size());
     assertEquals(unitId, result.get(0));
   }
+
+    @Test
+    void getUnitImages_shouldReturnMappedUnitImages() {
+        // Given
+        UUID propertyId = UUID.randomUUID();
+        UUID unitId = UUID.randomUUID();
+        UUID imageId = UUID.randomUUID();
+        String imageUrl = "http://localhost:8083/units/image.jpg";
+
+        var mockImage = mock(io.github.kwatera_project.kwatera.property_service.model.UnitImage.class);
+        when(mockImage.getId()).thenReturn(imageId);
+        when(mockImage.getUrl()).thenReturn(imageUrl);
+        when(mockImage.getIsMain()).thenReturn(true);
+
+        when(service.getUnitImages(propertyId, unitId)).thenReturn(List.of(mockImage));
+
+        // When
+        var result = controller.getUnitImages(propertyId, unitId);
+
+        // Then
+        assertEquals(1, result.size());
+        assertEquals(imageId, result.getFirst().getId());
+        assertEquals(imageUrl, result.getFirst().getUrl());
+        assertTrue(result.getFirst().getIsMain());
+
+        verify(service, times(1)).getUnitImages(propertyId, unitId);
+    }
 }
