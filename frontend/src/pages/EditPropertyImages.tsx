@@ -21,7 +21,6 @@ export default function EditPropertyImages() {
     useEffect(() => {
         if (!propertyId) return;
 
-        setLoading(true);
         getPropertyImages(propertyId)
             .then(data => {
                 if (Array.isArray(data)) {

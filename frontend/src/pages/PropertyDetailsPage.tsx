@@ -110,13 +110,15 @@ export default function PropertyDetailsPage() {
         });
 
         getPropertyImages(id)
-            .then((data) => {
+            .then((data: PropertyImage[]) => {
                 if (data && data.length > 0) {
-                    const mainImgObject = data.find((img: any) => img.isMain) || data[0];
+                    const mainImgObject =
+                        data.find((img) => img.isMain) ?? data[0];
+
                     setImages(data);
-                    setMainImage(mainImgObject.url || mainImgObject);
+                    setMainImage(mainImgObject.url);
                 }
-        });
+            });
     }, [id, currency, initialSearch.checkIn, initialSearch.checkOut, initialSearch.guests, hasInitialDateRange]);
 
     const handleGlobalDateChange = (dates: [Date | null, Date | null]) => {

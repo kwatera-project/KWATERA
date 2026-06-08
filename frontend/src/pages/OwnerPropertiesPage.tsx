@@ -4,6 +4,11 @@ import type {Property} from "../types/property";
 import {Link} from "react-router-dom";
 import {getPropertyImages} from "../api/propertyApi.ts";
 
+type PropertyImage = {
+    url: string;
+    isMain?: boolean;
+};
+
 export default function OwnerPropertiesPage() {
     const [properties, setProperties] = useState<Property[]>([]);
 
@@ -74,10 +79,12 @@ function PropertyCard({ property, onDelete }: { property: Property, onDelete: (i
 
     useEffect(() => {
         getPropertyImages(property.id)
-            .then((data) => {
+            .then((data: PropertyImage[]) => {
                 if (data && data.length > 0) {
-                    const mainImgObject = data.find((img: any) => img.isMain) || data[0];
-                    setMainImage(mainImgObject.url || mainImgObject);
+                    const mainImgObject =
+                        data.find((img) => img.isMain) || data[0];
+
+                    setMainImage(mainImgObject.url);
                 }
             })
             .catch(console.error);

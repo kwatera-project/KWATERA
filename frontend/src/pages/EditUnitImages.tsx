@@ -21,7 +21,6 @@ export default function EditUnitImages() {
     useEffect(() => {
         if (!unitId || !propertyId) return;
 
-        setLoading(true);
         getUnitImages(propertyId, unitId)
             .then(data => {
                 if (Array.isArray(data)) {

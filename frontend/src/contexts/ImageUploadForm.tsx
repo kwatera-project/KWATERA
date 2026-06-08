@@ -59,7 +59,7 @@ export default function ImageUploadForm({
             if (e.target instanceof HTMLFormElement) {
                 e.target.reset();
             }
-        } catch (err) {
+        } catch {
             setError("Something went wrong during the upload.");
         } finally {
             setLoading(false);

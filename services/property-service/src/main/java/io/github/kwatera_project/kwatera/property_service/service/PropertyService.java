@@ -13,7 +13,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -426,29 +425,30 @@ public class PropertyService {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
     }
 
-      String contentType = file.getContentType();
-      String extension;
+    String contentType = file.getContentType();
+    String extension;
 
-      if ("image/jpeg".equals(contentType)) {
-          extension = "jpg";
-      } else if ("image/png".equals(contentType)) {
-          extension = "png";
-      } else {
-          throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image format");
-      }
+    if ("image/jpeg".equals(contentType)) {
+      extension = "jpg";
+    } else if ("image/png".equals(contentType)) {
+      extension = "png";
+    } else {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image format");
+    }
 
-      String filename = UUID.randomUUID() + "." + extension;
+    String filename = UUID.randomUUID() + "." + extension;
 
-      Path directory = Paths.get("storage", "properties", propertyId.toString()).toAbsolutePath().normalize();
+    Path directory =
+        Paths.get("storage", "properties", propertyId.toString()).toAbsolutePath().normalize();
 
-      Path target = directory.resolve(filename).normalize();
+    Path target = directory.resolve(filename).normalize();
 
-      if (!target.startsWith(directory)) {
-          throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid path detection");
-      }
+    if (!target.startsWith(directory)) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid path detection");
+    }
 
-      Files.createDirectories(directory);
-      Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+    Files.createDirectories(directory);
+    Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
 
     if (isMain) {
       propertyImageRepository.clearMainImage(propertyId);
@@ -485,32 +485,32 @@ public class PropertyService {
         .findByIdAndPropertyId(unitId, propertyId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found"));
 
-      String contentType = file.getContentType();
-      String extension;
+    String contentType = file.getContentType();
+    String extension;
 
-      if ("image/jpeg".equals(contentType)) {
-          extension = "jpg";
-      } else if ("image/png".equals(contentType)) {
-          extension = "png";
-      } else {
-          throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image format");
-      }
+    if ("image/jpeg".equals(contentType)) {
+      extension = "jpg";
+    } else if ("image/png".equals(contentType)) {
+      extension = "png";
+    } else {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image format");
+    }
 
-      String filename = UUID.randomUUID() + "." + extension;
+    String filename = UUID.randomUUID() + "." + extension;
 
-      Path directory =
-              Paths.get("storage", "properties", propertyId.toString(), "units", unitId.toString())
-                      .toAbsolutePath()
-                      .normalize();
+    Path directory =
+        Paths.get("storage", "properties", propertyId.toString(), "units", unitId.toString())
+            .toAbsolutePath()
+            .normalize();
 
-      Path target = directory.resolve(filename).normalize();
+    Path target = directory.resolve(filename).normalize();
 
-      if (!target.startsWith(directory)) {
-          throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid path detection");
-      }
+    if (!target.startsWith(directory)) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid path detection");
+    }
 
-      Files.createDirectories(directory);
-      Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+    Files.createDirectories(directory);
+    Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
 
     if (isMain) {
       unitImageRepository.clearMainImage(unitId);
