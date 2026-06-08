@@ -11,11 +11,17 @@ import { format } from "date-fns";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { CustomCalendarHeader } from "../components/SharedDatePicker";
 
+interface PropertyImage {
+    id: string;
+    url: string;
+    isMain: boolean;
+}
+
 export default function PropertyDetailsPage() {
     const { id } = useParams();
     const [property, setProperty] = useState<Property | null>(null);
     const [units, setUnits] = useState<Unit[]>([]);
-    const [images, setImages] = useState<string[]>([]);
+    const [images, setImages] = useState<PropertyImage[]>([]);
     const [mainImage, setMainImage] = useState("");
     const [occupiedIntervals, setOccupiedIntervals] = useState<Record<string, { start: Date, end: Date }[]>>({});
     const [selectedDates, setSelectedDates] = useState<Record<string, [Date | null, Date | null]>>({});
@@ -43,12 +49,15 @@ export default function PropertyDetailsPage() {
             });
         });
 
-        getPropertyImages(id).then((data) => {
-            setImages(data);
-            if (data.length > 0) {
-                setMainImage(data[0]);
-            }
+        getPropertyImages(id)
+            .then((data) => {
+                if (data && data.length > 0) {
+                    const mainImgObject = data.find((img: any) => img.isMain) || data[0];
+                    setImages(data);
+                    setMainImage(mainImgObject.url || mainImgObject);
+                }
         });
+
     }, [id, currency]);
 
     const handleGlobalDateChange = (dates: [Date | null, Date | null]) => {
@@ -232,10 +241,10 @@ export default function PropertyDetailsPage() {
                     {images.map((img, i) => (
                         <img
                             key={i}
-                            src={img}
-                            onClick={() => setMainImage(img)}
+                            src={img.url}
+                            onClick={() => setMainImage(img.url)}
                             className={`w-20 h-20 object-cover rounded-lg cursor-pointer border-2 transition-all hover:scale-105 ${
-                                mainImage === img ? "border-brand-primary shadow-md" : "border-brand-accent hover:border-gray-400"
+                                mainImage === img.url ? "border-brand-primary shadow-md" : "border-brand-accent hover:border-gray-400"
                             }`}
                             alt={`Property thumbnail ${i + 1}`}
                         />

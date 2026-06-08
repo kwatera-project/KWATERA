@@ -161,7 +161,7 @@ public class AdminReservationService {
 
   private record UnitNameDto(String name) {}
 
-    public boolean hasReservationsForUnit(UUID unitId) {
-        return reservationRepository.existsByUnitId(unitId);
-    }
+  public boolean hasReservationsForUnit(UUID unitId) {
+    return reservationRepository.existsByUnitId(unitId);
+  }
 }

@@ -16,8 +16,8 @@ public class ReservationClient {
     return Boolean.TRUE.equals(
         reservationRestClient
             .get()
-            .uri("/api/v1/reservations/units/{unitId}/has-reservations", unitId)
-            .header(HttpHeaders.AUTHORIZATION, bearerToken)
+            .uri("/api/v1/admin/reservations/units/{unitId}/exists", unitId)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + bearerToken)
             .retrieve()
             .body(Boolean.class));
   }

@@ -24,6 +24,8 @@ import EditPropertyPage from "./pages/EditPropertyPage.tsx";
 import CreatePropertyPage from "./pages/CreatePropertyPage.tsx";
 import CreateUnitPage from "./pages/CreateUnitPage.tsx";
 import EditUnitPage from "./pages/EditUnitPage.tsx";
+import EditPropertyImages from "./pages/EditPropertyImages.tsx";
+import EditUnitImages from "./pages/EditUnitImages.tsx";
 
 function App() {
     return (
@@ -139,6 +141,14 @@ function App() {
                 <Route
                     path="/owner/properties/:propertyId/units/:unitId/edit"
                     element={<EditUnitPage />}
+                />
+                <Route
+                    path="/owner/properties/:propertyId/images"
+                    element={<EditPropertyImages />}
+                />
+                <Route
+                    path="/owner/properties/:propertyId/units/:unitId/images"
+                    element={<EditUnitImages />}
                 />
             </Routes>
         </CurrencyProvider>

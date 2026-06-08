@@ -16,6 +16,7 @@ services:
     url: http://localhost:9999
 
 app:
+  file-server-url: http://localhost:8083
   jpa:
     auditing:
       enabled: false

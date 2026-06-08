@@ -9,6 +9,7 @@ import io.github.kwatera_project.kwatera.property_service.dto.PropertyDto;
 import io.github.kwatera_project.kwatera.property_service.dto.PropertyUpdateRequest;
 import io.github.kwatera_project.kwatera.property_service.dto.UnitDto;
 import io.github.kwatera_project.kwatera.property_service.service.PropertyService;
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,8 +18,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,6 +36,9 @@ class OwnerPropertyControllerTest {
 
   private final UUID mockOwnerId = UUID.randomUUID();
   private final UUID propertyId = UUID.randomUUID();
+
+  @Value("${app.file-server-url}")
+  private String fileServerUrl;
 
   @BeforeEach
   void setUp() {
@@ -194,12 +201,20 @@ class OwnerPropertyControllerTest {
 
   @Test
   void deleteProperty_shouldThrow401_whenInvalidUUID() {
-    Authentication auth = auth(UUID.randomUUID(), "not-a-uuid", true);
+    UUID propertyId = UUID.randomUUID();
+    UUID ownerId = UUID.randomUUID();
+    String invalidToken = "not-a-uuid";
+
+    Authentication auth = auth(ownerId, invalidToken, true);
+
+    doThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token format"))
+        .when(propertyService)
+        .deleteProperty(eq(ownerId), eq(propertyId), eq(invalidToken));
 
     ResponseStatusException ex =
         assertThrows(
             ResponseStatusException.class,
-            () -> ownerPropertyController.deleteProperty(UUID.randomUUID(), auth));
+            () -> ownerPropertyController.deleteProperty(propertyId, auth));
 
     assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
     assertTrue(ex.getReason().contains("Invalid token format"));
@@ -265,8 +280,105 @@ class OwnerPropertyControllerTest {
     when(auth.getDetails()).thenReturn(token);
     when(auth.getPrincipal()).thenReturn(ownerId.toString());
 
+    // When
     ownerPropertyController.deleteUnit(unitId, propertyId, auth);
 
-    verify(propertyService).deleteUnit(ownerId, propertyId, unitId, token);
+    // Then
+    verify(propertyService, times(1)).deleteUnit(ownerId, propertyId, unitId, token);
+  }
+
+  @Test
+  void uploadPropertyImage_ShouldCallService_WhenValidRequest() throws IOException {
+    // Given
+    UUID propertyId = UUID.randomUUID();
+    MultipartFile mockFile =
+        new MockMultipartFile("file", "image.jpg", "image/jpeg", "data".getBytes());
+
+    when(authentication.getPrincipal()).thenReturn(mockOwnerId.toString());
+
+    // When
+    ownerPropertyController.uploadPropertyImage(propertyId, mockFile, true, authentication);
+
+    // Then
+    verify(propertyService).uploadPropertyImage(mockOwnerId, propertyId, true, mockFile);
+  }
+
+  @Test
+  void deletePropertyImage_ShouldCallService_WhenValidRequest() throws IOException {
+    // Given
+    UUID propertyId = UUID.randomUUID();
+    UUID imageId = UUID.randomUUID();
+
+    when(authentication.getPrincipal()).thenReturn(mockOwnerId.toString());
+
+    // When
+    ownerPropertyController.deletePropertyImage(propertyId, imageId, authentication);
+
+    // Then
+    verify(propertyService).deletePropertyImage(mockOwnerId, propertyId, imageId);
+  }
+
+  @Test
+  void setPropertyImageIsMain_ShouldCallService_WhenValidRequest() {
+    // Given
+    UUID propertyId = UUID.randomUUID();
+    UUID imageId = UUID.randomUUID();
+
+    when(authentication.getPrincipal()).thenReturn(mockOwnerId.toString());
+
+    // When
+    ownerPropertyController.setPropertyImageIsMain(propertyId, imageId, true, authentication);
+
+    // Then
+    verify(propertyService).setPropertyImageAsMain(mockOwnerId, propertyId, imageId, true);
+  }
+
+  @Test
+  void uploadUnitImage_ShouldCallService_WhenValidRequest() throws IOException {
+    // Given
+    UUID propertyId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    MultipartFile mockFile =
+        new MockMultipartFile("file", "room.png", "image/png", "data".getBytes());
+
+    when(authentication.getPrincipal()).thenReturn(mockOwnerId.toString());
+
+    // When
+    ownerPropertyController.uploadUnitImage(propertyId, unitId, mockFile, false, authentication);
+
+    // Then
+    verify(propertyService).uploadUnitImage(mockOwnerId, propertyId, unitId, false, mockFile);
+  }
+
+  @Test
+  void deleteUnitImage_ShouldCallService_WhenValidRequest() throws IOException {
+    // Given
+    UUID propertyId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    UUID imageId = UUID.randomUUID();
+
+    when(authentication.getPrincipal()).thenReturn(mockOwnerId.toString());
+
+    // When
+    ownerPropertyController.deleteUnitImage(propertyId, unitId, imageId, authentication);
+
+    // Then
+    verify(propertyService).deleteUnitImage(mockOwnerId, propertyId, unitId, imageId);
+  }
+
+  @Test
+  void setUnitImageIsMain_ShouldCallService_WhenValidRequest() {
+    // Given
+    UUID propertyId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    UUID imageId = UUID.randomUUID();
+
+    when(authentication.getPrincipal()).thenReturn(mockOwnerId.toString());
+
+    // When
+    ownerPropertyController.setUnitImageIsMain(propertyId, unitId, imageId, true, authentication);
+
+    // Then
+    verify(propertyService).setUnitImageAsMain(mockOwnerId, propertyId, unitId, imageId, true);
   }
 }

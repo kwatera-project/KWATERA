@@ -1,8 +1,6 @@
 package io.github.kwatera_project.kwatera.property_service.controller;
 
-import io.github.kwatera_project.kwatera.property_service.dto.PropertyDto;
-import io.github.kwatera_project.kwatera.property_service.dto.UnitDto;
-import io.github.kwatera_project.kwatera.property_service.dto.UnitSettlementItemDto;
+import io.github.kwatera_project.kwatera.property_service.dto.*;
 import io.github.kwatera_project.kwatera.property_service.service.PropertyService;
 import java.util.List;
 import java.util.UUID;
@@ -59,8 +57,18 @@ public class PropertyController {
   }
 
   @GetMapping("/{id}/images")
-  public List<String> getPropertyImages(@PathVariable("id") UUID id) {
-    return propertyService.getPropertyImages(id);
+  public List<PropertyImageDto> getPropertyImages(@PathVariable("id") UUID id) {
+    return propertyService.getPropertyImages(id).stream()
+        .map(img -> new PropertyImageDto(img.getId(), img.getUrl(), img.getIsMain()))
+        .toList();
+  }
+
+  @GetMapping("/{propertyId}/units/{unitId}/images")
+  public List<UnitImageDto> getUnitImages(
+      @PathVariable("propertyId") UUID propertyId, @PathVariable("unitId") UUID unitId) {
+    return propertyService.getUnitImages(propertyId, unitId).stream()
+        .map(img -> new UnitImageDto(img.getId(), img.getUrl(), img.getIsMain()))
+        .toList();
   }
 
   @GetMapping("/units/{id}/settlement-items")

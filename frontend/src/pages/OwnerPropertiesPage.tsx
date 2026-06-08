@@ -76,7 +76,8 @@ function PropertyCard({ property, onDelete }: { property: Property, onDelete: (i
         getPropertyImages(property.id)
             .then((data) => {
                 if (data && data.length > 0) {
-                    setMainImage(data[0]);
+                    const mainImgObject = data.find((img: any) => img.isMain) || data[0];
+                    setMainImage(mainImgObject.url || mainImgObject);
                 }
             })
             .catch(console.error);
@@ -109,9 +110,15 @@ function PropertyCard({ property, onDelete }: { property: Property, onDelete: (i
             <div className="flex gap-3 w-full md:w-auto justify-end border-t border-gray-100 md:border-none pt-4 md:pt-0 shrink-0">
                 <Link
                     to={`/owner/properties/${property.id}/units`}
-                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all inline-flex items-center"
+                    className="px-4 py-2 border border-[#42211D] bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg shadow-sm transition-all inline-flex items-center"
                 >
                     Manage Units
+                </Link>
+                <Link
+                    to={`/owner/properties/${property.id}/images`}
+                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all inline-flex items-center"
+                >
+                    Manage Images
                 </Link>
                 <Link
                     to={`/owner/properties/${property.id}/edit`}

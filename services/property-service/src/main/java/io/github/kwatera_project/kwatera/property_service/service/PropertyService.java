@@ -5,13 +5,19 @@ import io.github.kwatera_project.kwatera.property_service.dto.*;
 import io.github.kwatera_project.kwatera.property_service.model.*;
 import io.github.kwatera_project.kwatera.property_service.repository.*;
 import jakarta.transaction.Transactional;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.*;
 import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.io.FilenameUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -27,6 +33,9 @@ public class PropertyService {
       nbpExchangeRateClient;
   private final ReservationClient reservationClient;
   private final GeocodingService geocodingService;
+
+  @Value("${app.file-server-url}")
+  private String fileServerUrl;
 
   public List<UnitDto> getUnits(UUID propertyId, String currency) {
     if (!propertyRepository.existsById(propertyId)) {
@@ -104,10 +113,18 @@ public class PropertyService {
     return unitRepository.findAll().stream().map(Unit::getId).toList();
   }
 
-  public List<String> getPropertyImages(UUID propertyId) {
-    return propertyImageRepository.findByPropertyId(propertyId).stream()
-        .map(PropertyImage::getUrl)
-        .toList();
+  public List<PropertyImage> getPropertyImages(UUID propertyId) {
+    return propertyImageRepository.findByPropertyId(propertyId);
+  }
+
+  public List<UnitImage> getUnitImages(UUID propertyId, UUID unitId) {
+
+    Unit unit =
+        unitRepository
+            .findByIdAndPropertyId(unitId, propertyId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found"));
+
+    return unitImageRepository.findByUnitId(unitId);
   }
 
   public List<UnitSettlementItemDto> getUnitSettlementItems(UUID unitId) {
@@ -390,5 +407,248 @@ public class PropertyService {
     Unit saved = unitRepository.save(newUnit);
 
     return mapToDto(saved, "PLN");
+  }
+
+  @Transactional
+  public void uploadPropertyImage(UUID ownerId, UUID propertyId, Boolean isMain, MultipartFile file)
+      throws IOException {
+
+    if (file.isEmpty() || file.getOriginalFilename() == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File is empty or invalid");
+    }
+
+    Property property =
+        propertyRepository
+            .findById(propertyId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+
+    if (!property.getOwnerId().equals(ownerId)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+    }
+
+    String extension = FilenameUtils.getExtension(file.getOriginalFilename());
+
+    if (!Arrays.asList("jpg", "jpeg", "png")
+        .contains(Objects.requireNonNull(extension).toLowerCase())) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image format");
+    }
+
+    String filename = UUID.randomUUID() + "." + extension;
+
+    Path directory = Paths.get("storage", "properties", propertyId.toString());
+
+    Files.createDirectories(directory);
+
+    Path target = directory.resolve(filename);
+
+    Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+
+    if (isMain) {
+      propertyImageRepository.clearMainImage(propertyId);
+    }
+
+    PropertyImage propertyImage = new PropertyImage();
+    propertyImage.setPropertyId(propertyId);
+    propertyImage.setUrl(fileServerUrl + "/properties/" + propertyId + "/" + filename);
+    propertyImage.setIsMain(isMain);
+
+    propertyImageRepository.save(propertyImage);
+  }
+
+  @Transactional
+  public void uploadUnitImage(
+      UUID ownerId, UUID propertyId, UUID unitId, Boolean isMain, MultipartFile file)
+      throws IOException {
+
+    if (file.isEmpty() || file.getOriginalFilename() == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File is empty or invalid");
+    }
+
+    Property property =
+        propertyRepository
+            .findById(propertyId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+
+    if (!property.getOwnerId().equals(ownerId)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+    }
+
+    Unit unit =
+        unitRepository
+            .findByIdAndPropertyId(unitId, propertyId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found"));
+
+    String extension = FilenameUtils.getExtension(file.getOriginalFilename());
+
+    if (!Arrays.asList("jpg", "jpeg", "png")
+        .contains(Objects.requireNonNull(extension).toLowerCase())) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image format");
+    }
+
+    String filename = UUID.randomUUID() + "." + extension;
+
+    Path directory =
+        Paths.get("storage", "properties", propertyId.toString(), "units", unitId.toString());
+
+    Files.createDirectories(directory);
+
+    Path target = directory.resolve(filename);
+
+    Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+
+    if (isMain) {
+      unitImageRepository.clearMainImage(unitId);
+    }
+
+    UnitImage unitImage = new UnitImage();
+    unitImage.setUnitId(unitId);
+    unitImage.setUrl(
+        fileServerUrl + "/properties/" + propertyId + "/units/" + unitId + "/" + filename);
+    unitImage.setIsMain(isMain);
+
+    unitImageRepository.save(unitImage);
+  }
+
+  @Transactional
+  public void deletePropertyImage(UUID ownerId, UUID propertyId, UUID imageId) throws IOException {
+    Property property =
+        propertyRepository
+            .findById(propertyId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+
+    if (!property.getOwnerId().equals(ownerId)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+    }
+
+    PropertyImage propertyImage =
+        propertyImageRepository
+            .findById(imageId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Image not found"));
+
+    if (!propertyImage.getPropertyId().equals(propertyId)) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Image does not belong to this property");
+    }
+
+    String url = propertyImage.getUrl();
+    String filename = url.substring(url.lastIndexOf("/") + 1);
+
+    Path filePath = Paths.get("storage", "properties", propertyId.toString(), filename);
+    Files.deleteIfExists(filePath);
+
+    propertyImageRepository.delete(propertyImage);
+  }
+
+  @Transactional
+  public void deleteUnitImage(UUID ownerId, UUID propertyId, UUID unitId, UUID imageId)
+      throws IOException {
+
+    Property property =
+        propertyRepository
+            .findById(propertyId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+
+    if (!property.getOwnerId().equals(ownerId)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+    }
+
+    Unit unit =
+        unitRepository
+            .findByIdAndPropertyId(unitId, propertyId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found"));
+
+    UnitImage unitImage =
+        unitImageRepository
+            .findById(imageId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Image not found"));
+
+    if (!unitImage.getUnitId().equals(unitId)) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Image does not belong to this unit");
+    }
+
+    String url = unitImage.getUrl();
+    String filename = url.substring(url.lastIndexOf("/") + 1);
+
+    Path filePath =
+        Paths.get(
+            "storage", "properties", propertyId.toString(), "units", unitId.toString(), filename);
+    Files.deleteIfExists(filePath);
+
+    unitImageRepository.delete(unitImage);
+  }
+
+  @Transactional
+  public void setPropertyImageAsMain(UUID ownerId, UUID propertyId, UUID imageId, Boolean isMain) {
+    Property property =
+        propertyRepository
+            .findById(propertyId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+
+    if (!property.getOwnerId().equals(ownerId)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+    }
+
+    PropertyImage propertyImage =
+        propertyImageRepository
+            .findById(imageId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Image not found"));
+
+    if (!propertyImage.getPropertyId().equals(propertyId)) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Image does not belong to this property");
+    }
+
+    if (isMain) {
+      propertyImageRepository.clearMainImage(propertyId);
+    }
+
+    propertyImage.setIsMain(isMain);
+    propertyImageRepository.save(propertyImage);
+  }
+
+  @Transactional
+  public void setUnitImageAsMain(
+      UUID ownerId, UUID propertyId, UUID unitId, UUID imageId, Boolean isMain) {
+    Property property =
+        propertyRepository
+            .findById(propertyId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+
+    if (!property.getOwnerId().equals(ownerId)) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+    }
+
+    Unit unit =
+        unitRepository
+            .findByIdAndPropertyId(unitId, propertyId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found"));
+
+    UnitImage unitImage =
+        unitImageRepository
+            .findById(imageId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Image not found"));
+
+    if (!unitImage.getUnitId().equals(unitId)) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Image does not belong to this unit");
+    }
+
+    if (isMain) {
+      unitImageRepository.clearMainImage(unitId);
+    }
+
+    unitImage.setIsMain(isMain);
+    unitImageRepository.save(unitImage);
   }
 }

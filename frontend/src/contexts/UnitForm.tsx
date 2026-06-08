@@ -30,10 +30,10 @@ const UNIT_TYPES = [
 ];
 
 export default function UnitForm({
-                                         initialValues,
-                                         onSubmit,
-                                         submitLabel,
-                                     }: UnitFormProps) {
+                                     initialValues,
+                                     onSubmit,
+                                     submitLabel,
+                                 }: UnitFormProps) {
     const [form, setForm] = useState<UnitFormData>(
         initialValues ?? {
             name: "",
@@ -68,93 +68,118 @@ export default function UnitForm({
         await onSubmit(payload);
     };
 
+    const inputClasses = "w-full border border-[#DACDCA] rounded-lg p-3 text-sm font-semibold text-[#1A1A1A] placeholder-[#7A7A7A]/70 focus:outline-none focus:border-[#42211D] focus:ring-1 focus:ring-[#42211D] transition-all bg-transparent";
+
     return (
-        <form
-            onSubmit={handleSubmit}
-            className="bg-white border border-[#DACDCA] rounded-xl p-6 shadow-sm space-y-4"
-        >
-            <input
-                name="name"
-                placeholder="Name"
-                value={form.name}
-                onChange={handleChange}
-                className="w-full border rounded-lg p-3"
-                required
-            />
-
-            <textarea
-                name="description"
-                placeholder="Description"
-                value={form.description}
-                onChange={handleChange}
-                className="w-full border rounded-lg p-3"
-                rows={4}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-1">
+                <label className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Unit Name</label>
                 <input
-                    type="number"
-                    name="pricePerNight"
-                    placeholder="Price"
-                    value={form.pricePerNight === 0 ? "" : form.pricePerNight}
+                    name="name"
+                    placeholder="e.g. Apartment 4B"
+                    value={form.name}
                     onChange={handleChange}
-                    className="w-full border rounded-lg p-3"
-                    min="0"
-                    step="0.01"
-                    required
-                />
-
-                <select
-                    name="unitType"
-                    value={form.unitType}
-                    onChange={handleChange}
-                    className="w-full border rounded-lg p-3 bg-white h-[50px]"
-                    required>
-                    {UNIT_TYPES.map(type => (
-                        <option key={type} value={type}>
-                            {type}
-                        </option>
-                    ))}
-                </select>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input
-                    type="number"
-                    name="capacity"
-                    placeholder="Guests"
-                    value={form.capacity === 0 ? "" : form.capacity}
-                    onChange={handleChange}
-                    className="w-full border rounded-lg p-3"
-                    min="1"
-                    required
-                />
-
-                <input
-                    name="unitNumber"
-                    placeholder="e.g. 104A"
-                    value={form.unitNumber}
-                    onChange={handleChange}
-                    className="w-full border rounded-lg p-3"
-                    required
-                />
-
-                <input
-                    type="number"
-                    name="floor"
-                    placeholder="Floor"
-                    onChange={handleChange}
-                    className="w-full border rounded-lg p-3"
+                    className={inputClasses}
                     required
                 />
             </div>
 
-            <button
-                type="submit"
-                className="bg-[#42211D] text-white px-5 py-3 rounded-lg font-bold hover:bg-[#5C2E29]"
-            >
-                {submitLabel}
-            </button>
+            <div className="space-y-1">
+                <label className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Description</label>
+                <textarea
+                    name="description"
+                    placeholder="Describe unit details, unique features, or bedding arrangements..."
+                    value={form.description}
+                    onChange={handleChange}
+                    className={inputClasses}
+                    rows={4}
+                />
+            </div>
+
+            <div className="border-t border-[#DACDCA]/50 my-6 pt-4 space-y-4">
+                <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider mb-2">Pricing & Type</span>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                        <input
+                            type="number"
+                            name="pricePerNight"
+                            placeholder="Price per night"
+                            value={form.pricePerNight === 0 || isNaN(form.pricePerNight) ? "" : form.pricePerNight}
+                            onChange={handleChange}
+                            className={inputClasses}
+                            min="0"
+                            step="0.01"
+                            required
+                        />
+                    </div>
+
+                    <div className="space-y-1">
+                        <select
+                            name="unitType"
+                            value={form.unitType}
+                            onChange={handleChange}
+                            className={`${inputClasses} bg-white appearance-none cursor-pointer`}
+                            required
+                        >
+                            {UNIT_TYPES.map(type => (
+                                <option key={type} value={type}>
+                                    {type}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider mb-2 pt-2">Space & Location</span>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                        <input
+                            type="number"
+                            name="capacity"
+                            placeholder="Max Guests"
+                            value={form.capacity === 0 || isNaN(form.capacity) ? "" : form.capacity}
+                            onChange={handleChange}
+                            className={inputClasses}
+                            min="1"
+                            required
+                        />
+                    </div>
+
+                    <div className="space-y-1">
+                        <input
+                            name="unitNumber"
+                            placeholder="Unit Number (e.g. 104A)"
+                            value={form.unitNumber}
+                            onChange={handleChange}
+                            className={inputClasses}
+                            required
+                        />
+                    </div>
+
+                    <div className="space-y-1">
+                        <input
+                            type="number"
+                            name="floor"
+                            placeholder="Floor"
+                            value={isNaN(form.floor) ? "" : form.floor}
+                            onChange={handleChange}
+                            className={inputClasses}
+                            required
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <div className="pt-4">
+                <button
+                    type="submit"
+                    className="w-full md:w-auto px-6 py-3 bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm tracking-tight"
+                >
+                    {submitLabel}
+                </button>
+            </div>
         </form>
     );
 }

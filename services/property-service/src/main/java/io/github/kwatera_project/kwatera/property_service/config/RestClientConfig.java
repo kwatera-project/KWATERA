@@ -9,8 +9,13 @@ import org.springframework.web.client.RestClient;
 public class RestClientConfig {
 
   @Bean
-  public RestClient reservationRestClient(@Value("${services.reservation.url}") String baseUrl) {
+  public RestClient reservationRestClient(
+      org.springframework.cloud.client.loadbalancer.LoadBalancerInterceptor loadBalancerInterceptor,
+      @Value("${services.reservation.url}") String baseUrl) {
 
-    return RestClient.builder().baseUrl(baseUrl).build();
+    return RestClient.builder()
+        .baseUrl(baseUrl)
+        .requestInterceptor(loadBalancerInterceptor)
+        .build();
   }
 }

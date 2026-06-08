@@ -26,3 +26,8 @@ export async function getPropertyImages(id: string) {
     const res = await fetch(`${API_URL}/properties/${id}/images`);
     return res.json();
 }
+
+export async function getUnitImages(propertyId: string, unitId: string) {
+    const res = await fetch(`${API_URL}/properties/${propertyId}/units/${unitId}/images`);
+    return res.json();
+}

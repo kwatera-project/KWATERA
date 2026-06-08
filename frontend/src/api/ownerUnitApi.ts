@@ -97,3 +97,76 @@ export async function deleteUnit(
         throw new Error(`HTTP ${res.status}`);
     }
 }
+
+export async function uploadUnitImage(
+    propertyId: string,
+    unitId: string,
+    file: File,
+    isMain: boolean
+) {
+    const token = localStorage.getItem("token");
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("isMain", String(isMain));
+
+    const res = await fetch(
+        `${API_URL}/property/${propertyId}/unit/${unitId}/images`,
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+        }
+    );
+
+    if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+    }
+}
+
+export async function deleteUnitImage(
+    propertyId: string,
+    unitId: string,
+    imageId: string
+) {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(
+        `${API_URL}/property/${propertyId}/unit/${unitId}/images/${imageId}`,
+        {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        }
+    );
+
+    if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+    }
+}
+
+export async function setUnitImageAsMain(
+    propertyId: string,
+    unitId: string,
+    imageId: string,
+    isMain: boolean
+) {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(
+        `${API_URL}/property/${propertyId}/unit/${unitId}/images/${imageId}/main?isMain=${isMain}`,
+        {
+            method: "PATCH",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        }
+    );
+
+    if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+    }
+}

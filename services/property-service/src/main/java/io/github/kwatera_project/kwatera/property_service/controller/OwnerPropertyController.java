@@ -2,13 +2,16 @@ package io.github.kwatera_project.kwatera.property_service.controller;
 
 import io.github.kwatera_project.kwatera.property_service.dto.*;
 import io.github.kwatera_project.kwatera.property_service.service.PropertyService;
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
@@ -22,12 +25,12 @@ public class OwnerPropertyController {
   @PreAuthorize("hasRole('ROLE_OWNER')")
   public List<PropertyDto> getMyProperties(Authentication authentication) {
 
-      if (authentication != null) {
-          System.out.println("Principal class: " + authentication.getPrincipal().getClass().getName());
-          System.out.println("Principal value: " + authentication.getPrincipal());
-      } else {
-          System.out.println("Authentication is NULL!");
-      }
+    if (authentication != null) {
+      System.out.println("Principal class: " + authentication.getPrincipal().getClass().getName());
+      System.out.println("Principal value: " + authentication.getPrincipal());
+    } else {
+      System.out.println("Authentication is NULL!");
+    }
 
     UUID ownerId = validateAndGetUserId(authentication);
 
@@ -72,7 +75,7 @@ public class OwnerPropertyController {
           HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
     }
     try {
-        return (String) details;
+      return (String) details;
     } catch (IllegalArgumentException e) {
       throw new ResponseStatusException(
           HttpStatus.UNAUTHORIZED, "Unauthorized: Invalid token format");
@@ -149,5 +152,90 @@ public class OwnerPropertyController {
     String token = validateAndGetToken(authentication);
 
     propertyService.deleteUnit(ownerId, propertyId, unitId, token);
+  }
+
+  @PostMapping(
+      value = "/property/{propertyId}/images",
+      consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PreAuthorize("hasRole('ROLE_OWNER')")
+  public void uploadPropertyImage(
+      @PathVariable("propertyId") UUID propertyId,
+      @RequestParam("file") MultipartFile file,
+      @RequestParam("isMain") Boolean isMain,
+      Authentication authentication)
+      throws IOException {
+
+    UUID ownerId = validateAndGetUserId(authentication);
+
+    propertyService.uploadPropertyImage(ownerId, propertyId, isMain, file);
+  }
+
+  @DeleteMapping(value = "/property/{propertyId}/images/{imageId}")
+  @PreAuthorize("hasRole('ROLE_OWNER')")
+  public void deletePropertyImage(
+      @PathVariable("propertyId") UUID propertyId,
+      @PathVariable("imageId") UUID imageId,
+      Authentication authentication)
+      throws IOException {
+
+    UUID ownerId = validateAndGetUserId(authentication);
+
+    propertyService.deletePropertyImage(ownerId, propertyId, imageId);
+  }
+
+  @PatchMapping("/{propertyId}/images/{imageId}/main")
+  public void setPropertyImageIsMain(
+      @PathVariable("propertyId") UUID propertyId,
+      @PathVariable("imageId") UUID imageId,
+      @RequestParam("isMain") Boolean isMain,
+      Authentication authentication) {
+
+    UUID ownerId = validateAndGetUserId(authentication);
+
+    propertyService.setPropertyImageAsMain(ownerId, propertyId, imageId, isMain);
+  }
+
+  @PostMapping(
+      value = "/property/{propertyId}/unit/{unitId}/images",
+      consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PreAuthorize("hasRole('ROLE_OWNER')")
+  public void uploadUnitImage(
+      @PathVariable("propertyId") UUID propertyId,
+      @PathVariable("unitId") UUID unitId,
+      @RequestParam("file") MultipartFile file,
+      @RequestParam("isMain") Boolean isMain,
+      Authentication authentication)
+      throws IOException {
+
+    UUID ownerId = validateAndGetUserId(authentication);
+
+    propertyService.uploadUnitImage(ownerId, propertyId, unitId, isMain, file);
+  }
+
+  @DeleteMapping(value = "/property/{propertyId}/unit/{unitId}/images/{imageId}")
+  @PreAuthorize("hasRole('ROLE_OWNER')")
+  public void deleteUnitImage(
+      @PathVariable("propertyId") UUID propertyId,
+      @PathVariable("unitId") UUID unitId,
+      @PathVariable("imageId") UUID imageId,
+      Authentication authentication)
+      throws IOException {
+
+    UUID ownerId = validateAndGetUserId(authentication);
+
+    propertyService.deleteUnitImage(ownerId, propertyId, unitId, imageId);
+  }
+
+  @PatchMapping("/property/{propertyId}/unit/{unitId}/images/{imageId}/main")
+  public void setUnitImageIsMain(
+      @PathVariable("propertyId") UUID propertyId,
+      @PathVariable("unitId") UUID unitId,
+      @PathVariable("imageId") UUID imageId,
+      @RequestParam("isMain") Boolean isMain,
+      Authentication authentication) {
+
+    UUID ownerId = validateAndGetUserId(authentication);
+
+    propertyService.setUnitImageAsMain(ownerId, propertyId, unitId, imageId, isMain);
   }
 }

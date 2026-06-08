@@ -81,16 +81,17 @@ public class AdminReservationController {
         reservationId, request.getNewStatus(), userId, isAdmin);
   }
 
-    @GetMapping("/units/{unitId}/exists")
-    public boolean hasReservationsForUnit(@PathVariable UUID unitId, Authentication authentication) {
+  @GetMapping("/units/{unitId}/exists")
+  public boolean hasReservationsForUnit(
+      @PathVariable("unitId") UUID unitId, Authentication authentication) {
 
-        boolean isOwner =
-                authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_OWNER"));
+    boolean isOwner =
+        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_OWNER"));
 
-        if (!isOwner) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
-        }
-
-        return adminReservationService.hasReservationsForUnit(unitId);
+    if (!isOwner) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
     }
+
+    return adminReservationService.hasReservationsForUnit(unitId);
+  }
 }

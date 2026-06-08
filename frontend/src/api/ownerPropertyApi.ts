@@ -88,3 +88,73 @@ export async function deleteProperty(
         throw new Error(`HTTP ${res.status}`);
     }
 }
+
+export async function uploadPropertyImage(
+    propertyId: string,
+    file: File,
+    isMain: boolean
+) {
+    const token = localStorage.getItem("token");
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("isMain", String(isMain));
+
+    const res = await fetch(
+        `${API_URL}/property/${propertyId}/images`,
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+        }
+    );
+
+    if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+    }
+}
+
+export async function deletePropertyImage(
+    propertyId: string,
+    imageId: string
+) {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(
+        `${API_URL}/property/${propertyId}/images/${imageId}`,
+        {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        }
+    );
+
+    if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+    }
+}
+
+export async function setPropertyImageAsMain(
+    propertyId: string,
+    imageId: string,
+    isMain: boolean
+) {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(
+        `${API_URL}/${propertyId}/images/${imageId}/main?isMain=${isMain}`,
+        {
+            method: "PATCH",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        }
+    );
+
+    if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+    }
+}

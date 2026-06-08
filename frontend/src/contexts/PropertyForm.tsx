@@ -47,84 +47,100 @@ export default function PropertyForm({
         await onSubmit(form);
     };
 
+
+    const inputClasses = "w-full border border-[#DACDCA] rounded-lg p-3 text-sm font-semibold text-[#1A1A1A] placeholder-[#7A7A7A]/70 focus:outline-none focus:border-[#42211D] focus:ring-1 focus:ring-[#42211D] transition-all bg-transparent";
+
     return (
-        <form
-            onSubmit={handleSubmit}
-            className="bg-white border border-[#DACDCA] rounded-xl p-6 shadow-sm space-y-4"
-        >
-            <input
-                name="title"
-                placeholder="Title"
-                value={form.title}
-                onChange={handleChange}
-                className="w-full border rounded-lg p-3"
-                required
-            />
-
-            <textarea
-                name="description"
-                placeholder="Description"
-                value={form.description}
-                onChange={handleChange}
-                className="w-full border rounded-lg p-3"
-                rows={4}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-1">
+                <label className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Property Title</label>
                 <input
-                    name="country"
-                    placeholder="Country"
-                    value={form.country}
+                    name="title"
+                    placeholder="e.g. Cozy Downtown Apartment"
+                    value={form.title}
                     onChange={handleChange}
-                    className="border rounded-lg p-3"
-                    required
-                />
-
-                <input
-                    name="city"
-                    placeholder="City"
-                    value={form.city}
-                    onChange={handleChange}
-                    className="border rounded-lg p-3"
+                    className={inputClasses}
                     required
                 />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input
-                    name="postalCode"
-                    placeholder="Postal Code"
-                    value={form.postalCode}
+            <div className="space-y-1">
+                <label className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Description</label>
+                <textarea
+                    name="description"
+                    placeholder="Describe your property, amenities, and surroundings..."
+                    value={form.description}
                     onChange={handleChange}
-                    className="border rounded-lg p-3"
-                    required
-                />
-
-                <input
-                    name="street"
-                    placeholder="Street"
-                    value={form.street}
-                    onChange={handleChange}
-                    className="border rounded-lg p-3"
-                    required
-                />
-
-                <input
-                    name="streetNumber"
-                    placeholder="Street Number"
-                    value={form.streetNumber}
-                    onChange={handleChange}
-                    className="border rounded-lg p-3"
-                    required
+                    className={inputClasses}
+                    rows={4}
                 />
             </div>
 
-            <button
-                type="submit"
-                className="bg-[#42211D] text-white px-5 py-3 rounded-lg font-bold hover:bg-[#5C2E29]"
-            >
-                {submitLabel}
-            </button>
+            <div className="border-t border-[#DACDCA]/50 my-6 pt-4 space-y-4">
+                <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider mb-2">Location Details</span>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                        <input
+                            name="country"
+                            placeholder="Country"
+                            value={form.country}
+                            onChange={handleChange}
+                            className={inputClasses}
+                            required
+                        />
+                    </div>
+
+                    <div className="space-y-1">
+                        <input
+                            name="city"
+                            placeholder="City"
+                            value={form.city}
+                            onChange={handleChange}
+                            className={inputClasses}
+                            required
+                        />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <input
+                        name="postalCode"
+                        placeholder="Postal Code"
+                        value={form.postalCode}
+                        onChange={handleChange}
+                        className={inputClasses}
+                        required
+                    />
+
+                    <input
+                        name="street"
+                        placeholder="Street"
+                        value={form.street}
+                        onChange={handleChange}
+                        className={inputClasses}
+                        required
+                    />
+
+                    <input
+                        name="streetNumber"
+                        placeholder="Street Number"
+                        value={form.streetNumber}
+                        onChange={handleChange}
+                        className={inputClasses}
+                        required
+                    />
+                </div>
+            </div>
+
+            <div className="pt-4">
+                <button
+                    type="submit"
+                    className="w-full md:w-auto px-6 py-3 bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm tracking-tight"
+                >
+                    {submitLabel}
+                </button>
+            </div>
         </form>
     );
 }

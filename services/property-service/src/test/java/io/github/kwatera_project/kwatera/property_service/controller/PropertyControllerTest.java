@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 import io.github.kwatera_project.kwatera.property_service.dto.PropertyDto;
 import io.github.kwatera_project.kwatera.property_service.dto.UnitDto;
 import io.github.kwatera_project.kwatera.property_service.dto.UnitSettlementItemDto;
+import io.github.kwatera_project.kwatera.property_service.model.PropertyImage;
 import io.github.kwatera_project.kwatera.property_service.model.UnitType;
 import io.github.kwatera_project.kwatera.property_service.service.PropertyService;
 import java.math.BigDecimal;
@@ -142,12 +143,23 @@ class PropertyControllerTest {
   void getPropertyImages_shouldReturnImages() {
     UUID propertyId = UUID.randomUUID();
 
-    when(service.getPropertyImages(propertyId)).thenReturn(List.of("img1.jpg", "img2.jpg"));
+    PropertyImage mockImage = new PropertyImage();
+    mockImage.setId(UUID.randomUUID());
+    mockImage.setUrl(
+        "http://localhost:8083/properties/aaaa1111-1111-1111-1111-111111111111/4dc49eff-91e1-45db-8aab-dd61bd758fb5.jpg");
+    mockImage.setIsMain(true);
+    mockImage.setPropertyId(propertyId);
+
+    List<PropertyImage> mockImages = List.of(mockImage);
+
+    when(service.getPropertyImages(propertyId)).thenReturn(mockImages);
 
     var result = controller.getPropertyImages(propertyId);
 
-    assertEquals(2, result.size());
-    assertEquals("img1.jpg", result.get(0));
+    assertEquals(1, result.size());
+    assertEquals(
+        "http://localhost:8083/properties/aaaa1111-1111-1111-1111-111111111111/4dc49eff-91e1-45db-8aab-dd61bd758fb5.jpg",
+        result.get(0).getUrl());
   }
 
   @Test

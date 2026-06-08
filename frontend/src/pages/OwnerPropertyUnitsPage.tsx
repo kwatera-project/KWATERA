@@ -40,7 +40,6 @@ export default function OwnerPropertyUnitsPage() {
 
     return (
         <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
-            {/* Top Ghost Back Navigation Link */}
             <div>
                 <Link to="/owner/properties" className="inline-flex items-center text-sm font-bold text-[#7A7A7A] hover:text-[#1A1A1A] transition-colors mb-4">
                     ← Back to Properties
@@ -126,7 +125,7 @@ function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: stri
                     </div>
                 </div>
 
-                {/* Price Blocks */}
+
                 <div className="pt-4 flex flex-wrap gap-x-10 gap-y-4 items-center border-t border-gray-100 mt-4">
                     <div>
                         <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-1">Current Price</span>
@@ -151,6 +150,12 @@ function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: stri
             </div>
 
             <div className="flex gap-3 w-full lg:w-auto justify-end border-t border-gray-100 lg:border-none pt-4 lg:pt-0 shrink-0">
+                <Link
+                    to={`/owner/properties/${propertyId}/units/${unit.id}/images`}
+                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all inline-flex items-center"
+                >
+                    Manage Images
+                </Link>
                 <Link
                     to={`/owner/properties/${propertyId}/units/${unit.id}/edit`}
                     className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all"
