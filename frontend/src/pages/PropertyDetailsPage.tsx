@@ -323,8 +323,8 @@ export default function PropertyDetailsPage() {
                     {images.map((img, i) => (
                         <img
                             key={i}
-                            src={img}
-                            onClick={() => setMainImage(img)}
+                            src={img.url}
+                            onClick={() => setMainImage(img.url)}
                             className={`w-20 h-20 object-cover rounded-lg cursor-pointer border-2 transition-all hover:scale-105 ${
                                 mainImage === img.url ? "border-brand-primary shadow-md" : "border-brand-accent hover:border-gray-400"
                             }`}
