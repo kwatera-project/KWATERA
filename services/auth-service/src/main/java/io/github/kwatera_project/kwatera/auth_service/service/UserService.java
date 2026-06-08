@@ -4,17 +4,20 @@ import io.github.kwatera_project.kwatera.auth_service.model.Role;
 import io.github.kwatera_project.kwatera.auth_service.model.User;
 import io.github.kwatera_project.kwatera.auth_service.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
+  private final EmailNotificationService emailNotificationService;
 
   public User getUserByEmail(String email) {
     return userRepository
@@ -52,6 +55,11 @@ public class UserService {
     }
 
     userRepository.save(user);
+    try {
+      emailNotificationService.sendThankYouEmail(email, firstName);
+    } catch (Exception e) {
+      log.warn("Failed to send welcome email for registered user: {}", e.getMessage());
+    }
   }
 
   public User updateProfile(String email, String firstName, String lastName) {

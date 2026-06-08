@@ -248,6 +248,11 @@ public class ReservationService {
 
     Reservation saved = reservationRepository.save(reservation);
     emailNotificationService.sendReservationCreated(saved, saved.getGuestEmail());
+    try {
+      emailNotificationService.sendOwnerReservationCreated(saved);
+    } catch (Exception e) {
+      log.warn("Failed to send owner notification for reservation creation: {}", e.getMessage());
+    }
     return saved;
   }
 
@@ -295,6 +300,88 @@ public class ReservationService {
     dto.setCurrencyInfo(currencyInfo);
 
     // Fetch unit name, property name and city from property-service
+    String guestName = "Guest " + reservation.getUserId().toString().substring(0, 8);
+    String unitName = "Unknown Room";
+    String city = "Unknown City";
+
+    try {
+      String unitUrl = "http://property-service/api/properties/units/" + reservation.getUnitId();
+      UnitDetailsDto unitDto = restTemplate.getForObject(unitUrl, UnitDetailsDto.class);
+      if (unitDto != null) {
+        if (unitDto.name() != null) {
+          unitName = unitDto.name();
+        }
+        if (unitDto.propertyId() != null) {
+          String propertyUrl = "http://property-service/api/properties/" + unitDto.propertyId();
+          PropertyDetailsDto propertyDto =
+              restTemplate.getForObject(propertyUrl, PropertyDetailsDto.class);
+          if (propertyDto != null) {
+            if (propertyDto.city() != null) {
+              city = propertyDto.city();
+            }
+            if (propertyDto.ownerId() != null) {
+              UUID ownerId = propertyDto.ownerId();
+              String ownerName = "Owner " + ownerId.toString().substring(0, 8);
+              String ownerEmail = "owner_" + ownerId.toString().substring(0, 8) + "@example.com";
+              if (ownerId.toString().equals("22222222-2222-2222-2222-222222222222")) {
+                ownerName = "John Owner";
+                ownerEmail = "owner1@example.com";
+              } else if (ownerId.toString().equals("33333333-3333-3333-3333-333333333333")) {
+                ownerName = "Jane Owner";
+                ownerEmail = "owner2@example.com";
+              }
+              dto.setOwnerName(ownerName);
+              dto.setOwnerEmail(ownerEmail);
+            }
+          }
+        }
+      }
+    } catch (Exception e) {
+      log.warn("Failed to fetch property details for reservation: {}", reservationId, e);
+    }
+
+    dto.setGuestName(guestName);
+    dto.setUnitName(unitName);
+    dto.setCity(city);
+
+    return dto;
+  }
+
+  public ReservationDetailsDto getReservationDetailsInternal(UUID reservationId) {
+    Reservation reservation =
+        reservationRepository
+            .findById(reservationId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reservation not found"));
+
+    ReservationDetailsDto dto = new ReservationDetailsDto();
+    dto.setId(reservation.getId());
+    dto.setUserId(reservation.getUserId());
+    dto.setGuestEmail(reservation.getGuestEmail());
+    dto.setUnitId(reservation.getUnitId());
+    dto.setStartDate(reservation.getStartDate());
+    dto.setEndDate(reservation.getEndDate());
+    dto.setStatus(reservation.getStatus());
+    dto.setCreatedAt(reservation.getCreatedAt());
+    dto.setPricePerNightSnapshot(reservation.getPricePerNightSnapshot());
+    dto.setTotalPrice(reservation.getTotalPrice());
+
+    CurrencyMetadataDto currencyInfo =
+        new CurrencyMetadataDto(
+            "PLN",
+            reservation.getPaymentCurrency(),
+            reservation.getPaymentExchangeRate(),
+            reservation.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
+    BigDecimal convertedTotalPrice = reservation.getTotalPrice();
+
+    if (!"PLN".equalsIgnoreCase(reservation.getPaymentCurrency())) {
+      convertedTotalPrice =
+          convertedTotalPrice.divide(reservation.getPaymentExchangeRate(), 2, RoundingMode.HALF_UP);
+    }
+
+    dto.setConvertedTotalPrice(convertedTotalPrice);
+    dto.setCurrencyInfo(currencyInfo);
+
     String guestName = "Guest " + reservation.getUserId().toString().substring(0, 8);
     String unitName = "Unknown Room";
     String city = "Unknown City";
@@ -411,6 +498,17 @@ public class ReservationService {
     reservationRepository.save(reservation);
     emailNotificationService.sendReservationStatusChanged(
         reservation, oldStatus, reservation.getStatus(), reservation.getGuestEmail());
+    try {
+      if (reservation.getStatus() == ReservationStatus.CANCELLED) {
+        emailNotificationService.sendOwnerReservationCancelled(reservation);
+      } else {
+        emailNotificationService.sendOwnerReservationStatusChanged(
+            reservation, oldStatus, reservation.getStatus());
+      }
+    } catch (Exception e) {
+      log.warn(
+          "Failed to send owner notification for reservation status update: {}", e.getMessage());
+    }
   }
 
   public ReservationMetricsDto getDashboardReservationMetrics(
@@ -490,9 +588,26 @@ public class ReservationService {
       try {
         emailNotificationService.sendReservationStatusChanged(
             reservation, oldStatus, ReservationStatus.CANCELLED, reservation.getGuestEmail());
+        emailNotificationService.sendOwnerReservationCancelled(reservation);
       } catch (Exception e) {
         log.warn(
             "Failed to send cancellation email for reservation {}: {}",
+            reservation.getId(),
+            e.getMessage());
+      }
+    }
+  }
+
+  public void notifyUpcomingReservations() {
+    LocalDate tomorrow = businessDateProvider.today().plusDays(1);
+    List<Reservation> upcoming =
+        reservationRepository.findByStartDateAndStatus(tomorrow, ReservationStatus.CONFIRMED);
+    for (Reservation reservation : upcoming) {
+      try {
+        emailNotificationService.sendOwnerReservationUpcoming(reservation);
+      } catch (Exception e) {
+        log.warn(
+            "Failed to send upcoming reservation notification to owner for reservation {}: {}",
             reservation.getId(),
             e.getMessage());
       }

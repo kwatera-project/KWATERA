@@ -64,6 +64,12 @@ public class ReservationController {
     return reservationService.getReservationDetails(reservationId, userId, isAdmin, isOwner);
   }
 
+  @GetMapping("/internal/{reservationId}")
+  public ReservationDetailsDto getReservationDetailsInternal(
+      @PathVariable("reservationId") UUID reservationId) {
+    return reservationService.getReservationDetailsInternal(reservationId);
+  }
+
   private UUID validateAndGetUserId(Authentication authentication) {
     if (authentication == null || !authentication.isAuthenticated()) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized: Token is missing");

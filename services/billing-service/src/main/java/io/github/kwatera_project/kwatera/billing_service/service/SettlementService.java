@@ -117,6 +117,15 @@ public class SettlementService {
 
     settlementRepository.save(settlement);
 
+    try {
+      emailNotificationService.sendUtilityChargesAdded(settlement, item);
+    } catch (Exception e) {
+      log.warn(
+          "Failed to send utility charges notification for settlement {}: {}",
+          settlementId,
+          e.getMessage());
+    }
+
     return item;
   }
 
@@ -177,6 +186,12 @@ public class SettlementService {
           new SettlementStatusChangedEvent(settlement.getReservationId(), newStatus));
       emailNotificationService.sendPaymentStatusChanged(
           settlement, previous, newStatus, recipientEmail);
+      try {
+        emailNotificationService.sendOwnerPaymentStatusChanged(
+            settlement, previous, newStatus, unitId);
+      } catch (Exception e) {
+        log.warn("Failed to send owner notification for payment status change: {}", e.getMessage());
+      }
     }
   }
 

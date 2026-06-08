@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:replace="~{base-layout :: layout(~{::content})}">
+    <div th:fragment="content">
+        <div style="margin-bottom: 20px;">
+            <span style="display: inline-block; padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em; background-color: #F9F5F5; color: #42211D; border: 1px solid #DACDCA;" th:text="${newStatus}">
+                CONFIRMED
+            </span>
+        </div>
+
+        <h2 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 700; color: #1A1A1A; letter-spacing: -0.02em;">
+            Reservation Status Updated
+        </h2>
+        
+        <p style="margin: 0 0 24px 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;">
+            Hello,<br><br>
+            A reservation for your property has been updated. Below are the details:
+        </p>
+        
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F7F7F7; border: 1px solid #DACDCA; border-radius: 12px; margin-bottom: 24px; border-collapse: separate;">
+            <tr>
+                <td style="padding: 16px 20px; border-bottom: 1px solid #DACDCA;">
+                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #7A7A7A; font-weight: 600; display: block;">Accommodation / Property</span>
+                    <div style="font-size: 15px; font-weight: 700; color: #42211D; margin-top: 4px;" th:text="${propertyName}">
+                        Luxury Apartment
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 16px 20px; border-bottom: 1px solid #DACDCA;">
+                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #7A7A7A; font-weight: 600; display: block;">Reservation ID</span>
+                    <div style="font-size: 14px; font-family: monospace; color: #1A1A1A; margin-top: 4px;" th:text="${reservation.id}">
+                        1234-5678
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 16px 20px; border-bottom: 1px solid #DACDCA;">
+                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #7A7A7A; font-weight: 600; display: block;">Status Update</span>
+                    <div style="font-size: 14px; font-weight: 500; color: #1A1A1A; margin-top: 4px;">
+                        Changed from <span th:text="${oldStatus}" style="font-weight: 600; color: #7A7A7A;">PENDING</span> to <span th:text="${newStatus}" style="font-weight: 600; color: #42211D;">CONFIRMED</span>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 16px 20px; border-bottom: 1px solid #DACDCA;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                        <tr>
+                            <td width="50%" style="padding-right: 10px; vertical-align: top;">
+                                <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #7A7A7A; font-weight: 600; display: block;">Check-in</span>
+                                <div style="font-size: 14px; font-weight: 500; color: #1A1A1A; margin-top: 4px;" th:text="${reservation.startDate}">
+                                    2026-06-09
+                                </div>
+                            </td>
+                            <td width="50%" style="padding-left: 10px; vertical-align: top;">
+                                <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #7A7A7A; font-weight: 600; display: block;">Check-out</span>
+                                <div style="font-size: 14px; font-weight: 500; color: #1A1A1A; margin-top: 4px;" th:text="${reservation.endDate}">
+                                    2026-06-12
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 16px 20px; border-bottom: 1px solid #DACDCA;">
+                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #7A7A7A; font-weight: 600; display: block;">Duration</span>
+                    <div style="font-size: 14px; font-weight: 500; color: #1A1A1A; margin-top: 4px;">
+                        <span th:text="${numberOfNights}">3</span> nights
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 20px; background-color: #DACDCA; border-radius: 0 0 12px 12px; background-opacity: 0.2;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                        <tr>
+                            <td style="font-size: 14px; color: #42211D; font-weight: 700;">Total Payout / Price:</td>
+                            <td align="right" style="font-size: 18px; font-weight: 800; color: #42211D;" th:text="${formattedPrice}">
+                                300.00 PLN
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        
+        <p style="margin: 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;">
+            Please visit your owner dashboard to view the reservation calendar. Thank you!
+        </p>
+    </div>
+</div>
+</body>
+</html>

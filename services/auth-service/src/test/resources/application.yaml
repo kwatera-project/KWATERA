@@ -11,7 +11,15 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: create-drop
+  mail:
+    host: localhost
+    port: 1025
 
 eureka:
   client:
     enabled: false
+
+kwatera:
+  mail:
+    from: no-reply@kwatera.local
+    test-recipient: guest@kwatera.local
