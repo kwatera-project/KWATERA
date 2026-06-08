@@ -475,6 +475,30 @@ public class ReservationService {
     return new ReservationMetricsDto(totalReservations, occupancyRate, occupiedNights);
   }
 
+  @Transactional
+  public void cancelExpiredPendingReservations(java.time.Instant threshold) {
+    log.info("Starting cleanup of expired pending reservations older than: {}", threshold);
+    List<Reservation> expiredReservations =
+        reservationRepository.findByStatusAndCreatedAtBefore(ReservationStatus.PENDING, threshold);
+
+    for (Reservation reservation : expiredReservations) {
+      ReservationStatus oldStatus = reservation.getStatus();
+      reservation.setStatus(ReservationStatus.CANCELLED);
+      reservationRepository.save(reservation);
+      log.info("Cancelled expired pending reservation with ID: {}", reservation.getId());
+
+      try {
+        emailNotificationService.sendReservationStatusChanged(
+            reservation, oldStatus, ReservationStatus.CANCELLED, reservation.getGuestEmail());
+      } catch (Exception e) {
+        log.warn(
+            "Failed to send cancellation email for reservation {}: {}",
+            reservation.getId(),
+            e.getMessage());
+      }
+    }
+  }
+
   record UnitDetailsDto(UUID propertyId, String name) {}
 
   record PropertyDetailsDto(String title, String city, UUID ownerId) {}
