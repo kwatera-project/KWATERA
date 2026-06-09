@@ -9,6 +9,7 @@ interface TeamMember {
     linkedin: string;
     initials: string;
     bgColor: string;
+    image?: string;
 }
 
 export default function AboutPage() {
@@ -20,7 +21,8 @@ export default function AboutPage() {
             github: "https://github.com/ZuzannaAdamczyk",
             linkedin: "https://www.linkedin.com/in/zuzanna-adamczyk-26a56928a/",
             initials: "ZA",
-            bgColor: "bg-brand-accent text-brand-primary"
+            bgColor: "bg-brand-accent text-brand-primary",
+            image: "https://media.licdn.com/dms/image/v2/D4D03AQG-Nzan5fxIqw/profile-displayphoto-scale_400_400/B4DZypIThDH4Ag-/0/1772364056913?e=1782345600&v=beta&t=dJv1F7PmYzt7IprARrV9NEoCF1wkc61bViDR03qoOvw"
         },
         {
             name: "Łukasz Jęcek",
@@ -29,7 +31,8 @@ export default function AboutPage() {
             github: "https://github.com/lukaszjecek",
             linkedin: "https://www.linkedin.com/in/lukasz-jecek",
             initials: "ŁJ",
-            bgColor: "bg-brand-accent text-brand-primary"
+            bgColor: "bg-brand-accent text-brand-primary",
+            image: "https://media.licdn.com/dms/image/v2/D4D03AQEPl_ZjzTMrLQ/profile-displayphoto-scale_400_400/B4DZ1GO2n_IYAg-/0/1774999796059?e=1782345600&v=beta&t=3reSXKEcy20lX6dwpn2-rIF-JkXbUkgjRjJxqnErcFc"
         },
         {
             name: "Nadzeya Silchankava",
@@ -38,7 +41,8 @@ export default function AboutPage() {
             github: "https://github.com/sinadzeya",
             linkedin: "https://www.linkedin.com/in/nadzeya-silchankava/",
             initials: "NS",
-            bgColor: "bg-brand-accent text-brand-primary"
+            bgColor: "bg-brand-accent text-brand-primary",
+            image: "https://media.licdn.com/dms/image/v2/D4D03AQE_aChgY43qbQ/profile-displayphoto-scale_400_400/B4DZ0ptqeLI0Ag-/0/1774521351351?e=1782345600&v=beta&t=yoD_W1SRPieWYGMuWUGMFiBmgvMtRTXnZAWd2qlsCMI"
         },
         {
             name: "Alicja Świercz",
@@ -47,7 +51,8 @@ export default function AboutPage() {
             github: "https://github.com/alicjaswiers",
             linkedin: "https://www.linkedin.com/in/alicjaswiers/",
             initials: "AŚ",
-            bgColor: "bg-brand-accent text-brand-primary"
+            bgColor: "bg-brand-accent text-brand-primary",
+            image: "https://media.licdn.com/dms/image/v2/D4D03AQF3mQWeHKZC0Q/profile-displayphoto-scale_400_400/B4DZ6o31UOH4Ag-/0/1780949670275?e=1782345600&v=beta&t=EwpL05Qu1k0ab5Uf5Ws1koAIyYo-wgEIZw2YtL9d2G0"
         }
     ];
 
@@ -90,13 +95,18 @@ export default function AboutPage() {
                             <span className="text-[11px] font-bold tracking-[0.25em] text-brand-muted uppercase">
                                 Developed in academic & corporate collaboration with
                             </span>
-                            <div className="flex items-center justify-center p-2 hover:scale-102 transition-transform duration-300">
+                            <a 
+                                href="https://lodz.commerzbank.pl" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center p-2 hover:scale-102 transition-transform duration-300"
+                            >
                                 <img 
                                     src="/commerzbank_logo.png" 
                                     alt="Commerzbank Logo" 
                                     className="h-16 md:h-20 object-contain mix-blend-multiply" 
                                 />
-                            </div>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -311,9 +321,19 @@ export default function AboutPage() {
                             <div key={member.name} className="bg-white border border-brand-accent rounded-2xl p-6 flex flex-col justify-between hover:shadow-md transition-all duration-305 hover:-translate-y-0.5">
                                 <div className="space-y-4">
                                     <div className="flex justify-center">
-                                        <div className={`w-16 h-16 rounded-full ${member.bgColor} flex items-center justify-center font-bold text-lg border border-brand-accent shadow-inner`}>
-                                            {member.initials}
-                                        </div>
+                                        {member.image ? (
+                                            <div className="w-24 h-24 rounded-full overflow-hidden border border-brand-accent shadow-inner">
+                                                <img 
+                                                    src={member.image} 
+                                                    alt={member.name} 
+                                                    className="w-full h-full object-cover scale-105"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className={`w-24 h-24 rounded-full ${member.bgColor} flex items-center justify-center font-bold text-xl border border-brand-accent shadow-inner`}>
+                                                {member.initials}
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="text-center space-y-2">
                                         <h4 className="font-bold text-brand-primary text-lg leading-none">{member.name}</h4>
