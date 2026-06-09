@@ -56,9 +56,12 @@ public class EmailNotificationService {
       helper.setText(htmlBody, true);
 
       mailSender.send(message);
-      log.info("Sent email notification '{}'", subject);
+      log.info("Sent email notification '{}'", sanitize(subject));
     } catch (MailException | MessagingException e) {
-      log.warn("Failed to send email notification '{}': {}", subject, e.getMessage());
+      log.warn(
+          "Failed to send email notification '{}': {}",
+          sanitize(subject),
+          sanitize(e.getMessage()));
     }
   }
 
@@ -68,8 +71,15 @@ public class EmailNotificationService {
     }
     log.warn(
         "No recipient email available for notification '{}'; using dev fallback {}",
-        subject,
-        testRecipient);
+        sanitize(subject),
+        sanitize(testRecipient));
     return testRecipient;
+  }
+
+  private String sanitize(String value) {
+    if (value == null) {
+      return "null";
+    }
+    return value.replace('\n', '_').replace('\r', '_');
   }
 }

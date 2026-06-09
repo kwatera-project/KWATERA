@@ -284,13 +284,13 @@ public class EmailNotificationService {
       helper.setText(htmlBody, true);
 
       mailSender.send(message);
-      log.info("Sent email notification '{}' for {}", subject, referenceId);
+      log.info("Sent email notification '{}' for {}", sanitize(subject), sanitize(referenceId));
     } catch (MailException | MessagingException e) {
       log.warn(
           "Failed to send email notification '{}' for {}: {}",
-          subject,
-          referenceId,
-          e.getMessage());
+          sanitize(subject),
+          sanitize(referenceId),
+          sanitize(e.getMessage()));
     }
   }
 
@@ -300,9 +300,16 @@ public class EmailNotificationService {
     }
     log.warn(
         "No recipient email available for notification '{}' for {}; using dev fallback {}",
-        subject,
-        referenceId,
-        testRecipient);
+        sanitize(subject),
+        sanitize(referenceId),
+        sanitize(testRecipient));
     return testRecipient;
+  }
+
+  private String sanitize(String value) {
+    if (value == null) {
+      return "null";
+    }
+    return value.replace('\n', '_').replace('\r', '_');
   }
 }
