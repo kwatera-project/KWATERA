@@ -135,4 +135,45 @@ class UserProfileControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isForbidden());
   }
+
+  @Test
+  void shouldReturnUserProfileInternal_withToken() throws Exception {
+    java.util.UUID id = java.util.UUID.randomUUID();
+    User user = new User();
+    user.setId(id);
+    user.setUsername("test");
+    user.setEmail("test@mail.com");
+    user.setFirstName("First");
+    user.setLastName("Last");
+    user.setRole(Role.GUEST);
+
+    UserProfileDto dto = new UserProfileDto("test", "First", "Last", "test@mail.com", Role.GUEST);
+
+    when(userService.getUserById(id)).thenReturn(user);
+    when(userMapper.toUserProfileDto(user)).thenReturn(dto);
+
+    mockMvc
+        .perform(
+            get("/api/auth/users/internal/" + id)
+                .header("X-Internal-Token", "kwatera-internal-secret-token")
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.username").value("test"))
+        .andExpect(jsonPath("$.firstName").value("First"))
+        .andExpect(jsonPath("$.lastName").value("Last"))
+        .andExpect(jsonPath("$.email").value("test@mail.com"))
+        .andExpect(jsonPath("$.role").value("GUEST"));
+
+    verify(userService).getUserById(id);
+    verify(userMapper).toUserProfileDto(user);
+  }
+
+  @Test
+  void shouldRejectUserProfileInternal_withoutToken() throws Exception {
+    java.util.UUID id = java.util.UUID.randomUUID();
+    mockMvc
+        .perform(get("/api/auth/users/internal/" + id).accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isForbidden());
+  }
 }

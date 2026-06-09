@@ -813,6 +813,110 @@ class SettlementServiceTest {
   }
 
   @Test
+  void getSettlementWithItems_shouldHandleZeroExchangeRate() {
+    UUID reservationId = UUID.randomUUID();
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setCurrencyInfo(new CurrencyMetadataDto("PLN", "EUR", BigDecimal.ZERO, null));
+
+    Settlement settlement = new Settlement();
+    settlement.setId(UUID.randomUUID());
+    settlement.setTotalAmount(new BigDecimal("400.00"));
+    settlement.setAmountPaid(new BigDecimal("200.00"));
+    settlement.setBalanceDue(new BigDecimal("200.00"));
+
+    when(settlementRepository.findByReservationId(reservationId))
+        .thenReturn(Optional.of(settlement));
+    when(settlementItemRepository.findBySettlementId(settlement.getId())).thenReturn(List.of());
+
+    SettlementResponseDto result = settlementService.getSettlementWithItems(reservationDto);
+
+    assertEquals(new BigDecimal("400.00"), result.settlement().convertedTotalAmount());
+    assertEquals("EUR", result.settlement().currencyInfo().displayCurrency());
+  }
+
+  @Test
+  void getSettlementWithItems_shouldHandleNegativeExchangeRate() {
+    UUID reservationId = UUID.randomUUID();
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setCurrencyInfo(
+        new CurrencyMetadataDto("PLN", "EUR", new BigDecimal("-1.50"), null));
+
+    Settlement settlement = new Settlement();
+    settlement.setId(UUID.randomUUID());
+    settlement.setTotalAmount(new BigDecimal("400.00"));
+    settlement.setAmountPaid(new BigDecimal("200.00"));
+    settlement.setBalanceDue(new BigDecimal("200.00"));
+
+    when(settlementRepository.findByReservationId(reservationId))
+        .thenReturn(Optional.of(settlement));
+    when(settlementItemRepository.findBySettlementId(settlement.getId())).thenReturn(List.of());
+
+    SettlementResponseDto result = settlementService.getSettlementWithItems(reservationDto);
+
+    assertEquals(new BigDecimal("400.00"), result.settlement().convertedTotalAmount());
+    assertEquals("EUR", result.settlement().currencyInfo().displayCurrency());
+  }
+
+  @Test
+  void getSettlementItemInfoByType_shouldHandleZeroExchangeRate() {
+    UUID reservationId = UUID.randomUUID();
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setCurrencyInfo(new CurrencyMetadataDto("PLN", "EUR", BigDecimal.ZERO, null));
+
+    Settlement settlement = new Settlement();
+    settlement.setId(UUID.randomUUID());
+
+    SettlementItem item = new SettlementItem();
+    item.setAmount(new BigDecimal("40.00"));
+    item.setType(SettlementItemType.ELECTRICITY);
+
+    when(settlementRepository.findByReservationId(reservationId))
+        .thenReturn(Optional.of(settlement));
+    when(settlementItemRepository.findBySettlementIdAndType(
+            settlement.getId(), SettlementItemType.ELECTRICITY))
+        .thenReturn(Optional.of(item));
+
+    SettlementItemDto result =
+        settlementService.getSettlementItemInfoByType(
+            reservationDto, SettlementItemType.ELECTRICITY);
+
+    assertEquals(new BigDecimal("40.00"), result.convertedAmount());
+    assertEquals("EUR", result.currencyInfo().displayCurrency());
+  }
+
+  @Test
+  void getSettlementItemInfoByType_shouldHandleNegativeExchangeRate() {
+    UUID reservationId = UUID.randomUUID();
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setCurrencyInfo(
+        new CurrencyMetadataDto("PLN", "EUR", new BigDecimal("-1.50"), null));
+
+    Settlement settlement = new Settlement();
+    settlement.setId(UUID.randomUUID());
+
+    SettlementItem item = new SettlementItem();
+    item.setAmount(new BigDecimal("40.00"));
+    item.setType(SettlementItemType.ELECTRICITY);
+
+    when(settlementRepository.findByReservationId(reservationId))
+        .thenReturn(Optional.of(settlement));
+    when(settlementItemRepository.findBySettlementIdAndType(
+            settlement.getId(), SettlementItemType.ELECTRICITY))
+        .thenReturn(Optional.of(item));
+
+    SettlementItemDto result =
+        settlementService.getSettlementItemInfoByType(
+            reservationDto, SettlementItemType.ELECTRICITY);
+
+    assertEquals(new BigDecimal("40.00"), result.convertedAmount());
+    assertEquals("EUR", result.currencyInfo().displayCurrency());
+  }
+
+  @Test
   void shouldRejectDuplicateUtilityCharge() {
     UUID settlementId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
@@ -839,5 +943,82 @@ class SettlementServiceTest {
         .findBySettlementIdAndType(settlementId, SettlementItemType.WATER);
     verify(settlementRepository, never()).findById(any());
     verify(settlementItemRepository, never()).save(any(SettlementItem.class));
+  }
+
+  @Test
+  void shouldNotThrowWhenEmailNotificationFailsOnUtilityChargesAdded() {
+    UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    Settlement settlement = baseSettlement(settlementId);
+    settlement.setReservationId(UUID.randomUUID());
+
+    when(settlementItemRepository.findBySettlementIdAndType(settlementId, SettlementItemType.WATER))
+        .thenReturn(Optional.empty());
+
+    when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
+
+    when(settlementItemRepository.save(any(SettlementItem.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    when(settlementItemRepository.existsBySettlementIdAndTypeIn(any(), any())).thenReturn(true);
+
+    org.mockito.Mockito.doThrow(new RuntimeException("Email failed"))
+        .when(emailNotificationService)
+        .sendUtilityChargesAdded(any(), any());
+
+    assertDoesNotThrow(
+        () ->
+            settlementService.addUtilitySettlementItem(
+                settlementId,
+                unitId,
+                SettlementItemType.WATER,
+                "Water usage",
+                BigDecimal.valueOf(5),
+                BigDecimal.valueOf(20)));
+
+    verify(settlementRepository).save(settlement);
+  }
+
+  @Test
+  void shouldNotThrowWhenOwnerEmailNotificationFailsOnStatusChange() {
+    UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    Settlement settlement = new Settlement();
+    settlement.setId(settlementId);
+    settlement.setAccommodationAmount(BigDecimal.valueOf(500));
+    settlement.setUtilitiesAmount(BigDecimal.ZERO);
+    settlement.setDepositAmount(BigDecimal.ZERO);
+    settlement.setDiscountAmount(BigDecimal.ZERO);
+    settlement.setTotalAmount(BigDecimal.valueOf(500));
+    settlement.setAmountPaid(BigDecimal.valueOf(400));
+    settlement.setStatus(SettlementStatus.ISSUED);
+
+    when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
+
+    when(settlementItemRepository.save(any(SettlementItem.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    when(propertyClient.getUnitSettlementItems(unitId)).thenReturn(List.of());
+
+    when(settlementItemRepository.findBySettlementId(settlementId)).thenReturn(List.of());
+
+    org.mockito.Mockito.doThrow(new RuntimeException("Owner email failed"))
+        .when(emailNotificationService)
+        .sendOwnerPaymentStatusChanged(any(), any(), any(), any());
+
+    assertDoesNotThrow(
+        () ->
+            settlementService.registerPayment(
+                settlementId,
+                unitId,
+                SettlementItemType.ACCOMMODATION,
+                "Accommodation fee",
+                BigDecimal.ONE,
+                BigDecimal.valueOf(100)));
+
+    assertEquals(SettlementStatus.PAID, settlement.getStatus());
+    verify(settlementRepository).save(settlement);
   }
 }

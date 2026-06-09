@@ -35,6 +35,8 @@ services:
     url: http://localhost:8080
   ocr:
     url: http://localhost:8081
+  auth:
+    url: http://localhost:8082
 
 ocr:
   confidence-threshold: 0.7
@@ -43,3 +45,9 @@ kwatera:
   mail:
     from: no-reply@kwatera.local
     test-recipient: guest@kwatera.local
+    default-owner-email: owner1@example.com
+  security:
+    internal-token: test-internal-token
+  frontend:
+    url: http://localhost:5173
+

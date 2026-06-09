@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:replace="~{base-layout :: layout(~{::content})}">
+    <div th:fragment="content">
+        <div style="margin-bottom: 20px;">
+            <span style="display: inline-block; padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em; background-color: #FEF3C7; color: #92400E; border: 1px solid #DACDCA;">
+                UTILITIES DUE
+            </span>
+        </div>
+
+        <h2 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 700; color: #1A1A1A; letter-spacing: -0.02em;">
+            Utility Charges Calculated
+        </h2>
+        
+        <p style="margin: 0 0 24px 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;">
+            Your final meter readings have been processed, and the utility charges have been added to your reservation settlement. Below are the details:
+        </p>
+        
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F7F7F7; border: 1px solid #DACDCA; border-radius: 12px; margin-bottom: 24px; border-collapse: separate;">
+            <tr>
+                <td style="padding: 16px 20px; border-bottom: 1px solid #DACDCA;">
+                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #7A7A7A; font-weight: 600; display: block;">Settlement ID</span>
+                    <div style="font-size: 14px; font-family: monospace; color: #1A1A1A; margin-top: 4px;" th:text="${settlement.id}">
+                        1234-5678
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 16px 20px; border-bottom: 1px solid #DACDCA;">
+                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #7A7A7A; font-weight: 600; display: block;">Utility Details</span>
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 8px;">
+                        <tr>
+                            <td style="font-size: 14px; color: #7A7A7A; padding: 4px 0;">Utility Type:</td>
+                            <td align="right" style="font-size: 14px; font-weight: 600; color: #42211D; padding: 4px 0; text-transform: uppercase;" th:text="${item.type.name()}">
+                                WATER
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; color: #7A7A7A; padding: 4px 0;">Description:</td>
+                            <td align="right" style="font-size: 14px; font-weight: 500; color: #1A1A1A; padding: 4px 0;" th:text="${item.description}">
+                                Water usage
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; color: #7A7A7A; padding: 4px 0;">Consumption Quantity:</td>
+                            <td align="right" style="font-size: 14px; font-weight: 500; color: #1A1A1A; padding: 4px 0;" th:text="${item.quantity}">
+                                10
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; color: #7A7A7A; padding: 4px 0;">Added Charge:</td>
+                            <td align="right" style="font-size: 14px; font-weight: 700; color: #42211D; padding: 4px 0;" th:text="${formattedItemAmount}">
+                                50.00 PLN
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 20px; background-color: #DACDCA; border-radius: 0 0 12px 12px; background-opacity: 0.2;">
+                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                        <tr>
+                            <td style="font-size: 14px; font-weight: 700; color: #42211D;">Updated Total:</td>
+                            <td align="right" style="font-size: 16px; font-weight: 800; color: #42211D;" th:text="${formattedTotal}">
+                                500.00 PLN
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-size: 14px; font-weight: 800; color: #42211D; padding-top: 6px;">Balance Due:</td>
+                            <td align="right" style="font-size: 16px; font-weight: 800; color: #42211D; padding-top: 6px;" th:text="${formattedBalanceDue}">
+                                50.00 PLN
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <div style="text-align: center; margin: 28px 0;">
+            <a th:href="${paymentUrl}" 
+               style="display: inline-block; padding: 12px 24px; font-size: 15px; font-weight: 700; color: #FFFFFF; background-color: #42211D; border-radius: 8px; text-decoration: none; box-shadow: 0 4px 6px rgba(66, 33, 29, 0.15); transition: background-color 0.2s;">
+                Pay Balance Due
+            </a>
+        </div>
+        
+        <p style="margin: 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;">
+            If you have any questions regarding your bill, please reach out to support. Thank you!
+        </p>
+    </div>
+</div>
+</body>
+</html>

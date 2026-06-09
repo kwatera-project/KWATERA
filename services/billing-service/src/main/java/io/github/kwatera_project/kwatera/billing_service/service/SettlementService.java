@@ -117,6 +117,12 @@ public class SettlementService {
 
     settlementRepository.save(settlement);
 
+    try {
+      emailNotificationService.sendUtilityChargesAdded(settlement, item);
+    } catch (Exception e) {
+      log.warn("Failed to send utility charges notification for settlement {}", settlementId, e);
+    }
+
     return item;
   }
 
@@ -130,9 +136,7 @@ public class SettlementService {
       case ELECTRICITY, WATER, CLEANING_FEE ->
           settlement.setUtilitiesAmount(settlement.getUtilitiesAmount().add(amount));
 
-      case ACCOMMODATION -> {
-        // usually already known at settlement creation
-      }
+      case ACCOMMODATION -> {}
     }
   }
 
@@ -177,6 +181,12 @@ public class SettlementService {
           new SettlementStatusChangedEvent(settlement.getReservationId(), newStatus));
       emailNotificationService.sendPaymentStatusChanged(
           settlement, previous, newStatus, recipientEmail);
+      try {
+        emailNotificationService.sendOwnerPaymentStatusChanged(
+            settlement, previous, newStatus, unitId);
+      } catch (Exception e) {
+        log.warn("Failed to send owner notification for payment status change", e);
+      }
     }
   }
 
@@ -293,7 +303,8 @@ public class SettlementService {
             : "PLN";
     BigDecimal rRate =
         (reservation.getCurrencyInfo() != null
-                && reservation.getCurrencyInfo().exchangeRate() != null)
+                && reservation.getCurrencyInfo().exchangeRate() != null
+                && reservation.getCurrencyInfo().exchangeRate().compareTo(BigDecimal.ZERO) > 0)
             ? reservation.getCurrencyInfo().exchangeRate()
             : BigDecimal.ONE;
 
@@ -365,7 +376,8 @@ public class SettlementService {
             : "PLN";
     BigDecimal rRate =
         (reservation.getCurrencyInfo() != null
-                && reservation.getCurrencyInfo().exchangeRate() != null)
+                && reservation.getCurrencyInfo().exchangeRate() != null
+                && reservation.getCurrencyInfo().exchangeRate().compareTo(BigDecimal.ZERO) > 0)
             ? reservation.getCurrencyInfo().exchangeRate()
             : BigDecimal.ONE;
 

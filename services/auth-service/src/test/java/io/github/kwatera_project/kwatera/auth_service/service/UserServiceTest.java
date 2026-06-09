@@ -25,6 +25,8 @@ class UserServiceTest {
 
   @Mock PasswordEncoder passwordEncoder;
 
+  @Mock EmailNotificationService emailNotificationService;
+
   @InjectMocks UserService userService;
 
   @Test
@@ -71,6 +73,8 @@ class UserServiceTest {
     assertThat(saved.getRole()).isEqualTo(Role.OWNER);
     assertThat(saved.getFirstName()).isEqualTo("John");
     assertThat(saved.getLastName()).isEqualTo("Doe");
+
+    verify(emailNotificationService).sendThankYouEmail("john@mail.com", "John");
   }
 
   @Test
@@ -87,6 +91,22 @@ class UserServiceTest {
     assertThat(captor.getValue().getRole()).isEqualTo(Role.GUEST);
     assertThat(captor.getValue().getFirstName()).isEqualTo("John");
     assertThat(captor.getValue().getLastName()).isEqualTo("Doe");
+
+    verify(emailNotificationService).sendThankYouEmail("john@mail.com", "John");
+  }
+
+  @Test
+  void shouldRegisterSuccessfullyEvenIfEmailFails() {
+    when(userRepository.findByUsername("john")).thenReturn(Optional.empty());
+    when(passwordEncoder.encode("pass")).thenReturn("encoded-pass");
+    doThrow(new RuntimeException("Email service down"))
+        .when(emailNotificationService)
+        .sendThankYouEmail(any(), any());
+
+    userService.register("john", "john@mail.com", Role.OWNER, "pass", "John", "Doe");
+
+    verify(userRepository).save(any(User.class));
+    verify(emailNotificationService).sendThankYouEmail("john@mail.com", "John");
   }
 
   @Test
@@ -137,5 +157,35 @@ class UserServiceTest {
     assertThat(updated.getLastName()).isEqualTo("NewLast");
     verify(userRepository).findByEmail("john@mail.com");
     verify(userRepository).save(user);
+  }
+
+  @Test
+  void shouldReturnUserById() {
+    java.util.UUID id = java.util.UUID.randomUUID();
+    User user = new User();
+    user.setId(id);
+    user.setEmail("test@mail.com");
+
+    when(userRepository.findById(id)).thenReturn(Optional.of(user));
+
+    User result = userService.getUserById(id);
+
+    assertThat(result.getEmail()).isEqualTo("test@mail.com");
+    verify(userRepository).findById(id);
+  }
+
+  @Test
+  void shouldThrow404WhenUserByIdNotFound() {
+    java.util.UUID id = java.util.UUID.randomUUID();
+    when(userRepository.findById(id)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> userService.getUserById(id))
+        .isInstanceOf(ResponseStatusException.class)
+        .satisfies(
+            ex -> {
+              ResponseStatusException e = (ResponseStatusException) ex;
+              assertThat(e.getStatusCode().value()).isEqualTo(404);
+            });
+    verify(userRepository).findById(id);
   }
 }

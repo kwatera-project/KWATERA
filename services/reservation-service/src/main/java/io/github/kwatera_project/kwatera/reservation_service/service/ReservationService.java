@@ -27,6 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class ReservationService {
 
   private static final Logger log = LoggerFactory.getLogger(ReservationService.class);
+  private static final String RESERVATION_NOT_FOUND = "Reservation not found";
 
   private final ReservationRepository reservationRepository;
   private final RestTemplate restTemplate;
@@ -248,6 +249,11 @@ public class ReservationService {
 
     Reservation saved = reservationRepository.save(reservation);
     emailNotificationService.sendReservationCreated(saved, saved.getGuestEmail());
+    try {
+      emailNotificationService.sendOwnerReservationCreated(saved);
+    } catch (Exception e) {
+      log.warn("Failed to send owner notification for reservation creation", e);
+    }
     return saved;
   }
 
@@ -257,7 +263,7 @@ public class ReservationService {
         reservationRepository
             .findById(reservationId)
             .orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reservation not found"));
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, RESERVATION_NOT_FOUND));
 
     boolean isGuestOwner = reservation.getUserId().equals(userId);
     boolean isPropertyOwner = isOwner && ownerHasAccessToUnit(userId, reservation.getUnitId());
@@ -266,6 +272,20 @@ public class ReservationService {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
     }
 
+    return mapAndEnrichReservationDetails(reservation);
+  }
+
+  public ReservationDetailsDto getReservationDetailsInternal(UUID reservationId) {
+    Reservation reservation =
+        reservationRepository
+            .findById(reservationId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, RESERVATION_NOT_FOUND));
+
+    return mapAndEnrichReservationDetails(reservation);
+  }
+
+  private ReservationDetailsDto mapAndEnrichReservationDetails(Reservation reservation) {
     ReservationDetailsDto dto = new ReservationDetailsDto();
     dto.setId(reservation.getId());
     dto.setUserId(reservation.getUserId());
@@ -279,67 +299,68 @@ public class ReservationService {
     dto.setTotalPrice(reservation.getTotalPrice());
 
     CurrencyMetadataDto currencyInfo =
-        new CurrencyMetadataDto(
-            "PLN",
+        createCurrencyInfo(
             reservation.getPaymentCurrency(),
             reservation.getPaymentExchangeRate(),
-            reservation.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
-    BigDecimal convertedTotalPrice = reservation.getTotalPrice();
-
-    if (!"PLN".equalsIgnoreCase(reservation.getPaymentCurrency())) {
-      convertedTotalPrice =
-          convertedTotalPrice.divide(reservation.getPaymentExchangeRate(), 2, RoundingMode.HALF_UP);
-    }
+            reservation.getCreatedAt());
+    BigDecimal convertedTotalPrice =
+        calculateConvertedTotalPrice(
+            reservation.getTotalPrice(),
+            reservation.getPaymentCurrency(),
+            reservation.getPaymentExchangeRate());
 
     dto.setConvertedTotalPrice(convertedTotalPrice);
     dto.setCurrencyInfo(currencyInfo);
 
-    // Fetch unit name, property name and city from property-service
-    String guestName = "Guest " + reservation.getUserId().toString().substring(0, 8);
-    String unitName = "Unknown Room";
-    String city = "Unknown City";
+    dto.setGuestName("Guest " + reservation.getUserId().toString().substring(0, 8));
+    dto.setUnitName("Unknown Room");
+    dto.setCity("Unknown City");
 
+    enrichPropertyDetails(dto, reservation);
+
+    return dto;
+  }
+
+  private void enrichPropertyDetails(ReservationDetailsDto dto, Reservation reservation) {
     try {
       String unitUrl = "http://property-service/api/properties/units/" + reservation.getUnitId();
       UnitDetailsDto unitDto = restTemplate.getForObject(unitUrl, UnitDetailsDto.class);
       if (unitDto != null) {
         if (unitDto.name() != null) {
-          unitName = unitDto.name();
+          dto.setUnitName(unitDto.name());
         }
         if (unitDto.propertyId() != null) {
-          String propertyUrl = "http://property-service/api/properties/" + unitDto.propertyId();
-          PropertyDetailsDto propertyDto =
-              restTemplate.getForObject(propertyUrl, PropertyDetailsDto.class);
-          if (propertyDto != null) {
-            if (propertyDto.city() != null) {
-              city = propertyDto.city();
-            }
-            if (propertyDto.ownerId() != null) {
-              UUID ownerId = propertyDto.ownerId();
-              String ownerName = "Owner " + ownerId.toString().substring(0, 8);
-              String ownerEmail = "owner_" + ownerId.toString().substring(0, 8) + "@example.com";
-              if (ownerId.toString().equals("22222222-2222-2222-2222-222222222222")) {
-                ownerName = "John Owner";
-                ownerEmail = "owner1@example.com";
-              } else if (ownerId.toString().equals("33333333-3333-3333-3333-333333333333")) {
-                ownerName = "Jane Owner";
-                ownerEmail = "owner2@example.com";
-              }
-              dto.setOwnerName(ownerName);
-              dto.setOwnerEmail(ownerEmail);
-            }
-          }
+          enrichOwnerAndCityDetails(dto, unitDto.propertyId());
         }
       }
     } catch (Exception e) {
-      log.warn("Failed to fetch property details for reservation: {}", reservationId, e);
+      log.warn("Failed to fetch property details for reservation: {}", reservation.getId(), e);
     }
+  }
 
-    dto.setGuestName(guestName);
-    dto.setUnitName(unitName);
-    dto.setCity(city);
-
-    return dto;
+  private void enrichOwnerAndCityDetails(ReservationDetailsDto dto, UUID propertyId) {
+    String propertyUrl = "http://property-service/api/properties/" + propertyId;
+    PropertyDetailsDto propertyDto =
+        restTemplate.getForObject(propertyUrl, PropertyDetailsDto.class);
+    if (propertyDto != null) {
+      if (propertyDto.city() != null) {
+        dto.setCity(propertyDto.city());
+      }
+      if (propertyDto.ownerId() != null) {
+        UUID ownerId = propertyDto.ownerId();
+        String ownerName = "Owner " + ownerId.toString().substring(0, 8);
+        String ownerEmail = "owner_" + ownerId.toString().substring(0, 8) + "@example.com";
+        if (ownerId.toString().equals("22222222-2222-2222-2222-222222222222")) {
+          ownerName = "John Owner";
+          ownerEmail = "owner1@example.com";
+        } else if (ownerId.toString().equals("33333333-3333-3333-3333-333333333333")) {
+          ownerName = "Jane Owner";
+          ownerEmail = "owner2@example.com";
+        }
+        dto.setOwnerName(ownerName);
+        dto.setOwnerEmail(ownerEmail);
+      }
+    }
   }
 
   public List<GuestReservationDto> getMyReservations(UUID userId) {
@@ -347,17 +368,11 @@ public class ReservationService {
         .map(
             r -> {
               CurrencyMetadataDto currencyInfo =
-                  new CurrencyMetadataDto(
-                      "PLN",
-                      r.getPaymentCurrency(),
-                      r.getPaymentExchangeRate(),
-                      r.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toLocalDate());
-              BigDecimal convertedTotalPrice = r.getTotalPrice();
-
-              if (!"PLN".equalsIgnoreCase(r.getPaymentCurrency())) {
-                convertedTotalPrice =
-                    convertedTotalPrice.divide(r.getPaymentExchangeRate(), 2, RoundingMode.HALF_UP);
-              }
+                  createCurrencyInfo(
+                      r.getPaymentCurrency(), r.getPaymentExchangeRate(), r.getCreatedAt());
+              BigDecimal convertedTotalPrice =
+                  calculateConvertedTotalPrice(
+                      r.getTotalPrice(), r.getPaymentCurrency(), r.getPaymentExchangeRate());
 
               return new GuestReservationDto(
                   r.getId(),
@@ -391,7 +406,7 @@ public class ReservationService {
     Reservation reservation =
         reservationRepository
             .findById(reservationId)
-            .orElseThrow(() -> new RuntimeException("Reservation not found"));
+            .orElseThrow(() -> new RuntimeException(RESERVATION_NOT_FOUND));
     ReservationStatus oldStatus = reservation.getStatus();
 
     switch (settlementStatus) {
@@ -411,6 +426,16 @@ public class ReservationService {
     reservationRepository.save(reservation);
     emailNotificationService.sendReservationStatusChanged(
         reservation, oldStatus, reservation.getStatus(), reservation.getGuestEmail());
+    try {
+      if (reservation.getStatus() == ReservationStatus.CANCELLED) {
+        emailNotificationService.sendOwnerReservationCancelled(reservation);
+      } else {
+        emailNotificationService.sendOwnerReservationStatusChanged(
+            reservation, oldStatus, reservation.getStatus());
+      }
+    } catch (Exception e) {
+      log.warn("Failed to send owner notification for reservation status update", e);
+    }
   }
 
   public ReservationMetricsDto getDashboardReservationMetrics(
@@ -490,13 +515,48 @@ public class ReservationService {
       try {
         emailNotificationService.sendReservationStatusChanged(
             reservation, oldStatus, ReservationStatus.CANCELLED, reservation.getGuestEmail());
+        emailNotificationService.sendOwnerReservationCancelled(reservation);
       } catch (Exception e) {
-        log.warn(
-            "Failed to send cancellation email for reservation {}: {}",
-            reservation.getId(),
-            e.getMessage());
+        log.warn("Failed to send cancellation email for reservation {}", reservation.getId(), e);
       }
     }
+  }
+
+  public void notifyUpcomingReservations() {
+    LocalDate tomorrow = businessDateProvider.today().plusDays(1);
+    List<Reservation> upcoming =
+        reservationRepository.findByStartDateAndStatus(tomorrow, ReservationStatus.CONFIRMED);
+    for (Reservation reservation : upcoming) {
+      try {
+        emailNotificationService.sendOwnerReservationUpcoming(reservation);
+      } catch (Exception e) {
+        log.warn(
+            "Failed to send upcoming reservation notification to owner for reservation {}",
+            reservation.getId(),
+            e);
+      }
+    }
+  }
+
+  private CurrencyMetadataDto createCurrencyInfo(
+      String currency, BigDecimal exchangeRate, java.time.Instant createdAt) {
+    return new CurrencyMetadataDto(
+        "PLN",
+        currency,
+        exchangeRate,
+        createdAt.atZone(java.time.ZoneId.systemDefault()).toLocalDate());
+  }
+
+  private BigDecimal calculateConvertedTotalPrice(
+      BigDecimal totalPrice, String currency, BigDecimal exchangeRate) {
+    if (totalPrice != null
+        && currency != null
+        && !"PLN".equalsIgnoreCase(currency)
+        && exchangeRate != null
+        && exchangeRate.compareTo(BigDecimal.ZERO) > 0) {
+      return totalPrice.divide(exchangeRate, 2, RoundingMode.HALF_UP);
+    }
+    return totalPrice;
   }
 
   record UnitDetailsDto(UUID propertyId, String name) {}
