@@ -58,7 +58,9 @@ public class UserService {
     try {
       emailNotificationService.sendThankYouEmail(email, firstName);
     } catch (Exception e) {
-      log.warn("Failed to send welcome email for registered user", e);
+      String safeErrorMessage =
+          e.getMessage() != null ? e.getMessage().replaceAll("[\r\n]", "") : "Unknown error";
+      log.warn("Failed to send welcome email for registered user: {}", safeErrorMessage);
     }
   }
 

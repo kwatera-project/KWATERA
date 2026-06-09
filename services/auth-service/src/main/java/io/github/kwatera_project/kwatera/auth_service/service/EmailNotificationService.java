@@ -39,7 +39,8 @@ public class EmailNotificationService {
     String subject = "Thank you for registering!";
     Context context = new Context();
     context.setVariable("subject", subject);
-    context.setVariable("firstName", firstName != null ? firstName : "User");
+    String sanitizedFirstName = firstName != null ? firstName.replaceAll("[\r\n]", "") : "User";
+    context.setVariable("firstName", sanitizedFirstName);
 
     String htmlBody = templateEngine.process("thank-you-signup", context);
     send(recipientEmail, subject, htmlBody);
@@ -58,7 +59,9 @@ public class EmailNotificationService {
       mailSender.send(message);
       log.info("Sent email notification '{}'", subject);
     } catch (MailException | MessagingException e) {
-      log.warn("Failed to send email notification '{}'", subject, e);
+      String safeErrorMessage =
+          e.getMessage() != null ? e.getMessage().replaceAll("[\r\n]", "") : "Unknown error";
+      log.warn("Failed to send email notification '{}': {}", subject, safeErrorMessage);
     }
   }
 
