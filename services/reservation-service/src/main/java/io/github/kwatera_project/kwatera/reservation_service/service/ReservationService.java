@@ -27,6 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class ReservationService {
 
   private static final Logger log = LoggerFactory.getLogger(ReservationService.class);
+  private static final String RESERVATION_NOT_FOUND = "Reservation not found";
 
   private final ReservationRepository reservationRepository;
   private final RestTemplate restTemplate;
@@ -262,7 +263,7 @@ public class ReservationService {
         reservationRepository
             .findById(reservationId)
             .orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reservation not found"));
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, RESERVATION_NOT_FOUND));
 
     boolean isGuestOwner = reservation.getUserId().equals(userId);
     boolean isPropertyOwner = isOwner && ownerHasAccessToUnit(userId, reservation.getUnitId());
@@ -279,7 +280,7 @@ public class ReservationService {
         reservationRepository
             .findById(reservationId)
             .orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reservation not found"));
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, RESERVATION_NOT_FOUND));
 
     return mapAndEnrichReservationDetails(reservation);
   }
@@ -310,51 +311,56 @@ public class ReservationService {
 
     dto.setConvertedTotalPrice(convertedTotalPrice);
     dto.setCurrencyInfo(currencyInfo);
-    String guestName = "Guest " + reservation.getUserId().toString().substring(0, 8);
-    String unitName = "Unknown Room";
-    String city = "Unknown City";
 
+    dto.setGuestName("Guest " + reservation.getUserId().toString().substring(0, 8));
+    dto.setUnitName("Unknown Room");
+    dto.setCity("Unknown City");
+
+    enrichPropertyDetails(dto, reservation);
+
+    return dto;
+  }
+
+  private void enrichPropertyDetails(ReservationDetailsDto dto, Reservation reservation) {
     try {
       String unitUrl = "http://property-service/api/properties/units/" + reservation.getUnitId();
       UnitDetailsDto unitDto = restTemplate.getForObject(unitUrl, UnitDetailsDto.class);
       if (unitDto != null) {
         if (unitDto.name() != null) {
-          unitName = unitDto.name();
+          dto.setUnitName(unitDto.name());
         }
         if (unitDto.propertyId() != null) {
-          String propertyUrl = "http://property-service/api/properties/" + unitDto.propertyId();
-          PropertyDetailsDto propertyDto =
-              restTemplate.getForObject(propertyUrl, PropertyDetailsDto.class);
-          if (propertyDto != null) {
-            if (propertyDto.city() != null) {
-              city = propertyDto.city();
-            }
-            if (propertyDto.ownerId() != null) {
-              UUID ownerId = propertyDto.ownerId();
-              String ownerName = "Owner " + ownerId.toString().substring(0, 8);
-              String ownerEmail = "owner_" + ownerId.toString().substring(0, 8) + "@example.com";
-              if (ownerId.toString().equals("22222222-2222-2222-2222-222222222222")) {
-                ownerName = "John Owner";
-                ownerEmail = "owner1@example.com";
-              } else if (ownerId.toString().equals("33333333-3333-3333-3333-333333333333")) {
-                ownerName = "Jane Owner";
-                ownerEmail = "owner2@example.com";
-              }
-              dto.setOwnerName(ownerName);
-              dto.setOwnerEmail(ownerEmail);
-            }
-          }
+          enrichOwnerAndCityDetails(dto, unitDto.propertyId());
         }
       }
     } catch (Exception e) {
       log.warn("Failed to fetch property details for reservation: {}", reservation.getId(), e);
     }
+  }
 
-    dto.setGuestName(guestName);
-    dto.setUnitName(unitName);
-    dto.setCity(city);
-
-    return dto;
+  private void enrichOwnerAndCityDetails(ReservationDetailsDto dto, UUID propertyId) {
+    String propertyUrl = "http://property-service/api/properties/" + propertyId;
+    PropertyDetailsDto propertyDto =
+        restTemplate.getForObject(propertyUrl, PropertyDetailsDto.class);
+    if (propertyDto != null) {
+      if (propertyDto.city() != null) {
+        dto.setCity(propertyDto.city());
+      }
+      if (propertyDto.ownerId() != null) {
+        UUID ownerId = propertyDto.ownerId();
+        String ownerName = "Owner " + ownerId.toString().substring(0, 8);
+        String ownerEmail = "owner_" + ownerId.toString().substring(0, 8) + "@example.com";
+        if (ownerId.toString().equals("22222222-2222-2222-2222-222222222222")) {
+          ownerName = "John Owner";
+          ownerEmail = "owner1@example.com";
+        } else if (ownerId.toString().equals("33333333-3333-3333-3333-333333333333")) {
+          ownerName = "Jane Owner";
+          ownerEmail = "owner2@example.com";
+        }
+        dto.setOwnerName(ownerName);
+        dto.setOwnerEmail(ownerEmail);
+      }
+    }
   }
 
   public List<GuestReservationDto> getMyReservations(UUID userId) {
@@ -400,7 +406,7 @@ public class ReservationService {
     Reservation reservation =
         reservationRepository
             .findById(reservationId)
-            .orElseThrow(() -> new RuntimeException("Reservation not found"));
+            .orElseThrow(() -> new RuntimeException(RESERVATION_NOT_FOUND));
     ReservationStatus oldStatus = reservation.getStatus();
 
     switch (settlementStatus) {

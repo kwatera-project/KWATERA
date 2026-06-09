@@ -33,7 +33,7 @@ class EmailNotificationServiceTest {
   }
 
   @Test
-  void shouldSendThankYouEmail() throws Exception {
+  void shouldSendThankYouEmail() {
     when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
     when(templateEngine.process(eq("thank-you-signup"), any(Context.class)))
         .thenReturn("<html>Welcome!</html>");
@@ -48,5 +48,29 @@ class EmailNotificationServiceTest {
     Context context = contextCaptor.getValue();
     assertThat(context.getVariable("firstName")).isEqualTo("Alice");
     assertThat(context.getVariable("subject")).isEqualTo("Thank you for registering!");
+  }
+
+  @Test
+  void shouldNotThrowWhenMailSendingFails() {
+    when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+    when(templateEngine.process(eq("thank-you-signup"), any(Context.class)))
+        .thenReturn("<html>Welcome!</html>");
+    doThrow(new org.springframework.mail.MailSendException("SMTP error"))
+        .when(mailSender)
+        .send(any(MimeMessage.class));
+
+    org.junit.jupiter.api.Assertions.assertDoesNotThrow(
+        () -> emailNotificationService.sendThankYouEmail("user@example.com", "Alice"));
+  }
+
+  @Test
+  void shouldUseFallbackRecipientWhenRecipientIsBlank() {
+    when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+    when(templateEngine.process(eq("thank-you-signup"), any(Context.class)))
+        .thenReturn("<html>Welcome!</html>");
+
+    emailNotificationService.sendThankYouEmail(" ", "Alice");
+
+    verify(mailSender).send(mimeMessage);
   }
 }

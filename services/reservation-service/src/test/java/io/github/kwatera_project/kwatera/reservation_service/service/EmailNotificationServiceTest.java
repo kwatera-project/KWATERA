@@ -71,7 +71,7 @@ class EmailNotificationServiceTest {
   }
 
   @Test
-  void shouldSendReservationCreatedEmailWithForeignCurrency() throws Exception {
+  void shouldSendReservationCreatedEmailWithForeignCurrency() {
     Reservation reservation = reservation();
     reservation.setPaymentCurrency("USD");
     reservation.setPaymentExchangeRate(new BigDecimal("4.00"));
@@ -186,6 +186,110 @@ class EmailNotificationServiceTest {
 
     assertDoesNotThrow(
         () -> service.sendReservationCreated(reservation(), "actual.guest@example.com"));
+  }
+
+  @Test
+  void shouldFetchPropertyNameSuccessfully() throws Exception {
+    Reservation reservation = reservation();
+    java.util.Map<String, Object> response = new java.util.HashMap<>();
+    response.put("name", "Mock Property Name");
+
+    when(restTemplate.getForObject(
+            "http://property-service/api/properties/units/" + reservation.getUnitId(),
+            java.util.Map.class))
+        .thenReturn(response);
+
+    service.sendReservationCreated(reservation, "actual.guest@example.com");
+
+    ArgumentCaptor<Context> contextCaptor = ArgumentCaptor.forClass(Context.class);
+    verify(templateEngine, org.mockito.Mockito.atLeastOnce())
+        .process(
+            org.mockito.ArgumentMatchers.eq("reservation-confirmation"), contextCaptor.capture());
+    Context context = contextCaptor.getValue();
+    assertEquals("Mock Property Name", context.getVariable("propertyName"));
+  }
+
+  @Test
+  void shouldHandleExceptionWhenFetchingPropertyName() {
+    Reservation reservation = reservation();
+    when(restTemplate.getForObject(
+            "http://property-service/api/properties/units/" + reservation.getUnitId(),
+            java.util.Map.class))
+        .thenThrow(new RuntimeException("Property Service down"));
+
+    assertDoesNotThrow(
+        () -> service.sendReservationCreated(reservation, "actual.guest@example.com"));
+  }
+
+  @Test
+  void shouldFetchOwnerEmailSuccessfullyFromPropertyService() throws Exception {
+    Reservation reservation = reservation();
+
+    java.util.Map<String, Object> unitResponse = new java.util.HashMap<>();
+    unitResponse.put("propertyId", UUID.randomUUID());
+
+    java.util.Map<String, Object> propertyResponse = new java.util.HashMap<>();
+    propertyResponse.put("ownerId", "22222222-2222-2222-2222-222222222222");
+
+    when(restTemplate.getForObject(
+            "http://property-service/api/properties/units/" + reservation.getUnitId(),
+            java.util.Map.class))
+        .thenReturn(unitResponse);
+    when(restTemplate.getForObject(
+            "http://property-service/api/properties/" + unitResponse.get("propertyId"),
+            java.util.Map.class))
+        .thenReturn(propertyResponse);
+
+    service.sendOwnerReservationCreated(reservation);
+
+    ArgumentCaptor<MimeMessage> captor = ArgumentCaptor.forClass(MimeMessage.class);
+    verify(mailSender, org.mockito.Mockito.atLeastOnce()).send(captor.capture());
+    assertEquals(
+        "owner1@example.com",
+        captor.getValue().getRecipients(Message.RecipientType.TO)[0].toString());
+
+    propertyResponse.put("ownerId", "33333333-3333-3333-3333-333333333333");
+    service.sendOwnerReservationCreated(reservation);
+
+    verify(mailSender, org.mockito.Mockito.atLeastOnce()).send(captor.capture());
+    assertEquals(
+        "owner2@example.com",
+        captor.getValue().getRecipients(Message.RecipientType.TO)[0].toString());
+
+    propertyResponse.put("ownerId", "44444444-4444-4444-4444-444444444444");
+    service.sendOwnerReservationCreated(reservation);
+
+    verify(mailSender, org.mockito.Mockito.atLeastOnce()).send(captor.capture());
+    assertEquals(
+        "owner_44444444@example.com",
+        captor.getValue().getRecipients(Message.RecipientType.TO)[0].toString());
+  }
+
+  @Test
+  void shouldHandleExceptionWhenFetchingOwnerEmail() {
+    Reservation reservation = reservation();
+
+    when(restTemplate.getForObject(
+            "http://property-service/api/properties/units/" + reservation.getUnitId(),
+            java.util.Map.class))
+        .thenThrow(new RuntimeException("Property Service down"));
+
+    assertDoesNotThrow(() -> service.sendOwnerReservationCreated(reservation));
+  }
+
+  @Test
+  void shouldHandlePriceFormattingEdgeCases() throws Exception {
+    Reservation reservation = reservation();
+    reservation.setTotalPrice(null);
+
+    service.sendReservationCreated(reservation, "original.guest@example.com");
+
+    ArgumentCaptor<Context> contextCaptor = ArgumentCaptor.forClass(Context.class);
+    verify(templateEngine, org.mockito.Mockito.atLeastOnce())
+        .process(
+            org.mockito.ArgumentMatchers.eq("reservation-confirmation"), contextCaptor.capture());
+    Context context = contextCaptor.getValue();
+    assertEquals("0.00 PLN", context.getVariable("formattedPrice"));
   }
 
   private Reservation reservation() {

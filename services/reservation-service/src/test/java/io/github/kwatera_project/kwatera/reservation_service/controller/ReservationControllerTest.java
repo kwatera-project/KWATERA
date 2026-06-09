@@ -272,12 +272,12 @@ class ReservationControllerTest {
     ReservationDetailsDto dto = new ReservationDetailsDto();
     dto.setId(reservationId);
 
-    when(reservationService.getReservationDetailsInternal(eq(reservationId))).thenReturn(dto);
+    when(reservationService.getReservationDetailsInternal(reservationId)).thenReturn(dto);
 
     mockMvc
         .perform(get("/api/v1/reservations/internal/" + reservationId))
         .andExpect(status().isOk());
 
-    verify(reservationService).getReservationDetailsInternal(eq(reservationId));
+    verify(reservationService).getReservationDetailsInternal(reservationId);
   }
 }

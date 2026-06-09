@@ -1777,10 +1777,11 @@ class ReservationServiceTest {
     reservation.setId(reservationId);
     reservation.setUserId(userId);
     reservation.setUnitId(unitId);
-    reservation.setStartDate(LocalDate.now());
-    reservation.setEndDate(LocalDate.now().plusDays(2));
+    LocalDate fixedDate = LocalDate.of(2026, java.time.Month.JUNE, 9);
+    reservation.setStartDate(fixedDate);
+    reservation.setEndDate(fixedDate.plusDays(2));
     reservation.setStatus(ReservationStatus.CONFIRMED);
-    reservation.setCreatedAt(Instant.now());
+    reservation.setCreatedAt(Instant.parse("2026-06-09T00:00:00Z"));
     reservation.setTotalPrice(BigDecimal.valueOf(100));
     reservation.setPaymentCurrency("USD");
     reservation.setPaymentExchangeRate(BigDecimal.valueOf(4.0));
@@ -1822,7 +1823,7 @@ class ReservationServiceTest {
             emailService,
             businessDateProvider);
 
-    LocalDate today = LocalDate.of(2026, 6, 6);
+    LocalDate today = LocalDate.of(2026, java.time.Month.JUNE, 6);
     when(businessDateProvider.today()).thenReturn(today);
 
     Reservation r = new Reservation();
@@ -1850,7 +1851,7 @@ class ReservationServiceTest {
             emailService,
             businessDateProvider);
 
-    LocalDate today = LocalDate.of(2026, 6, 6);
+    LocalDate today = LocalDate.of(2026, java.time.Month.JUNE, 6);
     when(businessDateProvider.today()).thenReturn(today);
 
     Reservation r = new Reservation();
@@ -1863,6 +1864,6 @@ class ReservationServiceTest {
         .when(emailService)
         .sendOwnerReservationUpcoming(any());
 
-    assertDoesNotThrow(() -> service.notifyUpcomingReservations());
+    assertDoesNotThrow(service::notifyUpcomingReservations);
   }
 }

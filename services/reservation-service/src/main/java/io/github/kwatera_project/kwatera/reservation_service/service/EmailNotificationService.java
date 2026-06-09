@@ -22,6 +22,7 @@ import org.thymeleaf.context.Context;
 public class EmailNotificationService {
 
   private static final Logger log = LoggerFactory.getLogger(EmailNotificationService.class);
+  private static final String DEFAULT_OWNER_EMAIL = "owner1@example.com";
 
   private final JavaMailSender mailSender;
   private final TemplateEngine templateEngine;
@@ -69,9 +70,8 @@ public class EmailNotificationService {
         "Reservation created",
         "Reservation Created",
         "Your reservation has been successfully created. Here are the details of your upcoming stay:",
-        reservation.getStatus(),
         null,
-        null);
+        reservation.getStatus());
   }
 
   public void sendReservationStatusChanged(
@@ -85,9 +85,8 @@ public class EmailNotificationService {
         "Reservation status changed",
         "Reservation Status Updated",
         "Your reservation status was updated. Please review the details of the change below:",
-        newStatus,
-        oldStatus != null ? oldStatus.name() : null,
-        newStatus.name());
+        oldStatus,
+        newStatus);
   }
 
   public void sendOwnerReservationCreated(Reservation reservation) {
@@ -123,16 +122,15 @@ public class EmailNotificationService {
       String subject,
       String title,
       String message,
-      ReservationStatus status,
-      String oldStatusStr,
-      String newStatusStr) {
+      ReservationStatus oldStatus,
+      ReservationStatus newStatus) {
     Context context = createBaseContext(reservation, subject);
     context.setVariable("title", title);
     context.setVariable("message", message);
-    context.setVariable("statusLabel", status.name());
-    context.setVariable("statusStyle", getStatusStyle(status));
-    context.setVariable("oldStatus", oldStatusStr);
-    context.setVariable("newStatus", newStatusStr);
+    context.setVariable("statusLabel", newStatus.name());
+    context.setVariable("statusStyle", getStatusStyle(newStatus));
+    context.setVariable("oldStatus", oldStatus != null ? oldStatus.name() : null);
+    context.setVariable("newStatus", newStatus.name());
 
     String htmlBody = templateEngine.process("reservation-confirmation", context);
     send(recipientEmail, subject, htmlBody, String.valueOf(reservation.getId()));
@@ -182,7 +180,7 @@ public class EmailNotificationService {
 
   private String fetchOwnerEmail(UUID unitId) {
     if (restTemplate == null) {
-      return "owner1@example.com";
+      return DEFAULT_OWNER_EMAIL;
     }
     try {
       String baseUrl = "http://property-service/api/properties";
@@ -196,7 +194,7 @@ public class EmailNotificationService {
         if (propertyResponse != null && propertyResponse.get("ownerId") != null) {
           String ownerIdStr = propertyResponse.get("ownerId").toString();
           if ("22222222-2222-2222-2222-222222222222".equals(ownerIdStr)) {
-            return "owner1@example.com";
+            return DEFAULT_OWNER_EMAIL;
           } else if ("33333333-3333-3333-3333-333333333333".equals(ownerIdStr)) {
             return "owner2@example.com";
           }
@@ -209,7 +207,7 @@ public class EmailNotificationService {
           unitId,
           e.getMessage());
     }
-    return "owner1@example.com";
+    return DEFAULT_OWNER_EMAIL;
   }
 
   private String getStatusStyle(ReservationStatus status) {
