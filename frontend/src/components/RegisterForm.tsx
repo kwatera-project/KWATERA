@@ -23,7 +23,7 @@ export default function RegisterForm() {
                 <div className="w-full max-w-md bg-white border border-gray-100 rounded-2xl shadow-xl p-8 sm:p-10 space-y-6">
                     <div className="text-center space-y-2">
                         <h1 className="text-2xl font-bold text-gray-900">Demo login</h1>
-                        <p className="text-sm text-gray-500">Wybierz rolę bez tworzenia konta.</p>
+                        <p className="text-sm text-gray-500">Choose a role without creating an account.</p>
                     </div>
                     <DemoRoleSelector />
                     <Link to="/" className="block text-center text-sm text-[#42211D] font-bold hover:underline">

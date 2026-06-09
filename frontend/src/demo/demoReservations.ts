@@ -1,114 +1,290 @@
 import type { GuestReservation, ReservationDetails } from "../types/reservation";
-import { demoUnitsByProperty } from "./demoProperties";
+import { demoProperties, demoUnitsByProperty } from "./demoProperties";
 
-const [sopotStudio, sopotFamily] = demoUnitsByProperty["demo-property-sopot"];
-const [zakopaneHouse] = demoUnitsByProperty["demo-property-zakopane"];
-const [mazuryRoom] = demoUnitsByProperty["demo-property-mazury"];
+const currencyInfo = { baseCurrency: "PLN", displayCurrency: "PLN", exchangeRate: 1, rateEffectiveDate: "2026-06-09" };
+const ownerName = "Marcus Green";
+const ownerEmail = "owner.demo@kwatera.local";
+
+function propertyCity(propertyId: string) {
+    return demoProperties.find((property) => property.id === propertyId)?.city;
+}
+
+function unit(propertyId: string, unitId: string) {
+    const found = demoUnitsByProperty[propertyId]?.find((item) => item.id === unitId);
+    if (!found) throw new Error(`Missing demo unit ${unitId}`);
+    return found;
+}
+
+function reservation(
+    id: string,
+    propertyId: string,
+    unitId: string,
+    guestName: string,
+    guestEmail: string,
+    startDate: string,
+    endDate: string,
+    status: string,
+    userId: string,
+    createdAt: string,
+    pricePerNightSnapshot: number,
+    totalPrice: number
+): ReservationDetails {
+    const unitInfo = unit(propertyId, unitId);
+
+    return {
+        id,
+        unitId,
+        guestName,
+        guestEmail,
+        unitName: unitInfo.name,
+        city: propertyCity(propertyId),
+        startDate,
+        endDate,
+        status,
+        userId,
+        createdAt,
+        pricePerNightSnapshot,
+        totalPrice,
+        convertedTotalPrice: totalPrice,
+        currencyInfo,
+        ownerName,
+        ownerEmail,
+    };
+}
 
 export const demoReservations: ReservationDetails[] = [
-    {
-        id: "demo-reservation-1001",
-        unitId: sopotStudio.id,
-        guestName: "Anna Nowak",
-        guestEmail: "guest.demo@kwatera.local",
-        unitName: sopotStudio.name,
-        city: "Sopot",
-        startDate: "2026-06-18",
-        endDate: "2026-06-22",
-        status: "CONFIRMED",
-        userId: "demo-user-guest",
-        createdAt: "2026-06-02T10:15:00Z",
-        pricePerNightSnapshot: 420,
-        totalPrice: 1680,
-        convertedTotalPrice: 1680,
-        currencyInfo: { baseCurrency: "PLN", displayCurrency: "PLN", exchangeRate: 1, rateEffectiveDate: "2026-06-09" },
-        ownerName: "Marek Zieliński",
-        ownerEmail: "owner.demo@kwatera.local",
-    },
-    {
-        id: "demo-reservation-1002",
-        unitId: sopotFamily.id,
-        guestName: "Piotr Kowalski",
-        guestEmail: "piotr@example.local",
-        unitName: sopotFamily.name,
-        city: "Sopot",
-        startDate: "2026-06-24",
-        endDate: "2026-06-28",
-        status: "PENDING",
-        userId: "demo-user-guest-2",
-        createdAt: "2026-06-03T14:20:00Z",
-        pricePerNightSnapshot: 690,
-        totalPrice: 2760,
-        convertedTotalPrice: 2760,
-        currencyInfo: { baseCurrency: "PLN", displayCurrency: "PLN", exchangeRate: 1, rateEffectiveDate: "2026-06-09" },
-        ownerName: "Marek Zieliński",
-        ownerEmail: "owner.demo@kwatera.local",
-    },
-    {
-        id: "demo-reservation-1003",
-        unitId: zakopaneHouse.id,
-        guestName: "Karolina Wójcik",
-        guestEmail: "karolina@example.local",
-        unitName: zakopaneHouse.name,
-        city: "Zakopane",
-        startDate: "2026-06-15",
-        endDate: "2026-06-20",
-        status: "COMPLETED",
-        userId: "demo-user-guest-3",
-        createdAt: "2026-05-26T09:00:00Z",
-        pricePerNightSnapshot: 810,
-        totalPrice: 4050,
-        convertedTotalPrice: 4050,
-        currencyInfo: { baseCurrency: "PLN", displayCurrency: "PLN", exchangeRate: 1, rateEffectiveDate: "2026-06-09" },
-        ownerName: "Marek Zieliński",
-        ownerEmail: "owner.demo@kwatera.local",
-    },
+    reservation(
+        "demo-reservation-1001",
+        "demo-property-sopot",
+        "demo-unit-sopot-a",
+        "Alice Morgan",
+        "guest.demo@kwatera.local",
+        "2026-05-05",
+        "2026-05-09",
+        "COMPLETED",
+        "demo-user-guest",
+        "2026-04-26T10:15:00Z",
+        410,
+        1640
+    ),
+    reservation(
+        "demo-reservation-1002",
+        "demo-property-zakopane",
+        "demo-unit-zakopane-a",
+        "Mia Carter",
+        "mia.carter@example.local",
+        "2026-05-26",
+        "2026-05-31",
+        "COMPLETED",
+        "demo-user-guest-2",
+        "2026-05-12T09:00:00Z",
+        810,
+        4050
+    ),
+    reservation(
+        "demo-reservation-1003",
+        "demo-property-krakow",
+        "demo-unit-krakow-a",
+        "Noah Adams",
+        "noah.adams@example.local",
+        "2026-05-18",
+        "2026-05-21",
+        "CONFIRMED",
+        "demo-user-guest-3",
+        "2026-05-10T08:40:00Z",
+        540,
+        1620
+    ),
+    reservation(
+        "demo-reservation-1004",
+        "demo-property-mazury",
+        "demo-unit-mazury-a",
+        "Liam Brooks",
+        "liam.brooks@example.local",
+        "2026-05-14",
+        "2026-05-17",
+        "CANCELLED",
+        "demo-user-guest-4",
+        "2026-05-01T16:30:00Z",
+        360,
+        1080
+    ),
+    reservation(
+        "demo-reservation-1005",
+        "demo-property-zakopane",
+        "demo-unit-zakopane-b",
+        "Alice Morgan",
+        "guest.demo@kwatera.local",
+        "2026-06-06",
+        "2026-06-09",
+        "CONFIRMED",
+        "demo-user-guest",
+        "2026-05-23T13:20:00Z",
+        330,
+        990
+    ),
+    reservation(
+        "demo-reservation-1006",
+        "demo-property-sopot",
+        "demo-unit-sopot-a",
+        "Alice Morgan",
+        "guest.demo@kwatera.local",
+        "2026-06-18",
+        "2026-06-22",
+        "CONFIRMED",
+        "demo-user-guest",
+        "2026-06-02T10:15:00Z",
+        420,
+        1680
+    ),
+    reservation(
+        "demo-reservation-1007",
+        "demo-property-sopot",
+        "demo-unit-sopot-b",
+        "Ethan Reed",
+        "ethan.reed@example.local",
+        "2026-06-24",
+        "2026-06-28",
+        "PENDING",
+        "demo-user-guest-5",
+        "2026-06-03T14:20:00Z",
+        690,
+        2760
+    ),
+    reservation(
+        "demo-reservation-1008",
+        "demo-property-mazury",
+        "demo-unit-mazury-b",
+        "Grace Hill",
+        "grace.hill@example.local",
+        "2026-06-26",
+        "2026-06-30",
+        "CONFIRMED",
+        "demo-user-guest-6",
+        "2026-06-09T12:45:00Z",
+        560,
+        2240
+    ),
+    reservation(
+        "demo-reservation-1009",
+        "demo-property-krakow",
+        "demo-unit-krakow-b",
+        "Sophia Turner",
+        "sophia.turner@example.local",
+        "2026-06-02",
+        "2026-06-05",
+        "COMPLETED",
+        "demo-user-guest-7",
+        "2026-05-24T11:10:00Z",
+        480,
+        1440
+    ),
+    reservation(
+        "demo-reservation-1010",
+        "demo-property-sopot",
+        "demo-unit-sopot-c",
+        "Lucas Bell",
+        "lucas.bell@example.local",
+        "2026-07-10",
+        "2026-07-13",
+        "PENDING",
+        "demo-user-guest-8",
+        "2026-06-28T15:00:00Z",
+        880,
+        2640
+    ),
+    reservation(
+        "demo-reservation-1011",
+        "demo-property-mazury",
+        "demo-unit-mazury-b",
+        "Alice Morgan",
+        "guest.demo@kwatera.local",
+        "2026-07-15",
+        "2026-07-20",
+        "CONFIRMED",
+        "demo-user-guest",
+        "2026-06-29T18:25:00Z",
+        540,
+        2700
+    ),
+    reservation(
+        "demo-reservation-1012",
+        "demo-property-zakopane",
+        "demo-unit-zakopane-b",
+        "Nora Scott",
+        "nora.scott@example.local",
+        "2026-07-26",
+        "2026-07-29",
+        "CONFIRMED",
+        "demo-user-guest-9",
+        "2026-07-01T09:50:00Z",
+        350,
+        1050
+    ),
+    reservation(
+        "demo-reservation-1013",
+        "demo-property-krakow",
+        "demo-unit-krakow-a",
+        "Oliver Price",
+        "oliver.price@example.local",
+        "2026-07-22",
+        "2026-07-25",
+        "CANCELLED",
+        "demo-user-guest-10",
+        "2026-07-03T10:05:00Z",
+        510,
+        1530
+    ),
+    reservation(
+        "demo-reservation-1014",
+        "demo-property-sopot",
+        "demo-unit-sopot-a",
+        "Harper Lee",
+        "harper.lee@example.local",
+        "2026-07-04",
+        "2026-07-08",
+        "CONFIRMED",
+        "demo-user-guest-11",
+        "2026-06-22T16:15:00Z",
+        455,
+        1820
+    ),
 ];
 
-export const demoAdminReservations = demoReservations.map((reservation) => ({
-    id: reservation.id,
-    guestName: reservation.guestName,
-    unitName: reservation.unitName,
-    startDate: reservation.startDate,
-    endDate: reservation.endDate,
-    status: reservation.status,
-    userId: reservation.userId,
-    pricePerNightSnapshot: reservation.pricePerNightSnapshot,
-    totalPrice: reservation.totalPrice,
+export const demoAdminReservations = demoReservations.map((item) => ({
+    id: item.id,
+    guestName: item.guestName,
+    unitName: item.unitName,
+    startDate: item.startDate,
+    endDate: item.endDate,
+    status: item.status,
+    userId: item.userId,
+    pricePerNightSnapshot: item.pricePerNightSnapshot,
+    totalPrice: item.totalPrice,
 }));
 
-export const demoOccupancy = [
-    ...demoAdminReservations.map((reservation) => ({
-        reservationId: reservation.id,
-        unitId: demoReservations.find((item) => item.id === reservation.id)?.unitId ?? "",
-        unitName: reservation.unitName,
-        startDate: reservation.startDate,
-        endDate: reservation.endDate,
-        status: reservation.status,
-        guestName: reservation.guestName,
-        totalPrice: reservation.totalPrice,
-    })),
-    {
-        reservationId: "demo-reservation-1004",
-        unitId: mazuryRoom.id,
-        unitName: mazuryRoom.name,
-        startDate: "2026-06-10",
-        endDate: "2026-06-13",
-        status: "CONFIRMED",
-        guestName: "Tomasz Maj",
-        totalPrice: 1080,
-    },
-];
+export const demoOccupancy = demoReservations
+    .filter((item) => item.status !== "CANCELLED")
+    .map((item) => ({
+        reservationId: item.id,
+        unitId: item.unitId,
+        unitName: item.unitName,
+        startDate: item.startDate,
+        endDate: item.endDate,
+        status: item.status,
+        guestName: item.guestName,
+        totalPrice: item.totalPrice,
+    }));
 
 export const demoGuestReservations: GuestReservation[] = demoReservations
-    .filter((reservation) => reservation.userId === "demo-user-guest")
-    .map((reservation) => ({
-        id: reservation.id,
-        unitId: reservation.unitId,
-        startDate: reservation.startDate,
-        endDate: reservation.endDate,
-        status: reservation.status,
-        totalPrice: reservation.totalPrice,
-        convertedTotalPrice: reservation.convertedTotalPrice,
-        currencyInfo: reservation.currencyInfo,
+    .filter((item) => item.userId === "demo-user-guest")
+    .map((item) => ({
+        id: item.id,
+        unitId: item.unitId,
+        startDate: item.startDate,
+        endDate: item.endDate,
+        status: item.status,
+        totalPrice: item.totalPrice,
+        convertedTotalPrice: item.convertedTotalPrice,
+        currencyInfo: item.currencyInfo,
     }));

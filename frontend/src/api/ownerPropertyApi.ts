@@ -4,7 +4,7 @@ import { demoProperties } from "../demo/demoProperties";
 const API_URL = `${GATEWAY_BASE_URL}/api/owner`;
 
 export async function getMyProperties() {
-    if (IS_DEMO_MODE) return demoProperties.slice(0, 2);
+    if (IS_DEMO_MODE) return demoProperties;
 
     const token = localStorage.getItem("token");
 

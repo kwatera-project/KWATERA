@@ -4,8 +4,8 @@ export default function DemoModeBanner() {
     if (!IS_DEMO_MODE) return null;
 
     return (
-        <div className="sticky top-0 z-[1100] bg-amber-50 border-b border-amber-200 text-amber-900 text-center text-xs sm:text-sm font-bold px-4 py-2">
-            Demo mode: dane przykładowe, bez zapisu na serwerze
+        <div className="fixed bottom-3 right-3 z-[900] max-w-[calc(100vw-1.5rem)] rounded-full border border-amber-200 bg-amber-50/95 px-3 py-1.5 text-[11px] sm:text-xs font-bold text-amber-900 shadow-sm backdrop-blur">
+            Demo mode: sample data only, no server writes.
         </div>
     );
 }

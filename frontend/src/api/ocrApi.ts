@@ -12,7 +12,7 @@ export type ReadingStatus =
 
 export type ReadingType = "INITIAL" | "FINAL";
 
-export type UtilityType = "WATER";
+export type UtilityType = "WATER" | "ELECTRICITY";
 
 export type MeterReadingResponse = {
     status: ReadingStatus;
