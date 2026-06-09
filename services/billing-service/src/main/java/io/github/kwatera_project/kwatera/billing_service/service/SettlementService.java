@@ -120,10 +120,7 @@ public class SettlementService {
     try {
       emailNotificationService.sendUtilityChargesAdded(settlement, item);
     } catch (Exception e) {
-      log.warn(
-          "Failed to send utility charges notification for settlement {}: {}",
-          settlementId,
-          e.getMessage());
+      log.warn("Failed to send utility charges notification for settlement {}", settlementId, e);
     }
 
     return item;
@@ -188,7 +185,7 @@ public class SettlementService {
         emailNotificationService.sendOwnerPaymentStatusChanged(
             settlement, previous, newStatus, unitId);
       } catch (Exception e) {
-        log.warn("Failed to send owner notification for payment status change: {}", e.getMessage());
+        log.warn("Failed to send owner notification for payment status change", e);
       }
     }
   }

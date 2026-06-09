@@ -65,7 +65,7 @@ public class AdminReservationService {
       return reservations.stream().map(this::mapToOverviewDto).toList();
 
     } catch (Exception e) {
-      System.err.println("Error connection with property-service: " + e.getMessage());
+      log.error("Error connection with property-service", e);
       return Collections.emptyList();
     }
   }
@@ -117,8 +117,7 @@ public class AdminReservationService {
             reservation, oldStatus, newStatus);
       }
     } catch (Exception e) {
-      log.warn(
-          "Failed to send owner notification for reservation status update: {}", e.getMessage());
+      log.warn("Failed to send owner notification for reservation status update", e);
     }
 
     return mapToOverviewDto(reservation);

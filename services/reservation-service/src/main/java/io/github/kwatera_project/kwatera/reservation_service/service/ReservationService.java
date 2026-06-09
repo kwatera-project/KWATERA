@@ -252,7 +252,7 @@ public class ReservationService {
     try {
       emailNotificationService.sendOwnerReservationCreated(saved);
     } catch (Exception e) {
-      log.warn("Failed to send owner notification for reservation creation: {}", e.getMessage());
+      log.warn("Failed to send owner notification for reservation creation", e);
     }
     return saved;
   }
@@ -434,8 +434,7 @@ public class ReservationService {
             reservation, oldStatus, reservation.getStatus());
       }
     } catch (Exception e) {
-      log.warn(
-          "Failed to send owner notification for reservation status update: {}", e.getMessage());
+      log.warn("Failed to send owner notification for reservation status update", e);
     }
   }
 
@@ -518,10 +517,7 @@ public class ReservationService {
             reservation, oldStatus, ReservationStatus.CANCELLED, reservation.getGuestEmail());
         emailNotificationService.sendOwnerReservationCancelled(reservation);
       } catch (Exception e) {
-        log.warn(
-            "Failed to send cancellation email for reservation {}: {}",
-            reservation.getId(),
-            e.getMessage());
+        log.warn("Failed to send cancellation email for reservation {}", reservation.getId(), e);
       }
     }
   }
@@ -535,9 +531,9 @@ public class ReservationService {
         emailNotificationService.sendOwnerReservationUpcoming(reservation);
       } catch (Exception e) {
         log.warn(
-            "Failed to send upcoming reservation notification to owner for reservation {}: {}",
+            "Failed to send upcoming reservation notification to owner for reservation {}",
             reservation.getId(),
-            e.getMessage());
+            e);
       }
     }
   }
