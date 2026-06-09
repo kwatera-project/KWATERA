@@ -3,6 +3,7 @@ package io.github.kwatera_project.kwatera.property_service.service;
 import io.github.kwatera_project.kwatera.property_service.dto.*;
 import io.github.kwatera_project.kwatera.property_service.model.*;
 import io.github.kwatera_project.kwatera.property_service.repository.*;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,15 @@ public class PropertyService {
 
   public List<PropertyDto> getAll() {
     return propertyRepository.findAll().stream().map(this::mapToDto).toList();
+  }
+
+  public List<PropertyDto> getByBoundingBox(
+      BigDecimal minLat, BigDecimal maxLat, BigDecimal minLng, BigDecimal maxLng) {
+    return propertyRepository
+        .findByLatitudeBetweenAndLongitudeBetween(minLat, maxLat, minLng, maxLng)
+        .stream()
+        .map(this::mapToDto)
+        .toList();
   }
 
   public PropertyDto getById(UUID id) {

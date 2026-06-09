@@ -64,6 +64,29 @@ class PropertyServiceTest {
   }
 
   @Test
+  void getByBoundingBox_shouldReturnFilteredProperties() {
+    Property property = new Property();
+    property.setId(UUID.randomUUID());
+    property.setTitle("Test");
+    property.setCity("Warsaw");
+    property.setDescription("Desc");
+
+    BigDecimal minLat = BigDecimal.valueOf(50);
+    BigDecimal maxLat = BigDecimal.valueOf(53);
+    BigDecimal minLng = BigDecimal.valueOf(19);
+    BigDecimal maxLng = BigDecimal.valueOf(22);
+
+    when(propertyRepository.findByLatitudeBetweenAndLongitudeBetween(
+            minLat, maxLat, minLng, maxLng))
+        .thenReturn(List.of(property));
+
+    var result = propertyService.getByBoundingBox(minLat, maxLat, minLng, maxLng);
+
+    assertEquals(1, result.size());
+    assertEquals("Test", result.get(0).getTitle());
+  }
+
+  @Test
   void getById_shouldReturnProperty() {
     UUID id = UUID.randomUUID();
 

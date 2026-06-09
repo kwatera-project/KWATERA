@@ -4,6 +4,7 @@ import io.github.kwatera_project.kwatera.property_service.dto.PropertyDto;
 import io.github.kwatera_project.kwatera.property_service.dto.UnitDto;
 import io.github.kwatera_project.kwatera.property_service.dto.UnitSettlementItemDto;
 import io.github.kwatera_project.kwatera.property_service.service.PropertyService;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -25,7 +26,14 @@ public class PropertyController {
   }
 
   @GetMapping
-  public List<PropertyDto> getAllProperties() {
+  public List<PropertyDto> getAllProperties(
+      @RequestParam(name = "minLat", required = false) BigDecimal minLat,
+      @RequestParam(name = "maxLat", required = false) BigDecimal maxLat,
+      @RequestParam(name = "minLng", required = false) BigDecimal minLng,
+      @RequestParam(name = "maxLng", required = false) BigDecimal maxLng) {
+    if (minLat != null && maxLat != null && minLng != null && maxLng != null) {
+      return propertyService.getByBoundingBox(minLat, maxLat, minLng, maxLng);
+    }
     return propertyService.getAll();
   }
 
