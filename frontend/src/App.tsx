@@ -27,6 +27,7 @@ import CreateUnitPage from "./pages/CreateUnitPage.tsx";
 import EditUnitPage from "./pages/EditUnitPage.tsx";
 import EditPropertyImages from "./pages/EditPropertyImages.tsx";
 import EditUnitImages from "./pages/EditUnitImages.tsx";
+import AboutPage from "./pages/AboutPage";
 
 function App() {
     return (
@@ -34,6 +35,7 @@ function App() {
             <Navbar/>
             <Routes>
                 <Route path="/" element={<HomePage/>}/>
+                <Route path="/about" element={<AboutPage/>}/>
                 <Route path="/register" element={<RegisterForm/>}/>
                 <Route path="/login" element={<LoginForm/>}/>
                 <Route
