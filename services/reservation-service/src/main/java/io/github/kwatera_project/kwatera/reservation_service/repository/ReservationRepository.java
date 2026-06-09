@@ -57,4 +57,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
 
   List<Reservation> findByStatusAndCreatedAtBefore(
       ReservationStatus status, java.time.Instant threshold);
+
+  List<Reservation> findByStartDateAndStatus(LocalDate startDate, ReservationStatus status);
 }

@@ -19,4 +19,9 @@ kwatera:
   reservation:
     cleanup:
       cron: "0 */5 * * * *"
-      expiration-minutes: 15
+      expiration-minutes: 15
+    upcoming-check:
+      cron: "0 0 8 * * *"
+      zone: "Europe/Warsaw"
+  security:
+    internal-token: kwatera-internal-secret-token

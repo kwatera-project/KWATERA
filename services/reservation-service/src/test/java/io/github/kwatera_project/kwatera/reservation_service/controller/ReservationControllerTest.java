@@ -265,4 +265,41 @@ class ReservationControllerTest {
 
     verifyNoInteractions(reservationService);
   }
+
+  @Test
+  void shouldGetReservationDetailsInternal_withValidInternalToken() throws Exception {
+    UUID reservationId = UUID.randomUUID();
+    ReservationDetailsDto dto = new ReservationDetailsDto();
+    dto.setId(reservationId);
+
+    when(reservationService.getReservationDetailsInternal(reservationId)).thenReturn(dto);
+
+    mockMvc
+        .perform(
+            get("/api/v1/reservations/internal/" + reservationId)
+                .header("X-Internal-Token", "kwatera-internal-secret-token"))
+        .andExpect(status().isOk());
+
+    verify(reservationService).getReservationDetailsInternal(reservationId);
+  }
+
+  @Test
+  void shouldFailGetReservationDetailsInternal_withInvalidInternalToken() throws Exception {
+    UUID reservationId = UUID.randomUUID();
+
+    mockMvc
+        .perform(
+            get("/api/v1/reservations/internal/" + reservationId)
+                .header("X-Internal-Token", "wrong-token"))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void shouldFailGetReservationDetailsInternal_withMissingInternalToken() throws Exception {
+    UUID reservationId = UUID.randomUUID();
+
+    mockMvc
+        .perform(get("/api/v1/reservations/internal/" + reservationId))
+        .andExpect(status().isForbidden());
+  }
 }

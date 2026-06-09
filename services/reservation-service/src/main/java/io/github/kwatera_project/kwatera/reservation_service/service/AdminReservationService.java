@@ -21,6 +21,9 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class AdminReservationService {
 
+  private static final org.slf4j.Logger log =
+      org.slf4j.LoggerFactory.getLogger(AdminReservationService.class);
+
   private final ReservationRepository reservationRepository;
 
   private final ReservationStatusHistoryRepository statusHistoryRepository;
@@ -62,7 +65,7 @@ public class AdminReservationService {
       return reservations.stream().map(this::mapToOverviewDto).toList();
 
     } catch (Exception e) {
-      System.err.println("Error connection with property-service: " + e.getMessage());
+      log.error("Error connection with property-service", e);
       return Collections.emptyList();
     }
   }
@@ -105,6 +108,17 @@ public class AdminReservationService {
 
     emailNotificationService.sendReservationStatusChanged(
         reservation, oldStatus, newStatus, reservation.getGuestEmail());
+
+    try {
+      if (newStatus == ReservationStatus.CANCELLED) {
+        emailNotificationService.sendOwnerReservationCancelled(reservation);
+      } else {
+        emailNotificationService.sendOwnerReservationStatusChanged(
+            reservation, oldStatus, newStatus);
+      }
+    } catch (Exception e) {
+      log.warn("Failed to send owner notification for reservation status update", e);
+    }
 
     return mapToOverviewDto(reservation);
   }
