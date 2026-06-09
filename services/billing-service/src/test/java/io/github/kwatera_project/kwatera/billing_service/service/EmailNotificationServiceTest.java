@@ -131,10 +131,30 @@ class EmailNotificationServiceTest {
   }
 
   @Test
+  void shouldUseFallbackRecipientWhenRecipientEmailIsNull() throws Exception {
+    service.sendSettlementCreated(settlement(), null);
+
+    ArgumentCaptor<MimeMessage> captor = ArgumentCaptor.forClass(MimeMessage.class);
+    verify(mailSender).send(captor.capture());
+
+    assertEquals(
+        "guest@kwatera.local",
+        captor.getValue().getRecipients(Message.RecipientType.TO)[0].toString());
+  }
+
+  @Test
   void shouldNotThrowWhenMailSendingFails() {
     doThrow(new MailSendException("SMTP unavailable"))
         .when(mailSender)
         .send(any(MimeMessage.class));
+
+    assertDoesNotThrow(
+        () -> service.sendSettlementCreated(settlement(), "actual.guest@example.com"));
+  }
+
+  @Test
+  void shouldNotThrowWhenMailSendingFailsWithNullMessage() {
+    doThrow(new MailSendException((String) null)).when(mailSender).send(any(MimeMessage.class));
 
     assertDoesNotThrow(
         () -> service.sendSettlementCreated(settlement(), "actual.guest@example.com"));

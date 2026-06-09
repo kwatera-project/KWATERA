@@ -73,4 +73,28 @@ class EmailNotificationServiceTest {
 
     verify(mailSender).send(mimeMessage);
   }
+
+  @Test
+  void shouldUseFallbackRecipientWhenRecipientIsNull() {
+    when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+    when(templateEngine.process(eq("thank-you-signup"), any(Context.class)))
+        .thenReturn("<html>Welcome!</html>");
+
+    emailNotificationService.sendThankYouEmail(null, null);
+
+    verify(mailSender).send(mimeMessage);
+  }
+
+  @Test
+  void shouldNotThrowWhenMailSendingFailsWithNullMessage() {
+    when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+    when(templateEngine.process(eq("thank-you-signup"), any(Context.class)))
+        .thenReturn("<html>Welcome!</html>");
+    doThrow(new org.springframework.mail.MailSendException((String) null))
+        .when(mailSender)
+        .send(any(MimeMessage.class));
+
+    org.junit.jupiter.api.Assertions.assertDoesNotThrow(
+        () -> emailNotificationService.sendThankYouEmail("user@example.com", "Alice"));
+  }
 }
