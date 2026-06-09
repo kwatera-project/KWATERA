@@ -1,8 +1,11 @@
-import { GATEWAY_BASE_URL } from "./apiConfig";
+import { GATEWAY_BASE_URL, IS_DEMO_MODE } from "./apiConfig";
+import { demoProperties } from "../demo/demoProperties";
 
 const API_URL = `${GATEWAY_BASE_URL}/api/owner`;
 
 export async function getMyProperties() {
+    if (IS_DEMO_MODE) return demoProperties.slice(0, 2);
+
     const token = localStorage.getItem("token");
 
     const res = await fetch(

@@ -1,6 +1,12 @@
-import { GATEWAY_BASE_URL } from "./apiConfig";
+import { GATEWAY_BASE_URL, IS_DEMO_MODE } from "./apiConfig";
+import { demoOccupancy, demoAdminReservations } from "../demo/demoReservations";
+import { demoBillingMetrics, demoReservationMetrics } from "../demo/demoReports";
 
 export async function getOccupancy(startDate: string, endDate: string) {
+    if (IS_DEMO_MODE) {
+        return demoOccupancy.filter((item) => item.startDate <= endDate && item.endDate >= startDate);
+    }
+
     const token = localStorage.getItem("token");
     const res = await fetch(
         `${GATEWAY_BASE_URL}/api/v1/admin/occupancy?startDate=${startDate}&endDate=${endDate}`,
@@ -15,6 +21,12 @@ export async function getOccupancy(startDate: string, endDate: string) {
 }
 
 export async function getDashboardReservationMetrics(startDate?: string, endDate?: string) {
+    if (IS_DEMO_MODE) {
+        void startDate;
+        void endDate;
+        return demoReservationMetrics;
+    }
+
     const token = localStorage.getItem("token");
     let url = `${GATEWAY_BASE_URL}/api/v1/admin/dashboard/reservations`;
     const params = new URLSearchParams();
@@ -35,6 +47,12 @@ export async function getDashboardReservationMetrics(startDate?: string, endDate
 }
 
 export async function getDashboardBillingMetrics(startDate?: string, endDate?: string) {
+    if (IS_DEMO_MODE) {
+        void startDate;
+        void endDate;
+        return demoBillingMetrics;
+    }
+
     const token = localStorage.getItem("token");
     let url = `${GATEWAY_BASE_URL}/api/v1/admin/dashboard/billing`;
     const params = new URLSearchParams();
@@ -52,4 +70,58 @@ export async function getDashboardBillingMetrics(startDate?: string, endDate?: s
     });
     if (!res.ok) throw new Error("Failed to fetch billing dashboard metrics");
     return res.json();
+}
+
+export async function getAdminReservations(status?: string) {
+    if (IS_DEMO_MODE) {
+        return status
+            ? demoAdminReservations.filter((reservation) => reservation.status === status)
+            : demoAdminReservations;
+    }
+
+    const token = localStorage.getItem("token");
+    const url = status
+        ? `${GATEWAY_BASE_URL}/api/v1/admin/reservations?status=${status}`
+        : `${GATEWAY_BASE_URL}/api/v1/admin/reservations`;
+
+    const res = await fetch(url, {
+        method: "GET",
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+        },
+    });
+
+    if (!res.ok) throw new Error("Get data error");
+    return res.json();
+}
+
+export async function updateAdminReservationStatus(id: string, newStatus: string) {
+    if (IS_DEMO_MODE) return { id, status: newStatus };
+
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${GATEWAY_BASE_URL}/api/v1/admin/reservations/${id}/status`, {
+        method: "PATCH",
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ newStatus }),
+    });
+
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: "An error occurred" }));
+        const message = res.status === 400
+            ? "This status transition is not allowed"
+            : res.status === 401
+              ? "Session expired or invalid. Please log in again"
+              : res.status === 403
+                ? "You are not allowed to update this reservation"
+                : res.status === 404
+                  ? "Reservation not found"
+                  : errorData.message || "An error occurred";
+        throw new Error(message);
+    }
+
+    return res.json().catch(() => ({ id, status: newStatus }));
 }

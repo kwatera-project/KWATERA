@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { format } from "date-fns";
-import { getDashboardReservationMetrics, getDashboardBillingMetrics } from "../api/adminApi";
+import { getDashboardReservationMetrics, getDashboardBillingMetrics, getAdminReservations } from "../api/adminApi";
 import { getMyProperties } from "../api/ownerPropertyApi";
 import { getPropertyUnits } from "../api/ownerUnitApi";
 import { getProperties, getUnits } from "../api/propertyApi";
 import { getSettlementDetails } from "../api/settlementApi";
 import { getUserRoles } from "../utils/jwtUtils";
-import { GATEWAY_BASE_URL } from "../api/apiConfig";
 import type { Unit } from "../types/property";
 
 export interface ReservationOverview {
@@ -88,20 +87,8 @@ export function useDashboardData() {
     try {
       const token = localStorage.getItem("token");
       if (!token) return [];
-      const res = await fetch(`${GATEWAY_BASE_URL}/api/v1/admin/reservations`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      if (!res.ok) {
-        if (isAdmin) {
-          console.error(`Admin failed to fetch reservations: ${res.status}`);
-        } else {
-          console.warn(`Owner/non-admin reservation loading bypassed or failed with status ${res.status}. Returning empty list.`);
-        }
-        return [];
-      }
-      return await res.json();
+      void isAdmin;
+      return await getAdminReservations();
     } catch (err) {
       console.error("Error in fetchAllReservations:", err);
       return [];

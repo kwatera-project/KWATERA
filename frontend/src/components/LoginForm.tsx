@@ -2,6 +2,8 @@ import '../App.css'
 import { GATEWAY_BASE_URL } from '../api/apiConfig'
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
+import DemoRoleSelector from "./DemoRoleSelector"
+import { IS_DEMO_MODE } from "../api/apiConfig"
 
 export default function LoginForm() {
     const [formData, setFormData] = useState({ email: '', password: '' })
@@ -42,7 +44,14 @@ export default function LoginForm() {
                             <p className="text-sm text-gray-500">Welcome back! Please enter your details to access your account.</p>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                        {IS_DEMO_MODE && (
+                            <div className="space-y-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                                <p className="text-xs font-black uppercase tracking-wider text-amber-900 text-center">Demo login</p>
+                                <DemoRoleSelector />
+                            </div>
+                        )}
+
+                        {!IS_DEMO_MODE && <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="space-y-1.5">
                                 <label className="block text-sm font-medium text-gray-700">Email Address</label>
                                 <input
@@ -71,7 +80,7 @@ export default function LoginForm() {
                             >
                                 Sign In
                             </button>
-                        </form>
+                        </form>}
 
                         <p className="text-center text-sm text-gray-600">
                             Don't have an account?{" "}

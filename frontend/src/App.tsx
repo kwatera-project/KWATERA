@@ -22,10 +22,12 @@ import AdminMeterReadingsPage from "./pages/AdminMeterReadingsPage";
 import OwnerPropertiesPage from "./pages/OwnerPropertiesPage.tsx";
 import OwnerPropertyUnitsPage from "./pages/OwnerPropertyUnitsPage.tsx";
 import AboutPage from "./pages/AboutPage";
+import DemoModeBanner from "./components/DemoModeBanner";
 
 function App() {
     return (
         <CurrencyProvider>
+            <DemoModeBanner/>
             <Navbar/>
             <Routes>
                 <Route path="/" element={<HomePage/>}/>

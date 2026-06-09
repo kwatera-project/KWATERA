@@ -5,12 +5,14 @@ import {getUserRoles, decodeJwt} from "../utils/jwtUtils.ts"
 import {useState, useEffect, useRef} from "react"
 import {useCurrency} from "../contexts/CurrencyContext"
 import {User, LogOut, LayoutDashboard, Calendar, Settings, Home} from 'lucide-react'
+import { IS_DEMO_MODE } from "../api/apiConfig.ts"
 
 interface NavbarProps {
     isSubpage?: boolean;
 }
 
 export default function Navbar({isSubpage}: NavbarProps = {}) {
+    const [, setAuthVersion] = useState(0);
     const token = localStorage.getItem("token");
     const userRoles = getUserRoles(token);
     const isLoggedIn = !!token;
@@ -28,6 +30,16 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
     const isHomePage = location.pathname === '/';
     const [isScrolled, setIsScrolled] = useState(false);
     const profileDropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleDemoAuth = () => setAuthVersion((value) => value + 1);
+        window.addEventListener("kwatera-demo-auth", handleDemoAuth);
+        window.addEventListener("storage", handleDemoAuth);
+        return () => {
+            window.removeEventListener("kwatera-demo-auth", handleDemoAuth);
+            window.removeEventListener("storage", handleDemoAuth);
+        };
+    }, []);
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -206,7 +218,16 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                         </div>
                     ) : (
                         <div className="flex items-center gap-6">
-                            <Link
+                            {IS_DEMO_MODE ? (
+                                <Link
+                                    to="/login"
+                                    className={`font-bold text-sm tracking-wide uppercase transition-all duration-300 ${isScrolledActive ? 'text-stone-800 hover:bg-stone-100 px-4 py-2 rounded-full' : 'text-white hover:text-gray-200 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]'}`}
+                                >
+                                    DEMO LOGIN
+                                </Link>
+                            ) : (
+                                <>
+                                <Link
                                 to="/login"
                                 className={`font-bold text-sm tracking-wide uppercase transition-all duration-300 ${isScrolledActive ? 'text-stone-800 hover:bg-stone-100 px-4 py-2 rounded-full' : 'text-white hover:text-gray-200 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]'}`}
                             >
@@ -218,6 +239,8 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                             >
                                 SIGN UP
                             </Link>
+                                </>
+                            )}
                         </div>
                     )}
                 </div>
