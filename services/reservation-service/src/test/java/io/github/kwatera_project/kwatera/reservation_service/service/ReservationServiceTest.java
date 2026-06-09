@@ -135,7 +135,7 @@ class ReservationServiceTest {
 
     UUID id = UUID.randomUUID();
     LocalDate from = LocalDate.now().plusDays(5);
-    LocalDate to = from;
+    LocalDate to = from.minusDays(1);
 
     assertThrows(ResponseStatusException.class, () -> service.checkAvailability(id, from, to));
   }

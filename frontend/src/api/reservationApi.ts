@@ -38,6 +38,49 @@ export async function createReservation(
     return res.json();
 }
 
+export async function createManualReservation(
+    unitId: string,
+    from: string,
+    to: string,
+    guestEmail: string,
+    guestDetails: {
+        firstName: string;
+        lastName: string;
+        phone: string;
+        note?: string;
+    }
+) {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+        throw new Error("Log in to create a manual reservation");
+    }
+
+    const res = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+            unitId: unitId,
+            startDate: from,
+            endDate: to,
+            currency: "PLN",
+            guestEmail: guestEmail,
+            status: "CONFIRMED",
+            ...guestDetails
+        })
+    });
+
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to create manual reservation");
+    }
+
+    return res.json();
+}
+
 export async function getReservationDetails(id: string) {
     const token = localStorage.getItem("token");
 

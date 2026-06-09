@@ -35,7 +35,10 @@ public class ReservationController {
       HttpServletRequest httpServletRequest) {
 
     UUID guestId = validateAndGetUserId(authentication);
-    String guestEmail = authentication.getName();
+    String guestEmail =
+        (request.getGuestEmail() != null && !request.getGuestEmail().isBlank())
+            ? request.getGuestEmail()
+            : authentication.getName();
     String token = httpServletRequest.getHeader("Authorization");
 
     return reservationService.createReservation(guestId, guestEmail, request, token);

@@ -45,7 +45,7 @@ public class ReservationService {
     if (from.isBefore(today)) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Date is in the past");
     }
-    if (!from.isBefore(to)) {
+    if (from.isAfter(to)) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid date range");
     }
     if (unitId == null) {
@@ -57,7 +57,16 @@ public class ReservationService {
           || r.getStatus() == ReservationStatus.COMPLETED) {
         continue;
       }
-      if (from.isBefore(r.getEndDate()) && to.isAfter(r.getStartDate())) {
+      LocalDate min1 = from;
+      LocalDate max1 = from.isBefore(to) ? to.minusDays(1) : from;
+
+      LocalDate min2 = r.getStartDate();
+      LocalDate max2 =
+          r.getStartDate().isBefore(r.getEndDate())
+              ? r.getEndDate().minusDays(1)
+              : r.getStartDate();
+
+      if (!min1.isAfter(max2) && !max1.isBefore(min2)) {
         return new AvailabilityDto(false, "Unit is not available in selected dates");
       }
     }
@@ -209,7 +218,11 @@ public class ReservationService {
     reservation.setUnitId(request.getUnitId());
     reservation.setStartDate(request.getStartDate());
     reservation.setEndDate(request.getEndDate());
-    reservation.setStatus(ReservationStatus.PENDING);
+    if (request.getStatus() != null) {
+      reservation.setStatus(request.getStatus());
+    } else {
+      reservation.setStatus(ReservationStatus.PENDING);
+    }
 
     BigDecimal pricePerNight = fetchUnitPrice(request.getUnitId(), token);
     long days =
@@ -248,11 +261,13 @@ public class ReservationService {
     reservation.setPaymentExchangeRate(paymentExchangeRate);
 
     Reservation saved = reservationRepository.save(reservation);
-    emailNotificationService.sendReservationCreated(saved, saved.getGuestEmail());
-    try {
-      emailNotificationService.sendOwnerReservationCreated(saved);
-    } catch (Exception e) {
-      log.warn("Failed to send owner notification for reservation creation", e);
+    if (saved.getStatus() != ReservationStatus.BLOCKED) {
+      emailNotificationService.sendReservationCreated(saved, saved.getGuestEmail());
+      try {
+        emailNotificationService.sendOwnerReservationCreated(saved);
+      } catch (Exception e) {
+        log.warn("Failed to send owner notification for reservation creation", e);
+      }
     }
     return saved;
   }

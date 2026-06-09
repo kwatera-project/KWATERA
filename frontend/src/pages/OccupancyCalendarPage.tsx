@@ -1,8 +1,10 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { getOccupancy } from "../api/adminApi";
 import { format, addDays, startOfToday, isAfter, isBefore, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMonths } from "date-fns";
 import SharedDatePicker from "../components/SharedDatePicker";
+import ManualReservationModal from "../components/ManualReservationModal";
+import BlockDatesModal from "../components/BlockDatesModal";
 
 interface Occupancy {
     reservationId: string;
@@ -24,6 +26,10 @@ export default function OccupancyCalendarPage() {
     const [startDate] = dateRange;
     const [selectedOcc, setSelectedOcc] = useState<Occupancy | null>(null);
     const [quickAction, setQuickAction] = useState<{ date: Date } | null>(null);
+    const [isManualReservationOpen, setIsManualReservationOpen] = useState(false);
+    const [isBlockDatesOpen, setIsBlockDatesOpen] = useState(false);
+    const [selectedQuickActionDate, setSelectedQuickActionDate] = useState<Date | null>(null);
+
     const calendarRef = useRef<HTMLDivElement>(null);
     const todayStr = format(startOfToday(), 'yyyy-MM-dd');
 
@@ -46,7 +52,7 @@ export default function OccupancyCalendarPage() {
         weeks.push(dates.slice(i, i + 7));
     }
 
-    useEffect(() => {
+    const fetchOccupancyData = useCallback(() => {
         const anchor = startDate || startOfToday();
         const firstDay = startOfMonth(anchor);
         const lastDay = endOfMonth(anchor);
@@ -61,12 +67,21 @@ export default function OccupancyCalendarPage() {
             .catch(console.error);
     }, [startDate]);
 
+    useEffect(() => {
+        fetchOccupancyData();
+    }, [fetchOccupancyData]);
+
     const unitMap = new Map<string, string>();
     occupancies.forEach(o => {
         if (!unitMap.has(o.unitId)) {
             unitMap.set(o.unitId, o.unitName || o.unitId);
         }
     });
+
+    const uniqueUnits = Array.from(unitMap.entries()).map(([id, name]) => ({
+        id,
+        name
+    }));
 
     const handlePrevMonth = () => {
         const prev = addMonths(anchorDate, -1);
@@ -167,8 +182,11 @@ export default function OccupancyCalendarPage() {
 
     return (
         <div className="p-8 max-w-7xl mx-auto min-h-screen text-brand-main space-y-6">
-            <div className="flex justify-between items-center relative z-[100]">
-                <h1 className="text-3xl font-bold text-brand-main">Occupancy Dashboard</h1>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-[100]">
+                <div>
+                    <h1 className="text-3xl font-bold text-brand-main">Occupancy Dashboard</h1>
+                    <p className="text-sm text-brand-muted mt-0.5">Manage occupancies, manual reservations, and maintenance blocks.</p>
+                </div>
                 <div className="flex bg-brand-bg p-1 rounded-lg border border-brand-accent shadow-sm">
                     <Link to="/admin/reservations" className="px-4 py-2 text-sm font-medium rounded-md text-brand-muted hover:bg-[#FFFFFF] hover:text-brand-main hover:shadow-sm transition-all">
                         List View
@@ -191,6 +209,26 @@ export default function OccupancyCalendarPage() {
                                 placeholderText="Select Month"
                             />
                         </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setIsManualReservationOpen(true)}
+                            className="px-4 py-2 text-sm font-bold text-white bg-brand-primary hover:bg-brand-primary-hover rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Add Reservation
+                        </button>
+                        <button
+                            onClick={() => setIsBlockDatesOpen(true)}
+                            className="px-4 py-2 text-sm font-bold text-brand-main bg-white border border-brand-accent hover:bg-gray-50 rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                            </svg>
+                            Block Dates
+                        </button>
                     </div>
                 </div>
             </div>
@@ -245,7 +283,7 @@ export default function OccupancyCalendarPage() {
                                         const hasOcc = occupancies.some(o => o.startDate <= dateStr && o.endDate >= dateStr);
                                         const isWeekend = dayIdx >= 5;
                                         return (
-                                            <div key={d.toISOString()} onClick={() => { if (!isPast && !hasOcc) setQuickAction({ date: d }); }} className={`h-full border-r border-brand-accent/5 last:border-r-0 ${isWeekend ? 'bg-gray-50/40' : ''} ${!isPast && !hasOcc ? 'cursor-pointer hover:bg-brand-accent/10 transition-colors' : ''}`} />
+                                            <div key={d.toISOString()} onClick={() => { if (!isPast && !hasOcc) { setQuickAction({ date: d }); setSelectedQuickActionDate(d); } }} className={`h-full border-r border-brand-accent/5 last:border-r-0 ${isWeekend ? 'bg-gray-50/40' : ''} ${!isPast && !hasOcc ? 'cursor-pointer hover:bg-brand-accent/10 transition-colors' : ''}`} />
                                         );
                                     })}
                                 </div>
@@ -264,14 +302,15 @@ export default function OccupancyCalendarPage() {
 
             {quickAction && (
                 <>
-                    <div className="fixed inset-0 bg-black/50 z-[9998] backdrop-blur-sm" onClick={() => setQuickAction(null)} />
-                    <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] bg-white rounded-2xl shadow-2xl border border-brand-accent p-8 w-full max-w-sm space-y-6">
+                    <div className="fixed inset-0 bg-black/50 z-[9998] backdrop-blur-sm" onClick={() => { setQuickAction(null); setSelectedQuickActionDate(null); }} />
+                    <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] bg-[#FFFFFF] rounded-2xl shadow-2xl border border-brand-accent p-8 w-full max-w-sm space-y-6">
                         <div className="text-center space-y-1">
                             <h3 className="text-lg font-bold text-brand-main">Quick Action</h3>
                             <p className="text-sm text-brand-muted">Date: <span className="font-bold text-brand-main">{format(quickAction.date, 'EEEE, d MMMM yyyy')}</span></p>
                         </div>
-                        <button onClick={() => setQuickAction(null)} className="w-full py-3 bg-brand-primary text-white font-bold rounded-lg hover:opacity-90 transition">New Booking</button>
-                        <button onClick={() => setQuickAction(null)} className="w-full py-3 border border-brand-accent rounded-lg text-brand-main font-bold hover:bg-gray-50 transition">Cancel</button>
+                        <button onClick={() => { setIsManualReservationOpen(true); setQuickAction(null); }} className="w-full py-3 bg-brand-primary text-white font-bold rounded-lg hover:opacity-90 transition cursor-pointer">New Booking</button>
+                        <button onClick={() => { setIsBlockDatesOpen(true); setQuickAction(null); }} className="w-full py-3 bg-[#FFFFFF] border border-brand-accent text-brand-main font-bold rounded-lg hover:bg-gray-50 transition cursor-pointer">Block Dates</button>
+                        <button onClick={() => { setQuickAction(null); setSelectedQuickActionDate(null); }} className="w-full py-3 border border-brand-accent rounded-lg text-brand-main font-bold hover:bg-gray-50 transition cursor-pointer">Cancel</button>
                     </div>
                 </>
             )}
@@ -382,6 +421,28 @@ export default function OccupancyCalendarPage() {
 
                     </div>
                 </>
+            )}
+
+            {isManualReservationOpen && (
+                <ManualReservationModal
+                    isOpen={isManualReservationOpen}
+                    onClose={() => { setIsManualReservationOpen(false); setSelectedQuickActionDate(null); }}
+                    onSuccess={fetchOccupancyData}
+                    units={uniqueUnits}
+                    initialStartDate={selectedQuickActionDate}
+                    occupancies={occupancies}
+                />
+            )}
+
+            {isBlockDatesOpen && (
+                <BlockDatesModal
+                    isOpen={isBlockDatesOpen}
+                    onClose={() => { setIsBlockDatesOpen(false); setSelectedQuickActionDate(null); }}
+                    onSuccess={fetchOccupancyData}
+                    units={uniqueUnits}
+                    initialStartDate={selectedQuickActionDate}
+                    occupancies={occupancies}
+                />
             )}
         </div>
     );
