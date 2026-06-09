@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -22,6 +23,9 @@ import org.springframework.web.server.ResponseStatusException;
 public class ReservationController {
 
   private final ReservationService reservationService;
+
+  @Value("${kwatera.security.internal-token:kwatera-internal-secret-token}")
+  private String expectedInternalToken;
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
@@ -66,7 +70,12 @@ public class ReservationController {
 
   @GetMapping("/internal/{reservationId}")
   public ReservationDetailsDto getReservationDetailsInternal(
-      @PathVariable("reservationId") UUID reservationId) {
+      @PathVariable("reservationId") UUID reservationId,
+      @RequestHeader(value = "X-Internal-Token", required = false) String internalToken) {
+    if (internalToken == null || !internalToken.equals(expectedInternalToken)) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Access denied: Invalid internal token");
+    }
     return reservationService.getReservationDetailsInternal(reservationId);
   }
 

@@ -549,7 +549,11 @@ public class ReservationService {
 
   private BigDecimal calculateConvertedTotalPrice(
       BigDecimal totalPrice, String currency, BigDecimal exchangeRate) {
-    if (!"PLN".equalsIgnoreCase(currency)) {
+    if (totalPrice != null
+        && currency != null
+        && !"PLN".equalsIgnoreCase(currency)
+        && exchangeRate != null
+        && exchangeRate.compareTo(BigDecimal.ZERO) > 0) {
       return totalPrice.divide(exchangeRate, 2, RoundingMode.HALF_UP);
     }
     return totalPrice;

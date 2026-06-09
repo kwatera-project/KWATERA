@@ -36,7 +36,11 @@ class EmailNotificationServiceTest {
           restTemplate,
           "no-reply@kwatera.local",
           "guest@kwatera.local",
-          "http://property-service/api/properties");
+          "http://property-service/api/properties",
+          "http://auth-service/api/auth/users",
+          "test-internal-token",
+          "http://localhost:5173",
+          "owner1@example.com");
 
   private MimeMessage mimeMessage;
 
@@ -172,10 +176,16 @@ class EmailNotificationServiceTest {
     reservationDtoPln.setGuestEmail("guest.pln@example.com");
     reservationDtoPln.setCurrencyInfo(new CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, null));
 
-    when(restTemplate.getForObject(
-            "http://reservation-service/api/v1/reservations/internal/" + reservationId,
-            io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto.class))
-        .thenReturn(reservationDtoPln);
+    when(restTemplate.exchange(
+            org.mockito.Mockito.eq(
+                "http://reservation-service/api/v1/reservations/internal/" + reservationId),
+            org.mockito.Mockito.eq(org.springframework.http.HttpMethod.GET),
+            any(org.springframework.http.HttpEntity.class),
+            org.mockito.Mockito.eq(
+                io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto.class)))
+        .thenReturn(
+            new org.springframework.http.ResponseEntity<>(
+                reservationDtoPln, org.springframework.http.HttpStatus.OK));
 
     service.sendSettlementCreated(settlement, "original.guest@example.com");
 
@@ -192,10 +202,16 @@ class EmailNotificationServiceTest {
     reservationDtoEur.setCurrencyInfo(
         new CurrencyMetadataDto("PLN", "EUR", new BigDecimal("4.50"), null));
 
-    when(restTemplate.getForObject(
-            "http://reservation-service/api/v1/reservations/internal/" + reservationId,
-            io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto.class))
-        .thenReturn(reservationDtoEur);
+    when(restTemplate.exchange(
+            org.mockito.Mockito.eq(
+                "http://reservation-service/api/v1/reservations/internal/" + reservationId),
+            org.mockito.Mockito.eq(org.springframework.http.HttpMethod.GET),
+            any(org.springframework.http.HttpEntity.class),
+            org.mockito.Mockito.eq(
+                io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto.class)))
+        .thenReturn(
+            new org.springframework.http.ResponseEntity<>(
+                reservationDtoEur, org.springframework.http.HttpStatus.OK));
 
     service.sendSettlementCreated(settlement, "original.guest@example.com");
   }
@@ -206,9 +222,13 @@ class EmailNotificationServiceTest {
     Settlement settlement = settlement();
     settlement.setReservationId(reservationId);
 
-    when(restTemplate.getForObject(
-            "http://reservation-service/api/v1/reservations/internal/" + reservationId,
-            io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto.class))
+    when(restTemplate.exchange(
+            org.mockito.Mockito.eq(
+                "http://reservation-service/api/v1/reservations/internal/" + reservationId),
+            org.mockito.Mockito.eq(org.springframework.http.HttpMethod.GET),
+            any(org.springframework.http.HttpEntity.class),
+            org.mockito.Mockito.eq(
+                io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto.class)))
         .thenThrow(new RuntimeException("Service down"));
 
     assertDoesNotThrow(() -> service.sendSettlementCreated(settlement, "actual.guest@example.com"));
@@ -225,6 +245,9 @@ class EmailNotificationServiceTest {
     java.util.Map<String, Object> propertyResponse = new java.util.HashMap<>();
     propertyResponse.put("ownerId", "22222222-2222-2222-2222-222222222222");
 
+    java.util.Map<String, Object> owner1Response = new java.util.HashMap<>();
+    owner1Response.put("email", "owner1@example.com");
+
     when(restTemplate.getForObject(
             "http://property-service/api/properties/units/" + unitId, java.util.Map.class))
         .thenReturn(unitResponse);
@@ -232,6 +255,15 @@ class EmailNotificationServiceTest {
             "http://property-service/api/properties/" + unitResponse.get("propertyId"),
             java.util.Map.class))
         .thenReturn(propertyResponse);
+    when(restTemplate.exchange(
+            org.mockito.Mockito.eq(
+                "http://auth-service/api/auth/users/internal/22222222-2222-2222-2222-222222222222"),
+            org.mockito.Mockito.eq(org.springframework.http.HttpMethod.GET),
+            any(org.springframework.http.HttpEntity.class),
+            org.mockito.Mockito.eq(java.util.Map.class)))
+        .thenReturn(
+            new org.springframework.http.ResponseEntity<>(
+                owner1Response, org.springframework.http.HttpStatus.OK));
 
     service.sendOwnerPaymentStatusChanged(
         settlement, SettlementStatus.ISSUED, SettlementStatus.PAID, unitId);
@@ -243,6 +275,18 @@ class EmailNotificationServiceTest {
         captor.getValue().getRecipients(Message.RecipientType.TO)[0].toString());
 
     propertyResponse.put("ownerId", "33333333-3333-3333-3333-333333333333");
+    java.util.Map<String, Object> owner2Response = new java.util.HashMap<>();
+    owner2Response.put("email", "owner2@example.com");
+    when(restTemplate.exchange(
+            org.mockito.Mockito.eq(
+                "http://auth-service/api/auth/users/internal/33333333-3333-3333-3333-333333333333"),
+            org.mockito.Mockito.eq(org.springframework.http.HttpMethod.GET),
+            any(org.springframework.http.HttpEntity.class),
+            org.mockito.Mockito.eq(java.util.Map.class)))
+        .thenReturn(
+            new org.springframework.http.ResponseEntity<>(
+                owner2Response, org.springframework.http.HttpStatus.OK));
+
     service.sendOwnerPaymentStatusChanged(
         settlement, SettlementStatus.ISSUED, SettlementStatus.PAID, unitId);
 
@@ -252,6 +296,18 @@ class EmailNotificationServiceTest {
         captor.getValue().getRecipients(Message.RecipientType.TO)[0].toString());
 
     propertyResponse.put("ownerId", "44444444-4444-4444-4444-444444444444");
+    java.util.Map<String, Object> owner4Response = new java.util.HashMap<>();
+    owner4Response.put("email", "owner_44444444@example.com");
+    when(restTemplate.exchange(
+            org.mockito.Mockito.eq(
+                "http://auth-service/api/auth/users/internal/44444444-4444-4444-4444-444444444444"),
+            org.mockito.Mockito.eq(org.springframework.http.HttpMethod.GET),
+            any(org.springframework.http.HttpEntity.class),
+            org.mockito.Mockito.eq(java.util.Map.class)))
+        .thenReturn(
+            new org.springframework.http.ResponseEntity<>(
+                owner4Response, org.springframework.http.HttpStatus.OK));
+
     service.sendOwnerPaymentStatusChanged(
         settlement, SettlementStatus.ISSUED, SettlementStatus.PAID, unitId);
 
@@ -296,10 +352,16 @@ class EmailNotificationServiceTest {
     reservationDtoZeroRate.setCurrencyInfo(
         new CurrencyMetadataDto("PLN", "EUR", BigDecimal.ZERO, null));
 
-    when(restTemplate.getForObject(
-            "http://reservation-service/api/v1/reservations/internal/" + reservationId,
-            io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto.class))
-        .thenReturn(reservationDtoZeroRate);
+    when(restTemplate.exchange(
+            org.mockito.Mockito.eq(
+                "http://reservation-service/api/v1/reservations/internal/" + reservationId),
+            org.mockito.Mockito.eq(org.springframework.http.HttpMethod.GET),
+            any(org.springframework.http.HttpEntity.class),
+            org.mockito.Mockito.eq(
+                io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto.class)))
+        .thenReturn(
+            new org.springframework.http.ResponseEntity<>(
+                reservationDtoZeroRate, org.springframework.http.HttpStatus.OK));
 
     service.sendSettlementCreated(settlement, "original.guest@example.com");
 

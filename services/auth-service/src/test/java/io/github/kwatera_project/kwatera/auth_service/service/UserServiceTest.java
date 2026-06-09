@@ -158,4 +158,34 @@ class UserServiceTest {
     verify(userRepository).findByEmail("john@mail.com");
     verify(userRepository).save(user);
   }
+
+  @Test
+  void shouldReturnUserById() {
+    java.util.UUID id = java.util.UUID.randomUUID();
+    User user = new User();
+    user.setId(id);
+    user.setEmail("test@mail.com");
+
+    when(userRepository.findById(id)).thenReturn(Optional.of(user));
+
+    User result = userService.getUserById(id);
+
+    assertThat(result.getEmail()).isEqualTo("test@mail.com");
+    verify(userRepository).findById(id);
+  }
+
+  @Test
+  void shouldThrow404WhenUserByIdNotFound() {
+    java.util.UUID id = java.util.UUID.randomUUID();
+    when(userRepository.findById(id)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> userService.getUserById(id))
+        .isInstanceOf(ResponseStatusException.class)
+        .satisfies(
+            ex -> {
+              ResponseStatusException e = (ResponseStatusException) ex;
+              assertThat(e.getStatusCode().value()).isEqualTo(404);
+            });
+    verify(userRepository).findById(id);
+  }
 }

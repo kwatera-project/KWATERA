@@ -34,7 +34,11 @@ class EmailNotificationServiceTest {
           templateEngine,
           restTemplate,
           "no-reply@kwatera.local",
-          "guest@kwatera.local");
+          "guest@kwatera.local",
+          "http://property-service/api/properties",
+          "http://auth-service/api/auth/users",
+          "test-internal-token",
+          "owner1@example.com");
 
   private MimeMessage mimeMessage;
 
@@ -251,6 +255,9 @@ class EmailNotificationServiceTest {
     java.util.Map<String, Object> propertyResponse = new java.util.HashMap<>();
     propertyResponse.put("ownerId", "22222222-2222-2222-2222-222222222222");
 
+    java.util.Map<String, Object> owner1Response = new java.util.HashMap<>();
+    owner1Response.put("email", "owner1@example.com");
+
     when(restTemplate.getForObject(
             "http://property-service/api/properties/units/" + reservation.getUnitId(),
             java.util.Map.class))
@@ -259,6 +266,15 @@ class EmailNotificationServiceTest {
             "http://property-service/api/properties/" + unitResponse.get("propertyId"),
             java.util.Map.class))
         .thenReturn(propertyResponse);
+    when(restTemplate.exchange(
+            org.mockito.Mockito.eq(
+                "http://auth-service/api/auth/users/internal/22222222-2222-2222-2222-222222222222"),
+            org.mockito.Mockito.eq(org.springframework.http.HttpMethod.GET),
+            any(org.springframework.http.HttpEntity.class),
+            org.mockito.Mockito.eq(java.util.Map.class)))
+        .thenReturn(
+            new org.springframework.http.ResponseEntity<>(
+                owner1Response, org.springframework.http.HttpStatus.OK));
 
     service.sendOwnerReservationCreated(reservation);
 
@@ -269,6 +285,18 @@ class EmailNotificationServiceTest {
         captor.getValue().getRecipients(Message.RecipientType.TO)[0].toString());
 
     propertyResponse.put("ownerId", "33333333-3333-3333-3333-333333333333");
+    java.util.Map<String, Object> owner2Response = new java.util.HashMap<>();
+    owner2Response.put("email", "owner2@example.com");
+    when(restTemplate.exchange(
+            org.mockito.Mockito.eq(
+                "http://auth-service/api/auth/users/internal/33333333-3333-3333-3333-333333333333"),
+            org.mockito.Mockito.eq(org.springframework.http.HttpMethod.GET),
+            any(org.springframework.http.HttpEntity.class),
+            org.mockito.Mockito.eq(java.util.Map.class)))
+        .thenReturn(
+            new org.springframework.http.ResponseEntity<>(
+                owner2Response, org.springframework.http.HttpStatus.OK));
+
     service.sendOwnerReservationCreated(reservation);
 
     verify(mailSender, org.mockito.Mockito.atLeastOnce()).send(captor.capture());
@@ -277,6 +305,18 @@ class EmailNotificationServiceTest {
         captor.getValue().getRecipients(Message.RecipientType.TO)[0].toString());
 
     propertyResponse.put("ownerId", "44444444-4444-4444-4444-444444444444");
+    java.util.Map<String, Object> owner4Response = new java.util.HashMap<>();
+    owner4Response.put("email", "owner_44444444@example.com");
+    when(restTemplate.exchange(
+            org.mockito.Mockito.eq(
+                "http://auth-service/api/auth/users/internal/44444444-4444-4444-4444-444444444444"),
+            org.mockito.Mockito.eq(org.springframework.http.HttpMethod.GET),
+            any(org.springframework.http.HttpEntity.class),
+            org.mockito.Mockito.eq(java.util.Map.class)))
+        .thenReturn(
+            new org.springframework.http.ResponseEntity<>(
+                owner4Response, org.springframework.http.HttpStatus.OK));
+
     service.sendOwnerReservationCreated(reservation);
 
     verify(mailSender, org.mockito.Mockito.atLeastOnce()).send(captor.capture());

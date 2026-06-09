@@ -29,6 +29,10 @@ public class EmailNotificationService {
   private final RestTemplate restTemplate;
   private final String fromAddress;
   private final String testRecipient;
+  private final String propertyServiceUrl;
+  private final String authServiceUrl;
+  private final String internalToken;
+  private final String defaultOwnerEmail;
 
   @SuppressFBWarnings("EI_EXPOSE_REP2")
   public EmailNotificationService(
@@ -36,12 +40,22 @@ public class EmailNotificationService {
       TemplateEngine templateEngine,
       RestTemplate restTemplate,
       @Value("${kwatera.mail.from}") String fromAddress,
-      @Value("${kwatera.mail.test-recipient}") String testRecipient) {
+      @Value("${kwatera.mail.test-recipient}") String testRecipient,
+      @Value("${services.property.url:http://property-service/api/properties}")
+          String propertyServiceUrl,
+      @Value("${services.auth.url:http://auth-service/api/auth/users}") String authServiceUrl,
+      @Value("${kwatera.security.internal-token:kwatera-internal-secret-token}")
+          String internalToken,
+      @Value("${kwatera.mail.default-owner-email:owner1@example.com}") String defaultOwnerEmail) {
     this.mailSender = mailSender;
     this.templateEngine = templateEngine;
     this.restTemplate = restTemplate;
     this.fromAddress = fromAddress;
     this.testRecipient = testRecipient;
+    this.propertyServiceUrl = propertyServiceUrl;
+    this.authServiceUrl = authServiceUrl;
+    this.internalToken = internalToken;
+    this.defaultOwnerEmail = defaultOwnerEmail;
   }
 
   private Context createBaseContext(Reservation reservation, String subject) {
@@ -167,7 +181,7 @@ public class EmailNotificationService {
       return "Room " + unitId.toString().substring(0, 8);
     }
     try {
-      String url = "http://property-service/api/properties/units/" + unitId;
+      String url = propertyServiceUrl + "/units/" + unitId;
       java.util.Map<?, ?> response = restTemplate.getForObject(url, java.util.Map.class);
       if (response != null && response.get("name") != null) {
         return (String) response.get("name");
@@ -180,25 +194,42 @@ public class EmailNotificationService {
 
   private String fetchOwnerEmail(UUID unitId) {
     if (restTemplate == null) {
-      return DEFAULT_OWNER_EMAIL;
+      return defaultOwnerEmail;
     }
     try {
-      String baseUrl = "http://property-service/api/properties";
-      String unitUrl = baseUrl + "/units/" + unitId;
+      String unitUrl = propertyServiceUrl + "/units/" + unitId;
       java.util.Map<?, ?> unitResponse = restTemplate.getForObject(unitUrl, java.util.Map.class);
       if (unitResponse != null && unitResponse.get("propertyId") != null) {
         String propertyId = unitResponse.get("propertyId").toString();
-        String propertyUrl = baseUrl + "/" + propertyId;
+        String propertyUrl = propertyServiceUrl + "/" + propertyId;
         java.util.Map<?, ?> propertyResponse =
             restTemplate.getForObject(propertyUrl, java.util.Map.class);
         if (propertyResponse != null && propertyResponse.get("ownerId") != null) {
           String ownerIdStr = propertyResponse.get("ownerId").toString();
-          if ("22222222-2222-2222-2222-222222222222".equals(ownerIdStr)) {
-            return DEFAULT_OWNER_EMAIL;
-          } else if ("33333333-3333-3333-3333-333333333333".equals(ownerIdStr)) {
-            return "owner2@example.com";
+          try {
+            String authUrl = authServiceUrl + "/internal/" + ownerIdStr;
+            org.springframework.http.HttpHeaders headers =
+                new org.springframework.http.HttpHeaders();
+            headers.set("X-Internal-Token", internalToken);
+            org.springframework.http.HttpEntity<Void> entity =
+                new org.springframework.http.HttpEntity<>(headers);
+            java.util.Map<?, ?> ownerResponse =
+                restTemplate
+                    .exchange(
+                        authUrl,
+                        org.springframework.http.HttpMethod.GET,
+                        entity,
+                        java.util.Map.class)
+                    .getBody();
+            if (ownerResponse != null && ownerResponse.get("email") != null) {
+              return ownerResponse.get("email").toString();
+            }
+          } catch (Exception e) {
+            log.warn(
+                "Failed to fetch owner email from auth-service for ownerId {}: {}",
+                ownerIdStr,
+                e.getMessage());
           }
-          return "owner_" + ownerIdStr.substring(0, 8) + "@example.com";
         }
       }
     } catch (Exception e) {
@@ -207,7 +238,7 @@ public class EmailNotificationService {
           unitId,
           e.getMessage());
     }
-    return DEFAULT_OWNER_EMAIL;
+    return defaultOwnerEmail;
   }
 
   private String getStatusStyle(ReservationStatus status) {

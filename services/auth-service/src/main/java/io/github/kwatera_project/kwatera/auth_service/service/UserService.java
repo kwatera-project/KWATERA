@@ -3,6 +3,7 @@ package io.github.kwatera_project.kwatera.auth_service.service;
 import io.github.kwatera_project.kwatera.auth_service.model.Role;
 import io.github.kwatera_project.kwatera.auth_service.model.User;
 import io.github.kwatera_project.kwatera.auth_service.repository.UserRepository;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,15 @@ public class UserService {
   public User getUserByEmail(String email) {
     return userRepository
         .findByEmail(email)
+        .orElseThrow(
+            () ->
+                new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "The user account has been deleted or inactivated"));
+  }
+
+  public User getUserById(UUID id) {
+    return userRepository
+        .findById(id)
         .orElseThrow(
             () ->
                 new ResponseStatusException(

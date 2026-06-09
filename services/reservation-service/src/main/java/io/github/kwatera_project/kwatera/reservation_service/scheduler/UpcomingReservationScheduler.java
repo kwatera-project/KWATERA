@@ -17,7 +17,9 @@ public class UpcomingReservationScheduler {
     this.reservationService = reservationService;
   }
 
-  @Scheduled(cron = "${kwatera.reservation.upcoming-check.cron:0 0 8 * * *}")
+  @Scheduled(
+      cron = "${kwatera.reservation.upcoming-check.cron:0 0 8 * * *}",
+      zone = "${kwatera.reservation.upcoming-check.zone:Europe/Warsaw}")
   public void notifyUpcomingReservations() {
     log.info("Starting scheduled upcoming reservations check.");
     try {

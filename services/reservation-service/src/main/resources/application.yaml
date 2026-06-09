@@ -49,4 +49,9 @@ kwatera:
     cleanup:
       cron: ${KWATERA_RESERVATION_CLEANUP_CRON:0 */5 * * * *}
       expiration-minutes: ${KWATERA_RESERVATION_CLEANUP_EXPIRATION_MINUTES:15}
+    upcoming-check:
+      cron: ${KWATERA_RESERVATION_UPCOMING_CHECK_CRON:0 0 8 * * *}
+      zone: ${KWATERA_RESERVATION_UPCOMING_CHECK_ZONE:Europe/Warsaw}
+  security:
+    internal-token: ${KWATERA_INTERNAL_TOKEN:kwatera-internal-secret-token}
 

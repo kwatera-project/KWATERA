@@ -23,3 +23,5 @@ kwatera:
   mail:
     from: no-reply@kwatera.local
     test-recipient: guest@kwatera.local
+  security:
+    internal-token: kwatera-internal-secret-token

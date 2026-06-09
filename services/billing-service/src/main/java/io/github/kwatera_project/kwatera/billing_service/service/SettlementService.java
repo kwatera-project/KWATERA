@@ -303,7 +303,8 @@ public class SettlementService {
             : "PLN";
     BigDecimal rRate =
         (reservation.getCurrencyInfo() != null
-                && reservation.getCurrencyInfo().exchangeRate() != null)
+                && reservation.getCurrencyInfo().exchangeRate() != null
+                && reservation.getCurrencyInfo().exchangeRate().compareTo(BigDecimal.ZERO) > 0)
             ? reservation.getCurrencyInfo().exchangeRate()
             : BigDecimal.ONE;
 
@@ -375,7 +376,8 @@ public class SettlementService {
             : "PLN";
     BigDecimal rRate =
         (reservation.getCurrencyInfo() != null
-                && reservation.getCurrencyInfo().exchangeRate() != null)
+                && reservation.getCurrencyInfo().exchangeRate() != null
+                && reservation.getCurrencyInfo().exchangeRate().compareTo(BigDecimal.ZERO) > 0)
             ? reservation.getCurrencyInfo().exchangeRate()
             : BigDecimal.ONE;
 

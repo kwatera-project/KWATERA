@@ -31,6 +31,10 @@ public class EmailNotificationService {
   private final String fromAddress;
   private final String testRecipient;
   private final String propertyServiceUrl;
+  private final String authServiceUrl;
+  private final String internalToken;
+  private final String frontendUrl;
+  private final String defaultOwnerEmail;
 
   @SuppressFBWarnings("EI_EXPOSE_REP2")
   public EmailNotificationService(
@@ -39,13 +43,22 @@ public class EmailNotificationService {
       RestTemplate restTemplate,
       @Value("${kwatera.mail.from}") String fromAddress,
       @Value("${kwatera.mail.test-recipient}") String testRecipient,
-      @Value("${services.property.url}") String propertyServiceUrl) {
+      @Value("${services.property.url}") String propertyServiceUrl,
+      @Value("${services.auth.url:http://auth-service/api/auth/users}") String authServiceUrl,
+      @Value("${kwatera.security.internal-token:kwatera-internal-secret-token}")
+          String internalToken,
+      @Value("${kwatera.frontend.url:http://localhost:5173}") String frontendUrl,
+      @Value("${kwatera.mail.default-owner-email:owner1@example.com}") String defaultOwnerEmail) {
     this.mailSender = mailSender;
     this.templateEngine = templateEngine;
     this.restTemplate = restTemplate;
     this.fromAddress = fromAddress;
     this.testRecipient = testRecipient;
     this.propertyServiceUrl = propertyServiceUrl;
+    this.authServiceUrl = authServiceUrl;
+    this.internalToken = internalToken;
+    this.frontendUrl = frontendUrl;
+    this.defaultOwnerEmail = defaultOwnerEmail;
   }
 
   public void sendSettlementCreated(Settlement settlement, String recipientEmail) {
@@ -66,7 +79,7 @@ public class EmailNotificationService {
     context.setVariable("statusLabel", settlement.getStatus().name());
     context.setVariable("statusStyle", getStatusStyle(settlement.getStatus()));
     context.setVariable("oldStatus", null);
-    context.setVariable("paymentUrl", "http://localhost:5173/settlements/" + settlement.getId());
+    context.setVariable("paymentUrl", frontendUrl + "/settlements/" + settlement.getId());
 
     setupFormattedAmounts(context, settlement, reservation);
 
@@ -97,7 +110,7 @@ public class EmailNotificationService {
     context.setVariable("statusStyle", getStatusStyle(newStatus));
     context.setVariable("oldStatus", oldStatus.name());
     context.setVariable("newStatus", newStatus.name());
-    context.setVariable("paymentUrl", "http://localhost:5173/settlements/" + settlement.getId());
+    context.setVariable("paymentUrl", frontendUrl + "/settlements/" + settlement.getId());
 
     setupFormattedAmounts(context, settlement, reservation);
 
@@ -147,7 +160,7 @@ public class EmailNotificationService {
     context.setVariable("item", item);
     context.setVariable("statusLabel", settlement.getStatus().name());
     context.setVariable("statusStyle", getStatusStyle(settlement.getStatus()));
-    context.setVariable("paymentUrl", "http://localhost:5173/settlements/" + settlement.getId());
+    context.setVariable("paymentUrl", frontendUrl + "/settlements/" + settlement.getId());
 
     setupFormattedAmounts(context, settlement, reservation);
 
@@ -173,7 +186,13 @@ public class EmailNotificationService {
     }
     try {
       String url = "http://reservation-service/api/v1/reservations/internal/" + reservationId;
-      return restTemplate.getForObject(url, ReservationDto.class);
+      org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+      headers.set("X-Internal-Token", internalToken);
+      org.springframework.http.HttpEntity<Void> entity =
+          new org.springframework.http.HttpEntity<>(headers);
+      return restTemplate
+          .exchange(url, org.springframework.http.HttpMethod.GET, entity, ReservationDto.class)
+          .getBody();
     } catch (Exception e) {
       log.warn(
           "Failed to fetch reservation details internally for {}: {}",
@@ -230,7 +249,7 @@ public class EmailNotificationService {
 
   private String fetchOwnerEmail(UUID unitId) {
     if (restTemplate == null) {
-      return "owner1@example.com";
+      return defaultOwnerEmail;
     }
     try {
       String baseUrl = propertyServiceUrl;
@@ -243,12 +262,30 @@ public class EmailNotificationService {
             restTemplate.getForObject(propertyUrl, java.util.Map.class);
         if (propertyResponse != null && propertyResponse.get("ownerId") != null) {
           String ownerIdStr = propertyResponse.get("ownerId").toString();
-          if ("22222222-2222-2222-2222-222222222222".equals(ownerIdStr)) {
-            return "owner1@example.com";
-          } else if ("33333333-3333-3333-3333-333333333333".equals(ownerIdStr)) {
-            return "owner2@example.com";
+          try {
+            String authUrl = authServiceUrl + "/internal/" + ownerIdStr;
+            org.springframework.http.HttpHeaders headers =
+                new org.springframework.http.HttpHeaders();
+            headers.set("X-Internal-Token", internalToken);
+            org.springframework.http.HttpEntity<Void> entity =
+                new org.springframework.http.HttpEntity<>(headers);
+            java.util.Map<?, ?> ownerResponse =
+                restTemplate
+                    .exchange(
+                        authUrl,
+                        org.springframework.http.HttpMethod.GET,
+                        entity,
+                        java.util.Map.class)
+                    .getBody();
+            if (ownerResponse != null && ownerResponse.get("email") != null) {
+              return ownerResponse.get("email").toString();
+            }
+          } catch (Exception e) {
+            log.warn(
+                "Failed to fetch owner email from auth-service for ownerId {}: {}",
+                ownerIdStr,
+                e.getMessage());
           }
-          return "owner_" + ownerIdStr.substring(0, 8) + "@example.com";
         }
       }
     } catch (Exception e) {
@@ -257,7 +294,7 @@ public class EmailNotificationService {
           unitId,
           e.getMessage());
     }
-    return "owner1@example.com";
+    return defaultOwnerEmail;
   }
 
   private String getStatusStyle(SettlementStatus status) {
