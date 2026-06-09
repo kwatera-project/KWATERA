@@ -3,22 +3,35 @@ package io.github.kwatera_project.kwatera.auth_service.service;
 import io.github.kwatera_project.kwatera.auth_service.model.Role;
 import io.github.kwatera_project.kwatera.auth_service.model.User;
 import io.github.kwatera_project.kwatera.auth_service.repository.UserRepository;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
+  private final EmailNotificationService emailNotificationService;
 
   public User getUserByEmail(String email) {
     return userRepository
         .findByEmail(email)
+        .orElseThrow(
+            () ->
+                new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "The user account has been deleted or inactivated"));
+  }
+
+  public User getUserById(UUID id) {
+    return userRepository
+        .findById(id)
         .orElseThrow(
             () ->
                 new ResponseStatusException(
@@ -52,6 +65,13 @@ public class UserService {
     }
 
     userRepository.save(user);
+    try {
+      emailNotificationService.sendThankYouEmail(email, firstName);
+    } catch (Exception e) {
+      String safeErrorMessage =
+          e.getMessage() != null ? e.getMessage().replaceAll("[\r\n]", "") : "Unknown error";
+      log.warn("Failed to send welcome email for registered user: {}", safeErrorMessage);
+    }
   }
 
   public User updateProfile(String email, String firstName, String lastName) {

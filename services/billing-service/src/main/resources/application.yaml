@@ -31,6 +31,8 @@ services:
     url: http://property-service/api/properties
   ocr:
     url: http://ocr-service:8085
+  auth:
+    url: http://auth-service/api/auth/users
 
 ocr:
   confidence-threshold: 0.70
@@ -58,3 +60,9 @@ kwatera:
   mail:
     from: ${KWATERA_MAIL_FROM:no-reply@kwatera.local}
     test-recipient: ${KWATERA_MAIL_TEST_RECIPIENT:guest@kwatera.local}
+    default-owner-email: ${KWATERA_MAIL_DEFAULT_OWNER_EMAIL:owner1@example.com}
+  security:
+    internal-token: ${KWATERA_INTERNAL_TOKEN:kwatera-internal-secret-token}
+  frontend:
+    url: ${KWATERA_FRONTEND_URL:http://localhost:5173}
+

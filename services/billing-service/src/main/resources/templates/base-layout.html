@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:fragment="layout(content)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${subject}">KWATERA</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #F7F7F7; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #1A1A1A;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F7F7F7; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #FFFFFF; border: 1px solid #DACDCA; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(66, 33, 29, 0.05);">
+                    <tr>
+                        <td align="center" style="padding: 32px 40px 24px 40px; border-bottom: 1px solid #F7F7F7;">
+                            <table border="0" cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                                <tr>
+                                    <td style="vertical-align: middle; padding-right: 12px;">
+                                        <svg viewBox="0 -79 2000 2000" width="36" height="36" xmlns="http://www.w3.org/2000/svg" style="display: block; color: #42211D; vertical-align: middle;">
+                                            <path fill="#42211D" d="M 1001.8145 497.94141 C 989.27928 497.36938 976.614 502.27509 967.51953 512.4668 L 592.09375 933.18555 C 591.50163 933.8491 590.93365 934.52645 590.38867 935.21484 C 581.89305 942.6862 576.54688 953.64565 576.54688 965.90039 L 576.54688 1303.418 C 576.54688 1326.0369 594.75603 1344.2461 617.375 1344.2461 L 619.84961 1344.2461 C 642.46858 1344.2461 660.67969 1326.0369 660.67969 1303.418 L 660.67969 995.45898 L 1000.7637 614.3457 L 1079.8535 705.35352 C 1078.5346 706.41641 1077.2728 707.58187 1076.0801 708.84766 L 793.69727 1008.5312 C 788.97314 1013.5448 785.94625 1019.4865 784.5918 1025.6855 C 783.43366 1029.0742 782.80664 1032.7131 782.80664 1036.5039 L 782.80664 1311.3652 C 782.80664 1329.7854 797.63455 1344.6152 816.05469 1344.6152 L 833.6875 1344.6152 C 834.53571 1344.6152 835.3771 1344.5833 836.20898 1344.5215 L 836.20898 1344.8203 L 1373.168 1344.8203 C 1374.2347 1344.9076 1375.3144 1344.9531 1376.4043 1344.9531 L 1382.9395 1344.9531 C 1404.4337 1344.9531 1421.7383 1327.6486 1421.7383 1306.1543 L 1421.7383 985.41992 C 1421.7383 983.86824 1421.6481 982.33901 1421.4727 980.83594 C 1422.7897 968.69313 1419.2703 956.06425 1410.748 946.25781 L 1043.2305 523.35938 C 1041.5437 521.4184 1039.7304 519.66869 1037.8164 518.11133 C 1036.3094 516.18661 1034.6231 514.36015 1032.7578 512.6582 L 1029.082 509.30469 C 1021.2339 502.1439 1011.564 498.38631 1001.8145 497.94141 z M 1138.8477 773.23633 L 1337.6055 1001.9453 L 1337.6055 1259.998 L 866.9375 1259.998 L 866.9375 1061.8027 L 1138.8477 773.23633 z"/>
+                                        </svg>
+                                    </td>
+                                    <td style="vertical-align: middle;">
+                                        <span style="font-size: 24px; font-weight: 800; letter-spacing: 0.15em; color: #1A1A1A; font-family: 'Inter', Arial, sans-serif; line-height: 1;">KWATERA</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 40px 40px 32px 40px;">
+                            <div th:replace="${content}"></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 32px 40px; background-color: #F7F7F7; border-top: 1px solid #DACDCA; text-align: center; font-size: 13px; color: #7A7A7A; line-height: 1.5;">
+                            <p style="margin: 0 0 8px 0; font-weight: 600; color: #42211D;">KWATERA Platform</p>
+                            <p style="margin: 0 0 16px 0;">Professional Accommodation Management</p>
+                            <p style="margin: 0; font-size: 12px; color: #7A7A7A;">
+                                Contact: support@kwatera.local | +48 123 456 789<br>
+                                © 2026 KWATERA. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
