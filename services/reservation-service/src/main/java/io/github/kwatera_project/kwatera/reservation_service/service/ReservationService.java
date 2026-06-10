@@ -221,7 +221,8 @@ public class ReservationService {
     }
   }
 
-  private long calculateBillableNights(ReservationStatus status, LocalDate startDate, LocalDate endDate) {
+  private long calculateBillableNights(
+      ReservationStatus status, LocalDate startDate, LocalDate endDate) {
     if (status == ReservationStatus.BLOCKED) {
       return 0;
     }
@@ -304,7 +305,8 @@ public class ReservationService {
           HttpStatus.CONFLICT, "The selected dates are no longer available");
     }
 
-    long billableNights = calculateBillableNights(status, request.getStartDate(), request.getEndDate());
+    long billableNights =
+        calculateBillableNights(status, request.getStartDate(), request.getEndDate());
     if (status != ReservationStatus.BLOCKED && billableNights <= 0) {
       throw new ResponseStatusException(
           HttpStatus.BAD_REQUEST, "Reservation must include at least one billable night");

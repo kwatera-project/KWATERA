@@ -2240,6 +2240,7 @@ class ReservationServiceTest {
             () -> service.createReservation(userId, request, mockToken));
 
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
-    assertTrue(exception.getReason().contains("Reservation must include at least one billable night"));
+    assertTrue(
+        exception.getReason().contains("Reservation must include at least one billable night"));
   }
 }
