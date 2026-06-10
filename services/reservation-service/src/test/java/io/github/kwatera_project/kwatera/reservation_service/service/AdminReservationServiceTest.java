@@ -5,6 +5,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventService;
+import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventType;
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationOverviewDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
@@ -22,6 +24,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -90,6 +93,34 @@ class AdminReservationServiceTest {
         .validateTransition(ReservationStatus.PENDING, ReservationStatus.CONFIRMED);
     verify(reservationRepository).save(reservation);
     verify(statusHistoryRepository).save(any(ReservationStatusHistory.class));
+  }
+
+  @Test
+  void shouldLogReservationStatusChangedEvent_whenAdminChangesReservationStatus() {
+    SystemEventService systemEventService = mock(SystemEventService.class);
+    ReflectionTestUtils.setField(adminReservationService, "systemEventService", systemEventService);
+
+    UUID resId = UUID.randomUUID();
+    UUID adminId = UUID.randomUUID();
+    Reservation reservation = createReservation();
+    reservation.setId(resId);
+    reservation.setStatus(ReservationStatus.PENDING);
+
+    when(reservationRepository.findById(resId)).thenReturn(Optional.of(reservation));
+
+    adminReservationService.updateReservationStatus(
+        resId, ReservationStatus.CONFIRMED, adminId, true);
+
+    verify(systemEventService)
+        .logSafely(
+            eq(SystemEventType.RESERVATION_STATUS_CHANGED),
+            eq(adminId),
+            eq("RESERVATION"),
+            eq(resId),
+            argThat(
+                details ->
+                    details.contains("oldStatus=PENDING")
+                        && details.contains("newStatus=CONFIRMED")));
   }
 
   @Test

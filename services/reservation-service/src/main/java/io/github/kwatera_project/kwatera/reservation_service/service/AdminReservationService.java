@@ -1,5 +1,7 @@
 package io.github.kwatera_project.kwatera.reservation_service.service;
 
+import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventService;
+import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventType;
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationOverviewDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
@@ -12,6 +14,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -33,6 +36,9 @@ public class AdminReservationService {
   private final RestTemplate restTemplate;
 
   private final EmailNotificationService emailNotificationService;
+
+  @Autowired(required = false)
+  private SystemEventService systemEventService;
 
   public List<ReservationOverviewDto> getReservationsOverview(
       UUID ownerId, ReservationStatus status, boolean isAdmin) {
@@ -106,6 +112,8 @@ public class AdminReservationService {
     history.setChangedAt(LocalDateTime.now());
     statusHistoryRepository.save(history);
 
+    logStatusChange(userId, reservation, oldStatus, newStatus);
+
     emailNotificationService.sendReservationStatusChanged(
         reservation, oldStatus, newStatus, reservation.getGuestEmail());
 
@@ -178,5 +186,32 @@ public class AdminReservationService {
   public boolean hasReservationsForUnit(UUID unitId) {
     return reservationRepository.existsByUnitIdAndStatusIn(
         unitId, List.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED));
+  }
+
+  private void logStatusChange(
+      UUID actorId,
+      Reservation reservation,
+      ReservationStatus oldStatus,
+      ReservationStatus newStatus) {
+    if (systemEventService == null) {
+      return;
+    }
+    systemEventService.logSafely(
+        SystemEventType.RESERVATION_STATUS_CHANGED,
+        actorId,
+        "RESERVATION",
+        reservation.getId(),
+        "reservationId="
+            + reservation.getId()
+            + ", unitId="
+            + reservation.getUnitId()
+            + ", startDate="
+            + reservation.getStartDate()
+            + ", endDate="
+            + reservation.getEndDate()
+            + ", oldStatus="
+            + oldStatus
+            + ", newStatus="
+            + newStatus);
   }
 }

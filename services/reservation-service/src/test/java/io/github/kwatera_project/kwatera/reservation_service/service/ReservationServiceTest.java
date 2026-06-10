@@ -7,6 +7,8 @@ import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventService;
+import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventType;
 import io.github.kwatera_project.kwatera.reservation_service.client.NbpExchangeRateClient;
 import io.github.kwatera_project.kwatera.reservation_service.dto.AvailabilityDto;
 import io.github.kwatera_project.kwatera.reservation_service.dto.CreateReservationRequest;
@@ -31,6 +33,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -2242,5 +2245,139 @@ class ReservationServiceTest {
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
     assertTrue(
         exception.getReason().contains("Reservation must include at least one billable night"));
+  }
+
+  @Test
+  void shouldLogReservationCreatedEvent_whenGuestCreatesReservation() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    SystemEventService systemEventService = mock(SystemEventService.class);
+    ReservationService service =
+        new ReservationService(
+            repository,
+            restTemplate,
+            mock(NbpExchangeRateClient.class),
+            mock(EmailNotificationService.class),
+            new BusinessDateProvider("Europe/Warsaw"));
+    ReflectionTestUtils.setField(service, "systemEventService", systemEventService);
+
+    UUID userId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    CreateReservationRequest request = new CreateReservationRequest();
+    request.setUnitId(unitId);
+    request.setStartDate(LocalDate.now().plusDays(10));
+    request.setEndDate(LocalDate.now().plusDays(12));
+
+    UnitDto mockUnit = new UnitDto();
+    mockUnit.setPricePerNight(new BigDecimal("200.00"));
+    when(restTemplate.exchange(
+            anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(UnitDto.class), eq(unitId)))
+        .thenReturn(ResponseEntity.ok(mockUnit));
+    when(repository.findByUnitId(unitId)).thenReturn(List.of());
+    when(repository.save(any(Reservation.class)))
+        .thenAnswer(
+            invocation -> {
+              Reservation reservation = invocation.getArgument(0);
+              reservation.setId(UUID.randomUUID());
+              return reservation;
+            });
+
+    Reservation created = service.createReservation(userId, request, "Bearer token");
+
+    verify(systemEventService)
+        .logSafely(
+            eq(SystemEventType.RESERVATION_CREATED),
+            eq(userId),
+            eq("RESERVATION"),
+            eq(created.getId()),
+            contains("unitId=" + unitId));
+  }
+
+  @Test
+  void shouldLogUnitBlockedEvent_whenOwnerBlocksDates() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    SystemEventService systemEventService = mock(SystemEventService.class);
+    ReservationService service =
+        new ReservationService(
+            repository,
+            restTemplate,
+            mock(NbpExchangeRateClient.class),
+            mock(EmailNotificationService.class),
+            new BusinessDateProvider("Europe/Warsaw"));
+    ReflectionTestUtils.setField(service, "systemEventService", systemEventService);
+
+    UUID ownerId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    CreateReservationRequest request = new CreateReservationRequest();
+    request.setUnitId(unitId);
+    request.setStartDate(LocalDate.now().plusDays(10));
+    request.setEndDate(LocalDate.now().plusDays(10));
+
+    UnitDto mockUnit = new UnitDto();
+    mockUnit.setPricePerNight(new BigDecimal("200.00"));
+    when(restTemplate.getForObject(
+            eq("http://property-service/api/properties/units/ids/{ownerId}"),
+            eq(UUID[].class),
+            eq(ownerId)))
+        .thenReturn(new UUID[] {unitId});
+    when(restTemplate.exchange(
+            anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(UnitDto.class), eq(unitId)))
+        .thenReturn(ResponseEntity.ok(mockUnit));
+    when(repository.findByUnitId(unitId)).thenReturn(List.of());
+    when(repository.save(any(Reservation.class)))
+        .thenAnswer(
+            invocation -> {
+              Reservation reservation = invocation.getArgument(0);
+              reservation.setId(UUID.randomUUID());
+              return reservation;
+            });
+
+    Reservation created = service.createReservation(ownerId, false, true, request, "Bearer token");
+
+    verify(systemEventService)
+        .logSafely(
+            eq(SystemEventType.UNIT_BLOCKED),
+            eq(ownerId),
+            eq("RESERVATION"),
+            eq(created.getId()),
+            contains("status=BLOCKED"));
+  }
+
+  @Test
+  void shouldLogExpiredReservationCancelledEvent_whenCleanupCancelsPendingReservation() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    SystemEventService systemEventService = mock(SystemEventService.class);
+    ReservationService service =
+        new ReservationService(
+            repository,
+            mock(RestTemplate.class),
+            mock(NbpExchangeRateClient.class),
+            mock(EmailNotificationService.class),
+            new BusinessDateProvider("Europe/Warsaw"));
+    ReflectionTestUtils.setField(service, "systemEventService", systemEventService);
+
+    UUID reservationId = UUID.randomUUID();
+    Reservation reservation = new Reservation();
+    reservation.setId(reservationId);
+    reservation.setUnitId(UUID.randomUUID());
+    reservation.setStartDate(LocalDate.now().plusDays(1));
+    reservation.setEndDate(LocalDate.now().plusDays(2));
+    reservation.setStatus(ReservationStatus.PENDING);
+    reservation.setGuestEmail("guest@test.com");
+    Instant threshold = Instant.now().minusSeconds(60);
+
+    when(repository.findByStatusAndCreatedAtBefore(ReservationStatus.PENDING, threshold))
+        .thenReturn(List.of(reservation));
+
+    service.cancelExpiredPendingReservations(threshold);
+
+    verify(systemEventService)
+        .logSafely(
+            eq(SystemEventType.EXPIRED_RESERVATION_CANCELLED),
+            isNull(),
+            eq("RESERVATION"),
+            eq(reservationId),
+            contains("newStatus=CANCELLED"));
   }
 }

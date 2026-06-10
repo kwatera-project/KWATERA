@@ -1,5 +1,7 @@
 package io.github.kwatera_project.kwatera.reservation_service.service;
 
+import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventService;
+import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventType;
 import io.github.kwatera_project.kwatera.reservation_service.client.NbpExchangeRateClient;
 import io.github.kwatera_project.kwatera.reservation_service.dto.*;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
@@ -15,6 +17,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -41,6 +44,9 @@ public class ReservationService {
   private final NbpExchangeRateClient nbpExchangeRateClient;
   private final EmailNotificationService emailNotificationService;
   private final BusinessDateProvider businessDateProvider;
+
+  @Autowired(required = false)
+  private SystemEventService systemEventService;
 
   public AvailabilityDto checkAvailability(UUID unitId, LocalDate from, LocalDate to) {
     if (from == null || to == null) {
@@ -355,6 +361,7 @@ public class ReservationService {
     reservation.setPaymentExchangeRate(paymentExchangeRate);
 
     Reservation saved = reservationRepository.save(reservation);
+    logReservationCreatedEvent(actorId, isGuest, saved);
     if (saved.getStatus() != ReservationStatus.BLOCKED) {
       emailNotificationService.sendReservationCreated(saved, saved.getGuestEmail());
       try {
@@ -533,6 +540,12 @@ public class ReservationService {
     }
 
     reservationRepository.save(reservation);
+    logSystemEvent(
+        SystemEventType.RESERVATION_STATUS_CHANGED,
+        null,
+        "RESERVATION",
+        reservation.getId(),
+        statusChangeDetails(reservation, oldStatus, reservation.getStatus()));
     emailNotificationService.sendReservationStatusChanged(
         reservation, oldStatus, reservation.getStatus(), reservation.getGuestEmail());
     try {
@@ -619,6 +632,12 @@ public class ReservationService {
       ReservationStatus oldStatus = reservation.getStatus();
       reservation.setStatus(ReservationStatus.CANCELLED);
       reservationRepository.save(reservation);
+      logSystemEvent(
+          SystemEventType.EXPIRED_RESERVATION_CANCELLED,
+          null,
+          "RESERVATION",
+          reservation.getId(),
+          statusChangeDetails(reservation, oldStatus, ReservationStatus.CANCELLED));
       log.info("Cancelled expired pending reservation with ID: {}", reservation.getId());
 
       try {
@@ -671,4 +690,51 @@ public class ReservationService {
   record UnitDetailsDto(UUID propertyId, String name) {}
 
   record PropertyDetailsDto(String title, String city, UUID ownerId) {}
+
+  private void logReservationCreatedEvent(UUID actorId, boolean isGuest, Reservation reservation) {
+    SystemEventType eventType;
+    if (reservation.getStatus() == ReservationStatus.BLOCKED) {
+      eventType = SystemEventType.UNIT_BLOCKED;
+    } else if (isGuest) {
+      eventType = SystemEventType.RESERVATION_CREATED;
+    } else {
+      eventType = SystemEventType.MANUAL_RESERVATION_CREATED;
+    }
+
+    logSystemEvent(
+        eventType, actorId, "RESERVATION", reservation.getId(), reservationDetails(reservation));
+  }
+
+  private void logSystemEvent(
+      SystemEventType actionType,
+      UUID actorUserId,
+      String entityType,
+      UUID entityId,
+      String details) {
+    if (systemEventService != null) {
+      systemEventService.logSafely(actionType, actorUserId, entityType, entityId, details);
+    }
+  }
+
+  private String reservationDetails(Reservation reservation) {
+    return "reservationId="
+        + reservation.getId()
+        + ", unitId="
+        + reservation.getUnitId()
+        + ", startDate="
+        + reservation.getStartDate()
+        + ", endDate="
+        + reservation.getEndDate()
+        + ", status="
+        + reservation.getStatus();
+  }
+
+  private String statusChangeDetails(
+      Reservation reservation, ReservationStatus oldStatus, ReservationStatus newStatus) {
+    return reservationDetails(reservation)
+        + ", oldStatus="
+        + oldStatus
+        + ", newStatus="
+        + newStatus;
+  }
 }
