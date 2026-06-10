@@ -1,12 +1,11 @@
 package io.github.kwatera_project.kwatera.property_service.controller;
 
-import io.github.kwatera_project.kwatera.property_service.dto.PropertyDto;
-import io.github.kwatera_project.kwatera.property_service.dto.UnitDto;
-import io.github.kwatera_project.kwatera.property_service.dto.UnitSettlementItemDto;
+import io.github.kwatera_project.kwatera.property_service.dto.*;
 import io.github.kwatera_project.kwatera.property_service.service.PropertyService;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,14 +15,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"})
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/properties")
 public class PropertyController {
 
   private final PropertyService propertyService;
-
-  public PropertyController(PropertyService propertyService) {
-    this.propertyService = propertyService;
-  }
 
   @GetMapping
   public List<PropertyDto> getAllProperties(
@@ -67,8 +63,18 @@ public class PropertyController {
   }
 
   @GetMapping("/{id}/images")
-  public List<String> getPropertyImages(@PathVariable("id") UUID id) {
-    return propertyService.getPropertyImages(id);
+  public List<PropertyImageDto> getPropertyImages(@PathVariable("id") UUID id) {
+    return propertyService.getPropertyImages(id).stream()
+        .map(img -> new PropertyImageDto(img.getId(), img.getUrl(), img.getIsMain()))
+        .toList();
+  }
+
+  @GetMapping("/{propertyId}/units/{unitId}/images")
+  public List<UnitImageDto> getUnitImages(
+      @PathVariable("propertyId") UUID propertyId, @PathVariable("unitId") UUID unitId) {
+    return propertyService.getUnitImages(propertyId, unitId).stream()
+        .map(img -> new UnitImageDto(img.getId(), img.getUrl(), img.getIsMain()))
+        .toList();
   }
 
   @GetMapping("/units/{id}/settlement-items")

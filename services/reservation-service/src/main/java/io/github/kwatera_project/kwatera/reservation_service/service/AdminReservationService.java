@@ -174,4 +174,9 @@ public class AdminReservationService {
   }
 
   private record UnitNameDto(String name) {}
+
+  public boolean hasReservationsForUnit(UUID unitId) {
+    return reservationRepository.existsByUnitIdAndStatusIn(
+        unitId, List.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED));
+  }
 }

@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 import io.github.kwatera_project.kwatera.property_service.dto.PropertyDto;
 import io.github.kwatera_project.kwatera.property_service.dto.UnitDto;
 import io.github.kwatera_project.kwatera.property_service.dto.UnitSettlementItemDto;
+import io.github.kwatera_project.kwatera.property_service.model.PropertyImage;
 import io.github.kwatera_project.kwatera.property_service.model.UnitType;
 import io.github.kwatera_project.kwatera.property_service.service.PropertyService;
 import java.math.BigDecimal;
@@ -173,12 +174,23 @@ class PropertyControllerTest {
   void getPropertyImages_shouldReturnImages() {
     UUID propertyId = UUID.randomUUID();
 
-    when(service.getPropertyImages(propertyId)).thenReturn(List.of("img1.jpg", "img2.jpg"));
+    PropertyImage mockImage = new PropertyImage();
+    mockImage.setId(UUID.randomUUID());
+    mockImage.setUrl(
+        "http://localhost:8083/properties/aaaa1111-1111-1111-1111-111111111111/4dc49eff-91e1-45db-8aab-dd61bd758fb5.jpg");
+    mockImage.setIsMain(true);
+    mockImage.setPropertyId(propertyId);
+
+    List<PropertyImage> mockImages = List.of(mockImage);
+
+    when(service.getPropertyImages(propertyId)).thenReturn(mockImages);
 
     var result = controller.getPropertyImages(propertyId);
 
-    assertEquals(2, result.size());
-    assertEquals("img1.jpg", result.get(0));
+    assertEquals(1, result.size());
+    assertEquals(
+        "http://localhost:8083/properties/aaaa1111-1111-1111-1111-111111111111/4dc49eff-91e1-45db-8aab-dd61bd758fb5.jpg",
+        result.get(0).getUrl());
   }
 
   @Test
@@ -207,5 +219,32 @@ class PropertyControllerTest {
 
     assertEquals(1, result.size());
     assertEquals(unitId, result.get(0));
+  }
+
+  @Test
+  void getUnitImages_shouldReturnMappedUnitImages() {
+    // Given
+    UUID propertyId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    UUID imageId = UUID.randomUUID();
+    String imageUrl = "http://localhost:8083/units/image.jpg";
+
+    var mockImage = mock(io.github.kwatera_project.kwatera.property_service.model.UnitImage.class);
+    when(mockImage.getId()).thenReturn(imageId);
+    when(mockImage.getUrl()).thenReturn(imageUrl);
+    when(mockImage.getIsMain()).thenReturn(true);
+
+    when(service.getUnitImages(propertyId, unitId)).thenReturn(List.of(mockImage));
+
+    // When
+    var result = controller.getUnitImages(propertyId, unitId);
+
+    // Then
+    assertEquals(1, result.size());
+    assertEquals(imageId, result.getFirst().getId());
+    assertEquals(imageUrl, result.getFirst().getUrl());
+    assertTrue(result.getFirst().getIsMain());
+
+    verify(service, times(1)).getUnitImages(propertyId, unitId);
   }
 }

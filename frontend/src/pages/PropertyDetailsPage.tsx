@@ -15,6 +15,12 @@ interface AvailabilityResponse {
     message: string;
 }
 
+interface PropertyImage {
+    id: string;
+    url: string;
+    isMain: boolean;
+}
+
 export default function PropertyDetailsPage() {
     const { id } = useParams();
     const [searchParams] = useSearchParams();
@@ -27,7 +33,7 @@ export default function PropertyDetailsPage() {
     const hasInitialDateRange = !!initialSearch.checkIn && !!initialSearch.checkOut && initialSearch.checkIn < initialSearch.checkOut;
     const [property, setProperty] = useState<Property | null>(null);
     const [units, setUnits] = useState<Unit[]>([]);
-    const [images, setImages] = useState<string[]>([]);
+    const [images, setImages] = useState<PropertyImage[]>([]);
     const [mainImage, setMainImage] = useState("");
     const [occupiedIntervals, setOccupiedIntervals] = useState<Record<string, { start: Date, end: Date }[]>>({});
     const [selectedDates, setSelectedDates] = useState<Record<string, [Date | null, Date | null]>>({});
@@ -103,12 +109,16 @@ export default function PropertyDetailsPage() {
             setBookingState(prev => ({ ...prev, ...nextBookingState }));
         });
 
-        getPropertyImages(id).then((data) => {
-            setImages(data);
-            if (data.length > 0) {
-                setMainImage(data[0]);
-            }
-        });
+        getPropertyImages(id)
+            .then((data: PropertyImage[]) => {
+                if (data && data.length > 0) {
+                    const mainImgObject =
+                        data.find((img) => img.isMain) ?? data[0];
+
+                    setImages(data);
+                    setMainImage(mainImgObject.url);
+                }
+            });
     }, [id, currency, initialSearch.checkIn, initialSearch.checkOut, initialSearch.guests, hasInitialDateRange]);
 
     const handleGlobalDateChange = (dates: [Date | null, Date | null]) => {
@@ -315,10 +325,10 @@ export default function PropertyDetailsPage() {
                     {images.map((img, i) => (
                         <img
                             key={i}
-                            src={img}
-                            onClick={() => setMainImage(img)}
+                            src={img.url}
+                            onClick={() => setMainImage(img.url)}
                             className={`w-20 h-20 object-cover rounded-lg cursor-pointer border-2 transition-all hover:scale-105 ${
-                                mainImage === img ? "border-brand-primary shadow-md" : "border-brand-accent hover:border-gray-400"
+                                mainImage === img.url ? "border-brand-primary shadow-md" : "border-brand-accent hover:border-gray-400"
                             }`}
                             alt={`Property thumbnail ${i + 1}`}
                         />
@@ -373,8 +383,8 @@ export default function PropertyDetailsPage() {
                                         <p className="text-sm text-brand-muted leading-relaxed">{u.description}</p>
                                         <div className="flex flex-wrap items-center gap-4 pt-2">
                                             <p className="text-lg font-bold text-brand-primary">
-                                                {u.convertedPricePerNight && u.currencyInfo && u.currencyInfo.displayCurrency !== 'PLN' 
-                                                    ? `${u.convertedPricePerNight.toFixed(2)} ${u.currencyInfo.displayCurrency} / night` 
+                                                {u.convertedPricePerNight && u.currencyInfo && u.currencyInfo.displayCurrency !== 'PLN'
+                                                    ? `${u.convertedPricePerNight.toFixed(2)} ${u.currencyInfo.displayCurrency} / night`
                                                     : `${u.pricePerNight} PLN / night`}
                                             </p>
                                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-brand-bg border border-brand-accent text-brand-muted">
