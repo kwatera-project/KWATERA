@@ -8,6 +8,8 @@ export interface Property {
     street: string;
     streetNumber: string;
     imageUrl: string;
+    latitude: number;
+    longitude: number;
 }
 
 export interface PropertyCreateRequest {

@@ -38,10 +38,41 @@ class PropertyControllerTest {
 
     when(service.getAll()).thenReturn(List.of(dto));
 
-    var result = controller.getAllProperties();
+    var result = controller.getAllProperties(null, null, null, null);
 
     assertEquals(1, result.size());
     assertEquals("Test", result.get(0).getTitle());
+  }
+
+  @Test
+  void getAllProperties_withBoundingBox_shouldReturnFilteredList() {
+    PropertyDto dto =
+        new PropertyDto(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            "Test",
+            "Desc",
+            "Warsaw",
+            "img",
+            BigDecimal.ZERO,
+            BigDecimal.ZERO,
+            "Poland",
+            "",
+            "",
+            "");
+
+    BigDecimal minLat = BigDecimal.valueOf(50);
+    BigDecimal maxLat = BigDecimal.valueOf(53);
+    BigDecimal minLng = BigDecimal.valueOf(19);
+    BigDecimal maxLng = BigDecimal.valueOf(22);
+
+    when(service.getByBoundingBox(minLat, maxLat, minLng, maxLng)).thenReturn(List.of(dto));
+
+    var result = controller.getAllProperties(minLat, maxLat, minLng, maxLng);
+
+    assertEquals(1, result.size());
+    assertEquals("Test", result.get(0).getTitle());
+    verify(service, times(1)).getByBoundingBox(minLat, maxLat, minLng, maxLng);
   }
 
   @Test

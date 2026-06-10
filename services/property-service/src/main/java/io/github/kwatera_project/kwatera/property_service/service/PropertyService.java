@@ -6,11 +6,14 @@ import io.github.kwatera_project.kwatera.property_service.model.*;
 import io.github.kwatera_project.kwatera.property_service.repository.*;
 import jakarta.transaction.Transactional;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.List;
+import java.util.UUID;
 import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,6 +51,15 @@ public class PropertyService {
 
   public List<PropertyDto> getAll() {
     return propertyRepository.findAll().stream().map(this::mapToDto).toList();
+  }
+
+  public List<PropertyDto> getByBoundingBox(
+      BigDecimal minLat, BigDecimal maxLat, BigDecimal minLng, BigDecimal maxLng) {
+    return propertyRepository
+        .findByLatitudeBetweenAndLongitudeBetween(minLat, maxLat, minLng, maxLng)
+        .stream()
+        .map(this::mapToDto)
+        .toList();
   }
 
   public PropertyDto getById(UUID id) {
