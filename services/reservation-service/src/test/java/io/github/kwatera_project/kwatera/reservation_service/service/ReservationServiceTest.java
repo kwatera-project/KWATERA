@@ -2254,7 +2254,7 @@ class ReservationServiceTest {
     ReservationService service =
         new ReservationService(
             repository,
-            restTemplate,
+            () -> restTemplate,
             mock(NbpExchangeRateClient.class),
             mock(EmailNotificationService.class),
             new BusinessDateProvider("Europe/Warsaw"),
@@ -2300,7 +2300,7 @@ class ReservationServiceTest {
     ReservationService service =
         new ReservationService(
             repository,
-            restTemplate,
+            () -> restTemplate,
             mock(NbpExchangeRateClient.class),
             mock(EmailNotificationService.class),
             new BusinessDateProvider("Europe/Warsaw"),
@@ -2350,7 +2350,7 @@ class ReservationServiceTest {
     ReservationService service =
         new ReservationService(
             repository,
-            mock(RestTemplate.class),
+            () -> mock(RestTemplate.class),
             mock(NbpExchangeRateClient.class),
             mock(EmailNotificationService.class),
             new BusinessDateProvider("Europe/Warsaw"),

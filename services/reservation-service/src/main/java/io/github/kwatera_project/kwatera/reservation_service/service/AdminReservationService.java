@@ -13,10 +13,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestOperations;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -31,7 +32,7 @@ public class AdminReservationService {
 
   private final ReservationStatusValidator statusValidator;
 
-  private final RestTemplate restTemplate;
+  private final ObjectFactory<RestOperations> restOperationsFactory;
 
   private final EmailNotificationService emailNotificationService;
 
@@ -42,13 +43,13 @@ public class AdminReservationService {
       ReservationRepository reservationRepository,
       ReservationStatusHistoryRepository statusHistoryRepository,
       ReservationStatusValidator statusValidator,
-      RestTemplate restTemplate,
+      ObjectFactory<RestOperations> restOperationsFactory,
       EmailNotificationService emailNotificationService,
       SystemEventService systemEventService) {
     this.reservationRepository = reservationRepository;
     this.statusHistoryRepository = statusHistoryRepository;
     this.statusValidator = statusValidator;
-    this.restTemplate = restTemplate;
+    this.restOperationsFactory = restOperationsFactory;
     this.emailNotificationService = emailNotificationService;
     this.systemEventService = systemEventService;
   }
@@ -57,13 +58,13 @@ public class AdminReservationService {
       ReservationRepository reservationRepository,
       ReservationStatusHistoryRepository statusHistoryRepository,
       ReservationStatusValidator statusValidator,
-      RestTemplate restTemplate,
+      RestOperations restTemplate,
       EmailNotificationService emailNotificationService) {
     this(
         reservationRepository,
         statusHistoryRepository,
         statusValidator,
-        restTemplate,
+        () -> restTemplate,
         emailNotificationService,
         null);
   }
@@ -83,7 +84,7 @@ public class AdminReservationService {
     String propertyServiceUrl = "http://property-service/api/properties/units/ids/" + ownerId;
 
     try {
-      UUID[] unitIdsArray = restTemplate.getForObject(propertyServiceUrl, UUID[].class);
+      UUID[] unitIdsArray = restOperations().getForObject(propertyServiceUrl, UUID[].class);
       List<UUID> ownerUnitIds =
           unitIdsArray != null ? Arrays.asList(unitIdsArray) : Collections.emptyList();
 
@@ -162,7 +163,7 @@ public class AdminReservationService {
   private void verifyOwnerAccess(UUID ownerId, UUID unitId) {
     String propertyServiceUrl = "http://property-service/api/properties/units/ids/" + ownerId;
     try {
-      UUID[] unitIdsArray = restTemplate.getForObject(propertyServiceUrl, UUID[].class);
+      UUID[] unitIdsArray = restOperations().getForObject(propertyServiceUrl, UUID[].class);
       List<UUID> ownerUnitIds =
           unitIdsArray != null ? Arrays.asList(unitIdsArray) : Collections.emptyList();
 
@@ -184,7 +185,7 @@ public class AdminReservationService {
 
     try {
       String unitUrl = "http://property-service/api/properties/units/" + reservation.getUnitId();
-      UnitNameDto unitDto = restTemplate.getForObject(unitUrl, UnitNameDto.class);
+      UnitNameDto unitDto = restOperations().getForObject(unitUrl, UnitNameDto.class);
       if (unitDto != null && unitDto.name() != null) {
         unitName = unitDto.name();
       } else {
@@ -210,6 +211,10 @@ public class AdminReservationService {
   }
 
   private record UnitNameDto(String name) {}
+
+  private RestOperations restOperations() {
+    return restOperationsFactory.getObject();
+  }
 
   public boolean hasReservationsForUnit(UUID unitId) {
     return reservationRepository.existsByUnitIdAndStatusIn(

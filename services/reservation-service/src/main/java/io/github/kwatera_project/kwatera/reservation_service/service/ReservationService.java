@@ -16,13 +16,14 @@ import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestOperations;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -38,7 +39,7 @@ public class ReservationService {
   private static final String RESERVATION_NOT_FOUND = "Reservation not found";
 
   private final ReservationRepository reservationRepository;
-  private final RestTemplate restTemplate;
+  private final ObjectFactory<RestOperations> restOperationsFactory;
   private final NbpExchangeRateClient nbpExchangeRateClient;
   private final EmailNotificationService emailNotificationService;
   private final BusinessDateProvider businessDateProvider;
@@ -47,13 +48,13 @@ public class ReservationService {
   @Autowired
   public ReservationService(
       ReservationRepository reservationRepository,
-      RestTemplate restTemplate,
+      ObjectFactory<RestOperations> restOperationsFactory,
       NbpExchangeRateClient nbpExchangeRateClient,
       EmailNotificationService emailNotificationService,
       BusinessDateProvider businessDateProvider,
       SystemEventService systemEventService) {
     this.reservationRepository = reservationRepository;
-    this.restTemplate = restTemplate;
+    this.restOperationsFactory = restOperationsFactory;
     this.nbpExchangeRateClient = nbpExchangeRateClient;
     this.emailNotificationService = emailNotificationService;
     this.businessDateProvider = businessDateProvider;
@@ -62,13 +63,13 @@ public class ReservationService {
 
   public ReservationService(
       ReservationRepository reservationRepository,
-      RestTemplate restTemplate,
+      RestOperations restTemplate,
       NbpExchangeRateClient nbpExchangeRateClient,
       EmailNotificationService emailNotificationService,
       BusinessDateProvider businessDateProvider) {
     this(
         reservationRepository,
-        restTemplate,
+        () -> restTemplate,
         nbpExchangeRateClient,
         emailNotificationService,
         businessDateProvider,
@@ -136,7 +137,7 @@ public class ReservationService {
       String name = "Room " + unitId.toString().substring(0, 8);
       try {
         String unitUrl = "http://property-service/api/properties/units/" + unitId;
-        UnitDto unitDto = restTemplate.getForObject(unitUrl, UnitDto.class);
+        UnitDto unitDto = restOperations().getForObject(unitUrl, UnitDto.class);
         if (unitDto != null && unitDto.getName() != null) {
           name = unitDto.getName();
         }
@@ -189,7 +190,7 @@ public class ReservationService {
           isAdmin
               ? "http://property-service/api/properties/units/ids"
               : "http://property-service/api/properties/units/ids/" + ownerId;
-      UUID[] unitIdsArray = restTemplate.getForObject(url, UUID[].class);
+      UUID[] unitIdsArray = restOperations().getForObject(url, UUID[].class);
       return unitIdsArray != null ? Arrays.asList(unitIdsArray) : java.util.Collections.emptyList();
     } catch (Exception e) {
       log.warn("Error fetching unit IDs from property-service: {}", e.getMessage());
@@ -205,7 +206,7 @@ public class ReservationService {
 
     try {
       ResponseEntity<UnitDto> response =
-          restTemplate.exchange(url, HttpMethod.GET, entity, UnitDto.class, unitId);
+          restOperations().exchange(url, HttpMethod.GET, entity, UnitDto.class, unitId);
 
       if (response.getBody() == null) {
         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found");
@@ -233,7 +234,7 @@ public class ReservationService {
 
     try {
       ResponseEntity<java.util.Map> response =
-          restTemplate.exchange(url, HttpMethod.GET, entity, java.util.Map.class, email);
+          restOperations().exchange(url, HttpMethod.GET, entity, java.util.Map.class, email);
       if (response.getBody() == null || response.getBody().get("id") == null) {
         throw new ResponseStatusException(
             HttpStatus.BAD_REQUEST, "Guest with the specified email does not exist");
@@ -467,7 +468,7 @@ public class ReservationService {
   private void enrichPropertyDetails(ReservationDetailsDto dto, Reservation reservation) {
     try {
       String unitUrl = "http://property-service/api/properties/units/" + reservation.getUnitId();
-      UnitDetailsDto unitDto = restTemplate.getForObject(unitUrl, UnitDetailsDto.class);
+      UnitDetailsDto unitDto = restOperations().getForObject(unitUrl, UnitDetailsDto.class);
       if (unitDto != null) {
         if (unitDto.name() != null) {
           dto.setUnitName(unitDto.name());
@@ -484,7 +485,7 @@ public class ReservationService {
   private void enrichOwnerAndCityDetails(ReservationDetailsDto dto, UUID propertyId) {
     String propertyUrl = "http://property-service/api/properties/" + propertyId;
     PropertyDetailsDto propertyDto =
-        restTemplate.getForObject(propertyUrl, PropertyDetailsDto.class);
+        restOperations().getForObject(propertyUrl, PropertyDetailsDto.class);
     if (propertyDto != null) {
       if (propertyDto.city() != null) {
         dto.setCity(propertyDto.city());
@@ -533,7 +534,8 @@ public class ReservationService {
   private boolean ownerHasAccessToUnit(UUID ownerId, UUID unitId) {
     String propertyServiceUrl = "http://property-service/api/properties/units/ids/{ownerId}";
     try {
-      UUID[] unitIdsArray = restTemplate.getForObject(propertyServiceUrl, UUID[].class, ownerId);
+      UUID[] unitIdsArray =
+          restOperations().getForObject(propertyServiceUrl, UUID[].class, ownerId);
       if (unitIdsArray == null) {
         return false;
       }
@@ -717,6 +719,10 @@ public class ReservationService {
   record UnitDetailsDto(UUID propertyId, String name) {}
 
   record PropertyDetailsDto(String title, String city, UUID ownerId) {}
+
+  private RestOperations restOperations() {
+    return restOperationsFactory.getObject();
+  }
 
   private void logReservationCreatedEvent(UUID actorId, boolean isGuest, Reservation reservation) {
     SystemEventType eventType;

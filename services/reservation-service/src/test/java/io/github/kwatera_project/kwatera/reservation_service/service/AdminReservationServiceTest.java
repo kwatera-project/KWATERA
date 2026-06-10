@@ -23,7 +23,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -38,6 +40,8 @@ class AdminReservationServiceTest {
 
   @Mock private RestTemplate restTemplate;
 
+  @Mock private ObjectFactory<RestOperations> restOperationsFactory;
+
   @Mock private EmailNotificationService emailNotificationService;
 
   @Mock private SystemEventService systemEventService;
@@ -46,7 +50,7 @@ class AdminReservationServiceTest {
 
   @BeforeEach
   void setUp() {
-    // Dependencies are injected via @InjectMocks.
+    lenient().when(restOperationsFactory.getObject()).thenReturn(restTemplate);
   }
 
   @Test
