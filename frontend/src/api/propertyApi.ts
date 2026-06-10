@@ -2,8 +2,12 @@ import { GATEWAY_BASE_URL } from "./apiConfig";
 
 const API_URL = `${GATEWAY_BASE_URL}/api`;
 
-export async function getProperties() {
-    const res = await fetch(`${API_URL}/properties`);
+export async function getProperties(minLat?: number, maxLat?: number, minLng?: number, maxLng?: number) {
+    let url = `${API_URL}/properties`;
+    if (minLat !== undefined && maxLat !== undefined && minLng !== undefined && maxLng !== undefined) {
+        url += `?minLat=${minLat}&maxLat=${maxLat}&minLng=${minLng}&maxLng=${maxLng}`;
+    }
+    const res = await fetch(url);
     return res.json();
 }
 

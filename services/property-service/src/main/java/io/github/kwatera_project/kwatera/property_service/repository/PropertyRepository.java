@@ -1,6 +1,7 @@
 package io.github.kwatera_project.kwatera.property_service.repository;
 
 import io.github.kwatera_project.kwatera.property_service.model.Property;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,4 +10,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PropertyRepository extends JpaRepository<Property, UUID> {
   List<Property> findByOwnerId(UUID ownerId);
+
+  List<Property> findByLatitudeBetweenAndLongitudeBetween(
+      BigDecimal minLat, BigDecimal maxLat, BigDecimal minLng, BigDecimal maxLng);
 }
