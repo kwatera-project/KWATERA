@@ -8,10 +8,11 @@ import { formatSearchDate, parseGuests, parseSearchDate } from "../utils/searchD
 import { getCitySuggestions } from "../utils/citySuggestions";
 import PropertyMap from "../components/PropertyMap";
 import { useCurrency } from "../contexts/CurrencyContext";
-import FilterSidebar, {
+import FilterSidebar from "../components/FilterSidebar";
+import {
     EMPTY_FILTERS,
     type FilterState,
-} from "../components/FilterSidebar";
+} from "../types/filters";
 import { useDebounce } from "../hooks/useDebounce";
 import { SlidersHorizontal, X } from "lucide-react";
 

@@ -32,7 +32,6 @@ class UnitDtoTest {
             null,
             null);
 
-
     assertEquals(id, dto.getId());
     assertEquals("Room", dto.getName());
     assertEquals("Nice room", dto.getDescription());
