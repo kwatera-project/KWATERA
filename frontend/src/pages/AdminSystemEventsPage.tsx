@@ -226,7 +226,7 @@ export default function AdminSystemEventsPage() {
         </div>
 
         <div className="flex flex-wrap items-end gap-3 rounded-lg border border-[#DACDCA] bg-white p-3 shadow-sm">
-          <label className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1">
             <span className="text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
               Date from
             </span>
@@ -253,8 +253,8 @@ export default function AdminSystemEventsPage() {
                 popperPlacement="bottom-start"
               />
             </div>
-          </label>
-          <label className="flex flex-col gap-1">
+          </div>
+          <div className="flex flex-col gap-1">
             <span className="text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
               Date to
             </span>
@@ -273,8 +273,8 @@ export default function AdminSystemEventsPage() {
                 popperPlacement="bottom-start"
               />
             </div>
-          </label>
-          <label className="flex flex-col gap-1">
+          </div>
+          <div className="flex flex-col gap-1">
             <span className="text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
               Time from
             </span>
@@ -284,8 +284,8 @@ export default function AdminSystemEventsPage() {
               onChange={(event) => setTimeFrom(event.target.value)}
               className="rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 text-sm font-semibold text-[#1A1A1A] outline-none focus:ring-2 focus:ring-[#42211D]/20"
             />
-          </label>
-          <label className="flex flex-col gap-1">
+          </div>
+          <div className="flex flex-col gap-1">
             <span className="text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
               Time to
             </span>
@@ -295,7 +295,7 @@ export default function AdminSystemEventsPage() {
               onChange={(event) => setTimeTo(event.target.value)}
               className="rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 text-sm font-semibold text-[#1A1A1A] outline-none focus:ring-2 focus:ring-[#42211D]/20"
             />
-          </label>
+          </div>
           <button
             type="button"
             onClick={clearDateFilters}
