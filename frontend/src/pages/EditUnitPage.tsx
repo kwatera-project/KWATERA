@@ -24,6 +24,7 @@ export default function EditUnitPage() {
                     unitType: data.unitType,
                     unitNumber: data.unitNumber,
                     floor: data.floor,
+                    amenities: data.amenities || [],
                 });
             })
             .finally(() => setLoading(false));

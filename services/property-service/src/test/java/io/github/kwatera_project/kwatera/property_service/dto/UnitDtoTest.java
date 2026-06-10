@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.github.kwatera_project.kwatera.property_service.model.UnitType;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +27,11 @@ class UnitDtoTest {
             "10A",
             4,
             BigDecimal.valueOf(200),
-            new CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, java.time.LocalDate.now()));
+            new CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, java.time.LocalDate.now()),
+            List.of("WiFi"),
+            null,
+            null);
+
 
     assertEquals(id, dto.getId());
     assertEquals("Room", dto.getName());
@@ -41,5 +46,6 @@ class UnitDtoTest {
     assertEquals(
         new CurrencyMetadataDto("PLN", "PLN", BigDecimal.ONE, java.time.LocalDate.now()),
         dto.getCurrencyInfo());
+    assertEquals(List.of("WiFi"), dto.getAmenities());
   }
 }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import TagInput from "../components/TagInput";
 
 export interface UnitFormData {
     name: string;
@@ -8,6 +9,7 @@ export interface UnitFormData {
     unitType: string;
     unitNumber: string;
     floor: number;
+    amenities?: string[];
 }
 
 interface UnitFormProps {
@@ -34,8 +36,14 @@ export default function UnitForm({
                                      onSubmit,
                                      submitLabel,
                                  }: UnitFormProps) {
-    const [form, setForm] = useState<UnitFormData>(
-        initialValues ?? {
+    const [form, setForm] = useState<UnitFormData>(() => {
+        if (initialValues) {
+            return {
+                ...initialValues,
+                amenities: initialValues.amenities ?? [],
+            };
+        }
+        return {
             name: "",
             description: "",
             pricePerNight: "" as unknown as number,
@@ -43,8 +51,9 @@ export default function UnitForm({
             unitType: UNIT_TYPES[0],
             unitNumber: "",
             floor: "" as unknown as number,
-        }
-    );
+            amenities: [],
+        };
+    });
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -63,7 +72,8 @@ export default function UnitForm({
             ...form,
             pricePerNight: Number(form.pricePerNight),
             capacity: Number(form.capacity),
-            floor: Number(form.floor)
+            floor: Number(form.floor),
+            amenities: form.amenities ?? []
         };
         await onSubmit(payload);
     };
@@ -170,6 +180,14 @@ export default function UnitForm({
                         />
                     </div>
                 </div>
+            </div>
+
+            <div className="border-t border-[#DACDCA]/50 my-6 pt-4">
+                <TagInput
+                    label="Amenities & Tags"
+                    tags={form.amenities ?? []}
+                    onChange={(tags) => setForm(prev => ({ ...prev, amenities: tags }))}
+                />
             </div>
 
             <div className="pt-4">

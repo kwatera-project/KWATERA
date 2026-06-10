@@ -8,6 +8,12 @@ import { formatSearchDate, parseGuests, parseSearchDate } from "../utils/searchD
 import { getCitySuggestions } from "../utils/citySuggestions";
 import PropertyMap from "../components/PropertyMap";
 import { useCurrency } from "../contexts/CurrencyContext";
+import FilterSidebar, {
+    EMPTY_FILTERS,
+    type FilterState,
+} from "../components/FilterSidebar";
+import { useDebounce } from "../hooks/useDebounce";
+import { SlidersHorizontal, X } from "lucide-react";
 
 interface AvailabilityResponse {
     available: boolean;
@@ -18,23 +24,43 @@ const PROPERTIES_LOAD_ERROR = "Could not load properties. Please try again later
 const UNITS_FILTER_ERROR = "Could not load units for filtering. Please try again later.";
 const AVAILABILITY_FILTER_ERROR = "Could not verify availability. Please try again or adjust your filters.";
 
+
+
 function propertyMatchesCity(property: Property, city: string) {
-    const normalizeCityText = (value: string) => value.toLowerCase().replace(/[,\s]+/g, " ").trim();
-    const normalizedCity = normalizeCityText(city);
+    const normalize = (v: string) => v.toLowerCase().replace(/[,\s]+/g, " ").trim();
+    const normalizedCity = normalize(city);
     if (!normalizedCity) return true;
-
-    const searchableText = [
-        property.city,
-        property.country,
-    ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-    return normalizeCityText(searchableText).includes(normalizedCity);
+    const text = [property.city, property.country].filter(Boolean).join(" ");
+    return normalize(text).includes(normalizedCity);
 }
 
+/* ─── Active filter badge ──────────────────────────────────────────────── */
+
+interface ActiveFilter {
+    id: string;
+    label: string;
+    onRemove: () => void;
+}
+
+function FilterBadge({ label, onRemove }: { label: string; onRemove: () => void }) {
+    return (
+        <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap shrink-0 transition-colors hover:bg-blue-100">
+            {label}
+            <button
+                onClick={onRemove}
+                aria-label={`Remove filter: ${label}`}
+                className="hover:text-blue-900 transition-colors cursor-pointer"
+            >
+                <X className="w-3 h-3" strokeWidth={2.5} />
+            </button>
+        </span>
+    );
+}
+
+/* ─── Page ─────────────────────────────────────────────────────────────── */
+
 export default function PropertiesPage() {
+    /* ── Core data ── */
     const [properties, setProperties] = useState<Property[]>([]);
     const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -43,19 +69,25 @@ export default function PropertiesPage() {
     const [filterError, setFilterError] = useState<string | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
 
+    /* ── UI state ── */
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [mapBounds, setMapBounds] = useState<{
-        minLat: number;
-        maxLat: number;
-        minLng: number;
-        maxLng: number;
+        minLat: number; maxLat: number; minLng: number; maxLng: number;
     } | null>(null);
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-    const [showMap, setShowMap] = useState<boolean>(false);
+    const [showMap, setShowMap] = useState(false);
     const [openPopupPropertyId, setOpenPopupPropertyId] = useState<string | null>(null);
+
+    /* ── Filter state (immediate — drives sidebar UI) ── */
+    const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
+
+    const debouncedFilters = useDebounce(filters, 450);
 
     const { currency } = useCurrency();
     const [propertyPrices, setPropertyPrices] = useState<Record<string, number>>({});
+    const [unitCapacities, setUnitCapacities] = useState<Record<string, { bedrooms: number; beds: number }>>({});
 
+    /* ── URL search values ── */
     const searchValues = useMemo(() => ({
         city: searchParams.get("city") ?? "",
         checkIn: parseSearchDate(searchParams.get("checkIn")),
@@ -63,29 +95,32 @@ export default function PropertiesPage() {
         guests: searchParams.get("guests") ?? "",
     }), [searchParams]);
 
-    const hasCompleteDateRange = !!searchValues.checkIn && !!searchValues.checkOut && searchValues.checkIn < searchValues.checkOut;
-    const requestedGuests = parseGuests(searchValues.guests);
+    const hasCompleteDateRange =
+        !!searchValues.checkIn &&
+        !!searchValues.checkOut &&
+        searchValues.checkIn < searchValues.checkOut;
+
+    const urlGuests = parseGuests(searchValues.guests);
+    const effectiveGuests = Math.max(urlGuests ?? 0, debouncedFilters.guests > 1 ? debouncedFilters.guests : 0);
+
     const citySuggestions = useMemo(() => getCitySuggestions(properties), [properties]);
+
     const propertyDetailsSearch = useMemo(() => {
         const params = new URLSearchParams();
         const checkIn = searchParams.get("checkIn");
         const checkOut = searchParams.get("checkOut");
         const guests = searchParams.get("guests");
-
         if (checkIn) params.set("checkIn", checkIn);
         if (checkOut) params.set("checkOut", checkOut);
         if (guests) params.set("guests", guests);
-
-        const serialized = params.toString();
-        return serialized ? `?${serialized}` : "";
+        const s = params.toString();
+        return s ? `?${s}` : "";
     }, [searchParams]);
 
     useEffect(() => {
-        getProperties()
+        getProperties(undefined, undefined, undefined, undefined, debouncedFilters.selectedAmenities)
             .then((data: Property[]) => {
-                if (!Array.isArray(data)) {
-                    throw new Error(PROPERTIES_LOAD_ERROR);
-                }
+                if (!Array.isArray(data)) throw new Error(PROPERTIES_LOAD_ERROR);
                 setProperties(data);
                 setPropertiesError(null);
             })
@@ -95,25 +130,33 @@ export default function PropertiesPage() {
                 setPropertiesError(PROPERTIES_LOAD_ERROR);
             })
             .finally(() => setIsLoading(false));
-    }, []);
+    }, [debouncedFilters.selectedAmenities]);
 
     useEffect(() => {
         if (filteredProperties.length === 0) return;
-
         filteredProperties.forEach((property) => {
             getUnits(property.id, currency)
                 .then((units: Unit[]) => {
                     if (units && units.length > 0) {
-                        const pricesList = units
-                            .map((u) => (u.convertedPricePerNight && currency !== "PLN" ? u.convertedPricePerNight : u.pricePerNight))
+                        const prices = units
+                            .map((u) =>
+                                u.convertedPricePerNight && currency !== "PLN"
+                                    ? u.convertedPricePerNight
+                                    : u.pricePerNight
+                            )
                             .filter((p) => p !== undefined && p !== null);
-                        if (pricesList.length > 0) {
-                            const minVal = Math.min(...pricesList);
+                        if (prices.length > 0) {
                             setPropertyPrices((prev) => ({
                                 ...prev,
-                                [property.id]: minVal,
+                                [property.id]: Math.min(...prices),
                             }));
                         }
+                        const maxBedrooms = Math.max(...units.map((u) => u.bedrooms ?? 0));
+                        const maxBeds = Math.max(...units.map((u) => u.beds ?? 0));
+                        setUnitCapacities((prev) => ({
+                            ...prev,
+                            [property.id]: { bedrooms: maxBedrooms, beds: maxBeds },
+                        }));
                     }
                 })
                 .catch((err) => console.error("Error loading price for card:", err));
@@ -122,10 +165,9 @@ export default function PropertiesPage() {
 
     useEffect(() => {
         if (selectedProperty && showMap) {
-            const element = document.getElementById(`property-card-${selectedProperty.id}`);
-            if (element) {
-                element.scrollIntoView({ behavior: "smooth", block: "nearest" });
-            }
+            document
+                .getElementById(`property-card-${selectedProperty.id}`)
+                ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }
     }, [selectedProperty, showMap]);
 
@@ -133,9 +175,14 @@ export default function PropertiesPage() {
         let cancelled = false;
 
         async function filterProperties() {
-            const cityFiltered = properties.filter((property) => propertyMatchesCity(property, searchValues.city));
+            const cityFiltered = properties.filter((p) =>
+                propertyMatchesCity(p, searchValues.city)
+            );
 
-            if (!requestedGuests && (!hasCompleteDateRange || !searchValues.checkIn || !searchValues.checkOut)) {
+            if (
+                !effectiveGuests &&
+                (!hasCompleteDateRange || !searchValues.checkIn || !searchValues.checkOut)
+            ) {
                 setIsFilteringAvailability(false);
                 setFilterError(null);
                 setFilteredProperties(cityFiltered);
@@ -147,77 +194,117 @@ export default function PropertiesPage() {
                 const checkIn = searchValues.checkIn ? formatSearchDate(searchValues.checkIn) : null;
                 const checkOut = searchValues.checkOut ? formatSearchDate(searchValues.checkOut) : null;
 
-                const filteredResults = await Promise.all(
+                const results = await Promise.all(
                     cityFiltered.map(async (property) => {
                         let units: Unit[];
                         try {
                             units = await getUnits(property.id);
-                            if (!Array.isArray(units)) {
-                                throw new Error(UNITS_FILTER_ERROR);
-                            }
+                            if (!Array.isArray(units)) throw new Error(UNITS_FILTER_ERROR);
                         } catch {
                             throw new Error(UNITS_FILTER_ERROR);
                         }
 
-                        const matchingUnits = requestedGuests
-                            ? units.filter((unit) => unit.capacity >= requestedGuests)
+                        const matching = effectiveGuests
+                            ? units.filter((u) => u.capacity >= effectiveGuests)
                             : units;
 
-                        if (matchingUnits.length === 0) return null;
+                        if (matching.length === 0) return null;
 
-                        if (!hasCompleteDateRange || !checkIn || !checkOut) {
-                            return property;
-                        }
+                        if (!hasCompleteDateRange || !checkIn || !checkOut) return property;
 
-                        const unitResults = await Promise.all(
-                            matchingUnits.map((unit) =>
+                        const available = await Promise.all(
+                            matching.map((unit) =>
                                 checkAvailability(unit.id, checkIn, checkOut)
-                                    .then((availability: AvailabilityResponse) => {
-                                        if (typeof availability.available !== "boolean") {
+                                    .then((a: AvailabilityResponse) => {
+                                        if (typeof a.available !== "boolean")
                                             throw new Error(AVAILABILITY_FILTER_ERROR);
-                                        }
-                                        return availability.available;
+                                        return a.available;
                                     })
-                                    .catch(() => {
-                                        throw new Error(AVAILABILITY_FILTER_ERROR);
-                                    })
+                                    .catch(() => { throw new Error(AVAILABILITY_FILTER_ERROR); })
                             )
                         );
 
-                        return unitResults.some(Boolean) ? property : null;
+                        return available.some(Boolean) ? property : null;
                     })
                 );
 
                 if (!cancelled) {
                     setFilterError(null);
-                    setFilteredProperties(filteredResults.filter((property): property is Property => property !== null));
+                    setFilteredProperties(results.filter((p): p is Property => p !== null));
                 }
             } catch (err: unknown) {
                 if (!cancelled) {
-                    const message = err instanceof Error ? err.message : UNITS_FILTER_ERROR;
-                    setFilterError(message === AVAILABILITY_FILTER_ERROR ? AVAILABILITY_FILTER_ERROR : UNITS_FILTER_ERROR);
+                    const msg = err instanceof Error ? err.message : UNITS_FILTER_ERROR;
+                    setFilterError(
+                        msg === AVAILABILITY_FILTER_ERROR
+                            ? AVAILABILITY_FILTER_ERROR
+                            : UNITS_FILTER_ERROR
+                    );
                     setFilteredProperties([]);
                 }
             } finally {
-                if (!cancelled) {
-                    setIsFilteringAvailability(false);
-                }
+                if (!cancelled) setIsFilteringAvailability(false);
             }
         }
 
         filterProperties();
+        return () => { cancelled = true; };
+    }, [
+        properties,
+        searchValues.city,
+        searchValues.checkIn,
+        searchValues.checkOut,
+        searchValues.guests,
+        hasCompleteDateRange,
+        effectiveGuests,
+    ]);
 
-        return () => {
-            cancelled = true;
-        };
-    }, [properties, searchValues.city, searchValues.checkIn, searchValues.checkOut, searchValues.guests, hasCompleteDateRange, requestedGuests]);
+    const displayProperties = useMemo(() => {
+        let result = filteredProperties;
+
+        if (debouncedFilters.propertyTypes.length > 0) {
+            result = result.filter((p) =>
+                p.propertyType
+                    ? debouncedFilters.propertyTypes.includes(p.propertyType)
+                    : true
+            );
+        }
+
+        const min = debouncedFilters.minPrice !== "" ? Number(debouncedFilters.minPrice) : null;
+        const max = debouncedFilters.maxPrice !== "" ? Number(debouncedFilters.maxPrice) : null;
+        if (min !== null || max !== null) {
+            result = result.filter((p) => {
+                const price = propertyPrices[p.id];
+                if (price === undefined) return true;
+                if (min !== null && price < min) return false;
+                if (max !== null && price > max) return false;
+                return true;
+            });
+        }
+
+        if (debouncedFilters.bedrooms > 0) {
+            result = result.filter((p) => {
+                const cap = unitCapacities[p.id];
+                if (!cap) return true;
+                return cap.bedrooms >= debouncedFilters.bedrooms;
+            });
+        }
+
+        if (debouncedFilters.beds > 0) {
+            result = result.filter((p) => {
+                const cap = unitCapacities[p.id];
+                if (!cap) return true;
+                return cap.beds >= debouncedFilters.beds;
+            });
+        }
+
+        return result;
+    }, [filteredProperties, propertyPrices, unitCapacities, debouncedFilters]);
 
     const visibleProperties = useMemo(() => {
-        if (!mapBounds) return filteredProperties;
-        return filteredProperties.filter((p) => {
-            if (p.latitude === undefined || p.longitude === undefined || p.latitude === null || p.longitude === null) {
-                return false;
-            }
+        if (!mapBounds) return displayProperties;
+        return displayProperties.filter((p) => {
+            if (p.latitude == null || p.longitude == null) return false;
             const lat = Number(p.latitude);
             const lng = Number(p.longitude);
             return (
@@ -227,7 +314,72 @@ export default function PropertiesPage() {
                 lng <= mapBounds.maxLng
             );
         });
-    }, [filteredProperties, mapBounds]);
+    }, [displayProperties, mapBounds]);
+
+    const activeFilters = useMemo((): ActiveFilter[] => {
+        const result: ActiveFilter[] = [];
+
+        filters.propertyTypes.forEach((type) =>
+            result.push({
+                id: `type-${type}`,
+                label: type,
+                onRemove: () =>
+                    setFilters((f) => ({
+                        ...f,
+                        propertyTypes: f.propertyTypes.filter((t) => t !== type),
+                    })),
+            })
+        );
+
+        if (filters.guests > 1)
+            result.push({
+                id: "guests",
+                label: `${filters.guests}+ guests`,
+                onRemove: () => setFilters((f) => ({ ...f, guests: 1 })),
+            });
+
+        if (filters.bedrooms > 0)
+            result.push({
+                id: "bedrooms",
+                label: `${filters.bedrooms}+ bedrooms`,
+                onRemove: () => setFilters((f) => ({ ...f, bedrooms: 0 })),
+            });
+
+        if (filters.beds > 0)
+            result.push({
+                id: "beds",
+                label: `${filters.beds}+ beds`,
+                onRemove: () => setFilters((f) => ({ ...f, beds: 0 })),
+            });
+
+        if (filters.minPrice !== "")
+            result.push({
+                id: "minPrice",
+                label: `Min ${filters.minPrice} ${currency}`,
+                onRemove: () => setFilters((f) => ({ ...f, minPrice: "" })),
+            });
+
+        if (filters.maxPrice !== "")
+            result.push({
+                id: "maxPrice",
+                label: `Max ${filters.maxPrice} ${currency}`,
+                onRemove: () => setFilters((f) => ({ ...f, maxPrice: "" })),
+            });
+
+        filters.selectedAmenities.forEach((amenity) =>
+            result.push({
+                id: `amenity-${amenity}`,
+                label: amenity,
+                onRemove: () =>
+                    setFilters((f) => ({
+                        ...f,
+                        selectedAmenities: f.selectedAmenities.filter((a) => a !== amenity),
+                    })),
+            })
+        );
+
+        return result;
+    }, [filters, currency]);
 
     const handleSearch = ({ city, checkIn, checkOut, guests }: PropertySearchValues) => {
         const params = new URLSearchParams();
@@ -249,28 +401,57 @@ export default function PropertiesPage() {
         });
     };
 
+    const activeFilterCount =
+        filters.selectedAmenities.length +
+        filters.propertyTypes.length +
+        (filters.minPrice !== "" ? 1 : 0) +
+        (filters.maxPrice !== "" ? 1 : 0) +
+        (filters.guests > 1 ? 1 : 0) +
+        (filters.bedrooms > 0 ? 1 : 0) +
+        (filters.beds > 0 ? 1 : 0);
+
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] flex flex-col">
-            <div className="mb-6 space-y-4 shrink-0">
-                <div className="flex justify-between items-center">
+        <div className="min-h-screen bg-[#F9F8F7] text-[#1A1A1A]">
+            <div className="bg-[#F9F8F7] px-4 md:px-8 pt-6 pb-4 max-w-[1440px] mx-auto">
+                <div className="flex justify-between items-start mb-5">
                     <div>
                         <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">Properties</h1>
-                        <p className="text-sm text-[#7A7A7A] mt-1">Explore our curated selection of properties.</p>
+                        <p className="text-sm text-[#7A7A7A] mt-1">
+                            Explore our curated selection of properties.
+                        </p>
                     </div>
-                    <button
-                        onClick={toggleMap}
-                        className="hidden md:flex items-center gap-2 bg-[#42211D] hover:bg-[#5c2e29] text-white px-5 py-2.5 rounded-xl shadow-sm font-semibold transition-all duration-300 cursor-pointer animate-fade-in"
-                    >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            {showMap ? (
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                            ) : (
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    <div className="flex items-center gap-2 shrink-0">
+                        <button
+                            onClick={() => setIsMobileSidebarOpen(true)}
+                            className="md:hidden relative flex items-center gap-2 bg-white border border-gray-200 text-[#1A1A1A] px-4 py-2.5 rounded-xl shadow-sm font-semibold text-sm hover:border-[#42211D]/40 cursor-pointer transition-all"
+                        >
+                            <SlidersHorizontal className="w-4 h-4" strokeWidth={2.5} />
+                            Filters
+                            {activeFilterCount > 0 && (
+                                <span className="absolute -top-1.5 -right-1.5 bg-[#42211D] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                                    {activeFilterCount}
+                                </span>
                             )}
-                        </svg>
-                        {showMap ? "Hide map" : "Show map"}
-                    </button>
+                        </button>
+
+                        <button
+                            onClick={toggleMap}
+                            className="hidden md:flex items-center gap-2 bg-[#42211D] hover:bg-[#5c2e29] text-white px-5 py-2.5 rounded-xl shadow-sm font-semibold text-sm transition-all duration-200 cursor-pointer"
+                        >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                {showMap ? (
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                        d="M4 6h16M4 12h16M4 18h16" />
+                                ) : (
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                                )}
+                            </svg>
+                            {showMap ? "Hide map" : "Show map"}
+                        </button>
+                    </div>
                 </div>
+
                 <PropertySearchBar
                     key={searchParams.toString()}
                     initialValues={searchValues}
@@ -281,134 +462,185 @@ export default function PropertiesPage() {
             </div>
 
             {(isLoading || isFilteringAvailability) && (
-                <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 text-center text-[#7A7A7A] font-medium mb-6 shrink-0 animate-pulse">
-                    {isLoading ? "Loading properties..." : "Checking availability..."}
+                <div className="px-4 md:px-8 max-w-[1440px] mx-auto mb-4">
+                    <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 text-center text-[#7A7A7A] font-medium animate-pulse">
+                        {isLoading ? "Loading properties…" : "Checking availability…"}
+                    </div>
                 </div>
             )}
 
             {(propertiesError || filterError) && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700 font-semibold mb-6 shrink-0">
-                    {propertiesError || filterError}
+                <div className="px-4 md:px-8 max-w-[1440px] mx-auto mb-4">
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-5 text-red-700 font-semibold">
+                        {propertiesError || filterError}
+                    </div>
                 </div>
             )}
 
             {!isLoading && !propertiesError && (
-                <div className="flex-1 flex flex-col md:flex-row gap-6 min-h-0 relative">
-                    <div
-                        className={`flex-1 overflow-y-auto pr-2 ${
-                            showMap ? "hidden md:block" : "block"
-                        }`}
-                        style={{ maxHeight: "calc(100vh - 280px)" }}
-                    >
-                        {filteredProperties.length === 0 ? (
-                            <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-8 text-center">
-                                <h2 className="text-xl font-bold text-[#1A1A1A] tracking-tight">No properties found</h2>
-                                <p className="text-sm text-[#7A7A7A] mt-2">
-                                    Try a different city or date range.
-                                </p>
-                            </div>
-                        ) : visibleProperties.length === 0 && showMap ? (
-                            <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-8 text-center">
-                                <h2 className="text-xl font-bold text-[#1A1A1A] tracking-tight">No properties in this map area</h2>
-                                <p className="text-sm text-[#7A7A7A] mt-2">
-                                    Pan the map or zoom out to see more properties.
-                                </p>
-                            </div>
-                        ) : (
-                            <div
-                                className={`grid gap-6 pb-6 ${
-                                    showMap
-                                        ? "grid-cols-1 lg:grid-cols-2"
-                                        : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-                                }`}
-                            >
-                                {(showMap ? visibleProperties : filteredProperties).map((p) => {
-                                    const isSelected = selectedProperty?.id === p.id;
-                                    return (
-                                        <div
-                                            key={p.id}
-                                            id={`property-card-${p.id}`}
-                                            onMouseEnter={() => showMap && setSelectedProperty(p)}
-                                            className="relative p-1"
-                                        >
-                                            <Link
-                                                to={`/property/${p.id}${propertyDetailsSearch}`}
-                                                onClick={(e) => {
-                                                    if (showMap) {
-                                                        e.preventDefault();
-                                                        setSelectedProperty(p);
-                                                        setOpenPopupPropertyId(p.id);
-                                                    }
-                                                }}
-                                                className="group block"
-                                            >
-                                                <div
-                                                    className={`bg-white border rounded-xl p-4 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 ${
-                                                        isSelected
-                                                            ? "border-[#42211D] ring-2 ring-inset ring-[#42211D]/30 bg-[#42211D]/5 shadow-md"
-                                                            : "border-[#DACDCA] shadow-sm"
-                                                    }`}
-                                                >
-                                                    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-gray-50">
-                                                        <img
-                                                            src={p.imageUrl}
-                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                                            alt={p.title}
-                                                        />
-                                                    </div>
-                                                    <div className="flex items-baseline justify-between mt-3">
-                                                        <div className="min-w-0 flex-1">
-                                                            <h2 className="text-lg font-bold text-[#1A1A1A] tracking-tight group-hover:text-[#42211D] transition-colors line-clamp-1">
-                                                                {p.title}
-                                                            </h2>
-                                                            <p className="text-xs text-[#7A7A7A] mt-0.5 font-medium">{p.city}</p>
-                                                        </div>
-                                                        <div className="text-right shrink-0 ml-4">
-                                                            <span className="text-[9px] text-[#7A7A7A] block font-bold uppercase tracking-wider leading-none mb-0.5">From</span>
-                                                            <span className="font-black text-base text-[#42211D]">
-                                                                {propertyPrices[p.id] !== undefined ? (
-                                                                    `${Math.round(propertyPrices[p.id])} ${currency}`
-                                                                ) : (
-                                                                    <span className="text-xs font-normal text-[#7A7A7A]">...</span>
-                                                                )}
-                                                                <span className="text-[10px] text-[#7A7A7A] font-normal ml-0.5">/night</span>
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </Link>
-                                        </div>
-                                    );
-                                })}
+                <div className="px-4 md:px-8 pb-10 max-w-[1440px] mx-auto flex gap-6 items-start">
+                    <FilterSidebar
+                        filters={filters}
+                        onFiltersChange={setFilters}
+                        isOpen={isMobileSidebarOpen}
+                        onClose={() => setIsMobileSidebarOpen(false)}
+                        currency={currency}
+                    />
+
+                    <div className="flex-1 min-w-0 flex flex-col gap-4">
+                        {activeFilters.length > 0 && (
+                            <div className="flex items-center gap-2 overflow-x-auto pb-0.5 -mx-1 px-1 scrollbar-hide">
+                                {activeFilters.map((f) => (
+                                    <FilterBadge
+                                        key={f.id}
+                                        label={f.label}
+                                        onRemove={f.onRemove}
+                                    />
+                                ))}
+                                {activeFilters.length > 1 && (
+                                    <button
+                                        onClick={() => setFilters(EMPTY_FILTERS)}
+                                        className="shrink-0 text-xs font-semibold text-[#7A7A7A] hover:text-[#42211D] border border-dashed border-gray-300 rounded-full px-3 py-1 transition-colors cursor-pointer whitespace-nowrap"
+                                    >
+                                        Clear all
+                                    </button>
+                                )}
                             </div>
                         )}
-                    </div>
 
-                    {showMap && (
-                        <div
-                            className="flex-1 h-[450px] md:h-auto md:sticky md:top-6"
-                            style={{ height: "calc(100vh - 280px)" }}
-                        >
-                            <div className="w-full h-full rounded-xl overflow-hidden border border-[#DACDCA] shadow-sm relative z-0">
-                                <PropertyMap
-                                    properties={filteredProperties}
-                                    onBoundsChange={setMapBounds}
-                                    onPropertySelect={setSelectedProperty}
-                                    propertyDetailsSearch={propertyDetailsSearch}
-                                    selectedProperty={selectedProperty}
-                                    openPopupPropertyId={openPopupPropertyId}
-                                    setOpenPopupPropertyId={setOpenPopupPropertyId}
-                                />
+                        <div className="flex gap-6">
+                            <div
+                                className={`flex-1 min-w-0 ${
+                                    showMap ? "md:max-w-[340px] lg:max-w-[400px] xl:max-w-[440px]" : ""
+                                }`}
+                            >
+                                {displayProperties.length === 0 ? (
+                                    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-10 text-center">
+                                        <div className="w-12 h-12 rounded-full bg-[#42211D]/10 flex items-center justify-center mx-auto mb-4">
+                                            <svg className="w-6 h-6 text-[#42211D]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                                                    d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
+                                            </svg>
+                                        </div>
+                                        <h2 className="text-lg font-bold text-[#1A1A1A]">No properties found</h2>
+                                        <p className="text-sm text-[#7A7A7A] mt-1.5">
+                                            Try adjusting your search or clearing filters.
+                                        </p>
+                                        {activeFilterCount > 0 && (
+                                            <button
+                                                onClick={() => setFilters(EMPTY_FILTERS)}
+                                                className="mt-4 text-sm font-semibold text-[#42211D] hover:underline cursor-pointer"
+                                            >
+                                                Clear all filters
+                                            </button>
+                                        )}
+                                    </div>
+                                ) : showMap && visibleProperties.length === 0 ? (
+                                    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-10 text-center">
+                                        <h2 className="text-lg font-bold text-[#1A1A1A]">No properties in this area</h2>
+                                        <p className="text-sm text-[#7A7A7A] mt-1.5">Pan or zoom out on the map.</p>
+                                    </div>
+                                ) : (
+                                    <div
+                                        className={`${
+                                            showMap
+                                                ? "flex flex-col gap-4 overflow-y-auto pr-1"
+                                                : "grid gap-5 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"
+                                        }`}
+                                        style={showMap ? { maxHeight: "calc(100vh - 240px)" } : undefined}
+                                    >
+                                        {(showMap ? visibleProperties : displayProperties).map((p) => {
+                                            const isSelected = selectedProperty?.id === p.id;
+                                            return (
+                                                <div
+                                                    key={p.id}
+                                                    id={`property-card-${p.id}`}
+                                                    onMouseEnter={() => showMap && setSelectedProperty(p)}
+                                                >
+                                                    <Link
+                                                        to={`/property/${p.id}${propertyDetailsSearch}`}
+                                                        onClick={(e) => {
+                                                            if (showMap) {
+                                                                e.preventDefault();
+                                                                setSelectedProperty(p);
+                                                                setOpenPopupPropertyId(p.id);
+                                                            }
+                                                        }}
+                                                        className="group block"
+                                                    >
+                                                        <div
+                                                            className={`bg-white border rounded-xl p-4 hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 ${
+                                                                isSelected
+                                                                    ? "border-[#42211D] ring-2 ring-inset ring-[#42211D]/20 shadow-md"
+                                                                    : "border-gray-200 shadow-sm"
+                                                            }`}
+                                                        >
+                                                            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-gray-100">
+                                                                <img
+                                                                    src={p.imageUrl}
+                                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                                    alt={p.title}
+                                                                />
+                                                            </div>
+                                                            <div className="flex items-baseline justify-between mt-3">
+                                                                <div className="min-w-0 flex-1">
+                                                                    <h2 className="text-base font-bold text-[#1A1A1A] tracking-tight group-hover:text-[#42211D] transition-colors line-clamp-1">
+                                                                        {p.title}
+                                                                    </h2>
+                                                                    <p className="text-xs text-[#7A7A7A] mt-0.5 font-medium">
+                                                                        {p.city}
+                                                                    </p>
+                                                                </div>
+                                                                <div className="text-right shrink-0 ml-4">
+                                                                    <span className="text-[9px] text-[#7A7A7A] block font-bold uppercase tracking-wider leading-none mb-0.5">
+                                                                        From
+                                                                    </span>
+                                                                    <span className="font-black text-base text-[#42211D]">
+                                                                        {propertyPrices[p.id] !== undefined ? (
+                                                                            `${Math.round(propertyPrices[p.id])} ${currency}`
+                                                                        ) : (
+                                                                            <span className="text-xs font-normal text-[#7A7A7A]">…</span>
+                                                                        )}
+                                                                        <span className="text-[10px] text-[#7A7A7A] font-normal ml-0.5">/night</span>
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </Link>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
+
+                            {showMap && (
+                                <div
+                                    className="hidden md:block flex-1 sticky top-6"
+                                    style={{ height: "calc(100vh - 200px)" }}
+                                >
+                                    <div className="w-full h-full rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
+                                        <PropertyMap
+                                            properties={displayProperties}
+                                            onBoundsChange={setMapBounds}
+                                            onPropertySelect={setSelectedProperty}
+                                            propertyDetailsSearch={propertyDetailsSearch}
+                                            selectedProperty={selectedProperty}
+                                            openPopupPropertyId={openPopupPropertyId}
+                                            setOpenPopupPropertyId={setOpenPopupPropertyId}
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
             )}
 
-            {!isLoading && !propertiesError && filteredProperties.length > 0 && (
+            {!isLoading && !propertiesError && displayProperties.length > 0 && (
                 <button
                     onClick={toggleMap}
-                    className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[1000] bg-[#42211D] hover:bg-[#5c2e29] text-white px-6 py-3 rounded-full shadow-lg font-bold flex items-center gap-2 md:hidden transition-all duration-300 cursor-pointer"
+                    className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-[#42211D] hover:bg-[#5c2e29] text-white px-6 py-3 rounded-full shadow-lg font-bold flex items-center gap-2 md:hidden transition-all duration-200 cursor-pointer"
                 >
                     {showMap ? (
                         <>

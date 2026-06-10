@@ -3,10 +3,14 @@ package io.github.kwatera_project.kwatera.property_service.model;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -60,4 +64,12 @@ public class Property {
 
   @Column(nullable = false)
   private BigDecimal longitude;
+
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "amenities", columnDefinition = "jsonb")
+  private List<String> amenities = new ArrayList<>();
+
+  @Column(name = "property_type")
+  @Enumerated(EnumType.STRING)
+  private PropertyType propertyType;
 }

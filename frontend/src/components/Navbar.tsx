@@ -64,7 +64,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
 
     const isEffectiveSubpage = isSubpage !== undefined ? isSubpage : !isHomePage;
     const isFullScreenPage = ['/login', '/register', '/payment-cancel'].some(path => location.pathname.includes(path));
-    const positionClass = (isEffectiveSubpage && !isFullScreenPage) ? 'sticky top-0 mb-8' : 'fixed top-0';
+    const positionClass = (isEffectiveSubpage && !isFullScreenPage) ? 'sticky top-0' : 'fixed top-0';
     
     // On full-screen pages, we want a solid background to ensure readability over split screens
     const forceSolid = isFullScreenPage;

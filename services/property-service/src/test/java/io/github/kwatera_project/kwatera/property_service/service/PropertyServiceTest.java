@@ -80,9 +80,10 @@ class PropertyServiceTest {
     property.setCity("Warsaw");
     property.setDescription("Desc");
 
-    when(propertyRepository.findAll()).thenReturn(List.of(property));
+    when(propertyRepository.findByBoundingBoxAndAmenities(any(), any(), any(), any(), any(), any()))
+        .thenReturn(List.of(property));
 
-    var result = propertyService.getAll();
+    var result = propertyService.getAll(null);
 
     assertEquals(1, result.size());
     assertEquals("Test", result.get(0).getTitle());
@@ -101,11 +102,11 @@ class PropertyServiceTest {
     BigDecimal minLng = BigDecimal.valueOf(19);
     BigDecimal maxLng = BigDecimal.valueOf(22);
 
-    when(propertyRepository.findByLatitudeBetweenAndLongitudeBetween(
-            minLat, maxLat, minLng, maxLng))
+    when(propertyRepository.findByBoundingBoxAndAmenities(
+            eq(minLat), eq(maxLat), eq(minLng), eq(maxLng), any(), any()))
         .thenReturn(List.of(property));
 
-    var result = propertyService.getByBoundingBox(minLat, maxLat, minLng, maxLng);
+    var result = propertyService.getByBoundingBox(minLat, maxLat, minLng, maxLng, null);
 
     assertEquals(1, result.size());
     assertEquals("Test", result.get(0).getTitle());

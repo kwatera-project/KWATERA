@@ -24,6 +24,7 @@ export async function getMyProperties() {
 
 export async function createProperty(data: PropertyCreateRequest) {
     const token = localStorage.getItem("token");
+    const body = { ...data, propertyType: data.propertyType || undefined };
 
     const res = await fetch(
         `${API_URL}/property`,
@@ -33,7 +34,7 @@ export async function createProperty(data: PropertyCreateRequest) {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify(data),
+            body: JSON.stringify(body),
         }
     );
 
@@ -49,6 +50,7 @@ export async function updateProperty(
     data: PropertyUpdateRequest
 ) {
     const token = localStorage.getItem("token");
+    const body = { ...data, propertyType: data.propertyType || undefined };
 
     const res = await fetch(
         `${API_URL}/property/${propertyId}`,
@@ -58,7 +60,7 @@ export async function updateProperty(
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify(data),
+            body: JSON.stringify(body),
         }
     );
 

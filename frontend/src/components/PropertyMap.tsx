@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -154,15 +154,11 @@ interface MapEventsHandlerProps {
 
 function MapEventsHandler({ onBoundsChange }: MapEventsHandlerProps) {
   const map = useMapEvents({
-    moveend: () => {
-      handleBoundsUpdate();
-    },
-    zoomend: () => {
-      handleBoundsUpdate();
-    },
+    moveend: () => handleBoundsUpdate(),
+    zoomend: () => handleBoundsUpdate(),
   });
 
-  const handleBoundsUpdate = () => {
+  const handleBoundsUpdate = useCallback(() => {
     if (!onBoundsChange) return;
     const bounds = map.getBounds();
     const southWest = bounds.getSouthWest();
@@ -173,14 +169,14 @@ function MapEventsHandler({ onBoundsChange }: MapEventsHandlerProps) {
       minLng: southWest.lng,
       maxLng: northEast.lng,
     });
-  };
+  }, [map, onBoundsChange]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       handleBoundsUpdate();
     }, 100);
     return () => clearTimeout(timer);
-  }, [map]);
+  }, [handleBoundsUpdate]);
 
   return null;
 }
