@@ -2,8 +2,9 @@ import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getProperty } from "../api/propertyApi.ts";
 import type { Property, Unit } from "../types/property";
-import { deleteUnit, getPropertyUnits } from "../api/ownerUnitApi.ts";
+import {deleteUnit, getPropertyUnits, updateUnit} from "../api/ownerUnitApi.ts";
 import { getPredictedPrice } from "../api/predictionApi.ts";
+import { Wand2 } from "lucide-react";
 
 export default function OwnerPropertyUnitsPage() {
     const { propertyId } = useParams();
@@ -88,6 +89,8 @@ export default function OwnerPropertyUnitsPage() {
 function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: string, onDelete: (propertyId: string, unitId: string) => void }) {
     const [predictedPrice, setPredictedPrice] = useState<number | null>(null);
     const [loadingPrediction, setLoadingPrediction] = useState(true);
+    const [currentPrice, setCurrentPrice] = useState<number>(unit.pricePerNight);
+    const [isUpdatingPrice, setIsUpdatingPrice] = useState(false);
 
     useEffect(() => {
         getPredictedPrice(propertyId, unit.id, undefined)
@@ -101,6 +104,23 @@ function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: stri
                 setLoadingPrediction(false);
             });
     }, [propertyId, unit.id]);
+
+    const handleApplySuggestedPrice = async () => {
+        if (predictedPrice === null || isUpdatingPrice) return;
+
+        setIsUpdatingPrice(true);
+        try {
+            await updateUnit(propertyId, unit.id, { pricePerNight: predictedPrice });
+
+            setCurrentPrice(predictedPrice);
+            alert("Price updated successfully!");
+        } catch (error) {
+            console.error("Failed to update price:", error);
+            alert("Failed to update price. Please try again.");
+        } finally {
+            setIsUpdatingPrice(false);
+        }
+    };
 
     return (
         <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
@@ -133,7 +153,7 @@ function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: stri
                     <div>
                         <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-1">Current Price</span>
                         <div className="text-sm font-bold text-[#7A7A7A]">
-                            <span className="text-xl font-black text-[#1A1A1A]">{unit.pricePerNight.toFixed(2)} PLN</span> / night
+                            <span className="text-xl font-black text-[#1A1A1A]">{currentPrice.toFixed(2)} PLN</span> / night
                         </div>
                     </div>
 
@@ -143,7 +163,26 @@ function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: stri
                             {loadingPrediction ? (
                                 <span className="text-gray-400 text-sm animate-pulse font-semibold">Calculating...</span>
                             ) : predictedPrice !== null ? (
-                                <span className="text-xl font-black text-indigo-600">{predictedPrice.toFixed(2)} PLN</span>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-xl font-black text-indigo-600">{predictedPrice.toFixed(2)} PLN</span>
+
+                                        {Math.abs(currentPrice - predictedPrice) > 0.01 && (
+                                            <button
+                                                onClick={handleApplySuggestedPrice}
+                                                disabled={isUpdatingPrice}
+                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-md border border-indigo-200 hover:bg-indigo-100 transition-colors disabled:opacity-50"
+                                            >
+                                                {isUpdatingPrice ? (
+                                                    "Applying..."
+                                                ) : (
+                                                    <>
+                                                        <Wand2 className="w-3.5 h-3.5" />
+                                                        Apply AI Price
+                                                    </>
+                                                )}
+                                            </button>
+                                        )}
+                                    </div>
                             ) : (
                                 <span className="text-amber-600 text-sm font-semibold">Unavailable</span>
                             )}
