@@ -55,6 +55,7 @@ def test_large_image():
         result = process_meter_image(make_big_img())
     assert result.readingValue == "0836"
 
+
 def test_decimal_digits_found():
     with patch("app.service.ocr_service._detector") as mock:
         mock.read_digits_direct.return_value = ("123.45", 0.92)
