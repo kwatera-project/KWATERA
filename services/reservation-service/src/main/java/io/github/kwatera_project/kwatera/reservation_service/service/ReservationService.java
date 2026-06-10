@@ -193,14 +193,14 @@ public class ReservationService {
   }
 
   private UUID fetchUserIdByEmail(String email) {
-    String url = authServiceUrl + "/internal/by-email/" + email;
+    String url = authServiceUrl + "/internal/by-email/{email}";
     HttpHeaders headers = new HttpHeaders();
     headers.set("X-Internal-Token", internalToken);
     HttpEntity<Void> entity = new HttpEntity<>(headers);
 
     try {
       ResponseEntity<java.util.Map> response =
-          restTemplate.exchange(url, HttpMethod.GET, entity, java.util.Map.class);
+          restTemplate.exchange(url, HttpMethod.GET, entity, java.util.Map.class, email);
       if (response.getBody() == null || response.getBody().get("id") == null) {
         throw new ResponseStatusException(
             HttpStatus.BAD_REQUEST, "Guest with the specified email does not exist");

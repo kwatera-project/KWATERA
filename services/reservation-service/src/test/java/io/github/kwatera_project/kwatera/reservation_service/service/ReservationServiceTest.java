@@ -2044,10 +2044,11 @@ class ReservationServiceTest {
     java.util.Map<String, Object> guestMap = new java.util.HashMap<>();
     guestMap.put("id", guestId.toString());
     when(restTemplate.exchange(
-            contains("/internal/by-email/guest@test.com"),
+            anyString(),
             eq(HttpMethod.GET),
             any(HttpEntity.class),
-            eq(java.util.Map.class)))
+            eq(java.util.Map.class),
+            eq("guest@test.com")))
         .thenReturn(ResponseEntity.ok(guestMap));
 
     when(repository.findByUnitId(unitId)).thenReturn(List.of());
@@ -2093,10 +2094,11 @@ class ReservationServiceTest {
         .thenReturn(new UUID[] {unitId});
 
     when(restTemplate.exchange(
-            contains("/internal/by-email/nonexistent@test.com"),
+            anyString(),
             eq(HttpMethod.GET),
             any(HttpEntity.class),
-            eq(java.util.Map.class)))
+            eq(java.util.Map.class),
+            eq("nonexistent@test.com")))
         .thenThrow(
             new org.springframework.web.client.HttpClientErrorException(HttpStatus.NOT_FOUND));
 

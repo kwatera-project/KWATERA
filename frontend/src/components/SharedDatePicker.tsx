@@ -15,7 +15,22 @@ interface SharedDatePickerProps {
     dateFormat?: string;
     datepickerRef?: React.RefObject<DatePicker | null>;
     wrapperClassName?: string;
-    popperPlacement?: string;
+    popperPlacement?:
+        | "top"
+        | "top-start"
+        | "top-end"
+        | "bottom"
+        | "bottom-start"
+        | "bottom-end"
+        | "left"
+        | "left-start"
+        | "left-end"
+        | "right"
+        | "right-start"
+        | "right-end"
+        | "auto"
+        | "auto-left"
+        | "auto-right";
 }
 
 const MONTHS = [
@@ -182,7 +197,7 @@ export default function SharedDatePicker({
             popperClassName="z-[9999]"
             calendarStartDay={1}
             wrapperClassName={wrapperClassName}
-            popperPlacement={popperPlacement as any}
+            popperPlacement={popperPlacement}
             popperProps={{
                 strategy: "fixed"
             }}
