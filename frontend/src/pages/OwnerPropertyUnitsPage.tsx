@@ -31,9 +31,11 @@ export default function OwnerPropertyUnitsPage() {
             setUnits(prev =>
                 prev.filter(p => p.id !== unitId)
             );
-        } catch (error: any) {
+        } catch (error) {
 
-            if (error.status === 409) {
+            const err = error as { status?: number; message?: string };
+
+            if (err.status === 409) {
                 alert("Unit has reservations and cannot be deleted");
                 return;
             }
