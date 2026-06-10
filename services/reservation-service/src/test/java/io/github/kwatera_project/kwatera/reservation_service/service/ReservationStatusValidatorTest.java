@@ -112,4 +112,20 @@ class ReservationStatusValidatorTest {
         IllegalStateException.class,
         () -> validator.validateTransition(ReservationStatus.CANCELLED, target));
   }
+
+  @Test
+  void shouldAllowTransitionFromBlockedToCancelled() {
+    assertDoesNotThrow(
+        () -> validator.validateTransition(ReservationStatus.BLOCKED, ReservationStatus.CANCELLED));
+  }
+
+  @ParameterizedTest
+  @EnumSource(
+      value = ReservationStatus.class,
+      names = {"PENDING", "CONFIRMED", "COMPLETED"})
+  void shouldBlockTransitionsFromBlockedExceptCancelled(ReservationStatus target) {
+    assertThrows(
+        IllegalStateException.class,
+        () -> validator.validateTransition(ReservationStatus.BLOCKED, target));
+  }
 }
