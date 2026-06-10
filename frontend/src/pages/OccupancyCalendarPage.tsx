@@ -99,7 +99,7 @@ export default function OccupancyCalendarPage() {
         const chunkEndStr = format(chunkDates[chunkDates.length - 1], 'yyyy-MM-dd');
 
         const overlapping = occupancies.filter(occ =>
-            occ.startDate <= chunkEndStr && occ.endDate >= chunkStartStr
+            occ.status !== 'CANCELLED' && occ.startDate <= chunkEndStr && occ.endDate >= chunkStartStr
         );
 
         overlapping.sort((a, b) => {
@@ -161,7 +161,7 @@ export default function OccupancyCalendarPage() {
                         key={occ.reservationId || occ.unitId + dateStr}
                         onClick={() => setSelectedOcc(occ)}
                         style={{ gridColumn: `${i + 1} / span ${span}` }}
-                        className={`h-8 ${roundedClass} ${bgColor} ${textColor} text-[10px] sm:text-xs font-bold flex items-center shadow-sm transition-colors truncate cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-primary`}
+                        className={`h-8 ${roundedClass} ${bgColor} ${textColor} text-[10px] sm:text-xs font-bold flex items-center shadow-sm transition-colors truncate cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-primary pointer-events-auto`}
                     >
                         <span className="truncate">{displayText}</span>
                     </button>
@@ -264,11 +264,18 @@ export default function OccupancyCalendarPage() {
                                     const dateStr = format(d, 'yyyy-MM-dd');
                                     const isCurrentMonth = format(d, 'MM') === format(anchorDate, 'MM');
                                     const isToday = dateStr === todayStr;
+                                    const isSelected = selectedQuickActionDate && dateStr === format(selectedQuickActionDate, 'yyyy-MM-dd');
+                                    const isHighlighted = isToday || isSelected;
                                     const isPast = isBefore(d, startOfToday()) && !isToday;
                                     const isWeekend = dayIdx >= 5;
                                     return (
-                                        <div key={d.toISOString()} className={`p-1.5 pr-2.5 text-right font-semibold text-xs border-r border-brand-accent/10 last:border-r-0 ${isWeekend ? 'bg-gray-50/60' : ''} ${isToday ? 'ring-1 ring-inset ring-brand-primary bg-brand-accent/15' : ''}`}>
-                                            <span className={`${isPast ? 'text-gray-300' : isCurrentMonth ? 'text-brand-main' : 'text-gray-300'} ${isToday ? 'font-black text-brand-primary' : ''}`}>
+                                        <div 
+                                            key={d.toISOString()} 
+                                            className={`p-1.5 pr-2.5 text-right font-semibold text-xs border-r border-brand-accent/10 last:border-r-0 ${isWeekend ? 'bg-gray-50/60' : ''} ${
+                                                isHighlighted ? 'bg-brand-accent/20 border-t-4 border-t-brand-primary border-x border-brand-accent/30 shadow-sm' : ''
+                                            }`}
+                                        >
+                                            <span className={`${isPast ? 'text-gray-300' : isCurrentMonth ? 'text-brand-main' : 'text-gray-300'} ${isHighlighted ? 'font-black text-brand-primary' : ''}`}>
                                                 {format(d, 'd')}
                                             </span>
                                         </div>
@@ -279,15 +286,27 @@ export default function OccupancyCalendarPage() {
                                 <div className="absolute inset-0 grid grid-cols-7">
                                     {weekDates.map((d, dayIdx) => {
                                         const dateStr = format(d, 'yyyy-MM-dd');
-                                        const isPast = isBefore(d, startOfToday());
-                                        const hasOcc = occupancies.some(o => o.startDate <= dateStr && o.endDate >= dateStr);
+                                        const isToday = dateStr === todayStr;
+                                        const isSelected = selectedQuickActionDate && dateStr === format(selectedQuickActionDate, 'yyyy-MM-dd');
+                                        const isHighlighted = isToday || isSelected;
                                         const isWeekend = dayIdx >= 5;
                                         return (
-                                            <div key={d.toISOString()} onClick={() => { if (!isPast && !hasOcc) { setQuickAction({ date: d }); setSelectedQuickActionDate(d); } }} className={`h-full border-r border-brand-accent/5 last:border-r-0 ${isWeekend ? 'bg-gray-50/40' : ''} ${!isPast && !hasOcc ? 'cursor-pointer hover:bg-brand-accent/10 transition-colors' : ''}`} />
+                                            <div
+                                                key={d.toISOString()}
+                                                onClick={() => {
+                                                    setQuickAction({ date: d });
+                                                    setSelectedQuickActionDate(d);
+                                                }}
+                                                className={`h-full border-r border-brand-accent/5 last:border-r-0 ${
+                                                    isWeekend ? "bg-gray-50/40" : ""
+                                                } ${
+                                                    isHighlighted ? "bg-brand-accent/10 border-x border-b border-brand-accent/30 shadow-inner" : ""
+                                                } cursor-pointer hover:bg-brand-accent/20 transition-colors`}
+                                            />
                                         );
                                     })}
                                 </div>
-                                <div className="relative z-[1] p-2 space-y-1">
+                                <div className="relative z-[1] p-2 space-y-1 pointer-events-none">
                                     {getLanesForChunk(weekDates).map((lane, laneIdx) => (
                                         <div key={laneIdx} className="grid grid-cols-7 gap-1">
                                             {renderLaneCellsForWeek(lane, weekDates)}

@@ -87,10 +87,7 @@ class ReservationControllerTest {
             + "\"guestEmail\":\"manual.guest@example.com\"}";
 
     when(reservationService.createReservation(
-            eq(userId),
-            eq("manual.guest@example.com"),
-            any(CreateReservationRequest.class),
-            anyString()))
+            eq(userId), eq(false), eq(true), any(CreateReservationRequest.class), anyString()))
         .thenReturn(new Reservation());
 
     mockMvc
@@ -105,7 +102,8 @@ class ReservationControllerTest {
     verify(reservationService)
         .createReservation(
             eq(userId),
-            eq("manual.guest@example.com"),
+            eq(false),
+            eq(true),
             any(CreateReservationRequest.class),
             eq("Bearer mock-token"));
   }
@@ -120,7 +118,7 @@ class ReservationControllerTest {
             + "\"guestEmail\":\"   \"}";
 
     when(reservationService.createReservation(
-            eq(userId), eq("user@test.com"), any(CreateReservationRequest.class), anyString()))
+            eq(userId), eq(false), eq(true), any(CreateReservationRequest.class), anyString()))
         .thenReturn(new Reservation());
 
     mockMvc
@@ -135,7 +133,8 @@ class ReservationControllerTest {
     verify(reservationService)
         .createReservation(
             eq(userId),
-            eq("user@test.com"),
+            eq(false),
+            eq(true),
             any(CreateReservationRequest.class),
             eq("Bearer mock-token"));
   }
@@ -364,5 +363,41 @@ class ReservationControllerTest {
     mockMvc
         .perform(get("/api/v1/reservations/internal/" + reservationId))
         .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void shouldFailCreateReservation_whenGuestAttemptsToSetStatus() throws Exception {
+    UUID userId = UUID.randomUUID();
+    String json =
+        "{\"unitId\":\""
+            + UUID.randomUUID()
+            + "\", \"startDate\":\"2026-10-10\", \"endDate\":\"2026-10-15\", \"status\":\"BLOCKED\"}";
+
+    mockMvc
+        .perform(
+            post("/api/v1/reservations")
+                .header("Authorization", "Bearer mock-token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json)
+                .with(authentication(buildAuth(userId, "ROLE_GUEST"))))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void shouldFailCreateReservation_whenGuestAttemptsToSetDifferentEmail() throws Exception {
+    UUID userId = UUID.randomUUID();
+    String json =
+        "{\"unitId\":\""
+            + UUID.randomUUID()
+            + "\", \"startDate\":\"2026-10-10\", \"endDate\":\"2026-10-15\", \"guestEmail\":\"hacker@test.com\"}";
+
+    mockMvc
+        .perform(
+            post("/api/v1/reservations")
+                .header("Authorization", "Bearer mock-token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json)
+                .with(authentication(buildAuth(userId, "ROLE_GUEST"))))
+        .andExpect(status().isBadRequest());
   }
 }

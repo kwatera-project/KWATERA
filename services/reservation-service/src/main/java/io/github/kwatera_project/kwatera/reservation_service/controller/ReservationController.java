@@ -34,14 +34,35 @@ public class ReservationController {
       Authentication authentication,
       HttpServletRequest httpServletRequest) {
 
-    UUID guestId = validateAndGetUserId(authentication);
-    String guestEmail =
-        (request.getGuestEmail() != null && !request.getGuestEmail().isBlank())
-            ? request.getGuestEmail()
-            : authentication.getName();
+    UUID actorId = validateAndGetUserId(authentication);
     String token = httpServletRequest.getHeader("Authorization");
 
-    return reservationService.createReservation(guestId, guestEmail, request, token);
+    boolean isAdmin =
+        authentication.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    boolean isOwner =
+        authentication.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_OWNER"));
+    boolean isGuest =
+        authentication.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_GUEST"));
+
+    if (isGuest && !isAdmin && !isOwner) {
+      if (request.getStatus() != null) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST, "Guests cannot specify reservation status");
+      }
+      if (request.getGuestEmail() != null
+          && !request.getGuestEmail().isBlank()
+          && !request.getGuestEmail().equals(authentication.getName())) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST, "Guests cannot specify a different guest email");
+      }
+      String guestEmail = authentication.getName();
+      return reservationService.createReservation(actorId, guestEmail, request, token);
+    }
+
+    return reservationService.createReservation(actorId, isAdmin, isOwner, request, token);
   }
 
   @GetMapping("/my")

@@ -57,4 +57,16 @@ public class UserProfileController {
     final var user = userService.getUserById(userId);
     return ResponseEntity.ok(userMapper.toUserProfileDto(user));
   }
+
+  @GetMapping("/internal/by-email/{email}")
+  public ResponseEntity<UserProfileDto> getUserProfileByEmailInternal(
+      @PathVariable("email") String email,
+      @RequestHeader(value = "X-Internal-Token", required = false) String internalToken) {
+    if (internalToken == null || !internalToken.equals(expectedInternalToken)) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Access denied: Invalid internal token");
+    }
+    final var user = userService.getUserByEmail(email);
+    return ResponseEntity.ok(userMapper.toUserProfileDto(user));
+  }
 }

@@ -1,6 +1,17 @@
 import React, { useState } from "react";
 import { createBlock } from "../api/availabilityApi";
 import { format } from "date-fns";
+import SharedDatePicker from "./SharedDatePicker";
+
+const parseDateString = (str: string): Date | null => {
+    if (!str) return null;
+    const parts = str.split("-");
+    if (parts.length !== 3) return null;
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    return new Date(year, month, day);
+};
 
 interface Unit {
     id: string;
@@ -200,30 +211,47 @@ export default function BlockDatesModal({
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
                             <label htmlFor="checkIn" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Start Date</label>
-                            <input
-                                type="date"
-                                id="checkIn"
-                                name="checkIn"
-                                value={form.checkIn}
-                                onChange={handleChange}
-                                className={`w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm font-medium ${
+                            <SharedDatePicker
+                                selected={parseDateString(form.checkIn)}
+                                onChange={(date) => {
+                                    const formatted = date ? format(date, "yyyy-MM-dd") : "";
+                                    setForm(prev => ({ ...prev, checkIn: formatted }));
+                                    if (errors.checkIn) {
+                                        setErrors(prev => ({ ...prev, checkIn: undefined }));
+                                    }
+                                }}
+                                selectsStart
+                                startDate={parseDateString(form.checkIn)}
+                                endDate={parseDateString(form.checkOut)}
+                                placeholderText="Select start date"
+                                className={`w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm font-semibold cursor-pointer text-left ${
                                     errors.checkIn ? "border-red-500" : "border-brand-accent"
                                 }`}
+                                wrapperClassName="w-full"
                             />
                             {errors.checkIn && <p className="text-xs font-semibold text-red-500">{errors.checkIn}</p>}
                         </div>
 
                         <div className="grid grid-cols-1 space-y-1">
                             <label htmlFor="checkOut" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">End Date</label>
-                            <input
-                                type="date"
-                                id="checkOut"
-                                name="checkOut"
-                                value={form.checkOut}
-                                onChange={handleChange}
-                                className={`w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm font-medium ${
+                            <SharedDatePicker
+                                selected={parseDateString(form.checkOut)}
+                                onChange={(date) => {
+                                    const formatted = date ? format(date, "yyyy-MM-dd") : "";
+                                    setForm(prev => ({ ...prev, checkOut: formatted }));
+                                    if (errors.checkOut) {
+                                        setErrors(prev => ({ ...prev, checkOut: undefined }));
+                                    }
+                                }}
+                                selectsEnd
+                                startDate={parseDateString(form.checkIn)}
+                                endDate={parseDateString(form.checkOut)}
+                                minDate={parseDateString(form.checkIn)}
+                                placeholderText="Select end date"
+                                className={`w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm font-semibold cursor-pointer text-left ${
                                     errors.checkOut ? "border-red-500" : "border-brand-accent"
                                 }`}
+                                wrapperClassName="w-full"
                             />
                             {errors.checkOut && <p className="text-xs font-semibold text-red-500">{errors.checkOut}</p>}
                         </div>

@@ -15,6 +15,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,12 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 @RequiredArgsConstructor
 public class ReservationService {
+
+  @Value("${services.auth.url:http://auth-service/api/auth/users}")
+  private String authServiceUrl = "http://auth-service/api/auth/users";
+
+  @Value("${kwatera.security.internal-token:kwatera-internal-secret-token}")
+  private String internalToken = "kwatera-internal-secret-token";
 
   private static final Logger log = LoggerFactory.getLogger(ReservationService.class);
   private static final String RESERVATION_NOT_FOUND = "Reservation not found";
@@ -185,26 +192,104 @@ public class ReservationService {
     }
   }
 
+  private UUID fetchUserIdByEmail(String email) {
+    String url = authServiceUrl + "/internal/by-email/" + email;
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("X-Internal-Token", internalToken);
+    HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+    try {
+      ResponseEntity<java.util.Map> response =
+          restTemplate.exchange(url, HttpMethod.GET, entity, java.util.Map.class);
+      if (response.getBody() == null || response.getBody().get("id") == null) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST, "Guest with the specified email does not exist");
+      }
+      return UUID.fromString(response.getBody().get("id").toString());
+    } catch (HttpClientErrorException e) {
+      if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST, "Guest with the specified email does not exist");
+      }
+      throw new ResponseStatusException(
+          HttpStatus.BAD_GATEWAY, "Cannot fetch guest details: " + e.getMessage());
+    } catch (ResponseStatusException e) {
+      throw e;
+    } catch (Exception e) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_GATEWAY, "Cannot fetch guest details: " + e.getMessage());
+    }
+  }
+
   @Transactional
   public Reservation createReservation(
       UUID userId, CreateReservationRequest request, String token) {
-    return createReservationInternal(userId, null, request, token);
+    return createReservation(userId, false, false, request, token);
   }
 
   @Transactional
   public Reservation createReservation(
       UUID userId, String guestEmail, CreateReservationRequest request, String token) {
-    return createReservationInternal(userId, guestEmail, request, token);
+    if (request != null && (request.getGuestEmail() == null || request.getGuestEmail().isBlank())) {
+      request.setGuestEmail(guestEmail);
+    }
+    return createReservation(userId, false, false, request, token);
   }
 
-  private Reservation createReservationInternal(
-      UUID userId, String guestEmail, CreateReservationRequest request, String token) {
-    if (userId == null) {
+  @Transactional
+  public Reservation createReservation(
+      UUID actorId,
+      boolean isAdmin,
+      boolean isOwner,
+      CreateReservationRequest request,
+      String token) {
+    if (actorId == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User id is required");
     }
     if (request == null) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Reservation request is required");
     }
+
+    if (isOwner && !isAdmin) {
+      if (!ownerHasAccessToUnit(actorId, request.getUnitId())) {
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this unit");
+      }
+    }
+
+    boolean isGuest = !isAdmin && !isOwner;
+
+    ReservationStatus status;
+    UUID finalUserId;
+    String finalGuestEmail;
+
+    if (request.getStatus() != null) {
+      status = request.getStatus();
+    } else {
+      if (isGuest) {
+        status = ReservationStatus.PENDING;
+      } else if (request.getGuestEmail() != null && !request.getGuestEmail().isBlank()) {
+        status = ReservationStatus.CONFIRMED;
+      } else {
+        status = ReservationStatus.BLOCKED;
+      }
+    }
+
+    if (status == ReservationStatus.BLOCKED) {
+      finalUserId = actorId;
+      finalGuestEmail = request.getGuestEmail();
+    } else {
+      if (!isGuest && (request.getGuestEmail() == null || request.getGuestEmail().isBlank())) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Guest email is required");
+      }
+      if (isGuest) {
+        finalUserId = actorId;
+        finalGuestEmail = request.getGuestEmail();
+      } else {
+        finalUserId = fetchUserIdByEmail(request.getGuestEmail());
+        finalGuestEmail = request.getGuestEmail();
+      }
+    }
+
     AvailabilityDto availability =
         checkAvailability(request.getUnitId(), request.getStartDate(), request.getEndDate());
     if (!availability.isAvailable()) {
@@ -213,16 +298,12 @@ public class ReservationService {
     }
 
     Reservation reservation = new Reservation();
-    reservation.setUserId(userId);
-    reservation.setGuestEmail(guestEmail);
+    reservation.setUserId(finalUserId);
+    reservation.setGuestEmail(finalGuestEmail);
     reservation.setUnitId(request.getUnitId());
     reservation.setStartDate(request.getStartDate());
     reservation.setEndDate(request.getEndDate());
-    if (request.getStatus() != null) {
-      reservation.setStatus(request.getStatus());
-    } else {
-      reservation.setStatus(ReservationStatus.PENDING);
-    }
+    reservation.setStatus(status);
 
     BigDecimal pricePerNight = fetchUnitPrice(request.getUnitId(), token);
     long days =
