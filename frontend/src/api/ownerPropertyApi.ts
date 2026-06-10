@@ -85,7 +85,19 @@ export async function deleteProperty(
     );
 
     if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
+        let errorMessage = "Failed to delete property";
+
+        try {
+            const errorData = await res.json();
+            errorMessage = errorData.message || errorMessage;
+        } catch {
+            errorMessage = await res.text() || errorMessage;
+        }
+
+        throw {
+            status: res.status,
+            message: errorMessage
+        };
     }
 }
 

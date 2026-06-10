@@ -94,7 +94,19 @@ export async function deleteUnit(
     );
 
     if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
+        let errorMessage = "Failed to delete unit";
+
+        try {
+            const errorData = await res.json();
+            errorMessage = errorData.message || errorMessage;
+        } catch {
+            errorMessage = await res.text() || errorMessage;
+        }
+
+        throw {
+            status: res.status,
+            message: errorMessage
+        };
     }
 }
 
