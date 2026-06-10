@@ -4,11 +4,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.github.kwatera_project.kwatera.reservation_service.config.SecurityConfig;
 import io.github.kwatera_project.kwatera.reservation_service.filter.JwtAuthFilter;
 import io.github.kwatera_project.kwatera.reservation_service.service.JwtService;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -41,16 +43,49 @@ class SystemEventControllerTest {
 
   @Test
   void shouldAllowAdminToAccessSystemEvents() throws Exception {
-    when(systemEventService.getLatestEvents(null, 100)).thenReturn(List.of());
+    when(systemEventService.getLatestEvents(null, null)).thenReturn(List.of());
+
+    mockMvc
+        .perform(get("/api/v1/admin/system-events").with(authentication(buildAuth("ROLE_ADMIN"))))
+        .andExpect(status().isOk());
+
+    verify(systemEventService).getLatestEvents(null, null);
+  }
+
+  @Test
+  void shouldPassActionTypeAndLimitToServiceAndSerializeResponse() throws Exception {
+    UUID id = UUID.randomUUID();
+    UUID actorUserId = UUID.randomUUID();
+    UUID entityId = UUID.randomUUID();
+    SystemEventResponseDto response =
+        new SystemEventResponseDto(
+            id,
+            Instant.parse("2026-06-10T12:00:00Z"),
+            SystemEventType.UNIT_BLOCKED,
+            actorUserId,
+            "RESERVATION",
+            entityId,
+            "reservationId=" + entityId + ", status=BLOCKED");
+    when(systemEventService.getLatestEvents(SystemEventType.UNIT_BLOCKED, 50))
+        .thenReturn(List.of(response));
 
     mockMvc
         .perform(
             get("/api/v1/admin/system-events")
-                .param("limit", "100")
+                .param("actionType", "UNIT_BLOCKED")
+                .param("limit", "50")
                 .with(authentication(buildAuth("ROLE_ADMIN"))))
-        .andExpect(status().isOk());
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].id").value(id.toString()))
+        .andExpect(jsonPath("$[0].timestamp").value("2026-06-10T12:00:00Z"))
+        .andExpect(jsonPath("$[0].actionType").value("UNIT_BLOCKED"))
+        .andExpect(jsonPath("$[0].actorUserId").value(actorUserId.toString()))
+        .andExpect(jsonPath("$[0].entityType").value("RESERVATION"))
+        .andExpect(jsonPath("$[0].entityId").value(entityId.toString()))
+        .andExpect(
+            jsonPath("$[0].details").value("reservationId=" + entityId + ", status=BLOCKED"));
 
-    verify(systemEventService).getLatestEvents(null, 100);
+    verify(systemEventService).getLatestEvents(SystemEventType.UNIT_BLOCKED, 50);
   }
 
   @Test

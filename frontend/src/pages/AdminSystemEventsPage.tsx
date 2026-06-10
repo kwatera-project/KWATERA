@@ -12,6 +12,12 @@ const ACTION_TYPES: Array<SystemEventType | "ALL"> = [
   "EXPIRED_RESERVATION_CANCELLED"
 ];
 
+type SystemEventsLoadState = {
+  actionType: SystemEventType | "ALL" | null;
+  events: SystemEvent[];
+  error: string | null;
+};
+
 function formatAction(actionType: string) {
   return actionType
     .toLowerCase()
@@ -32,32 +38,40 @@ function compactId(value: string | null) {
 }
 
 export default function AdminSystemEventsPage() {
-  const [events, setEvents] = useState<SystemEvent[]>([]);
+  const [loadState, setLoadState] = useState<SystemEventsLoadState>({
+    actionType: null,
+    events: [],
+    error: null
+  });
   const [search, setSearch] = useState("");
   const [actionType, setActionType] = useState<SystemEventType | "ALL">("ALL");
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const loading = loadState.actionType !== actionType;
+  const events = useMemo(() => (loading ? [] : loadState.events), [loadState.events, loading]);
+  const error = loading ? null : loadState.error;
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
+    const requestedActionType = actionType;
 
-    getSystemEvents(actionType)
+    getSystemEvents(requestedActionType)
       .then((data) => {
         if (!cancelled) {
-          setEvents(data);
+          setLoadState({
+            actionType: requestedActionType,
+            events: data,
+            error: null
+          });
         }
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to fetch system events");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoading(false);
+          setLoadState({
+            actionType: requestedActionType,
+            events: [],
+            error: err instanceof Error ? err.message : "Failed to fetch system events"
+          });
         }
       });
 
