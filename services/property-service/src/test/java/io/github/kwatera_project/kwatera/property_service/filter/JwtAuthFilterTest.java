@@ -74,8 +74,8 @@ class JwtAuthFilterTest {
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
     assertNotNull(auth);
-    assertEquals("john", auth.getPrincipal());
-    assertEquals("123", auth.getDetails());
+    assertEquals("123", auth.getPrincipal());
+    assertEquals("valid.jwt.token", auth.getDetails());
     assertTrue(auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_USER")));
 
     verify(filterChain).doFilter(request, response);

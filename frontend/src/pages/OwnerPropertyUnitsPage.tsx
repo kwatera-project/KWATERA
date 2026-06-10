@@ -2,7 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getProperty } from "../api/propertyApi.ts";
 import type { Property, Unit } from "../types/property";
-import { getPropertyUnits } from "../api/ownerUnitApi.ts";
+import { deleteUnit, getPropertyUnits } from "../api/ownerUnitApi.ts";
 import { getPredictedPrice } from "../api/predictionApi.ts";
 
 export default function OwnerPropertyUnitsPage() {
@@ -18,9 +18,34 @@ export default function OwnerPropertyUnitsPage() {
         getPropertyUnits(propertyId).then(setUnits).catch(console.error);
     }, [propertyId]);
 
+    const handleDelete = async (propetryId: string, unitId: string) => {
+        const confirmed = window.confirm(
+            "Are you sure you want to delete this unit?"
+        );
+
+        if (!confirmed) return;
+
+        try {
+            await deleteUnit(propetryId, unitId);
+
+            setUnits(prev =>
+                prev.filter(p => p.id !== unitId)
+            );
+        } catch (error) {
+
+            const err = error as { status?: number; message?: string };
+
+            if (err.status === 409) {
+                alert("Unit has reservations and cannot be deleted");
+                return;
+            }
+
+            alert("Failed to delete unit");
+        }
+    };
+
     return (
         <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
-            {/* Top Ghost Back Navigation Link */}
             <div>
                 <Link to="/owner/properties" className="inline-flex items-center text-sm font-bold text-[#7A7A7A] hover:text-[#1A1A1A] transition-colors mb-4">
                     ← Back to Properties
@@ -33,9 +58,12 @@ export default function OwnerPropertyUnitsPage() {
                     <p className="text-sm font-semibold text-[#7A7A7A] uppercase tracking-wider mt-1.5">Manage Accommodation Units</p>
                 </div>
 
-                <button className="px-5 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm">
+                <Link
+                    to={`/owner/properties/${propertyId}/units/new`}
+                    className="px-5 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm"
+                >
                     Add Unit
-                </button>
+                </Link>
             </div>
 
             <div className="space-y-6">
@@ -44,6 +72,7 @@ export default function OwnerPropertyUnitsPage() {
                         key={unit.id}
                         unit={unit}
                         propertyId={propertyId!}
+                        onDelete={handleDelete}
                     />
                 ))}
                 {units.length === 0 && (
@@ -56,7 +85,7 @@ export default function OwnerPropertyUnitsPage() {
     );
 }
 
-function UnitCard({ unit, propertyId }: { unit: Unit; propertyId: string }) {
+function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: string, onDelete: (propertyId: string, unitId: string) => void }) {
     const [predictedPrice, setPredictedPrice] = useState<number | null>(null);
     const [loadingPrediction, setLoadingPrediction] = useState(true);
 
@@ -81,7 +110,6 @@ function UnitCard({ unit, propertyId }: { unit: Unit; propertyId: string }) {
                     <p className="text-[#7A7A7A] text-sm font-medium mt-1">{unit.description}</p>
                 </div>
 
-                {/* Details Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2 text-xs font-bold text-gray-500 border-t border-gray-50/50">
                     <div>
                         <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-0.5">Unit Type</span>
@@ -101,7 +129,6 @@ function UnitCard({ unit, propertyId }: { unit: Unit; propertyId: string }) {
                     </div>
                 </div>
 
-                {/* Price Blocks */}
                 <div className="pt-4 flex flex-wrap gap-x-10 gap-y-4 items-center border-t border-gray-100 mt-4">
                     <div>
                         <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-1">Current Price</span>
@@ -126,10 +153,22 @@ function UnitCard({ unit, propertyId }: { unit: Unit; propertyId: string }) {
             </div>
 
             <div className="flex gap-3 w-full lg:w-auto justify-end border-t border-gray-100 lg:border-none pt-4 lg:pt-0 shrink-0">
-                <button className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all">
+                <Link
+                    to={`/owner/properties/${propertyId}/units/${unit.id}/images`}
+                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all inline-flex items-center"
+                >
+                    Manage Images
+                </Link>
+                <Link
+                    to={`/owner/properties/${propertyId}/units/${unit.id}/edit`}
+                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all"
+                >
                     Edit
-                </button>
-                <button className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 text-sm rounded-lg shadow-sm transition-all">
+                </Link>
+                <button
+                    onClick={() => onDelete(propertyId, unit.id)}
+                    className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 text-sm rounded-lg shadow-sm transition-all"
+                >
                     Delete
                 </button>
             </div>

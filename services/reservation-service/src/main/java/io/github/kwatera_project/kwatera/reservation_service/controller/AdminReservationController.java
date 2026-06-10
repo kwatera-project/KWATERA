@@ -9,6 +9,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -78,5 +79,19 @@ public class AdminReservationController {
 
     return adminReservationService.updateReservationStatus(
         reservationId, request.getNewStatus(), userId, isAdmin);
+  }
+
+  @GetMapping("/units/{unitId}/exists")
+  public boolean hasReservationsForUnit(
+      @PathVariable("unitId") UUID unitId, Authentication authentication) {
+
+    boolean isOwner =
+        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_OWNER"));
+
+    if (!isOwner) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+    }
+
+    return adminReservationService.hasReservationsForUnit(unitId);
   }
 }
