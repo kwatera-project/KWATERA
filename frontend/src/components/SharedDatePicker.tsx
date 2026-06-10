@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import type { ComponentProps } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -15,22 +16,7 @@ interface SharedDatePickerProps {
     dateFormat?: string;
     datepickerRef?: React.RefObject<DatePicker | null>;
     wrapperClassName?: string;
-    popperPlacement?:
-        | "top"
-        | "top-start"
-        | "top-end"
-        | "bottom"
-        | "bottom-start"
-        | "bottom-end"
-        | "left"
-        | "left-start"
-        | "left-end"
-        | "right"
-        | "right-start"
-        | "right-end"
-        | "auto"
-        | "auto-left"
-        | "auto-right";
+    popperPlacement?: ComponentProps<typeof DatePicker>["popperPlacement"];
 }
 
 const MONTHS = [
