@@ -1,8 +1,8 @@
 package io.github.kwatera_project.kwatera.reservation_service.controller;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -29,6 +30,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.server.ResponseStatusException;
 
 @WebMvcTest(AdminReservationController.class)
 @Import({SecurityConfig.class, JwtAuthFilter.class})
@@ -159,7 +161,7 @@ class AdminReservationControllerTest {
   @Test
   void shouldThrowUnauthorized_whenAuthenticationIsNullDirectly() {
     org.springframework.web.server.ResponseStatusException ex =
-        org.junit.jupiter.api.Assertions.assertThrows(
+        assertThrows(
             org.springframework.web.server.ResponseStatusException.class,
             () -> adminReservationController.getReservations(null, null));
     org.junit.jupiter.api.Assertions.assertEquals(
@@ -172,7 +174,7 @@ class AdminReservationControllerTest {
         new UsernamePasswordAuthenticationToken(
             "user", "pass", List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
     org.springframework.web.server.ResponseStatusException ex =
-        org.junit.jupiter.api.Assertions.assertThrows(
+        assertThrows(
             org.springframework.web.server.ResponseStatusException.class,
             () -> adminReservationController.getReservations(null, auth));
     org.junit.jupiter.api.Assertions.assertEquals(
@@ -186,7 +188,7 @@ class AdminReservationControllerTest {
             "user", "pass", List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
     ((UsernamePasswordAuthenticationToken) auth).setDetails("   ");
     org.springframework.web.server.ResponseStatusException ex =
-        org.junit.jupiter.api.Assertions.assertThrows(
+        assertThrows(
             org.springframework.web.server.ResponseStatusException.class,
             () -> adminReservationController.getReservations(null, auth));
     org.junit.jupiter.api.Assertions.assertEquals(
@@ -205,5 +207,56 @@ class AdminReservationControllerTest {
             () -> adminReservationController.getReservations(null, auth));
     org.junit.jupiter.api.Assertions.assertEquals(
         org.springframework.http.HttpStatus.UNAUTHORIZED, ex.getStatusCode());
+  }
+
+  @Test
+  void hasReservationsForUnit_whenOwnerAndNoReservations_shouldReturnFalse() {
+    UUID unitId = UUID.randomUUID();
+    Authentication authentication = mock(Authentication.class);
+
+    doReturn(List.of(new SimpleGrantedAuthority("ROLE_OWNER")))
+        .when(authentication)
+        .getAuthorities();
+
+    when(adminReservationService.hasReservationsForUnit(unitId)).thenReturn(false);
+
+    boolean result = adminReservationController.hasReservationsForUnit(unitId, authentication);
+
+    assertFalse(result);
+    verify(adminReservationService, times(1)).hasReservationsForUnit(unitId);
+  }
+
+  @Test
+  void hasReservationsForUnit_whenOwnerAndHasReservations_shouldReturnTrue() {
+    UUID unitId = UUID.randomUUID();
+    Authentication authentication = mock(Authentication.class);
+
+    doReturn(List.of(new SimpleGrantedAuthority("ROLE_OWNER")))
+        .when(authentication)
+        .getAuthorities();
+    when(adminReservationService.hasReservationsForUnit(unitId)).thenReturn(true);
+
+    boolean result = adminReservationController.hasReservationsForUnit(unitId, authentication);
+
+    assertTrue(result);
+    verify(adminReservationService, times(1)).hasReservationsForUnit(unitId);
+  }
+
+  @Test
+  void hasReservationsForUnit_whenNotOwner_shouldThrowForbiddenException() {
+    UUID unitId = UUID.randomUUID();
+    Authentication authentication = mock(Authentication.class);
+
+    doReturn(Collections.emptyList()).when(authentication).getAuthorities();
+
+    ResponseStatusException exception =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> adminReservationController.hasReservationsForUnit(unitId, authentication));
+
+    assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
+    assertEquals("Access denied", exception.getReason());
+
+    verify(adminReservationService, never()).hasReservationsForUnit(any());
   }
 }

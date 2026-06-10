@@ -1,5 +1,7 @@
 package io.github.kwatera_project.kwatera.ai_pricing_service.model;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public enum UnitType {
   ENTIRE_RENTAL_UNIT("Entire rental unit"),
 
@@ -75,6 +77,7 @@ public enum UnitType {
     this.value = value;
   }
 
+  @JsonValue
   public String getValue() {
     return value;
   }

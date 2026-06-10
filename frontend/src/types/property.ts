@@ -10,6 +10,26 @@ export interface Property {
     imageUrl: string;
 }
 
+export interface PropertyCreateRequest {
+    title: string;
+    description: string;
+    city: string;
+    country: string;
+    postalCode: string;
+    street: string;
+    streetNumber: string;
+}
+
+export interface PropertyUpdateRequest {
+    title?: string;
+    description?: string;
+    city?: string;
+    country?: string;
+    postalCode?: string;
+    street?: string;
+    streetNumber?: string;
+}
+
 export interface Unit {
     id: string;
     propertyId: string;
@@ -28,4 +48,24 @@ export interface Unit {
     unitType: string;
     unitNumber: string;
     floor: number;
+}
+
+export interface UnitCreateRequest {
+    name: string;
+    description: string;
+    pricePerNight: number;
+    capacity: number;
+    unitType: string;
+    unitNumber: string;
+    floor: number;
+}
+
+export interface UnitUpdateRequest {
+    name?: string;
+    description?: string;
+    pricePerNight?: number;
+    capacity?: number;
+    unitType?: string;
+    unitNumber?: string;
+    floor?: number;
 }
