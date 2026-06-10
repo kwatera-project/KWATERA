@@ -18,6 +18,7 @@ public class ReservationStatusValidator {
           case CONFIRMED ->
               newStatus == ReservationStatus.COMPLETED || newStatus == ReservationStatus.CANCELLED;
           case COMPLETED, CANCELLED -> false;
+          case BLOCKED -> newStatus == ReservationStatus.CANCELLED;
         };
 
     if (!isValid)

@@ -250,6 +250,7 @@ public class EmailNotificationService {
       case CONFIRMED -> "background-color: #D1FAE5; color: #065F46;";
       case CANCELLED -> "background-color: #FEE2E2; color: #991B1B;";
       case COMPLETED -> "background-color: #F9F5F5; color: #42211D; border: 1px solid #DACDCA;";
+      case BLOCKED -> "background-color: #F3F4F6; color: #374151;";
     };
   }
 

@@ -21,4 +21,8 @@ public class CreateReservationRequest {
       regexp = "^(?i)(PLN|EUR|USD)$",
       message = "Unsupported currency")
   private String currency;
+
+  private String guestEmail;
+
+  private io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus status;
 }

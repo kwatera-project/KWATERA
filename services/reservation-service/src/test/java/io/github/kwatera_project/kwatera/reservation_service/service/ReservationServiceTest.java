@@ -135,7 +135,7 @@ class ReservationServiceTest {
 
     UUID id = UUID.randomUUID();
     LocalDate from = LocalDate.now().plusDays(5);
-    LocalDate to = from;
+    LocalDate to = from.minusDays(1);
 
     assertThrows(ResponseStatusException.class, () -> service.checkAvailability(id, from, to));
   }
@@ -186,6 +186,29 @@ class ReservationServiceTest {
     AvailabilityDto result = service.checkAvailability(unitId, end, end.plusDays(3));
 
     assertTrue(result.isAvailable());
+  }
+
+  @Test
+  void shouldReturnUnavailableWhenSingleDayBlockOverlapsRequestedSingleDay() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    ReservationService service =
+        reservationService(repository, mock(RestTemplate.class), mock(NbpExchangeRateClient.class));
+
+    UUID unitId = UUID.randomUUID();
+    LocalDate blockedDay = LocalDate.now().plusDays(10);
+
+    Reservation block = new Reservation();
+    block.setUnitId(unitId);
+    block.setStartDate(blockedDay);
+    block.setEndDate(blockedDay);
+    block.setStatus(ReservationStatus.BLOCKED);
+
+    when(repository.findByUnitId(unitId)).thenReturn(List.of(block));
+
+    AvailabilityDto result = service.checkAvailability(unitId, blockedDay, blockedDay);
+
+    assertFalse(result.isAvailable());
+    assertEquals("Unit is not available in selected dates", result.getMessage());
   }
 
   @Test
@@ -1257,6 +1280,56 @@ class ReservationServiceTest {
   }
 
   @Test
+  void shouldCreateBlockedReservationWithoutSendingNotifications() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    EmailNotificationService emailService = mock(EmailNotificationService.class);
+
+    ReservationService service =
+        new ReservationService(
+            repository,
+            restTemplate,
+            mock(NbpExchangeRateClient.class),
+            emailService,
+            new BusinessDateProvider("Europe/Warsaw"));
+
+    UUID userId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    LocalDate blockedDay = LocalDate.now().plusDays(10);
+
+    CreateReservationRequest request = new CreateReservationRequest();
+    request.setUnitId(unitId);
+    request.setStartDate(blockedDay);
+    request.setEndDate(blockedDay);
+    request.setCurrency("PLN");
+    request.setStatus(ReservationStatus.BLOCKED);
+
+    UnitDto mockUnit = new UnitDto();
+    mockUnit.setPricePerNight(new BigDecimal("200.00"));
+
+    when(repository.findByUnitId(unitId)).thenReturn(List.of());
+    when(restTemplate.exchange(
+            anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(UnitDto.class), eq(unitId)))
+        .thenReturn(ResponseEntity.ok(mockUnit));
+    when(repository.save(any(Reservation.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    Reservation created =
+        service.createReservation(userId, "manual.guest@example.com", request, "Bearer mock-token");
+
+    assertEquals(userId, created.getUserId());
+    assertEquals("manual.guest@example.com", created.getGuestEmail());
+    assertEquals(unitId, created.getUnitId());
+    assertEquals(blockedDay, created.getStartDate());
+    assertEquals(blockedDay, created.getEndDate());
+    assertEquals(ReservationStatus.BLOCKED, created.getStatus());
+    assertEquals(0, BigDecimal.ZERO.compareTo(created.getTotalPrice()));
+
+    verify(repository).save(any(Reservation.class));
+    verifyNoInteractions(emailService);
+  }
+
+  @Test
   void getDashboardReservationMetrics_shouldThrowIfStartAfterEnd() {
     ReservationService service = reservationService(null, null, null);
     ResponseStatusException ex =
@@ -1865,5 +1938,309 @@ class ReservationServiceTest {
         .sendOwnerReservationUpcoming(any());
 
     assertDoesNotThrow(service::notifyUpcomingReservations);
+  }
+
+  @Test
+  void shouldCreateBlockedReservation_whenOwnerOrAdminBlocksDates() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    EmailNotificationService emailService = mock(EmailNotificationService.class);
+    ReservationService service =
+        new ReservationService(
+            repository,
+            restTemplate,
+            mock(NbpExchangeRateClient.class),
+            emailService,
+            new BusinessDateProvider("Europe/Warsaw"));
+
+    UUID actorId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    String mockToken = "some-jwt-token";
+    LocalDate start = LocalDate.now().plusDays(10);
+    LocalDate end = LocalDate.now().plusDays(15);
+
+    CreateReservationRequest request = new CreateReservationRequest();
+    request.setUnitId(unitId);
+    request.setStartDate(start);
+    request.setEndDate(end);
+
+    UnitDto mockUnit = new UnitDto();
+    mockUnit.setPricePerNight(new BigDecimal("200.00"));
+
+    // Mock unit ownership check
+    when(restTemplate.getForObject(
+            eq("http://property-service/api/properties/units/ids/{ownerId}"),
+            eq(UUID[].class),
+            eq(actorId)))
+        .thenReturn(new UUID[] {unitId});
+
+    when(restTemplate.exchange(
+            anyString(),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(UnitDto.class),
+            any(UUID.class)))
+        .thenReturn(ResponseEntity.ok(mockUnit));
+
+    when(repository.findByUnitId(unitId)).thenReturn(List.of());
+    when(repository.save(any(Reservation.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    Reservation created = service.createReservation(actorId, false, true, request, mockToken);
+
+    assertNotNull(created);
+    assertEquals(actorId, created.getUserId());
+    assertNull(created.getGuestEmail());
+    assertEquals(ReservationStatus.BLOCKED, created.getStatus());
+    verify(emailService, never()).sendReservationCreated(any(), any());
+  }
+
+  @Test
+  void shouldCreateReservation_whenOwnerCreatesManualReservationForGuest() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    EmailNotificationService emailService = mock(EmailNotificationService.class);
+    ReservationService service =
+        new ReservationService(
+            repository,
+            restTemplate,
+            mock(NbpExchangeRateClient.class),
+            emailService,
+            new BusinessDateProvider("Europe/Warsaw"));
+
+    UUID ownerId = UUID.randomUUID();
+    UUID guestId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    String mockToken = "some-jwt-token";
+    LocalDate start = LocalDate.now().plusDays(10);
+    LocalDate end = LocalDate.now().plusDays(15);
+
+    CreateReservationRequest request = new CreateReservationRequest();
+    request.setUnitId(unitId);
+    request.setStartDate(start);
+    request.setEndDate(end);
+    request.setGuestEmail("guest@test.com");
+
+    UnitDto mockUnit = new UnitDto();
+    mockUnit.setPricePerNight(new BigDecimal("200.00"));
+
+    // Mock unit ownership check
+    when(restTemplate.getForObject(
+            eq("http://property-service/api/properties/units/ids/{ownerId}"),
+            eq(UUID[].class),
+            eq(ownerId)))
+        .thenReturn(new UUID[] {unitId});
+
+    // Mock unit price check
+    when(restTemplate.exchange(
+            contains("/units/"),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(UnitDto.class),
+            eq(unitId)))
+        .thenReturn(ResponseEntity.ok(mockUnit));
+
+    // Mock guest ID lookup
+    java.util.Map<String, Object> guestMap = new java.util.HashMap<>();
+    guestMap.put("id", guestId.toString());
+    when(restTemplate.exchange(
+            anyString(),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(java.util.Map.class),
+            eq("guest@test.com")))
+        .thenReturn(ResponseEntity.ok(guestMap));
+
+    when(repository.findByUnitId(unitId)).thenReturn(List.of());
+    when(repository.save(any(Reservation.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    Reservation created = service.createReservation(ownerId, false, true, request, mockToken);
+
+    assertNotNull(created);
+    assertEquals(guestId, created.getUserId());
+    assertEquals("guest@test.com", created.getGuestEmail());
+    assertEquals(ReservationStatus.CONFIRMED, created.getStatus());
+    verify(emailService).sendReservationCreated(created, "guest@test.com");
+  }
+
+  @Test
+  void shouldFailCreateReservation_whenOwnerCreatesManualReservationAndGuestNotFound() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service =
+        new ReservationService(
+            repository,
+            restTemplate,
+            mock(NbpExchangeRateClient.class),
+            mock(EmailNotificationService.class),
+            new BusinessDateProvider("Europe/Warsaw"));
+
+    UUID ownerId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    String mockToken = "some-jwt-token";
+
+    CreateReservationRequest request = new CreateReservationRequest();
+    request.setUnitId(unitId);
+    request.setStartDate(LocalDate.now().plusDays(10));
+    request.setEndDate(LocalDate.now().plusDays(15));
+    request.setGuestEmail("nonexistent@test.com");
+
+    // Mock unit ownership check
+    when(restTemplate.getForObject(
+            eq("http://property-service/api/properties/units/ids/{ownerId}"),
+            eq(UUID[].class),
+            eq(ownerId)))
+        .thenReturn(new UUID[] {unitId});
+
+    when(restTemplate.exchange(
+            anyString(),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(java.util.Map.class),
+            eq("nonexistent@test.com")))
+        .thenThrow(
+            new org.springframework.web.client.HttpClientErrorException(HttpStatus.NOT_FOUND));
+
+    ResponseStatusException exception =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> {
+              service.createReservation(ownerId, false, true, request, mockToken);
+            });
+
+    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+    assertTrue(exception.getReason().contains("Guest with the specified email does not exist"));
+  }
+
+  @Test
+  void shouldFailCreateReservation_whenOwnerReservesUnitTheyDoNotOwn() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service =
+        new ReservationService(
+            repository,
+            restTemplate,
+            mock(NbpExchangeRateClient.class),
+            mock(EmailNotificationService.class),
+            new BusinessDateProvider("Europe/Warsaw"));
+
+    UUID ownerId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    String mockToken = "some-jwt-token";
+
+    CreateReservationRequest request = new CreateReservationRequest();
+    request.setUnitId(unitId);
+    request.setStartDate(LocalDate.now().plusDays(10));
+    request.setEndDate(LocalDate.now().plusDays(15));
+
+    // Mock unit ownership check
+    when(restTemplate.getForObject(
+            eq("http://property-service/api/properties/units/ids/{ownerId}"),
+            eq(UUID[].class),
+            eq(ownerId)))
+        .thenReturn(new UUID[] {UUID.randomUUID()}); // return different unit ID
+
+    ResponseStatusException exception =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> {
+              service.createReservation(ownerId, false, true, request, mockToken);
+            });
+
+    assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
+    assertTrue(exception.getReason().contains("You do not own this unit"));
+  }
+
+  @Test
+  void shouldCreateSingleDayBlockedReservation_whenOwnerBlocksDates() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    EmailNotificationService emailService = mock(EmailNotificationService.class);
+    ReservationService service =
+        new ReservationService(
+            repository,
+            restTemplate,
+            mock(NbpExchangeRateClient.class),
+            emailService,
+            new BusinessDateProvider("Europe/Warsaw"));
+
+    UUID actorId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    String mockToken = "some-jwt-token";
+    LocalDate blockDay = LocalDate.now().plusDays(10);
+
+    CreateReservationRequest request = new CreateReservationRequest();
+    request.setUnitId(unitId);
+    request.setStartDate(blockDay);
+    request.setEndDate(blockDay);
+
+    UnitDto mockUnit = new UnitDto();
+    mockUnit.setPricePerNight(new BigDecimal("200.00"));
+
+    // Mock unit ownership check
+    when(restTemplate.getForObject(
+            eq("http://property-service/api/properties/units/ids/{ownerId}"),
+            eq(UUID[].class),
+            eq(actorId)))
+        .thenReturn(new UUID[] {unitId});
+
+    when(restTemplate.exchange(
+            anyString(),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(UnitDto.class),
+            any(UUID.class)))
+        .thenReturn(ResponseEntity.ok(mockUnit));
+
+    when(repository.findByUnitId(unitId)).thenReturn(List.of());
+    when(repository.save(any(Reservation.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    Reservation created = service.createReservation(actorId, false, true, request, mockToken);
+
+    assertNotNull(created);
+    assertEquals(actorId, created.getUserId());
+    assertNull(created.getGuestEmail());
+    assertEquals(ReservationStatus.BLOCKED, created.getStatus());
+    assertEquals(blockDay, created.getStartDate());
+    assertEquals(blockDay, created.getEndDate());
+    assertEquals(0, BigDecimal.ZERO.compareTo(created.getTotalPrice()));
+    verify(emailService, never()).sendReservationCreated(any(), any());
+  }
+
+  @Test
+  void shouldFailCreateReservation_whenNormalReservationHasZeroBillableNights() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service =
+        new ReservationService(
+            repository,
+            restTemplate,
+            mock(NbpExchangeRateClient.class),
+            mock(EmailNotificationService.class),
+            new BusinessDateProvider("Europe/Warsaw"));
+
+    UUID userId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    String mockToken = "some-jwt-token";
+    LocalDate sameDay = LocalDate.now().plusDays(10);
+
+    CreateReservationRequest request = new CreateReservationRequest();
+    request.setUnitId(unitId);
+    request.setStartDate(sameDay);
+    request.setEndDate(sameDay);
+    request.setStatus(ReservationStatus.PENDING);
+
+    when(repository.findByUnitId(unitId)).thenReturn(List.of());
+
+    ResponseStatusException exception =
+        assertThrows(
+            ResponseStatusException.class,
+            () -> service.createReservation(userId, request, mockToken));
+
+    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+    assertTrue(
+        exception.getReason().contains("Reservation must include at least one billable night"));
   }
 }

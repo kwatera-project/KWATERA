@@ -9,9 +9,11 @@ class DtoTest {
 
   @Test
   void testUserProfileDto() {
+    java.util.UUID id = java.util.UUID.randomUUID();
     UserProfileDto dto =
-        new UserProfileDto("username", "John", "Doe", "john@example.com", Role.GUEST);
+        new UserProfileDto(id, "username", "John", "Doe", "john@example.com", Role.GUEST);
 
+    assertThat(dto.id()).isEqualTo(id);
     assertThat(dto.username()).isEqualTo("username");
     assertThat(dto.firstName()).isEqualTo("John");
     assertThat(dto.lastName()).isEqualTo("Doe");
