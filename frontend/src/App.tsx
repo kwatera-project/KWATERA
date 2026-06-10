@@ -21,6 +21,12 @@ import MeterReadingsPage from "./pages/MeterReadingsPage";
 import AdminMeterReadingsPage from "./pages/AdminMeterReadingsPage";
 import OwnerPropertiesPage from "./pages/OwnerPropertiesPage.tsx";
 import OwnerPropertyUnitsPage from "./pages/OwnerPropertyUnitsPage.tsx";
+import EditPropertyPage from "./pages/EditPropertyPage.tsx";
+import CreatePropertyPage from "./pages/CreatePropertyPage.tsx";
+import CreateUnitPage from "./pages/CreateUnitPage.tsx";
+import EditUnitPage from "./pages/EditUnitPage.tsx";
+import EditPropertyImages from "./pages/EditPropertyImages.tsx";
+import EditUnitImages from "./pages/EditUnitImages.tsx";
 import AboutPage from "./pages/AboutPage";
 import DemoModeBanner from "./components/DemoModeBanner";
 
@@ -131,6 +137,54 @@ function App() {
                     element={
                         <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
                             <OwnerPropertyUnitsPage/>
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/owner/properties/new"
+                    element={
+                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                            <CreatePropertyPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/owner/properties/:propertyId/edit"
+                    element={
+                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                            <EditPropertyPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/owner/properties/:propertyId/units/new"
+                    element={
+                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                            <CreateUnitPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/owner/properties/:propertyId/units/:unitId/edit"
+                    element={
+                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                            <EditUnitPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/owner/properties/:propertyId/images"
+                    element={
+                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                            <EditPropertyImages />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/owner/properties/:propertyId/units/:unitId/images"
+                    element={
+                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                            <EditUnitImages />
                         </ProtectedRoute>
                     }
                 />

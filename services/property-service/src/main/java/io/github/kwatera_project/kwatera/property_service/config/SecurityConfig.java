@@ -38,6 +38,8 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll()
+                    .requestMatchers("/properties/**")
+                    .permitAll()
                     .requestMatchers("/api/owner/**")
                     .hasAuthority("ROLE_OWNER")
                     .anyRequest()

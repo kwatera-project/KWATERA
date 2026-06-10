@@ -14,8 +14,15 @@ spring:
     hibernate:
       ddl-auto: none
 
+app:
+  file-server-url: http://localhost:8083
+
 jwt:
   secret: ${JWT_SECRET}
+
+services:
+  reservation:
+    url: http://reservation-service
 
 eureka:
   client:

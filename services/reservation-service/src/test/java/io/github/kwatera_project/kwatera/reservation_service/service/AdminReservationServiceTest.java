@@ -1,8 +1,6 @@
 package io.github.kwatera_project.kwatera.reservation_service.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -282,6 +280,40 @@ class AdminReservationServiceTest {
         adminReservationService.getReservationsOverview(ownerId, null, false);
 
     assertTrue(result.isEmpty());
+  }
+
+  @Test
+  void shouldReturnTrue_whenUnitHasPendingOrConfirmedReservations() {
+    UUID unitId = UUID.randomUUID();
+
+    when(reservationRepository.existsByUnitIdAndStatusIn(
+            eq(unitId), eq(List.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED))))
+        .thenReturn(true);
+
+    boolean result = adminReservationService.hasReservationsForUnit(unitId);
+
+    assertTrue(result);
+
+    verify(reservationRepository)
+        .existsByUnitIdAndStatusIn(
+            unitId, List.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED));
+  }
+
+  @Test
+  void shouldReturnFalse_whenUnitHasNoPendingOrConfirmedReservations() {
+    UUID unitId = UUID.randomUUID();
+
+    when(reservationRepository.existsByUnitIdAndStatusIn(
+            eq(unitId), eq(List.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED))))
+        .thenReturn(false);
+
+    boolean result = adminReservationService.hasReservationsForUnit(unitId);
+
+    assertFalse(result);
+
+    verify(reservationRepository)
+        .existsByUnitIdAndStatusIn(
+            unitId, List.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED));
   }
 
   private Reservation createReservation() {
