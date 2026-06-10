@@ -14,4 +14,9 @@ public record UnitCreateRequest(
     Integer floor,
     List<String> amenities,
     Integer bedrooms,
-    Integer beds) {}
+    Integer beds) {
+
+  public UnitCreateRequest {
+    amenities = amenities != null ? List.copyOf(amenities) : null;
+  }
+}

@@ -12,4 +12,9 @@ public record PropertyCreateRequest(
     String street,
     String streetNumber,
     List<String> amenities,
-    PropertyType propertyType) {}
+    PropertyType propertyType) {
+
+  public PropertyCreateRequest {
+    amenities = amenities != null ? List.copyOf(amenities) : null;
+  }
+}
