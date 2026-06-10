@@ -24,7 +24,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -41,11 +40,13 @@ class AdminReservationServiceTest {
 
   @Mock private EmailNotificationService emailNotificationService;
 
+  @Mock private SystemEventService systemEventService;
+
   @InjectMocks private AdminReservationService adminReservationService;
 
   @BeforeEach
   void setUp() {
-    // restTemplate is injected via @InjectMocks (Lombok @RequiredArgsConstructor)
+    // Dependencies are injected via @InjectMocks.
   }
 
   @Test
@@ -97,9 +98,6 @@ class AdminReservationServiceTest {
 
   @Test
   void shouldLogReservationStatusChangedEvent_whenAdminChangesReservationStatus() {
-    SystemEventService systemEventService = mock(SystemEventService.class);
-    ReflectionTestUtils.setField(adminReservationService, "systemEventService", systemEventService);
-
     UUID resId = UUID.randomUUID();
     UUID adminId = UUID.randomUUID();
     Reservation reservation = createReservation();
@@ -115,7 +113,7 @@ class AdminReservationServiceTest {
         .logSafely(
             eq(SystemEventType.RESERVATION_STATUS_CHANGED),
             eq(adminId),
-            eq("RESERVATION"),
+            eq(SystemEventService.ENTITY_TYPE_RESERVATION),
             eq(resId),
             argThat(
                 details ->

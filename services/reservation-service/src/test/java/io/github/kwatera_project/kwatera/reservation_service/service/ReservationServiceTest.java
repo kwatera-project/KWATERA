@@ -33,7 +33,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -2258,8 +2257,8 @@ class ReservationServiceTest {
             restTemplate,
             mock(NbpExchangeRateClient.class),
             mock(EmailNotificationService.class),
-            new BusinessDateProvider("Europe/Warsaw"));
-    ReflectionTestUtils.setField(service, "systemEventService", systemEventService);
+            new BusinessDateProvider("Europe/Warsaw"),
+            systemEventService);
 
     UUID userId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
@@ -2288,7 +2287,7 @@ class ReservationServiceTest {
         .logSafely(
             eq(SystemEventType.RESERVATION_CREATED),
             eq(userId),
-            eq("RESERVATION"),
+            eq(SystemEventService.ENTITY_TYPE_RESERVATION),
             eq(created.getId()),
             contains("unitId=" + unitId));
   }
@@ -2304,8 +2303,8 @@ class ReservationServiceTest {
             restTemplate,
             mock(NbpExchangeRateClient.class),
             mock(EmailNotificationService.class),
-            new BusinessDateProvider("Europe/Warsaw"));
-    ReflectionTestUtils.setField(service, "systemEventService", systemEventService);
+            new BusinessDateProvider("Europe/Warsaw"),
+            systemEventService);
 
     UUID ownerId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
@@ -2339,7 +2338,7 @@ class ReservationServiceTest {
         .logSafely(
             eq(SystemEventType.UNIT_BLOCKED),
             eq(ownerId),
-            eq("RESERVATION"),
+            eq(SystemEventService.ENTITY_TYPE_RESERVATION),
             eq(created.getId()),
             contains("status=BLOCKED"));
   }
@@ -2354,8 +2353,8 @@ class ReservationServiceTest {
             mock(RestTemplate.class),
             mock(NbpExchangeRateClient.class),
             mock(EmailNotificationService.class),
-            new BusinessDateProvider("Europe/Warsaw"));
-    ReflectionTestUtils.setField(service, "systemEventService", systemEventService);
+            new BusinessDateProvider("Europe/Warsaw"),
+            systemEventService);
 
     UUID reservationId = UUID.randomUUID();
     Reservation reservation = new Reservation();
@@ -2376,7 +2375,7 @@ class ReservationServiceTest {
         .logSafely(
             eq(SystemEventType.EXPIRED_RESERVATION_CANCELLED),
             isNull(),
-            eq("RESERVATION"),
+            eq(SystemEventService.ENTITY_TYPE_RESERVATION),
             eq(reservationId),
             contains("newStatus=CANCELLED"));
   }

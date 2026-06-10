@@ -13,7 +13,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,6 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
-@RequiredArgsConstructor
 public class AdminReservationService {
 
   private static final org.slf4j.Logger log =
@@ -37,8 +35,38 @@ public class AdminReservationService {
 
   private final EmailNotificationService emailNotificationService;
 
-  @Autowired(required = false)
-  private SystemEventService systemEventService;
+  private final SystemEventService systemEventService;
+
+  @Autowired
+  public AdminReservationService(
+      ReservationRepository reservationRepository,
+      ReservationStatusHistoryRepository statusHistoryRepository,
+      ReservationStatusValidator statusValidator,
+      RestTemplate restTemplate,
+      EmailNotificationService emailNotificationService,
+      SystemEventService systemEventService) {
+    this.reservationRepository = reservationRepository;
+    this.statusHistoryRepository = statusHistoryRepository;
+    this.statusValidator = statusValidator;
+    this.restTemplate = restTemplate;
+    this.emailNotificationService = emailNotificationService;
+    this.systemEventService = systemEventService;
+  }
+
+  public AdminReservationService(
+      ReservationRepository reservationRepository,
+      ReservationStatusHistoryRepository statusHistoryRepository,
+      ReservationStatusValidator statusValidator,
+      RestTemplate restTemplate,
+      EmailNotificationService emailNotificationService) {
+    this(
+        reservationRepository,
+        statusHistoryRepository,
+        statusValidator,
+        restTemplate,
+        emailNotificationService,
+        null);
+  }
 
   public List<ReservationOverviewDto> getReservationsOverview(
       UUID ownerId, ReservationStatus status, boolean isAdmin) {
@@ -199,7 +227,7 @@ public class AdminReservationService {
     systemEventService.logSafely(
         SystemEventType.RESERVATION_STATUS_CHANGED,
         actorId,
-        "RESERVATION",
+        SystemEventService.ENTITY_TYPE_RESERVATION,
         reservation.getId(),
         "reservationId="
             + reservation.getId()

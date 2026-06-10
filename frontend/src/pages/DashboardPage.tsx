@@ -31,7 +31,7 @@ import { useDashboardData } from "../hooks/useDashboardData";
 import AdminSystemEventsPage from "./AdminSystemEventsPage";
 
 export default function DashboardPage() {
-  const [activeAdminTab, setActiveAdminTab] = useState<"logs" | "overview">("logs");
+  const [activeAdminTab, setActiveAdminTab] = useState<"logs" | "overview">("overview");
   const {
     startDate,
     setStartDate,

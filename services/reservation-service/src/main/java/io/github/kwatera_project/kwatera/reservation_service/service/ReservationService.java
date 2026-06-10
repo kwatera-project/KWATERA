@@ -14,7 +14,6 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +26,6 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
-@RequiredArgsConstructor
 public class ReservationService {
 
   @Value("${services.auth.url:http://auth-service/api/auth/users}")
@@ -44,9 +42,38 @@ public class ReservationService {
   private final NbpExchangeRateClient nbpExchangeRateClient;
   private final EmailNotificationService emailNotificationService;
   private final BusinessDateProvider businessDateProvider;
+  private final SystemEventService systemEventService;
 
-  @Autowired(required = false)
-  private SystemEventService systemEventService;
+  @Autowired
+  public ReservationService(
+      ReservationRepository reservationRepository,
+      RestTemplate restTemplate,
+      NbpExchangeRateClient nbpExchangeRateClient,
+      EmailNotificationService emailNotificationService,
+      BusinessDateProvider businessDateProvider,
+      SystemEventService systemEventService) {
+    this.reservationRepository = reservationRepository;
+    this.restTemplate = restTemplate;
+    this.nbpExchangeRateClient = nbpExchangeRateClient;
+    this.emailNotificationService = emailNotificationService;
+    this.businessDateProvider = businessDateProvider;
+    this.systemEventService = systemEventService;
+  }
+
+  public ReservationService(
+      ReservationRepository reservationRepository,
+      RestTemplate restTemplate,
+      NbpExchangeRateClient nbpExchangeRateClient,
+      EmailNotificationService emailNotificationService,
+      BusinessDateProvider businessDateProvider) {
+    this(
+        reservationRepository,
+        restTemplate,
+        nbpExchangeRateClient,
+        emailNotificationService,
+        businessDateProvider,
+        null);
+  }
 
   public AvailabilityDto checkAvailability(UUID unitId, LocalDate from, LocalDate to) {
     if (from == null || to == null) {
@@ -543,7 +570,7 @@ public class ReservationService {
     logSystemEvent(
         SystemEventType.RESERVATION_STATUS_CHANGED,
         null,
-        "RESERVATION",
+        SystemEventService.ENTITY_TYPE_RESERVATION,
         reservation.getId(),
         statusChangeDetails(reservation, oldStatus, reservation.getStatus()));
     emailNotificationService.sendReservationStatusChanged(
@@ -635,7 +662,7 @@ public class ReservationService {
       logSystemEvent(
           SystemEventType.EXPIRED_RESERVATION_CANCELLED,
           null,
-          "RESERVATION",
+          SystemEventService.ENTITY_TYPE_RESERVATION,
           reservation.getId(),
           statusChangeDetails(reservation, oldStatus, ReservationStatus.CANCELLED));
       log.info("Cancelled expired pending reservation with ID: {}", reservation.getId());
@@ -702,7 +729,11 @@ public class ReservationService {
     }
 
     logSystemEvent(
-        eventType, actorId, "RESERVATION", reservation.getId(), reservationDetails(reservation));
+        eventType,
+        actorId,
+        SystemEventService.ENTITY_TYPE_RESERVATION,
+        reservation.getId(),
+        reservationDetails(reservation));
   }
 
   private void logSystemEvent(

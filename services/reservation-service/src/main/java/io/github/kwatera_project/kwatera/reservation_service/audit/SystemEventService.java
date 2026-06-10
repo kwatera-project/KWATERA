@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class SystemEventService {
 
   private static final Logger log = LoggerFactory.getLogger(SystemEventService.class);
+  public static final String ENTITY_TYPE_RESERVATION = "RESERVATION";
   private static final int DEFAULT_LIMIT = 100;
   private static final int MAX_LIMIT = 500;
 
