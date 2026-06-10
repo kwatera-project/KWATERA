@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, FileClock, Loader2, Search, X } from "lucide-react";
 import { getSystemEvents } from "../api/adminApi";
 import type { SystemEvent, SystemEventType } from "../api/adminApi";
+import SharedDatePicker from "../components/SharedDatePicker";
 
 const ACTION_TYPES: Array<SystemEventType | "ALL"> = [
   "ALL",
@@ -37,17 +38,21 @@ function compactId(value: string | null) {
   return value ? value.slice(0, 8) : "-";
 }
 
-function buildLocalIso(date: string, time: string, fallbackTime: string, endOfMinute = false) {
+function buildLocalIso(
+  date: Date | null,
+  time: string,
+  fallbackTime: string,
+  endOfMinute = false
+) {
   if (!date) {
     return null;
   }
 
-  const [year, month, day] = date.split("-").map(Number);
   const [hour, minute] = (time || fallbackTime).split(":").map(Number);
   const localDate = new Date(
-    year,
-    month - 1,
-    day,
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
     hour,
     minute,
     endOfMinute ? 59 : 0,
@@ -82,9 +87,9 @@ export default function AdminSystemEventsPage() {
   const [search, setSearch] = useState("");
   const [actionType, setActionType] = useState<SystemEventType | "ALL">("ALL");
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
-  const [dateFrom, setDateFrom] = useState("");
+  const [dateFrom, setDateFrom] = useState<Date | null>(null);
   const [timeFrom, setTimeFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [dateTo, setDateTo] = useState<Date | null>(null);
   const [timeTo, setTimeTo] = useState("");
 
   const range = useMemo(() => {
@@ -177,9 +182,9 @@ export default function AdminSystemEventsPage() {
   }, [events, search, sortDirection]);
 
   const clearDateFilters = () => {
-    setDateFrom("");
+    setDateFrom(null);
     setTimeFrom("");
-    setDateTo("");
+    setDateTo(null);
     setTimeTo("");
   };
 
@@ -223,12 +228,38 @@ export default function AdminSystemEventsPage() {
             <span className="text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
               Date from
             </span>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(event) => setDateFrom(event.target.value)}
-              className="rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 text-sm font-semibold text-[#1A1A1A] outline-none focus:ring-2 focus:ring-[#42211D]/20"
-            />
+            <div className="flex items-center rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-[#42211D]/20">
+              <SharedDatePicker
+                selected={dateFrom}
+                onChange={setDateFrom}
+                selectsStart
+                startDate={dateFrom}
+                endDate={dateTo}
+                placeholderText="Start"
+                className="w-24 cursor-pointer bg-transparent text-center text-sm font-bold text-[#1A1A1A] outline-none"
+                wrapperClassName="block"
+                popperPlacement="bottom-start"
+              />
+            </div>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
+              Date to
+            </span>
+            <div className="flex items-center rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-[#42211D]/20">
+              <SharedDatePicker
+                selected={dateTo}
+                onChange={setDateTo}
+                selectsEnd
+                startDate={dateFrom}
+                endDate={dateTo}
+                minDate={dateFrom}
+                placeholderText="End"
+                className="w-24 cursor-pointer bg-transparent text-center text-sm font-bold text-[#1A1A1A] outline-none"
+                wrapperClassName="block"
+                popperPlacement="bottom-start"
+              />
+            </div>
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
@@ -238,17 +269,6 @@ export default function AdminSystemEventsPage() {
               type="time"
               value={timeFrom}
               onChange={(event) => setTimeFrom(event.target.value)}
-              className="rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 text-sm font-semibold text-[#1A1A1A] outline-none focus:ring-2 focus:ring-[#42211D]/20"
-            />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
-              Date to
-            </span>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(event) => setDateTo(event.target.value)}
               className="rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 text-sm font-semibold text-[#1A1A1A] outline-none focus:ring-2 focus:ring-[#42211D]/20"
             />
           </label>
