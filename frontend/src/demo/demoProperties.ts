@@ -12,6 +12,8 @@ export const demoProperties: Property[] = [
         postalCode: "81-718",
         street: "Grunwaldzka",
         streetNumber: "12",
+        latitude: 54.4446,
+        longitude: 18.5681,
         imageUrl: img(1571460),
     },
     {
@@ -23,6 +25,8 @@ export const demoProperties: Property[] = [
         postalCode: "34-500",
         street: "Koscieliska",
         streetNumber: "44",
+        latitude: 49.2992,
+        longitude: 19.9496,
         imageUrl: img(754268),
     },
     {
@@ -34,6 +38,8 @@ export const demoProperties: Property[] = [
         postalCode: "11-730",
         street: "Jeziorna",
         streetNumber: "8",
+        latitude: 53.8027,
+        longitude: 21.5701,
         imageUrl: img(261102),
     },
     {
@@ -45,6 +51,8 @@ export const demoProperties: Property[] = [
         postalCode: "31-042",
         street: "Grodzka",
         streetNumber: "27",
+        latitude: 50.0619,
+        longitude: 19.9373,
         imageUrl: img(271624),
     },
 ];
