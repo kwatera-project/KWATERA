@@ -89,7 +89,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
     const containerClass = "max-w-7xl mx-auto px-4 md:px-8 lg:px-16 flex justify-between items-center relative";
 
     return (
-        <nav className={`${positionClass} w-full z-[1000] transition-all duration-300 ease-in-out ${bgAndPaddingClass}`}>
+        <nav className={`${positionClass} w-full z-[20000] transition-all duration-300 ease-in-out ${bgAndPaddingClass}`}>
             <div className={containerClass}>
 
                 <Link to="/" className="flex items-center gap-2.5 group leading-none">
@@ -126,9 +126,9 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                         >
                             {currency}
                         </button>
+
                         {isCurrencyDropdownOpen && (
-                            <div
-                                className="absolute top-full right-0 mt-3 w-28 bg-card rounded-2xl shadow-xl z-50 overflow-hidden py-1.5 border border-[#DACDCA]/40">
+                            <div className="absolute top-full right-0 mt-3 w-28 bg-card rounded-2xl shadow-xl z-[21000] overflow-hidden py-1.5 border border-[#DACDCA]/40">
                                 {['PLN', 'EUR', 'USD'].map((curr) => (
                                     <button
                                         key={curr}
@@ -164,7 +164,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
 
                             {isProfileDropdownOpen && (
                                 <div
-                                    className="absolute top-full right-0 mt-3 w-56 bg-card rounded-2xl shadow-2xl z-[1000] overflow-hidden border border-[#DACDCA]/40 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                                    className="absolute top-full right-0 mt-3 w-56 bg-card rounded-2xl shadow-2xl z-[21000] overflow-hidden border border-[#DACDCA]/40 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
                                     <div className="px-4 py-3 border-b border-gray-100 mb-1">
                                         <p className="text-xs font-bold uppercase tracking-wider text-details">My
                                             Account</p>

@@ -79,7 +79,13 @@ export async function getUnits(propertyId: string, currency: string = "PLN") {
 }
 
 export async function getPropertyImages(id: string) {
-    if (IS_DEMO_MODE) return demoPropertyImages[id] ?? [];
+    if (IS_DEMO_MODE) {
+        return (demoPropertyImages[id] ?? []).map((url, index) => ({
+            id: `${id}-demo-image-${index + 1}`,
+            url,
+            isMain: index === 0,
+        }));
+    }
 
     const res = await fetch(`${API_URL}/properties/${id}/images`);
     return res.json();
