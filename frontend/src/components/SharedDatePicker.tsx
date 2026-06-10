@@ -17,6 +17,8 @@ interface SharedDatePickerProps {
     datepickerRef?: React.RefObject<DatePicker | null>;
     wrapperClassName?: string;
     popperPlacement?: ComponentProps<typeof DatePicker>["popperPlacement"];
+    onCalendarClose?: () => void;
+    shouldCloseOnSelect?: boolean;
 }
 
 const MONTHS = [
@@ -163,7 +165,9 @@ export default function SharedDatePicker({
     dateFormat,
     datepickerRef,
     wrapperClassName,
-    popperPlacement
+    popperPlacement,
+    onCalendarClose,
+    shouldCloseOnSelect
 }: SharedDatePickerProps) {
     return (
         <DatePicker
@@ -184,6 +188,8 @@ export default function SharedDatePicker({
             calendarStartDay={1}
             wrapperClassName={wrapperClassName}
             popperPlacement={popperPlacement}
+            onCalendarClose={onCalendarClose}
+            shouldCloseOnSelect={shouldCloseOnSelect}
             popperProps={{
                 strategy: "fixed"
             }}

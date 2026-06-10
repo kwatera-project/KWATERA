@@ -94,6 +94,7 @@ export default function AdminSystemEventsPage() {
   const [timeTo, setTimeTo] = useState("");
   const dateFromRef = useRef<DatePicker | null>(null);
   const dateToRef = useRef<DatePicker | null>(null);
+  const shouldOpenDateToAfterDateFromCloseRef = useRef(false);
 
   const range = useMemo(() => {
     const from = buildLocalIso(dateFrom, timeFrom, "00:00");
@@ -241,12 +242,19 @@ export default function AdminSystemEventsPage() {
                     setDateTo(null);
                   }
                   if (date) {
+                    shouldOpenDateToAfterDateFromCloseRef.current = true;
                     dateFromRef.current?.setOpen(false);
-                    setTimeout(() => {
-                      dateToRef.current?.setOpen(true);
-                    }, 100);
                   }
                 }}
+                onCalendarClose={() => {
+                  if (shouldOpenDateToAfterDateFromCloseRef.current) {
+                    shouldOpenDateToAfterDateFromCloseRef.current = false;
+                    setTimeout(() => {
+                      dateToRef.current?.setOpen(true);
+                    }, 50);
+                  }
+                }}
+                shouldCloseOnSelect
                 selectsStart
                 startDate={dateFrom}
                 endDate={dateTo}
@@ -274,6 +282,7 @@ export default function AdminSystemEventsPage() {
                 className="w-24 cursor-pointer bg-transparent text-center text-sm font-bold text-[#1A1A1A] outline-none"
                 wrapperClassName="block"
                 popperPlacement="bottom-start"
+                shouldCloseOnSelect
               />
             </div>
           </label>
