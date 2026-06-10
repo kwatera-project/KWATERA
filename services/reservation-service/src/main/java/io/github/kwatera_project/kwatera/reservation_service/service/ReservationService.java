@@ -221,6 +221,13 @@ public class ReservationService {
     }
   }
 
+  private long calculateBillableNights(ReservationStatus status, LocalDate startDate, LocalDate endDate) {
+    if (status == ReservationStatus.BLOCKED) {
+      return 0;
+    }
+    return java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate);
+  }
+
   @Transactional
   public Reservation createReservation(
       UUID userId, CreateReservationRequest request, String token) {
@@ -297,6 +304,12 @@ public class ReservationService {
           HttpStatus.CONFLICT, "The selected dates are no longer available");
     }
 
+    long billableNights = calculateBillableNights(status, request.getStartDate(), request.getEndDate());
+    if (status != ReservationStatus.BLOCKED && billableNights <= 0) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Reservation must include at least one billable night");
+    }
+
     Reservation reservation = new Reservation();
     reservation.setUserId(finalUserId);
     reservation.setGuestEmail(finalGuestEmail);
@@ -306,9 +319,7 @@ public class ReservationService {
     reservation.setStatus(status);
 
     BigDecimal pricePerNight = fetchUnitPrice(request.getUnitId(), token);
-    long days =
-        java.time.temporal.ChronoUnit.DAYS.between(request.getStartDate(), request.getEndDate());
-    BigDecimal totalPrice = pricePerNight.multiply(BigDecimal.valueOf(days));
+    BigDecimal totalPrice = pricePerNight.multiply(BigDecimal.valueOf(billableNights));
 
     reservation.setPricePerNightSnapshot(pricePerNight);
     reservation.setTotalPrice(totalPrice);

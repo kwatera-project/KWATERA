@@ -2,6 +2,7 @@ package io.github.kwatera_project.kwatera.reservation_service.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -56,7 +57,7 @@ public class Reservation {
   private BigDecimal pricePerNightSnapshot;
 
   @Column(name = "total_price", nullable = false)
-  @Positive
+  @PositiveOrZero
   private BigDecimal totalPrice;
 
   @Column(name = "payment_currency", nullable = false)
