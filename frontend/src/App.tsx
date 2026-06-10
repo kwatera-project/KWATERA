@@ -140,27 +140,51 @@ function App() {
                 />
                 <Route
                     path="/owner/properties/new"
-                    element={<CreatePropertyPage />}
+                    element={
+                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                            <CreatePropertyPage />
+                        </ProtectedRoute>
+                    }
                 />
                 <Route
                     path="/owner/properties/:propertyId/edit"
-                    element={<EditPropertyPage />}
+                    element={
+                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                            <EditPropertyPage />
+                        </ProtectedRoute>
+                    }
                 />
                 <Route
                     path="/owner/properties/:propertyId/units/new"
-                    element={<CreateUnitPage />}
+                    element={
+                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                            <CreateUnitPage />
+                        </ProtectedRoute>
+                    }
                 />
                 <Route
                     path="/owner/properties/:propertyId/units/:unitId/edit"
-                    element={<EditUnitPage />}
+                    element={
+                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                            <EditUnitPage />
+                        </ProtectedRoute>
+                    }
                 />
                 <Route
                     path="/owner/properties/:propertyId/images"
-                    element={<EditPropertyImages />}
+                    element={
+                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                            <EditPropertyImages />
+                        </ProtectedRoute>
+                    }
                 />
                 <Route
                     path="/owner/properties/:propertyId/units/:unitId/images"
-                    element={<EditUnitImages />}
+                    element={
+                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                            <EditUnitImages />
+                        </ProtectedRoute>
+                    }
                 />
             </Routes>
         </CurrencyProvider>

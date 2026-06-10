@@ -31,8 +31,13 @@ export default function OwnerPropertyUnitsPage() {
             setUnits(prev =>
                 prev.filter(p => p.id !== unitId)
             );
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
+
+            if (error.response?.status === 409) {
+                alert(error.response.data.message);
+            }
+
             alert("Failed to delete unit");
         }
     };

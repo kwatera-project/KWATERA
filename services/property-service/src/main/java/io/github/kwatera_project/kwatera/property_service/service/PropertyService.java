@@ -320,7 +320,8 @@ public class PropertyService {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unit not found"));
 
     if (reservationClient.hasReservationsForUnit(unitId, token)) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "Unit has reservations");
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT, "Unit has reservations and cannot be deleted");
     }
 
     unitRepository.delete(unit);
@@ -343,7 +344,7 @@ public class PropertyService {
     for (Unit unit : units) {
       if (reservationClient.hasReservationsForUnit(unit.getId(), token)) {
         throw new ResponseStatusException(
-            HttpStatus.CONFLICT, "Property contains units with reservations");
+            HttpStatus.CONFLICT, "Property contains units with reservations and cannot be deleted");
       }
     }
 

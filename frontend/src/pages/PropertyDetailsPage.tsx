@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { getProperty, getUnits, getPropertyImages } from "../api/propertyApi";
-import { useParams, useSearchParams, useNavigate  } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import type { Unit, Property } from "../types/property";
 import { checkAvailability, getOccupiedDates } from "../api/availabilityApi";
 import DatePicker from "react-datepicker";
@@ -37,7 +37,7 @@ export default function PropertyDetailsPage() {
     const [mainImage, setMainImage] = useState("");
     const [occupiedIntervals, setOccupiedIntervals] = useState<Record<string, { start: Date, end: Date }[]>>({});
     const [selectedDates, setSelectedDates] = useState<Record<string, [Date | null, Date | null]>>({});
-    const [globalDates, setGlobalDates] = useState<[Date | null, Date | null]>([null, null]);
+    const [globalDates, setGlobalDates] = useState<[Date | null, Date | null]>([initialSearch.checkIn, initialSearch.checkOut]);
     const [showCalendar, setShowCalendar] = useState<Record<string, boolean>>({});
 
     const [bookingState, setBookingState] = useState<
@@ -383,8 +383,8 @@ export default function PropertyDetailsPage() {
                                         <p className="text-sm text-brand-muted leading-relaxed">{u.description}</p>
                                         <div className="flex flex-wrap items-center gap-4 pt-2">
                                             <p className="text-lg font-bold text-brand-primary">
-                                                {u.convertedPricePerNight && u.currencyInfo && u.currencyInfo.displayCurrency !== 'PLN' 
-                                                    ? `${u.convertedPricePerNight.toFixed(2)} ${u.currencyInfo.displayCurrency} / night` 
+                                                {u.convertedPricePerNight && u.currencyInfo && u.currencyInfo.displayCurrency !== 'PLN'
+                                                    ? `${u.convertedPricePerNight.toFixed(2)} ${u.currencyInfo.displayCurrency} / night`
                                                     : `${u.pricePerNight} PLN / night`}
                                             </p>
                                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-brand-bg border border-brand-accent text-brand-muted">
@@ -472,7 +472,7 @@ export default function PropertyDetailsPage() {
                                                     ? "bg-green-600 text-white cursor-default"
                                                     : bookingState[u.id]?.loading
                                                         ? "bg-brand-muted text-white cursor-wait"
-                                                        : (!unitStart || !unitEnd)
+                                                        : (lacksRequestedCapacity || !unitStart || !unitEnd)
                                                             ? "bg-brand-accent text-brand-main opacity-50 cursor-not-allowed"
                                                             : "bg-brand-primary text-white hover:bg-brand-primary-hover"
                                             }`}

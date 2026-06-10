@@ -177,6 +177,7 @@ public class OwnerPropertyController {
   }
 
   @PatchMapping("/{propertyId}/images/{imageId}/main")
+  @PreAuthorize("hasRole('ROLE_OWNER')")
   public void setPropertyImageIsMain(
       @PathVariable("propertyId") UUID propertyId,
       @PathVariable("imageId") UUID imageId,
@@ -220,6 +221,7 @@ public class OwnerPropertyController {
   }
 
   @PatchMapping("/property/{propertyId}/unit/{unitId}/images/{imageId}/main")
+  @PreAuthorize("hasRole('ROLE_OWNER')")
   public void setUnitImageIsMain(
       @PathVariable("propertyId") UUID propertyId,
       @PathVariable("unitId") UUID unitId,
