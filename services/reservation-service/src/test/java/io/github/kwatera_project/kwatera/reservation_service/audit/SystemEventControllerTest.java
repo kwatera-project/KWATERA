@@ -43,20 +43,22 @@ class SystemEventControllerTest {
 
   @Test
   void shouldAllowAdminToAccessSystemEvents() throws Exception {
-    when(systemEventService.getLatestEvents(null, null)).thenReturn(List.of());
+    when(systemEventService.getLatestEvents(null, null, null, null)).thenReturn(List.of());
 
     mockMvc
         .perform(get("/api/v1/admin/system-events").with(authentication(buildAuth("ROLE_ADMIN"))))
         .andExpect(status().isOk());
 
-    verify(systemEventService).getLatestEvents(null, null);
+    verify(systemEventService).getLatestEvents(null, null, null, null);
   }
 
   @Test
-  void shouldPassActionTypeAndLimitToServiceAndSerializeResponse() throws Exception {
+  void shouldPassActionTypeLimitAndTimestampRangeToServiceAndSerializeResponse() throws Exception {
     UUID id = UUID.randomUUID();
     UUID actorUserId = UUID.randomUUID();
     UUID entityId = UUID.randomUUID();
+    Instant from = Instant.parse("2026-06-10T00:00:00Z");
+    Instant to = Instant.parse("2026-06-10T23:59:59Z");
     SystemEventResponseDto response =
         new SystemEventResponseDto(
             id,
@@ -66,7 +68,7 @@ class SystemEventControllerTest {
             "RESERVATION",
             entityId,
             "reservationId=" + entityId + ", status=BLOCKED");
-    when(systemEventService.getLatestEvents(SystemEventType.UNIT_BLOCKED, 50))
+    when(systemEventService.getLatestEvents(SystemEventType.UNIT_BLOCKED, 50, from, to))
         .thenReturn(List.of(response));
 
     mockMvc
@@ -74,6 +76,8 @@ class SystemEventControllerTest {
             get("/api/v1/admin/system-events")
                 .param("actionType", "UNIT_BLOCKED")
                 .param("limit", "50")
+                .param("from", "2026-06-10T00:00:00Z")
+                .param("to", "2026-06-10T23:59:59Z")
                 .with(authentication(buildAuth("ROLE_ADMIN"))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].id").value(id.toString()))
@@ -85,7 +89,7 @@ class SystemEventControllerTest {
         .andExpect(
             jsonPath("$[0].details").value("reservationId=" + entityId + ", status=BLOCKED"));
 
-    verify(systemEventService).getLatestEvents(SystemEventType.UNIT_BLOCKED, 50);
+    verify(systemEventService).getLatestEvents(SystemEventType.UNIT_BLOCKED, 50, from, to);
   }
 
   @Test

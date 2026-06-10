@@ -23,18 +23,61 @@ public class SystemEventService {
   private final SystemEventRepository systemEventRepository;
 
   @Transactional(readOnly = true)
-  public List<SystemEventResponseDto> getLatestEvents(SystemEventType actionType, Integer limit) {
+  public List<SystemEventResponseDto> getLatestEvents(
+      SystemEventType actionType, Integer limit, Instant from, Instant to) {
     int effectiveLimit = Math.min(Math.max(limit == null ? DEFAULT_LIMIT : limit, 1), MAX_LIMIT);
     PageRequest pageRequest =
         PageRequest.of(0, effectiveLimit, Sort.by(Sort.Direction.DESC, "timestamp"));
 
     if (actionType != null) {
+      if (from != null && to != null) {
+        return systemEventRepository
+            .findByActionTypeAndTimestampBetween(actionType, from, to, pageRequest)
+            .stream()
+            .map(this::toResponse)
+            .toList();
+      }
+      if (from != null) {
+        return systemEventRepository
+            .findByActionTypeAndTimestampGreaterThanEqual(actionType, from, pageRequest)
+            .stream()
+            .map(this::toResponse)
+            .toList();
+      }
+      if (to != null) {
+        return systemEventRepository
+            .findByActionTypeAndTimestampLessThanEqual(actionType, to, pageRequest)
+            .stream()
+            .map(this::toResponse)
+            .toList();
+      }
       return systemEventRepository.findByActionType(actionType, pageRequest).stream()
           .map(this::toResponse)
           .toList();
     }
 
+    if (from != null && to != null) {
+      return systemEventRepository.findByTimestampBetween(from, to, pageRequest).stream()
+          .map(this::toResponse)
+          .toList();
+    }
+    if (from != null) {
+      return systemEventRepository.findByTimestampGreaterThanEqual(from, pageRequest).stream()
+          .map(this::toResponse)
+          .toList();
+    }
+    if (to != null) {
+      return systemEventRepository.findByTimestampLessThanEqual(to, pageRequest).stream()
+          .map(this::toResponse)
+          .toList();
+    }
+
     return systemEventRepository.findAll(pageRequest).stream().map(this::toResponse).toList();
+  }
+
+  @Transactional(readOnly = true)
+  public List<SystemEventResponseDto> getLatestEvents(SystemEventType actionType, Integer limit) {
+    return getLatestEvents(actionType, limit, null, null);
   }
 
   public void logSafely(

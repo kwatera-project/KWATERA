@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, FileClock, Loader2, Search } from "lucide-react";
+import { AlertCircle, FileClock, Loader2, Search, X } from "lucide-react";
 import { getSystemEvents } from "../api/adminApi";
 import type { SystemEvent, SystemEventType } from "../api/adminApi";
 
@@ -13,7 +13,7 @@ const ACTION_TYPES: Array<SystemEventType | "ALL"> = [
 ];
 
 type SystemEventsLoadState = {
-  actionType: SystemEventType | "ALL" | null;
+  requestKey: string | null;
   events: SystemEvent[];
   error: string | null;
 };
@@ -37,29 +37,98 @@ function compactId(value: string | null) {
   return value ? value.slice(0, 8) : "-";
 }
 
+function buildLocalIso(date: string, time: string, fallbackTime: string, endOfMinute = false) {
+  if (!date) {
+    return null;
+  }
+
+  const [year, month, day] = date.split("-").map(Number);
+  const [hour, minute] = (time || fallbackTime).split(":").map(Number);
+  const localDate = new Date(
+    year,
+    month - 1,
+    day,
+    hour,
+    minute,
+    endOfMinute ? 59 : 0,
+    endOfMinute ? 999 : 0
+  );
+  return localDate.toISOString();
+}
+
+function getActionBadgeClass(actionType: SystemEventType) {
+  switch (actionType) {
+    case "RESERVATION_CREATED":
+      return "border-emerald-200 bg-emerald-50 text-emerald-800";
+    case "MANUAL_RESERVATION_CREATED":
+      return "border-indigo-200 bg-indigo-50 text-indigo-800";
+    case "UNIT_BLOCKED":
+      return "border-amber-200 bg-amber-50 text-amber-800";
+    case "RESERVATION_STATUS_CHANGED":
+      return "border-blue-200 bg-blue-50 text-blue-800";
+    case "EXPIRED_RESERVATION_CANCELLED":
+      return "border-rose-200 bg-rose-50 text-rose-800";
+    default:
+      return "border-[#DACDCA] bg-[#42211D]/5 text-[#42211D]";
+  }
+}
+
 export default function AdminSystemEventsPage() {
   const [loadState, setLoadState] = useState<SystemEventsLoadState>({
-    actionType: null,
+    requestKey: null,
     events: [],
     error: null
   });
   const [search, setSearch] = useState("");
   const [actionType, setActionType] = useState<SystemEventType | "ALL">("ALL");
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
+  const [dateFrom, setDateFrom] = useState("");
+  const [timeFrom, setTimeFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [timeTo, setTimeTo] = useState("");
 
-  const loading = loadState.actionType !== actionType;
+  const range = useMemo(() => {
+    const from = buildLocalIso(dateFrom, timeFrom, "00:00");
+    const to = buildLocalIso(dateTo, timeTo, "23:59", true);
+    const error =
+      from && to && new Date(from).getTime() > new Date(to).getTime()
+        ? "Date from must be before or equal to Date to."
+        : null;
+    return { from, to, error };
+  }, [dateFrom, dateTo, timeFrom, timeTo]);
+
+  const requestKey = useMemo(() => {
+    if (range.error) {
+      return null;
+    }
+    return JSON.stringify({
+      actionType,
+      from: range.from,
+      to: range.to
+    });
+  }, [actionType, range.error, range.from, range.to]);
+
+  const loading = requestKey !== null && loadState.requestKey !== requestKey;
   const events = useMemo(() => (loading ? [] : loadState.events), [loadState.events, loading]);
   const error = loading ? null : loadState.error;
 
   useEffect(() => {
-    let cancelled = false;
-    const requestedActionType = actionType;
+    if (!requestKey) {
+      return;
+    }
 
-    getSystemEvents(requestedActionType)
+    let cancelled = false;
+    const requestedKey = requestKey;
+
+    getSystemEvents({
+      actionType,
+      from: range.from,
+      to: range.to
+    })
       .then((data) => {
         if (!cancelled) {
           setLoadState({
-            actionType: requestedActionType,
+            requestKey: requestedKey,
             events: data,
             error: null
           });
@@ -68,7 +137,7 @@ export default function AdminSystemEventsPage() {
       .catch((err) => {
         if (!cancelled) {
           setLoadState({
-            actionType: requestedActionType,
+            requestKey: requestedKey,
             events: [],
             error: err instanceof Error ? err.message : "Failed to fetch system events"
           });
@@ -78,7 +147,7 @@ export default function AdminSystemEventsPage() {
     return () => {
       cancelled = true;
     };
-  }, [actionType]);
+  }, [actionType, range.from, range.to, requestKey]);
 
   const filteredEvents = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -89,6 +158,8 @@ export default function AdminSystemEventsPage() {
         }
         return [
           event.actionType,
+          formatAction(event.actionType),
+          formatDate(event.timestamp),
           event.actorUserId ?? "System",
           event.entityType ?? "",
           event.entityId ?? "",
@@ -105,37 +176,104 @@ export default function AdminSystemEventsPage() {
       });
   }, [events, search, sortDirection]);
 
+  const clearDateFilters = () => {
+    setDateFrom("");
+    setTimeFrom("");
+    setDateTo("");
+    setTimeTo("");
+  };
+
   return (
     <div className="space-y-5">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-extrabold text-[#1A1A1A]">System Logs</h2>
-          <p className="text-sm text-[#7A7A7A]">
-            Admin-only reservation and system event history.
-          </p>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-extrabold text-[#1A1A1A]">System Logs</h2>
+            <p className="text-sm text-[#7A7A7A]">
+              Admin-only reservation and system event history.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <label className="relative block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A7A7A]" />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search logs"
+                className="w-full sm:w-72 rounded-lg border border-[#DACDCA] bg-white pl-9 pr-3 py-2 text-sm font-medium text-[#1A1A1A] outline-none focus:ring-2 focus:ring-[#42211D]/20"
+              />
+            </label>
+            <select
+              value={actionType}
+              onChange={(event) => setActionType(event.target.value as SystemEventType | "ALL")}
+              className="rounded-lg border border-[#DACDCA] bg-white px-3 py-2 text-sm font-bold text-[#1A1A1A] outline-none focus:ring-2 focus:ring-[#42211D]/20"
+            >
+              {ACTION_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type === "ALL" ? "All actions" : formatAction(type)}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <label className="relative block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7A7A7A]" />
+        <div className="flex flex-wrap items-end gap-3 rounded-lg border border-[#DACDCA] bg-white p-3 shadow-sm">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
+              Date from
+            </span>
             <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search logs"
-              className="w-full sm:w-72 rounded-lg border border-[#DACDCA] bg-white pl-9 pr-3 py-2 text-sm font-medium text-[#1A1A1A] outline-none focus:ring-2 focus:ring-[#42211D]/20"
+              type="date"
+              value={dateFrom}
+              onChange={(event) => setDateFrom(event.target.value)}
+              className="rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 text-sm font-semibold text-[#1A1A1A] outline-none focus:ring-2 focus:ring-[#42211D]/20"
             />
           </label>
-          <select
-            value={actionType}
-            onChange={(event) => setActionType(event.target.value as SystemEventType | "ALL")}
-            className="rounded-lg border border-[#DACDCA] bg-white px-3 py-2 text-sm font-bold text-[#1A1A1A] outline-none focus:ring-2 focus:ring-[#42211D]/20"
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
+              Time from
+            </span>
+            <input
+              type="time"
+              value={timeFrom}
+              onChange={(event) => setTimeFrom(event.target.value)}
+              className="rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 text-sm font-semibold text-[#1A1A1A] outline-none focus:ring-2 focus:ring-[#42211D]/20"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
+              Date to
+            </span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(event) => setDateTo(event.target.value)}
+              className="rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 text-sm font-semibold text-[#1A1A1A] outline-none focus:ring-2 focus:ring-[#42211D]/20"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
+              Time to
+            </span>
+            <input
+              type="time"
+              value={timeTo}
+              onChange={(event) => setTimeTo(event.target.value)}
+              className="rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 text-sm font-semibold text-[#1A1A1A] outline-none focus:ring-2 focus:ring-[#42211D]/20"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={clearDateFilters}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#DACDCA] bg-white px-4 py-2 text-sm font-bold text-[#42211D] transition-colors hover:bg-[#F7F7F7]"
           >
-            {ACTION_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type === "ALL" ? "All actions" : formatAction(type)}
-              </option>
-            ))}
-          </select>
+            <X className="h-4 w-4" />
+            Clear dates
+          </button>
+          {range.error && (
+            <p className="w-full text-sm font-semibold text-red-700">{range.error}</p>
+          )}
         </div>
       </div>
 
@@ -156,7 +294,7 @@ export default function AdminSystemEventsPage() {
             <FileClock className="w-10 h-10 text-[#DACDCA] mb-3" />
             <p className="text-sm font-bold text-[#1A1A1A]">No system events found</p>
             <p className="text-xs text-[#7A7A7A] mt-1">
-              Adjust the search or action filter to inspect a different slice.
+              Adjust the search, action, or date filters to inspect a different slice.
             </p>
           </div>
         ) : (
@@ -196,7 +334,9 @@ export default function AdminSystemEventsPage() {
                       {formatDate(event.timestamp)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="inline-flex rounded-full border border-[#DACDCA] bg-[#42211D]/5 px-2.5 py-1 text-xs font-bold text-[#42211D]">
+                      <span
+                        className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${getActionBadgeClass(event.actionType)}`}
+                      >
                         {formatAction(event.actionType)}
                       </span>
                     </td>

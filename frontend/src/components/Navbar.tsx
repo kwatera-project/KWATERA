@@ -191,11 +191,13 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                                                 System Logs
                                             </Link>
                                         )}
-                                        <Link to="/owner/properties"
-                                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
-                                            <Home size={16} />
-                                            Manage properties
-                                        </Link>
+                                        {userRoles.includes("ROLE_OWNER") && (
+                                            <Link to="/owner/properties"
+                                                className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
+                                                <Home size={16} />
+                                                Manage properties
+                                            </Link>
+                                        )}
                                         </>
                                         )}
 

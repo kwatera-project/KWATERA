@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import DatePicker from "react-datepicker";
 import SharedDatePicker from "../components/SharedDatePicker";
 import {
@@ -28,10 +28,8 @@ import {
 } from "lucide-react";
 import ReportExportButtons from "../components/ReportExportButtons";
 import { useDashboardData } from "../hooks/useDashboardData";
-import AdminSystemEventsPage from "./AdminSystemEventsPage";
 
 export default function DashboardPage() {
-  const [activeAdminTab, setActiveAdminTab] = useState<"logs" | "overview">("overview");
   const {
     startDate,
     setStartDate,
@@ -153,33 +151,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {userRole === "ADMIN" && (
-        <div className="flex flex-wrap items-center gap-2 border-b border-[#DACDCA] pb-3">
-          <button
-            type="button"
-            onClick={() => setActiveAdminTab("logs")}
-            className={`px-4 py-2 rounded-lg text-sm font-bold border transition-colors ${
-              activeAdminTab === "logs"
-                ? "bg-[#42211D] text-white border-[#42211D]"
-                : "bg-white text-[#42211D] border-[#DACDCA] hover:bg-[#F7F7F7]"
-            }`}
-          >
-            System Logs
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveAdminTab("overview")}
-            className={`px-4 py-2 rounded-lg text-sm font-bold border transition-colors ${
-              activeAdminTab === "overview"
-                ? "bg-[#42211D] text-white border-[#42211D]"
-                : "bg-white text-[#42211D] border-[#DACDCA] hover:bg-[#F7F7F7]"
-            }`}
-          >
-            System Overview
-          </button>
-        </div>
-      )}
-
       {error && (
         <div className="flex items-center gap-3 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl text-red-700 animate-fade-in shadow-sm">
           <AlertCircle className="w-5 h-5 flex-shrink-0" />
@@ -187,10 +158,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {userRole === "ADMIN" && activeAdminTab === "logs" ? (
-        <AdminSystemEventsPage />
-      ) : (
-        <>
       {loading ? (
         <div className="space-y-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -613,8 +580,6 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-      )}
-        </>
       )}
     </div>
   );

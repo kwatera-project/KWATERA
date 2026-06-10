@@ -80,6 +80,75 @@ class SystemEventServiceTest {
   }
 
   @Test
+  void getLatestEventsWithTimestampRangeUsesRangeFilterAndMapsResults() {
+    Instant from = Instant.parse("2026-06-10T00:00:00Z");
+    Instant to = Instant.parse("2026-06-10T23:59:59Z");
+    SystemEvent event =
+        systemEvent(
+            SystemEventType.RESERVATION_STATUS_CHANGED,
+            UUID.randomUUID(),
+            "RESERVATION",
+            UUID.randomUUID(),
+            "status changed");
+    when(systemEventRepository.findByTimestampBetween(
+            org.mockito.ArgumentMatchers.eq(from),
+            org.mockito.ArgumentMatchers.eq(to),
+            any(Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of(event)));
+
+    List<SystemEventResponseDto> result = systemEventService.getLatestEvents(null, 25, from, to);
+
+    assertEquals(1, result.size());
+    assertDtoMatchesEvent(event, result.getFirst());
+
+    ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+    verify(systemEventRepository)
+        .findByTimestampBetween(
+            org.mockito.ArgumentMatchers.eq(from),
+            org.mockito.ArgumentMatchers.eq(to),
+            pageableCaptor.capture());
+    assertEquals(25, pageableCaptor.getValue().getPageSize());
+    assertEquals(
+        Sort.Direction.DESC,
+        pageableCaptor.getValue().getSort().getOrderFor("timestamp").getDirection());
+  }
+
+  @Test
+  void getLatestEventsWithActionTypeAndTimestampRangeCombinesFilters() {
+    Instant from = Instant.parse("2026-06-10T08:00:00Z");
+    Instant to = Instant.parse("2026-06-10T18:00:00Z");
+    SystemEvent event =
+        systemEvent(
+            SystemEventType.MANUAL_RESERVATION_CREATED,
+            UUID.randomUUID(),
+            "RESERVATION",
+            UUID.randomUUID(),
+            "manual reservation");
+    when(systemEventRepository.findByActionTypeAndTimestampBetween(
+            org.mockito.ArgumentMatchers.eq(SystemEventType.MANUAL_RESERVATION_CREATED),
+            org.mockito.ArgumentMatchers.eq(from),
+            org.mockito.ArgumentMatchers.eq(to),
+            any(Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of(event)));
+
+    List<SystemEventResponseDto> result =
+        systemEventService.getLatestEvents(
+            SystemEventType.MANUAL_RESERVATION_CREATED, 75, from, to);
+
+    assertEquals(1, result.size());
+    assertDtoMatchesEvent(event, result.getFirst());
+
+    ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+    verify(systemEventRepository)
+        .findByActionTypeAndTimestampBetween(
+            org.mockito.ArgumentMatchers.eq(SystemEventType.MANUAL_RESERVATION_CREATED),
+            org.mockito.ArgumentMatchers.eq(from),
+            org.mockito.ArgumentMatchers.eq(to),
+            pageableCaptor.capture());
+    assertEquals(75, pageableCaptor.getValue().getPageSize());
+  }
+
+  @Test
   void getLatestEventsClampsLimitToAtLeastOne() {
     when(systemEventRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
 

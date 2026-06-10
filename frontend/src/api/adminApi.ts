@@ -71,15 +71,30 @@ export async function getDashboardBillingMetrics(startDate?: string, endDate?: s
     return res.json();
 }
 
-export async function getSystemEvents(actionType?: SystemEventType | "ALL", limit = 100): Promise<SystemEvent[]> {
+export type SystemEventsQuery = {
+    actionType?: SystemEventType | "ALL";
+    from?: string | null;
+    to?: string | null;
+    limit?: number;
+};
+
+export async function getSystemEvents(query: SystemEventsQuery = {}): Promise<SystemEvent[]> {
     const token = localStorage.getItem("token");
     const params = new URLSearchParams();
-    params.append("limit", String(limit));
+    const { actionType, from, to, limit = 100 } = query;
     if (actionType && actionType !== "ALL") {
         params.append("actionType", actionType);
     }
+    if (from) params.append("from", from);
+    if (to) params.append("to", to);
+    if (limit) params.append("limit", String(limit));
 
-    const res = await fetch(`${GATEWAY_BASE_URL}/api/v1/admin/system-events?${params.toString()}`, {
+    const queryString = params.toString();
+    const url = queryString
+        ? `${GATEWAY_BASE_URL}/api/v1/admin/system-events?${queryString}`
+        : `${GATEWAY_BASE_URL}/api/v1/admin/system-events`;
+
+    const res = await fetch(url, {
         headers: {
             Authorization: `Bearer ${token}`
         }
