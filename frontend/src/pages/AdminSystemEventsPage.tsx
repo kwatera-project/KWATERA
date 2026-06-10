@@ -92,9 +92,7 @@ export default function AdminSystemEventsPage() {
   const [timeFrom, setTimeFrom] = useState("");
   const [dateTo, setDateTo] = useState<Date | null>(null);
   const [timeTo, setTimeTo] = useState("");
-  const dateFromRef = useRef<DatePicker | null>(null);
   const dateToRef = useRef<DatePicker | null>(null);
-  const shouldOpenDateToAfterDateFromCloseRef = useRef(false);
 
   const range = useMemo(() => {
     const from = buildLocalIso(dateFrom, timeFrom, "00:00");
@@ -234,7 +232,6 @@ export default function AdminSystemEventsPage() {
             </span>
             <div className="flex items-center rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-[#42211D]/20">
               <SharedDatePicker
-                datepickerRef={dateFromRef}
                 selected={dateFrom}
                 onChange={(date: Date | null) => {
                   setDateFrom(date);
@@ -242,19 +239,11 @@ export default function AdminSystemEventsPage() {
                     setDateTo(null);
                   }
                   if (date) {
-                    shouldOpenDateToAfterDateFromCloseRef.current = true;
-                    dateFromRef.current?.setOpen(false);
-                  }
-                }}
-                onCalendarClose={() => {
-                  if (shouldOpenDateToAfterDateFromCloseRef.current) {
-                    shouldOpenDateToAfterDateFromCloseRef.current = false;
                     setTimeout(() => {
                       dateToRef.current?.setOpen(true);
-                    }, 50);
+                    }, 100);
                   }
                 }}
-                shouldCloseOnSelect
                 selectsStart
                 startDate={dateFrom}
                 endDate={dateTo}
@@ -282,7 +271,6 @@ export default function AdminSystemEventsPage() {
                 className="w-24 cursor-pointer bg-transparent text-center text-sm font-bold text-[#1A1A1A] outline-none"
                 wrapperClassName="block"
                 popperPlacement="bottom-start"
-                shouldCloseOnSelect
               />
             </div>
           </label>
