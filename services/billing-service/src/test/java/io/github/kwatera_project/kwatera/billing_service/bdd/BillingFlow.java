@@ -11,6 +11,7 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.github.kwatera_project.kwatera.billing_service.client.OcrClient;
+import io.github.kwatera_project.kwatera.billing_service.client.ReservationClient;
 import io.github.kwatera_project.kwatera.billing_service.dto.OcrResponseDto;
 import io.github.kwatera_project.kwatera.billing_service.model.MediaReading;
 import io.github.kwatera_project.kwatera.billing_service.model.ReadingSource;
@@ -42,6 +43,7 @@ public class BillingFlow {
   @Autowired private MediaReadingRepository mediaReadingRepository;
   @Autowired private MediaReadingUploadAttemptRepository uploadAttemptRepository;
   @Autowired private OcrClient ocrClient;
+  @Autowired private ReservationClient reservationClient;
 
   private UUID settlementId;
   private UUID unitId;
@@ -61,6 +63,7 @@ public class BillingFlow {
 
     multipartFile = mock(MultipartFile.class);
     when(multipartFile.getBytes()).thenReturn(new byte[0]);
+    when(reservationClient.getReservation(any())).thenReturn(null);
 
     ReflectionTestUtils.setField(
         mediaReadingService, "ocrConfidenceThreshold", new BigDecimal("0.70"));
