@@ -3,16 +3,17 @@ package io.github.kwatera_project.kwatera.reservation_service.audit;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
-@RequiredArgsConstructor
 public class SystemEventService {
 
   private static final Logger log = LoggerFactory.getLogger(SystemEventService.class);
@@ -21,6 +22,14 @@ public class SystemEventService {
   private static final int MAX_LIMIT = 500;
 
   private final SystemEventRepository systemEventRepository;
+  private final TransactionTemplate transactionTemplate;
+
+  public SystemEventService(
+      SystemEventRepository systemEventRepository, PlatformTransactionManager transactionManager) {
+    this.systemEventRepository = systemEventRepository;
+    this.transactionTemplate = new TransactionTemplate(transactionManager);
+    this.transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+  }
 
   @Transactional(readOnly = true)
   public List<SystemEventResponseDto> getLatestEvents(
@@ -94,7 +103,7 @@ public class SystemEventService {
       event.setEntityType(entityType);
       event.setEntityId(entityId);
       event.setDetails(details);
-      systemEventRepository.save(event);
+      transactionTemplate.executeWithoutResult(status -> systemEventRepository.save(event));
     } catch (Exception e) {
       log.warn("Failed to persist system event {}", actionType, e);
     }

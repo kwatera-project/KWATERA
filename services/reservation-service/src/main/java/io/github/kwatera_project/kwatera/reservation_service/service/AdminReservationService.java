@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.beans.factory.ObjectFactory;
+import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -32,7 +32,7 @@ public class AdminReservationService {
 
   private final ReservationStatusValidator statusValidator;
 
-  private final ObjectFactory<RestOperations> restOperationsFactory;
+  private final Supplier<RestOperations> restOperationsProvider;
 
   private final EmailNotificationService emailNotificationService;
 
@@ -43,30 +43,15 @@ public class AdminReservationService {
       ReservationRepository reservationRepository,
       ReservationStatusHistoryRepository statusHistoryRepository,
       ReservationStatusValidator statusValidator,
-      ObjectFactory<RestOperations> restOperationsFactory,
+      RestOperations restOperations,
       EmailNotificationService emailNotificationService,
       SystemEventService systemEventService) {
     this.reservationRepository = reservationRepository;
     this.statusHistoryRepository = statusHistoryRepository;
     this.statusValidator = statusValidator;
-    this.restOperationsFactory = restOperationsFactory;
+    this.restOperationsProvider = () -> restOperations;
     this.emailNotificationService = emailNotificationService;
     this.systemEventService = systemEventService;
-  }
-
-  public AdminReservationService(
-      ReservationRepository reservationRepository,
-      ReservationStatusHistoryRepository statusHistoryRepository,
-      ReservationStatusValidator statusValidator,
-      RestOperations restTemplate,
-      EmailNotificationService emailNotificationService) {
-    this(
-        reservationRepository,
-        statusHistoryRepository,
-        statusValidator,
-        () -> restTemplate,
-        emailNotificationService,
-        null);
   }
 
   public List<ReservationOverviewDto> getReservationsOverview(
@@ -213,7 +198,7 @@ public class AdminReservationService {
   private record UnitNameDto(String name) {}
 
   private RestOperations restOperations() {
-    return restOperationsFactory.getObject();
+    return restOperationsProvider.get();
   }
 
   public boolean hasReservationsForUnit(UUID unitId) {
@@ -226,9 +211,6 @@ public class AdminReservationService {
       Reservation reservation,
       ReservationStatus oldStatus,
       ReservationStatus newStatus) {
-    if (systemEventService == null) {
-      return;
-    }
     systemEventService.logSafely(
         SystemEventType.RESERVATION_STATUS_CHANGED,
         actorId,

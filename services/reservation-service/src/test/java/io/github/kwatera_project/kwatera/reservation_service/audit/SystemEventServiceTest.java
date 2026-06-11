@@ -17,14 +17,24 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.SimpleTransactionStatus;
 
 class SystemEventServiceTest {
 
   private final SystemEventRepository systemEventRepository =
       org.mockito.Mockito.mock(SystemEventRepository.class);
 
+  private final PlatformTransactionManager transactionManager =
+      org.mockito.Mockito.mock(PlatformTransactionManager.class);
+
   private final SystemEventService systemEventService =
-      new SystemEventService(systemEventRepository);
+      new SystemEventService(systemEventRepository, transactionManager);
+
+  SystemEventServiceTest() {
+    when(transactionManager.getTransaction(any())).thenReturn(new SimpleTransactionStatus());
+  }
 
   @Test
   void getLatestEventsWithoutActionTypeUsesDefaultLimitAndMapsResults() {
@@ -184,6 +194,12 @@ class SystemEventServiceTest {
 
     ArgumentCaptor<SystemEvent> eventCaptor = ArgumentCaptor.forClass(SystemEvent.class);
     verify(systemEventRepository).save(eventCaptor.capture());
+    ArgumentCaptor<TransactionDefinition> transactionDefinitionCaptor =
+        ArgumentCaptor.forClass(TransactionDefinition.class);
+    verify(transactionManager).getTransaction(transactionDefinitionCaptor.capture());
+    assertEquals(
+        TransactionDefinition.PROPAGATION_REQUIRES_NEW,
+        transactionDefinitionCaptor.getValue().getPropagationBehavior());
     SystemEvent event = eventCaptor.getValue();
     assertNotNull(event.getTimestamp());
     assertEquals(SystemEventType.MANUAL_RESERVATION_CREATED, event.getActionType());

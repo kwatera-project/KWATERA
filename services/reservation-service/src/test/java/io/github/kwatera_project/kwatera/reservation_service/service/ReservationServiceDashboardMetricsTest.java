@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventService;
 import io.github.kwatera_project.kwatera.reservation_service.client.NbpExchangeRateClient;
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationMetricsDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
@@ -20,9 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -31,9 +30,9 @@ class ReservationServiceDashboardMetricsTest {
 
   @Mock private ReservationRepository reservationRepository;
   @Mock private RestTemplate restTemplate;
-  @Mock private ObjectFactory<RestOperations> restOperationsFactory;
   @Mock private NbpExchangeRateClient nbpExchangeRateClient;
   @Mock private BusinessDateProvider businessDateProvider;
+  @Mock private SystemEventService systemEventService;
 
   @InjectMocks private ReservationService reservationService;
 
@@ -44,7 +43,6 @@ class ReservationServiceDashboardMetricsTest {
   void setUp() {
     ownerId = UUID.randomUUID();
     unitId = UUID.randomUUID();
-    lenient().when(restOperationsFactory.getObject()).thenReturn(restTemplate);
     when(businessDateProvider.today()).thenReturn(LocalDate.of(2026, 5, 15));
   }
 

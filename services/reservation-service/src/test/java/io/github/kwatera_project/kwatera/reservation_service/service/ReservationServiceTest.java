@@ -47,7 +47,8 @@ class ReservationServiceTest {
         restTemplate,
         nbpExchangeRateClient,
         mock(EmailNotificationService.class),
-        new BusinessDateProvider("Europe/Warsaw"));
+        new BusinessDateProvider("Europe/Warsaw"),
+        mock(SystemEventService.class));
   }
 
   private ReservationService reservationService(
@@ -60,7 +61,8 @@ class ReservationServiceTest {
         restTemplate,
         nbpExchangeRateClient,
         mock(EmailNotificationService.class),
-        businessDateProvider);
+        businessDateProvider,
+        mock(SystemEventService.class));
   }
 
   @Test
@@ -919,7 +921,8 @@ class ReservationServiceTest {
             mock(RestTemplate.class),
             mock(NbpExchangeRateClient.class),
             emailNotificationService,
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID reservationId = UUID.randomUUID();
 
@@ -1293,7 +1296,8 @@ class ReservationServiceTest {
             restTemplate,
             mock(NbpExchangeRateClient.class),
             emailService,
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID userId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
@@ -1774,7 +1778,8 @@ class ReservationServiceTest {
             mock(RestTemplate.class),
             mock(NbpExchangeRateClient.class),
             emailService,
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID resId = UUID.randomUUID();
     Reservation reservation = new Reservation();
@@ -1809,7 +1814,8 @@ class ReservationServiceTest {
             mock(RestTemplate.class),
             mock(NbpExchangeRateClient.class),
             emailService,
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID resId = UUID.randomUUID();
     Reservation reservation = new Reservation();
@@ -1842,7 +1848,8 @@ class ReservationServiceTest {
             restTemplate,
             mock(NbpExchangeRateClient.class),
             emailService,
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID reservationId = UUID.randomUUID();
     UUID userId = UUID.randomUUID();
@@ -1896,7 +1903,8 @@ class ReservationServiceTest {
             mock(RestTemplate.class),
             mock(NbpExchangeRateClient.class),
             emailService,
-            businessDateProvider);
+            businessDateProvider,
+            mock(SystemEventService.class));
 
     LocalDate today = LocalDate.of(2026, java.time.Month.JUNE, 6);
     when(businessDateProvider.today()).thenReturn(today);
@@ -1924,7 +1932,8 @@ class ReservationServiceTest {
             mock(RestTemplate.class),
             mock(NbpExchangeRateClient.class),
             emailService,
-            businessDateProvider);
+            businessDateProvider,
+            mock(SystemEventService.class));
 
     LocalDate today = LocalDate.of(2026, java.time.Month.JUNE, 6);
     when(businessDateProvider.today()).thenReturn(today);
@@ -1953,7 +1962,8 @@ class ReservationServiceTest {
             restTemplate,
             mock(NbpExchangeRateClient.class),
             emailService,
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID actorId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
@@ -2008,7 +2018,8 @@ class ReservationServiceTest {
             restTemplate,
             mock(NbpExchangeRateClient.class),
             emailService,
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID ownerId = UUID.randomUUID();
     UUID guestId = UUID.randomUUID();
@@ -2076,7 +2087,8 @@ class ReservationServiceTest {
             restTemplate,
             mock(NbpExchangeRateClient.class),
             mock(EmailNotificationService.class),
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID ownerId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
@@ -2125,7 +2137,8 @@ class ReservationServiceTest {
             restTemplate,
             mock(NbpExchangeRateClient.class),
             mock(EmailNotificationService.class),
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID ownerId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
@@ -2165,7 +2178,8 @@ class ReservationServiceTest {
             restTemplate,
             mock(NbpExchangeRateClient.class),
             emailService,
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID actorId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
@@ -2221,7 +2235,8 @@ class ReservationServiceTest {
             restTemplate,
             mock(NbpExchangeRateClient.class),
             mock(EmailNotificationService.class),
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID userId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
@@ -2254,7 +2269,7 @@ class ReservationServiceTest {
     ReservationService service =
         new ReservationService(
             repository,
-            () -> restTemplate,
+            restTemplate,
             mock(NbpExchangeRateClient.class),
             mock(EmailNotificationService.class),
             new BusinessDateProvider("Europe/Warsaw"),
@@ -2300,7 +2315,7 @@ class ReservationServiceTest {
     ReservationService service =
         new ReservationService(
             repository,
-            () -> restTemplate,
+            restTemplate,
             mock(NbpExchangeRateClient.class),
             mock(EmailNotificationService.class),
             new BusinessDateProvider("Europe/Warsaw"),
@@ -2350,7 +2365,7 @@ class ReservationServiceTest {
     ReservationService service =
         new ReservationService(
             repository,
-            () -> mock(RestTemplate.class),
+            mock(RestTemplate.class),
             mock(NbpExchangeRateClient.class),
             mock(EmailNotificationService.class),
             new BusinessDateProvider("Europe/Warsaw"),

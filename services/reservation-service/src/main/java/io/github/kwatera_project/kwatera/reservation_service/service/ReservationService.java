@@ -14,9 +14,9 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -39,7 +39,7 @@ public class ReservationService {
   private static final String RESERVATION_NOT_FOUND = "Reservation not found";
 
   private final ReservationRepository reservationRepository;
-  private final ObjectFactory<RestOperations> restOperationsFactory;
+  private final Supplier<RestOperations> restOperationsProvider;
   private final NbpExchangeRateClient nbpExchangeRateClient;
   private final EmailNotificationService emailNotificationService;
   private final BusinessDateProvider businessDateProvider;
@@ -48,32 +48,17 @@ public class ReservationService {
   @Autowired
   public ReservationService(
       ReservationRepository reservationRepository,
-      ObjectFactory<RestOperations> restOperationsFactory,
+      RestOperations restOperations,
       NbpExchangeRateClient nbpExchangeRateClient,
       EmailNotificationService emailNotificationService,
       BusinessDateProvider businessDateProvider,
       SystemEventService systemEventService) {
     this.reservationRepository = reservationRepository;
-    this.restOperationsFactory = restOperationsFactory;
+    this.restOperationsProvider = () -> restOperations;
     this.nbpExchangeRateClient = nbpExchangeRateClient;
     this.emailNotificationService = emailNotificationService;
     this.businessDateProvider = businessDateProvider;
     this.systemEventService = systemEventService;
-  }
-
-  public ReservationService(
-      ReservationRepository reservationRepository,
-      RestOperations restTemplate,
-      NbpExchangeRateClient nbpExchangeRateClient,
-      EmailNotificationService emailNotificationService,
-      BusinessDateProvider businessDateProvider) {
-    this(
-        reservationRepository,
-        () -> restTemplate,
-        nbpExchangeRateClient,
-        emailNotificationService,
-        businessDateProvider,
-        null);
   }
 
   public AvailabilityDto checkAvailability(UUID unitId, LocalDate from, LocalDate to) {
@@ -721,7 +706,7 @@ public class ReservationService {
   record PropertyDetailsDto(String title, String city, UUID ownerId) {}
 
   private RestOperations restOperations() {
-    return restOperationsFactory.getObject();
+    return restOperationsProvider.get();
   }
 
   private void logReservationCreatedEvent(UUID actorId, boolean isGuest, Reservation reservation) {
@@ -748,9 +733,7 @@ public class ReservationService {
       String entityType,
       UUID entityId,
       String details) {
-    if (systemEventService != null) {
-      systemEventService.logSafely(actionType, actorUserId, entityType, entityId, details);
-    }
+    systemEventService.logSafely(actionType, actorUserId, entityType, entityId, details);
   }
 
   private String reservationDetails(Reservation reservation) {
