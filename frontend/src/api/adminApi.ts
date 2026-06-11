@@ -1,6 +1,7 @@
 import { GATEWAY_BASE_URL, IS_DEMO_MODE } from "./apiConfig";
 import { demoOccupancy, demoAdminReservations } from "../demo/demoReservations";
 import { demoBillingMetrics, demoReservationMetrics } from "../demo/demoReports";
+import { demoSystemEvents } from "../demo/demoSystemEvents";
 
 export type SystemEventType =
     | "RESERVATION_CREATED"
@@ -108,6 +109,20 @@ export async function getSystemEvents(query: SystemEventsQuery = {}): Promise<Sy
     const token = localStorage.getItem("token");
     const params = new URLSearchParams();
     const { actionType, from, to, limit = 100 } = query;
+
+    if (IS_DEMO_MODE) {
+        const fromTime = from ? new Date(from).getTime() : null;
+        const toTime = to ? new Date(to).getTime() : null;
+
+        return demoSystemEvents
+            .filter((event) => !actionType || actionType === "ALL" || event.actionType === actionType)
+            .filter((event) => {
+                const timestamp = new Date(event.timestamp).getTime();
+                return (fromTime === null || timestamp >= fromTime) && (toTime === null || timestamp <= toTime);
+            })
+            .sort((left, right) => new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime())
+            .slice(0, limit);
+    }
 
     if (actionType && actionType !== "ALL") {
         params.append("actionType", actionType);
