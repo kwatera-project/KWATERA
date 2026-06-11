@@ -14,7 +14,7 @@ export const demoProperties: Property[] = [
         streetNumber: "12",
         latitude: 54.4446,
         longitude: 18.5681,
-        imageUrl: img(1571460),
+        imageUrl: img(17399359),
     },
     {
         id: "demo-property-zakopane",
@@ -27,7 +27,7 @@ export const demoProperties: Property[] = [
         streetNumber: "44",
         latitude: 49.2992,
         longitude: 19.9496,
-        imageUrl: img(754268),
+        imageUrl: img(14699953),
     },
     {
         id: "demo-property-mazury",
@@ -40,7 +40,7 @@ export const demoProperties: Property[] = [
         streetNumber: "8",
         latitude: 53.8027,
         longitude: 21.5701,
-        imageUrl: img(261102),
+        imageUrl: img(6060361),
     },
     {
         id: "demo-property-krakow",
@@ -53,7 +53,7 @@ export const demoProperties: Property[] = [
         streetNumber: "27",
         latitude: 50.0619,
         longitude: 19.9373,
-        imageUrl: img(271624),
+        imageUrl: img(17675691),
     },
 ];
 
@@ -177,10 +177,10 @@ export const demoUnitsByProperty: Record<string, Unit[]> = {
 };
 
 const propertyImageIds: Record<string, number[]> = {
-    "demo-property-sopot": [1571460, 271624, 1643383],
-    "demo-property-zakopane": [754268, 106399, 259588],
-    "demo-property-mazury": [261102, 271619, 1457842],
-    "demo-property-krakow": [271624, 1571460, 1643383],
+    "demo-property-sopot": [17399359, 271624, 1643383],
+    "demo-property-zakopane": [14699953, 106399, 259588],
+    "demo-property-mazury": [6060361, 271619, 1457842],
+    "demo-property-krakow": [17675691, 1571460, 1643383],
 };
 
 export const demoPropertyImages: Record<string, string[]> = Object.fromEntries(
