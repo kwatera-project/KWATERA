@@ -41,12 +41,12 @@ interface ActiveFilter {
 
 function FilterBadge({ label, onRemove }: { label: string; onRemove: () => void }) {
     return (
-        <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap shrink-0 transition-colors hover:bg-blue-100">
+        <span className="inline-flex items-center gap-1.5 bg-[#F5F1EF] text-[#42211D] border border-[#DACDCA] rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap shrink-0 transition-colors hover:bg-[#EFE7E4]">
             {label}
             <button
                 onClick={onRemove}
                 aria-label={`Remove filter: ${label}`}
-                className="hover:text-blue-900 transition-colors cursor-pointer"
+                className="text-[#7A7A7A] hover:text-[#42211D] transition-colors cursor-pointer"
             >
                 <X className="w-3 h-3" strokeWidth={2.5} />
             </button>
