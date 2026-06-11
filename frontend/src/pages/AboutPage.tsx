@@ -102,7 +102,7 @@ export default function AboutPage() {
                                 className="flex items-center justify-center p-2 hover:scale-102 transition-transform duration-300"
                             >
                                 <img 
-                                    src="/commerzbank_logo.png" 
+                                    src={`${import.meta.env.BASE_URL}commerzbank_logo.png`} 
                                     alt="Commerzbank Logo" 
                                     className="h-16 md:h-20 object-contain mix-blend-multiply" 
                                 />

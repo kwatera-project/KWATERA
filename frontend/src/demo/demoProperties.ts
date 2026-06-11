@@ -15,6 +15,7 @@ export const demoProperties: Property[] = [
         latitude: 54.4446,
         longitude: 18.5681,
         imageUrl: img(17399359),
+        amenities: [],
     },
     {
         id: "demo-property-zakopane",
@@ -28,6 +29,7 @@ export const demoProperties: Property[] = [
         latitude: 49.2992,
         longitude: 19.9496,
         imageUrl: img(14699953),
+        amenities: [],
     },
     {
         id: "demo-property-mazury",
@@ -41,6 +43,7 @@ export const demoProperties: Property[] = [
         latitude: 53.8027,
         longitude: 21.5701,
         imageUrl: img(6060361),
+        amenities: [],
     },
     {
         id: "demo-property-krakow",
@@ -54,6 +57,7 @@ export const demoProperties: Property[] = [
         latitude: 50.0619,
         longitude: 19.9373,
         imageUrl: img(17675691),
+        amenities: [],
     },
 ];
 
@@ -70,6 +74,9 @@ export const demoUnitsByProperty: Record<string, Unit[]> = {
             unitType: "STUDIO",
             unitNumber: "A1",
             floor: 2,
+            amenities: [],
+            bedrooms: 0,
+            beds: 0,
         },
         {
             id: "demo-unit-sopot-b",
@@ -82,6 +89,9 @@ export const demoUnitsByProperty: Record<string, Unit[]> = {
             unitType: "APARTMENT",
             unitNumber: "B4",
             floor: 4,
+            amenities: [],
+            bedrooms: 0,
+            beds: 0,
         },
         {
             id: "demo-unit-sopot-c",
@@ -94,6 +104,9 @@ export const demoUnitsByProperty: Record<string, Unit[]> = {
             unitType: "SUITE",
             unitNumber: "C7",
             floor: 6,
+            amenities: [],
+            bedrooms: 0,
+            beds: 0,
         },
     ],
     "demo-property-zakopane": [
@@ -108,6 +121,9 @@ export const demoUnitsByProperty: Record<string, Unit[]> = {
             unitType: "HOUSE",
             unitNumber: "1",
             floor: 0,
+            amenities: [],
+            bedrooms: 0,
+            beds: 0,
         },
         {
             id: "demo-unit-zakopane-b",
@@ -120,6 +136,9 @@ export const demoUnitsByProperty: Record<string, Unit[]> = {
             unitType: "ROOM",
             unitNumber: "2",
             floor: 1,
+            amenities: [],
+            bedrooms: 0,
+            beds: 0,
         },
     ],
     "demo-property-mazury": [
@@ -134,6 +153,9 @@ export const demoUnitsByProperty: Record<string, Unit[]> = {
             unitType: "ROOM",
             unitNumber: "3",
             floor: 1,
+            amenities: [],
+            bedrooms: 0,
+            beds: 0,
         },
         {
             id: "demo-unit-mazury-b",
@@ -146,6 +168,9 @@ export const demoUnitsByProperty: Record<string, Unit[]> = {
             unitType: "APARTMENT",
             unitNumber: "7",
             floor: 2,
+            amenities: [],
+            bedrooms: 0,
+            beds: 0,
         },
     ],
     "demo-property-krakow": [
@@ -160,6 +185,9 @@ export const demoUnitsByProperty: Record<string, Unit[]> = {
             unitType: "SUITE",
             unitNumber: "11",
             floor: 3,
+            amenities: [],
+            bedrooms: 0,
+            beds: 0,
         },
         {
             id: "demo-unit-krakow-b",
@@ -172,6 +200,9 @@ export const demoUnitsByProperty: Record<string, Unit[]> = {
             unitType: "LOFT",
             unitNumber: "12",
             floor: 3,
+            amenities: [],
+            bedrooms: 0,
+            beds: 0,
         },
     ],
 };
