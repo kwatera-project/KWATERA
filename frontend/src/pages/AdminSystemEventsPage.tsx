@@ -11,7 +11,15 @@ const ACTION_TYPES: Array<SystemEventType | "ALL"> = [
   "MANUAL_RESERVATION_CREATED",
   "UNIT_BLOCKED",
   "RESERVATION_STATUS_CHANGED",
-  "EXPIRED_RESERVATION_CANCELLED"
+  "EXPIRED_RESERVATION_CANCELLED",
+  "OCR_READING_ATTEMPTED",
+  "OCR_READING_SUCCEEDED",
+  "OCR_READING_FAILED",
+  "METER_READING_MANUALLY_CORRECTED",
+  "MEDIA_SETTLEMENT_GENERATED",
+  "PAYMENT_FAILED",
+  "PAYMENT_CANCELLED",
+  "BALANCE_CHANGED"
 ];
 
 type SystemEventsLoadState = {
@@ -74,6 +82,22 @@ function getActionBadgeClass(actionType: SystemEventType) {
       return "border-blue-200 bg-blue-50 text-blue-800";
     case "EXPIRED_RESERVATION_CANCELLED":
       return "border-rose-200 bg-rose-50 text-rose-800";
+    case "OCR_READING_ATTEMPTED":
+      return "border-slate-200 bg-slate-50 text-slate-800";
+    case "OCR_READING_SUCCEEDED":
+      return "border-teal-200 bg-teal-50 text-teal-800";
+    case "OCR_READING_FAILED":
+      return "border-red-200 bg-red-50 text-red-800";
+    case "METER_READING_MANUALLY_CORRECTED":
+      return "border-cyan-200 bg-cyan-50 text-cyan-800";
+    case "MEDIA_SETTLEMENT_GENERATED":
+      return "border-lime-200 bg-lime-50 text-lime-800";
+    case "PAYMENT_FAILED":
+      return "border-pink-200 bg-pink-50 text-pink-800";
+    case "PAYMENT_CANCELLED":
+      return "border-orange-200 bg-orange-50 text-orange-800";
+    case "BALANCE_CHANGED":
+      return "border-violet-200 bg-violet-50 text-violet-800";
     default:
       return "border-[#DACDCA] bg-[#42211D]/5 text-[#42211D]";
   }

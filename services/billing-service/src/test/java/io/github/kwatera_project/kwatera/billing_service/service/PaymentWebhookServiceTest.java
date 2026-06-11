@@ -7,6 +7,7 @@ import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.checkout.Session;
 import io.github.kwatera_project.kwatera.billing_service.client.StripeClient;
+import io.github.kwatera_project.kwatera.billing_service.client.SystemEventClient;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -35,12 +36,15 @@ class PaymentWebhookServiceTest {
 
   @Mock private PaymentTransactionService paymentTransactionService;
 
+  @Mock private SystemEventClient systemEventClient;
+
   @Mock private PaymentIntent paymentIntent;
 
   @BeforeEach
   void setup() {
     paymentWebhookService =
-        new PaymentWebhookService(settlementService, stripeClient, paymentTransactionService);
+        new PaymentWebhookService(
+            settlementService, stripeClient, paymentTransactionService, systemEventClient);
     ReflectionTestUtils.setField(paymentWebhookService, "stripeWebhookSecret", "test_secret");
   }
 
@@ -158,6 +162,13 @@ class PaymentWebhookServiceTest {
         RuntimeException.class, () -> paymentWebhookService.processWebhook("payload", "sig"));
 
     verify(paymentTransactionService).markFailed(eq("evt_4"), any());
+    verify(systemEventClient)
+        .logSafely(
+            eq("PAYMENT_FAILED"),
+            isNull(),
+            eq("SETTLEMENT"),
+            any(),
+            contains("stripeEventId=evt_4"));
     verify(paymentTransactionService, never()).markSuccessIfAllowed("evt_4");
   }
 
@@ -177,6 +188,36 @@ class PaymentWebhookServiceTest {
     paymentWebhookService.processWebhook("payload", "sig");
 
     verify(paymentTransactionService).markFailed(eq("evt_2"), any());
+    verify(systemEventClient)
+        .logSafely(
+            eq("PAYMENT_CANCELLED"),
+            isNull(),
+            eq("SETTLEMENT"),
+            any(),
+            contains("Checkout session expired"));
+  }
+
+  @Test
+  void shouldHandleCheckoutAsyncPaymentFailed() throws Exception {
+    Event event = mockEvent("evt_5", "checkout.session.async_payment_failed");
+
+    Session session = mock(Session.class);
+    when(session.getId()).thenReturn("sess_5");
+    when(session.getMetadata()).thenReturn(validMetadata());
+
+    when(deserializer.getObject()).thenReturn(Optional.of(session));
+    when(stripeClient.constructEvent(any(), any(), any())).thenReturn(event);
+
+    paymentWebhookService.processWebhook("payload", "sig");
+
+    verify(paymentTransactionService).markFailed(eq("evt_5"), any());
+    verify(systemEventClient)
+        .logSafely(
+            eq("PAYMENT_FAILED"),
+            isNull(),
+            eq("SETTLEMENT"),
+            any(),
+            contains("Checkout payment failed"));
   }
 
   @Test
@@ -198,6 +239,13 @@ class PaymentWebhookServiceTest {
     paymentWebhookService.processWebhook("payload", "sig");
 
     verify(paymentTransactionService).markFailed(eq("evt_3"), any());
+    verify(systemEventClient)
+        .logSafely(
+            eq("PAYMENT_FAILED"),
+            isNull(),
+            eq("SETTLEMENT"),
+            any(),
+            contains("stripeEventId=evt_3"));
   }
 
   @Test

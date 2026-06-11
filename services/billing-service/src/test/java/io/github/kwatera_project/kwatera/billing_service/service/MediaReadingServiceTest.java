@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import io.github.kwatera_project.kwatera.billing_service.client.OcrClient;
 import io.github.kwatera_project.kwatera.billing_service.client.PropertyClient;
+import io.github.kwatera_project.kwatera.billing_service.client.SystemEventClient;
 import io.github.kwatera_project.kwatera.billing_service.dto.OcrResponseDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.UnitSettlementItemDto;
 import io.github.kwatera_project.kwatera.billing_service.model.*;
@@ -32,6 +33,7 @@ class MediaReadingServiceTest {
   @Mock private OcrClient ocrClient;
   @Mock private MediaReadingUploadAttemptRepository uploadAttemptRepository;
   @Mock private PropertyClient propertyClient;
+  @Mock private SystemEventClient systemEventClient;
   @Mock private MultipartFile multipartFile;
 
   @Mock
@@ -75,6 +77,20 @@ class MediaReadingServiceTest {
     assertEquals(ReadingStatus.AUTO_APPROVED, status);
     assertEquals(new BigDecimal("120.50"), reading.getInitialReading());
     assertEquals(ReadingSource.OCR, reading.getInitialReadingSource());
+    verify(systemEventClient)
+        .logSafely(
+            eq("OCR_READING_ATTEMPTED"),
+            isNull(),
+            eq("SETTLEMENT"),
+            eq(settlementId),
+            contains("readingType=INITIAL"));
+    verify(systemEventClient)
+        .logSafely(
+            eq("OCR_READING_SUCCEEDED"),
+            isNull(),
+            eq("SETTLEMENT"),
+            eq(settlementId),
+            contains("status=AUTO_APPROVED"));
   }
 
   @Test
@@ -232,6 +248,20 @@ class MediaReadingServiceTest {
 
     assertEquals(ReadingStatus.AUTO_APPROVED, status);
     assertEquals(new BigDecimal("150"), reading.getFinalReading());
+    verify(systemEventClient)
+        .logSafely(
+            eq("OCR_READING_ATTEMPTED"),
+            isNull(),
+            eq("SETTLEMENT"),
+            eq(settlementId),
+            contains("readingType=FINAL"));
+    verify(systemEventClient)
+        .logSafely(
+            eq("OCR_READING_SUCCEEDED"),
+            isNull(),
+            eq("SETTLEMENT"),
+            eq(settlementId),
+            contains("status=AUTO_APPROVED"));
     verify(settlementService)
         .addUtilitySettlementItem(
             eq(settlementId),
@@ -407,6 +437,13 @@ class MediaReadingServiceTest {
     assertEquals(new BigDecimal("140"), reading.getFinalReading());
     assertEquals(ReadingStatus.MANUALLY_APPROVED, reading.getFinalReadingStatus());
     assertEquals(ReadingSource.MANUAL, reading.getFinalReadingSource());
+    verify(systemEventClient)
+        .logSafely(
+            eq("METER_READING_MANUALLY_CORRECTED"),
+            isNull(),
+            eq("MEDIA_READING"),
+            isNull(),
+            contains("correctedReading=140"));
     verify(settlementService)
         .addUtilitySettlementItem(
             eq(settlementId),
@@ -539,6 +576,13 @@ class MediaReadingServiceTest {
 
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, status);
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, reading.getInitialReadingStatus());
+    verify(systemEventClient)
+        .logSafely(
+            eq("OCR_READING_FAILED"),
+            isNull(),
+            eq("SETTLEMENT"),
+            eq(settlementId),
+            contains("reason=OCR_EXCEPTION"));
     assertNull(reading.getInitialReading());
   }
 
@@ -606,6 +650,13 @@ class MediaReadingServiceTest {
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, status);
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, reading.getInitialReadingStatus());
     assertNull(reading.getInitialReading());
+    verify(systemEventClient)
+        .logSafely(
+            eq("OCR_READING_FAILED"),
+            isNull(),
+            eq("SETTLEMENT"),
+            eq(settlementId),
+            contains("reason=MISSING_VALUE"));
   }
 
   @Test
@@ -628,6 +679,13 @@ class MediaReadingServiceTest {
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, status);
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, reading.getInitialReadingStatus());
     assertNull(reading.getInitialReading());
+    verify(systemEventClient)
+        .logSafely(
+            eq("OCR_READING_FAILED"),
+            isNull(),
+            eq("SETTLEMENT"),
+            eq(settlementId),
+            contains("reason=MISSING_CONFIDENCE"));
   }
 
   @Test
@@ -651,6 +709,13 @@ class MediaReadingServiceTest {
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, status);
     assertEquals(ReadingStatus.REQUEST_REUPLOAD, reading.getInitialReadingStatus());
     assertNull(reading.getInitialReading());
+    verify(systemEventClient)
+        .logSafely(
+            eq("OCR_READING_FAILED"),
+            isNull(),
+            eq("SETTLEMENT"),
+            eq(settlementId),
+            contains("reason=INVALID_NUMBER"));
   }
 
   @Test

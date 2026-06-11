@@ -1,12 +1,13 @@
 package io.github.kwatera_project.kwatera.billing_service.service;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.github.kwatera_project.kwatera.billing_service.client.PropertyClient;
+import io.github.kwatera_project.kwatera.billing_service.client.SystemEventClient;
 import io.github.kwatera_project.kwatera.billing_service.dto.CurrencyMetadataDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementItemDto;
@@ -41,6 +42,8 @@ class SettlementServiceTest {
 
   @Mock private EmailNotificationService emailNotificationService;
 
+  @Mock private SystemEventClient systemEventClient;
+
   @InjectMocks private SettlementService settlementService;
 
   private Settlement baseSettlement(UUID id) {
@@ -73,6 +76,13 @@ class SettlementServiceTest {
     assertEquals(reservationId, result.getReservationId());
 
     verify(settlementRepository).save(any(Settlement.class));
+    verify(systemEventClient)
+        .logSafely(
+            eq("BALANCE_CHANGED"),
+            isNull(),
+            eq("SETTLEMENT"),
+            any(),
+            contains("previousBalance=0"));
   }
 
   @Test
@@ -106,6 +116,13 @@ class SettlementServiceTest {
 
     assertEquals(BigDecimal.valueOf(200), settlement.getAmountPaid());
     verify(settlementRepository).save(settlement);
+    verify(systemEventClient)
+        .logSafely(
+            eq("BALANCE_CHANGED"),
+            isNull(),
+            eq("SETTLEMENT"),
+            eq(settlementId),
+            contains("itemAmount=200"));
   }
 
   @Test
@@ -161,6 +178,13 @@ class SettlementServiceTest {
 
     assertEquals(BigDecimal.valueOf(50), settlement.getDiscountAmount());
     assertEquals(BigDecimal.valueOf(450), settlement.getTotalAmount()); // 500 - 50 = 450
+    verify(systemEventClient)
+        .logSafely(
+            eq("BALANCE_CHANGED"),
+            isNull(),
+            eq("SETTLEMENT"),
+            eq(settlementId),
+            contains("discountAmount=50"));
   }
 
   @Test
@@ -276,6 +300,20 @@ class SettlementServiceTest {
     verify(settlementItemRepository)
         .findBySettlementIdAndType(settlementId, SettlementItemType.WATER);
     verify(settlementRepository).save(settlement);
+    verify(systemEventClient)
+        .logSafely(
+            eq("MEDIA_SETTLEMENT_GENERATED"),
+            isNull(),
+            eq("SETTLEMENT"),
+            eq(settlementId),
+            contains("type=WATER"));
+    verify(systemEventClient)
+        .logSafely(
+            eq("BALANCE_CHANGED"),
+            isNull(),
+            eq("SETTLEMENT"),
+            eq(settlementId),
+            contains("newBalance=100"));
   }
 
   @Test

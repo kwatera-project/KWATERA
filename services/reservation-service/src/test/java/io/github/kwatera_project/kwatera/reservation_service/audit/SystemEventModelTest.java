@@ -68,7 +68,15 @@ class SystemEventModelTest {
           SystemEventType.MANUAL_RESERVATION_CREATED,
           SystemEventType.UNIT_BLOCKED,
           SystemEventType.RESERVATION_STATUS_CHANGED,
-          SystemEventType.EXPIRED_RESERVATION_CANCELLED
+          SystemEventType.EXPIRED_RESERVATION_CANCELLED,
+          SystemEventType.OCR_READING_ATTEMPTED,
+          SystemEventType.OCR_READING_SUCCEEDED,
+          SystemEventType.OCR_READING_FAILED,
+          SystemEventType.METER_READING_MANUALLY_CORRECTED,
+          SystemEventType.MEDIA_SETTLEMENT_GENERATED,
+          SystemEventType.PAYMENT_FAILED,
+          SystemEventType.PAYMENT_CANCELLED,
+          SystemEventType.BALANCE_CHANGED
         },
         SystemEventType.values());
   }

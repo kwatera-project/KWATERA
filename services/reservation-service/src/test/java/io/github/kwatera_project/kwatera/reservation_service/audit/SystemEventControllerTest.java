@@ -1,9 +1,11 @@
 package io.github.kwatera_project.kwatera.reservation_service.audit;
 
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -17,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -119,5 +122,63 @@ class SystemEventControllerTest {
     mockMvc
         .perform(get("/api/v1/admin/system-events").header("Authorization", "Bearer " + token))
         .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void shouldAcceptInternalSystemEventWithValidToken() throws Exception {
+    UUID actorUserId = UUID.randomUUID();
+    UUID entityId = UUID.randomUUID();
+    String body =
+        """
+        {
+          "actionType": "PAYMENT_FAILED",
+          "actorUserId": "%s",
+          "entityType": "SETTLEMENT",
+          "entityId": "%s",
+          "details": "settlementId=%s, reason=Checkout payment failed"
+        }
+        """
+            .formatted(actorUserId, entityId, entityId);
+
+    mockMvc
+        .perform(
+            post("/api/v1/internal/system-events")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("X-Internal-Token", "kwatera-internal-secret-token")
+                .content(body))
+        .andExpect(status().isOk());
+
+    verify(systemEventService)
+        .logSafely(
+            SystemEventType.PAYMENT_FAILED,
+            actorUserId,
+            "SETTLEMENT",
+            entityId,
+            "settlementId=" + entityId + ", reason=Checkout payment failed");
+  }
+
+  @Test
+  void shouldRejectInternalSystemEventWhenTokenIsMissing() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/internal/system-events")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"actionType\":\"BALANCE_CHANGED\",\"entityType\":\"SETTLEMENT\"}"))
+        .andExpect(status().isForbidden());
+
+    verifyNoInteractions(systemEventService);
+  }
+
+  @Test
+  void shouldRejectInternalSystemEventWhenTokenIsWrong() throws Exception {
+    mockMvc
+        .perform(
+            post("/api/v1/internal/system-events")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("X-Internal-Token", "wrong-token")
+                .content("{\"actionType\":\"BALANCE_CHANGED\",\"entityType\":\"SETTLEMENT\"}"))
+        .andExpect(status().isForbidden());
+
+    verifyNoInteractions(systemEventService);
   }
 }
