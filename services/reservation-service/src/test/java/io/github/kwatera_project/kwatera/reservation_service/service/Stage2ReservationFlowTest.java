@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventService;
 import io.github.kwatera_project.kwatera.reservation_service.dto.AvailabilityDto;
 import io.github.kwatera_project.kwatera.reservation_service.dto.CreateReservationRequest;
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationOverviewDto;
@@ -43,6 +44,8 @@ class Stage2ReservationFlowTest {
 
   @Mock private EmailNotificationService emailNotificationService;
 
+  @Mock private SystemEventService systemEventService;
+
   private ReservationService reservationService;
 
   private AdminReservationService adminReservationService;
@@ -57,14 +60,16 @@ class Stage2ReservationFlowTest {
                 io.github.kwatera_project.kwatera.reservation_service.client.NbpExchangeRateClient
                     .class),
             emailNotificationService,
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            systemEventService);
     adminReservationService =
         new AdminReservationService(
             reservationRepository,
             statusHistoryRepository,
             statusValidator,
             restTemplate,
-            emailNotificationService);
+            emailNotificationService,
+            systemEventService);
   }
 
   @Test

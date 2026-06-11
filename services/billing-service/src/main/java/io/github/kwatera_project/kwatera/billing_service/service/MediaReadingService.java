@@ -3,6 +3,7 @@ package io.github.kwatera_project.kwatera.billing_service.service;
 import io.github.kwatera_project.kwatera.billing_service.client.OcrClient;
 import io.github.kwatera_project.kwatera.billing_service.client.PropertyClient;
 import io.github.kwatera_project.kwatera.billing_service.client.ReservationClient;
+import io.github.kwatera_project.kwatera.billing_service.client.SystemEventClient;
 import io.github.kwatera_project.kwatera.billing_service.dto.*;
 import io.github.kwatera_project.kwatera.billing_service.model.*;
 import io.github.kwatera_project.kwatera.billing_service.repository.MediaReadingRepository;
@@ -33,6 +34,7 @@ public class MediaReadingService {
   private final PropertyClient propertyClient;
   private final SettlementRepository settlementRepository;
   private final ReservationClient reservationClient;
+  private final SystemEventClient systemEventClient;
 
   @Value("${ocr.confidence-threshold}")
   private BigDecimal ocrConfidenceThreshold;
@@ -69,33 +71,65 @@ public class MediaReadingService {
 
     OcrResponseDto ocrResponse;
     try {
+      logOcrAttempt(reading, settlementId, unitId, utilityType, ReadingType.FINAL);
       ocrResponse = ocrClient.readMeter(file);
     } catch (RuntimeException e) {
-      return handleFailedOcrAttempt(reading, file.getBytes(), ReadingType.FINAL);
+      return handleFailedOcrAttempt(
+          reading,
+          file.getBytes(),
+          settlementId,
+          unitId,
+          utilityType,
+          ReadingType.FINAL,
+          "OCR_EXCEPTION");
     }
 
-    if (ocrResponse == null
-        || ocrResponse.readingValue() == null
-        || ocrResponse.confidence() == null) {
-      return handleFailedOcrAttempt(reading, file.getBytes(), ReadingType.FINAL);
+    String failureReason = validateOcrResponse(ocrResponse);
+    if (failureReason != null) {
+      return handleFailedOcrAttempt(
+          reading,
+          file.getBytes(),
+          settlementId,
+          unitId,
+          utilityType,
+          ReadingType.FINAL,
+          failureReason);
     }
 
     BigDecimal parsedReading;
     try {
       parsedReading = new BigDecimal(ocrResponse.readingValue().trim());
     } catch (NumberFormatException e) {
-      return handleFailedOcrAttempt(reading, file.getBytes(), ReadingType.FINAL);
+      return handleFailedOcrAttempt(
+          reading,
+          file.getBytes(),
+          settlementId,
+          unitId,
+          utilityType,
+          ReadingType.FINAL,
+          "INVALID_NUMBER");
     }
 
-    return addFinalMediaReading(
+    ReadingStatus status =
+        addFinalMediaReading(
+            settlementId,
+            unitId,
+            utilityType,
+            parsedReading,
+            ocrResponse.confidence(),
+            ocrResponse.readingValue(),
+            file.getBytes(),
+            reading);
+    logOcrSuccess(
+        reading,
         settlementId,
         unitId,
         utilityType,
-        parsedReading,
+        ReadingType.FINAL,
         ocrResponse.confidence(),
-        ocrResponse.readingValue(),
-        file.getBytes(),
-        reading);
+        parsedReading,
+        status);
+    return status;
   }
 
   @Transactional
@@ -123,30 +157,62 @@ public class MediaReadingService {
 
     OcrResponseDto ocrResponse;
     try {
+      logOcrAttempt(reading, settlementId, unitId, utilityType, ReadingType.INITIAL);
       ocrResponse = ocrClient.readMeter(file);
     } catch (RuntimeException e) {
-      return handleFailedOcrAttempt(reading, file.getBytes(), ReadingType.INITIAL);
+      return handleFailedOcrAttempt(
+          reading,
+          file.getBytes(),
+          settlementId,
+          unitId,
+          utilityType,
+          ReadingType.INITIAL,
+          "OCR_EXCEPTION");
     }
 
-    if (ocrResponse == null
-        || ocrResponse.readingValue() == null
-        || ocrResponse.confidence() == null) {
-      return handleFailedOcrAttempt(reading, file.getBytes(), ReadingType.INITIAL);
+    String failureReason = validateOcrResponse(ocrResponse);
+    if (failureReason != null) {
+      return handleFailedOcrAttempt(
+          reading,
+          file.getBytes(),
+          settlementId,
+          unitId,
+          utilityType,
+          ReadingType.INITIAL,
+          failureReason);
     }
 
     BigDecimal parsedReading;
     try {
       parsedReading = new BigDecimal(ocrResponse.readingValue().trim());
     } catch (NumberFormatException e) {
-      return handleFailedOcrAttempt(reading, file.getBytes(), ReadingType.INITIAL);
+      return handleFailedOcrAttempt(
+          reading,
+          file.getBytes(),
+          settlementId,
+          unitId,
+          utilityType,
+          ReadingType.INITIAL,
+          "INVALID_NUMBER");
     }
 
-    return addInitialMediaReading(
-        parsedReading,
+    ReadingStatus status =
+        addInitialMediaReading(
+            parsedReading,
+            ocrResponse.confidence(),
+            ocrResponse.readingValue(),
+            file.getBytes(),
+            reading);
+    logOcrSuccess(
+        reading,
+        settlementId,
+        unitId,
+        utilityType,
+        ReadingType.INITIAL,
         ocrResponse.confidence(),
-        ocrResponse.readingValue(),
-        file.getBytes(),
-        reading);
+        parsedReading,
+        status);
+    return status;
   }
 
   @Transactional
@@ -201,6 +267,7 @@ public class MediaReadingService {
           consumptionDifference,
           reading.getUnitPrice());
     }
+    logManualCorrection(reading, settlementId, unitId, utilityType, readingType, correctedReading);
   }
 
   private ReadingStatus addFinalMediaReading(
@@ -297,7 +364,13 @@ public class MediaReadingService {
   }
 
   private ReadingStatus handleFailedOcrAttempt(
-      MediaReading reading, byte[] imageBytes, ReadingType readingType) {
+      MediaReading reading,
+      byte[] imageBytes,
+      UUID settlementId,
+      UUID unitId,
+      UtilityType utilityType,
+      ReadingType readingType,
+      String reason) {
     boolean isRetry =
         readingType == ReadingType.INITIAL
             ? reading.getInitialReadingStatus() == ReadingStatus.REQUEST_REUPLOAD
@@ -316,7 +389,116 @@ public class MediaReadingService {
 
     saveUploadAttempt(reading.getId(), imageBytes, null, BigDecimal.ZERO, status, readingType);
 
+    logOcrFailure(reading, settlementId, unitId, utilityType, readingType, reason);
     return status;
+  }
+
+  private String validateOcrResponse(OcrResponseDto ocrResponse) {
+    if (ocrResponse == null) {
+      return "EMPTY_RESPONSE";
+    }
+    if (ocrResponse.readingValue() == null || ocrResponse.readingValue().isBlank()) {
+      return "MISSING_VALUE";
+    }
+    if (ocrResponse.confidence() == null) {
+      return "MISSING_CONFIDENCE";
+    }
+    return null;
+  }
+
+  private void logOcrAttempt(
+      MediaReading reading,
+      UUID settlementId,
+      UUID unitId,
+      UtilityType utilityType,
+      ReadingType readingType) {
+    systemEventClient.logSafely(
+        "OCR_READING_ATTEMPTED",
+        null,
+        auditEntityType(reading, settlementId),
+        auditEntityId(reading, settlementId),
+        readingDetails(settlementId, unitId, utilityType, readingType));
+  }
+
+  private void logOcrSuccess(
+      MediaReading reading,
+      UUID settlementId,
+      UUID unitId,
+      UtilityType utilityType,
+      ReadingType readingType,
+      BigDecimal confidence,
+      BigDecimal parsedReading,
+      ReadingStatus status) {
+    systemEventClient.logSafely(
+        "OCR_READING_SUCCEEDED",
+        null,
+        auditEntityType(reading, settlementId),
+        auditEntityId(reading, settlementId),
+        readingDetails(settlementId, unitId, utilityType, readingType)
+            + ", confidence="
+            + confidence
+            + ", reading="
+            + parsedReading
+            + ", status="
+            + status);
+  }
+
+  private void logOcrFailure(
+      MediaReading reading,
+      UUID settlementId,
+      UUID unitId,
+      UtilityType utilityType,
+      ReadingType readingType,
+      String reason) {
+    systemEventClient.logSafely(
+        "OCR_READING_FAILED",
+        null,
+        auditEntityType(reading, settlementId),
+        auditEntityId(reading, settlementId),
+        readingDetails(settlementId, unitId, utilityType, readingType) + ", reason=" + reason);
+  }
+
+  private void logManualCorrection(
+      MediaReading reading,
+      UUID settlementId,
+      UUID unitId,
+      UtilityType utilityType,
+      ReadingType readingType,
+      BigDecimal correctedReading) {
+    ReadingStatus status =
+        readingType == ReadingType.INITIAL
+            ? reading.getInitialReadingStatus()
+            : reading.getFinalReadingStatus();
+    systemEventClient.logSafely(
+        "METER_READING_MANUALLY_CORRECTED",
+        null,
+        "MEDIA_READING",
+        reading.getId(),
+        readingDetails(settlementId, unitId, utilityType, readingType)
+            + ", correctedReading="
+            + correctedReading
+            + ", status="
+            + status);
+  }
+
+  private String readingDetails(
+      UUID settlementId, UUID unitId, UtilityType utilityType, ReadingType readingType) {
+    return "settlementId="
+        + settlementId
+        + ", unitId="
+        + unitId
+        + ", utilityType="
+        + utilityType
+        + ", readingType="
+        + readingType;
+  }
+
+  private String auditEntityType(MediaReading reading, UUID settlementId) {
+    return reading.getId() != null ? "MEDIA_READING" : "SETTLEMENT";
+  }
+
+  private UUID auditEntityId(MediaReading reading, UUID settlementId) {
+    return reading.getId() != null ? reading.getId() : settlementId;
   }
 
   private void saveUploadAttempt(

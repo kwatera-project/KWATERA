@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
+import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventService;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -22,7 +23,8 @@ class ReservationServiceValidationTest {
               io.github.kwatera_project.kwatera.reservation_service.client.NbpExchangeRateClient
                   .class),
           mock(EmailNotificationService.class),
-          new BusinessDateProvider("Europe/Warsaw"));
+          new BusinessDateProvider("Europe/Warsaw"),
+          mock(SystemEventService.class));
 
   @Test
   void shouldThrow_whenDatesAreNull() {
