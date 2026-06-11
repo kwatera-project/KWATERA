@@ -91,6 +91,24 @@ class EmailNotificationServiceTest {
   }
 
   @Test
+  void shouldUseBlockedStatusStyleInGuestNotification() {
+    Reservation reservation = reservation();
+    reservation.setStatus(ReservationStatus.BLOCKED);
+
+    service.sendReservationCreated(reservation, "actual.guest@example.com");
+
+    ArgumentCaptor<Context> contextCaptor = ArgumentCaptor.forClass(Context.class);
+    verify(templateEngine)
+        .process(
+            org.mockito.ArgumentMatchers.eq("reservation-confirmation"), contextCaptor.capture());
+
+    Context context = contextCaptor.getValue();
+
+    assertEquals("BLOCKED", context.getVariable("statusLabel"));
+    assertEquals("background-color: #F3F4F6; color: #374151;", context.getVariable("statusStyle"));
+  }
+
+  @Test
   void shouldSendReservationStatusChangedEmail() throws Exception {
     Reservation reservation = reservation();
 

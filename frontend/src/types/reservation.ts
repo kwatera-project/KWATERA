@@ -26,6 +26,7 @@ export interface ReservationDetails extends ReservationOverview {
     currencyInfo?: CurrencyMetadata;
     ownerName?: string;
     ownerEmail?: string;
+    guestMessage?: string;
 }
 
 export interface GuestReservation {

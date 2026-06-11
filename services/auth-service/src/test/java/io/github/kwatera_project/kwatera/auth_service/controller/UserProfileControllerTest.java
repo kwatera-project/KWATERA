@@ -53,7 +53,7 @@ class UserProfileControllerTest {
     user.setLastName("Last");
     user.setRole(Role.GUEST);
 
-    UserProfileDto dto = new UserProfileDto(username, "First", "Last", email, Role.GUEST);
+    UserProfileDto dto = new UserProfileDto(id, username, "First", "Last", email, Role.GUEST);
 
     when(userService.getUserByEmail(email)).thenReturn(user);
     when(userMapper.toUserProfileDto(user)).thenReturn(dto);
@@ -91,7 +91,7 @@ class UserProfileControllerTest {
     updatedUser.setLastName("NewLast");
     updatedUser.setRole(Role.GUEST);
 
-    UserProfileDto dto = new UserProfileDto(username, "NewFirst", "NewLast", email, Role.GUEST);
+    UserProfileDto dto = new UserProfileDto(id, username, "NewFirst", "NewLast", email, Role.GUEST);
 
     when(userService.updateProfile(email, "NewFirst", "NewLast")).thenReturn(updatedUser);
     when(userMapper.toUserProfileDto(updatedUser)).thenReturn(dto);
@@ -147,7 +147,8 @@ class UserProfileControllerTest {
     user.setLastName("Last");
     user.setRole(Role.GUEST);
 
-    UserProfileDto dto = new UserProfileDto("test", "First", "Last", "test@mail.com", Role.GUEST);
+    UserProfileDto dto =
+        new UserProfileDto(id, "test", "First", "Last", "test@mail.com", Role.GUEST);
 
     when(userService.getUserById(id)).thenReturn(user);
     when(userMapper.toUserProfileDto(user)).thenReturn(dto);
@@ -174,6 +175,47 @@ class UserProfileControllerTest {
     java.util.UUID id = java.util.UUID.randomUUID();
     mockMvc
         .perform(get("/api/auth/users/internal/" + id).accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void shouldReturnUserProfileByEmailInternal_withToken() throws Exception {
+    String email = "test@mail.com";
+    java.util.UUID id = java.util.UUID.randomUUID();
+    User user = new User();
+    user.setId(id);
+    user.setUsername("test");
+    user.setEmail(email);
+    user.setFirstName("First");
+    user.setLastName("Last");
+    user.setRole(Role.GUEST);
+
+    UserProfileDto dto = new UserProfileDto(id, "test", "First", "Last", email, Role.GUEST);
+
+    when(userService.getUserByEmail(email)).thenReturn(user);
+    when(userMapper.toUserProfileDto(user)).thenReturn(dto);
+
+    mockMvc
+        .perform(
+            get("/api/auth/users/internal/by-email/" + email)
+                .header("X-Internal-Token", "kwatera-internal-secret-token")
+                .accept(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.id").value(id.toString()))
+        .andExpect(jsonPath("$.username").value("test"))
+        .andExpect(jsonPath("$.email").value(email));
+
+    verify(userService).getUserByEmail(email);
+    verify(userMapper).toUserProfileDto(user);
+  }
+
+  @Test
+  void shouldRejectUserProfileByEmailInternal_withoutToken() throws Exception {
+    String email = "test@mail.com";
+    mockMvc
+        .perform(
+            get("/api/auth/users/internal/by-email/" + email).accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isForbidden());
   }
 }

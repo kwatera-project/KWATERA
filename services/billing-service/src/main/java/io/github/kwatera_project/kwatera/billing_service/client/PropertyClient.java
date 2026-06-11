@@ -1,5 +1,6 @@
 package io.github.kwatera_project.kwatera.billing_service.client;
 
+import io.github.kwatera_project.kwatera.billing_service.dto.UnitDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.UnitSettlementItemDto;
 import java.util.Arrays;
 import java.util.List;
@@ -28,5 +29,12 @@ public class PropertyClient {
         restTemplate.getForEntity(url, UnitSettlementItemDto[].class);
 
     return Arrays.asList(Objects.requireNonNull(response.getBody()));
+  }
+
+  public UnitDto getUnit(UUID unitId) {
+
+    String url = propertyServiceUrl + "/units/" + unitId;
+
+    return restTemplate.getForObject(url, UnitDto.class);
   }
 }

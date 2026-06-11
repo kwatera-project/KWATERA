@@ -52,9 +52,9 @@ class ReservationServiceValidationTest {
   }
 
   @Test
-  void shouldThrow_whenFromNotBeforeTo() {
+  void shouldThrow_whenFromAfterTo() {
     LocalDate from = LocalDate.now().plusDays(5);
-    LocalDate to = LocalDate.now().plusDays(5);
+    LocalDate to = LocalDate.now().plusDays(4);
 
     UUID unitId = UUID.randomUUID();
 

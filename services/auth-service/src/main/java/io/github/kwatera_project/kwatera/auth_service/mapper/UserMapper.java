@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 public class UserMapper {
   public UserProfileDto toUserProfileDto(final User user) {
     return new UserProfileDto(
+        user.getId(),
         user.getUsername(),
         user.getFirstName(),
         user.getLastName(),

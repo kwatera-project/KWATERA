@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import type { ComponentProps } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -14,6 +15,8 @@ interface SharedDatePickerProps {
     className?: string;
     dateFormat?: string;
     datepickerRef?: React.RefObject<DatePicker | null>;
+    wrapperClassName?: string;
+    popperPlacement?: ComponentProps<typeof DatePicker>["popperPlacement"];
 }
 
 const MONTHS = [
@@ -158,7 +161,9 @@ export default function SharedDatePicker({
     placeholderText,
     className,
     dateFormat,
-    datepickerRef
+    datepickerRef,
+    wrapperClassName,
+    popperPlacement
 }: SharedDatePickerProps) {
     return (
         <DatePicker
@@ -177,6 +182,11 @@ export default function SharedDatePicker({
             calendarClassName="bg-white border border-gray-200 shadow-xl rounded-lg custom-datepicker-has-header"
             popperClassName="z-[9999]"
             calendarStartDay={1}
+            wrapperClassName={wrapperClassName}
+            popperPlacement={popperPlacement}
+            popperProps={{
+                strategy: "fixed"
+            }}
         />
     );
 }
