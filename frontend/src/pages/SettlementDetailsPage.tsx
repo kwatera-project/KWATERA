@@ -2,9 +2,10 @@ import {useEffect, useState, useCallback} from "react";
 import {useParams, Link} from "react-router-dom";
 import {getSettlementDetails} from "../api/settlementApi";
 import type {SettlementDetails, SettlementItemDetails} from "../types/settlement";
-import {GATEWAY_BASE_URL} from "../api/apiConfig.ts";
+import {GATEWAY_BASE_URL, IS_DEMO_MODE} from "../api/apiConfig.ts";
 import {getReservationDetails} from "../api/reservationApi.ts";
 import {getUserRoles} from "../utils/jwtUtils";
+import {createCheckoutSession} from "../api/billingApi";
 
 export default function SettlementDetailsPage() {
     const {id} = useParams();
@@ -89,6 +90,11 @@ export default function SettlementDetailsPage() {
             const res = await getReservationDetails(reservationId);
             const unitId = res.unitId;
 
+            if (IS_DEMO_MODE) {
+                void unitId;
+                return ["DEPOSIT", "ACCOMMODATION", "WATER"];
+            }
+
             const unitSettlementItemsRes = await fetch(
                 `${GATEWAY_BASE_URL}/api/properties/units/${unitId}/settlement-items`,
                 { method: "GET" }
@@ -129,46 +135,24 @@ export default function SettlementDetailsPage() {
         setSettlementState(prev => ({ ...prev, [stateKey]: {loading: true} }));
 
         try {
-            const token = localStorage.getItem("token");
             const name = settlementType[0] + settlementType.slice(1).toLowerCase();
-
-            const checkoutRes = await fetch(
-                `${GATEWAY_BASE_URL}/api/billing/checkout/${reservationId}`,
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        type: `${settlementType}`,
-                        description: `${name} fee`,
-                        quantity: quantity,
-                        unitPrice: unitPrice
-                    })
-                }
-            );
-
-            if (!checkoutRes.ok) {
-                throw new Error(`Checkout failed: ${checkoutRes.status}`);
-            }
-
-            const checkoutUrl = await checkoutRes.text();
-
-            try {
-                new URL(checkoutUrl);
-            } catch {
-                throw new Error("Invalid checkout URL received");
-            }
+            const checkoutUrl = await createCheckoutSession(reservationId, {
+                type: settlementType as "ACCOMMODATION" | "DEPOSIT" | "ELECTRICITY" | "WATER" | "CLEANING_FEE",
+                description: `${name} fee`,
+                quantity,
+                unitPrice,
+            });
 
             setSettlementState(prev => ({
                 ...prev,
                 [stateKey]: { loading: false, success: true }
             }));
 
-            setTimeout(() => {
-                window.location.assign(checkoutUrl);
-            }, 800);
+            if (!IS_DEMO_MODE) {
+                setTimeout(() => {
+                    window.location.assign(checkoutUrl);
+                }, 800);
+            }
 
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "An error occurred";

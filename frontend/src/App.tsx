@@ -29,10 +29,12 @@ import EditUnitPage from "./pages/EditUnitPage.tsx";
 import EditPropertyImages from "./pages/EditPropertyImages.tsx";
 import EditUnitImages from "./pages/EditUnitImages.tsx";
 import AboutPage from "./pages/AboutPage";
+import DemoModeBanner from "./components/DemoModeBanner";
 
 function App() {
     return (
         <CurrencyProvider>
+            <DemoModeBanner/>
             <Navbar/>
             <Routes>
                 <Route path="/" element={<HomePage/>}/>

@@ -1,4 +1,5 @@
-import { GATEWAY_BASE_URL } from "./apiConfig";
+import { GATEWAY_BASE_URL, IS_DEMO_MODE } from "./apiConfig";
+import { getDemoUser } from "../demo/demoUsers";
 
 export interface UserProfile {
     username: string;
@@ -12,6 +13,17 @@ export async function getUserProfile(): Promise<UserProfile> {
     const token = localStorage.getItem("token");
     if (!token) {
         throw new Error("No token found");
+    }
+
+    if (IS_DEMO_MODE) {
+        const user = getDemoUser();
+        return {
+            username: user.username,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role,
+        };
     }
 
     const res = await fetch(`${GATEWAY_BASE_URL}/api/auth/users/me`, {
@@ -31,6 +43,17 @@ export async function updateUserProfile(firstName: string, lastName: string): Pr
     const token = localStorage.getItem("token");
     if (!token) {
         throw new Error("No token found");
+    }
+
+    if (IS_DEMO_MODE) {
+        const user = getDemoUser();
+        return {
+            username: user.username,
+            firstName,
+            lastName,
+            email: user.email,
+            role: user.role,
+        };
     }
 
     const res = await fetch(`${GATEWAY_BASE_URL}/api/auth/users/me`, {

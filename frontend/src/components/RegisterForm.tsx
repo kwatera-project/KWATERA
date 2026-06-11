@@ -1,7 +1,8 @@
 import '../App.css'
-import { GATEWAY_BASE_URL } from '../api/apiConfig'
+import { GATEWAY_BASE_URL, IS_DEMO_MODE } from '../api/apiConfig'
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
+import DemoRoleSelector from "./DemoRoleSelector"
 
 export default function RegisterForm() {
     const [formData, setFormData] = useState({
@@ -15,6 +16,23 @@ export default function RegisterForm() {
 
     const navigate = useNavigate()
     const [message, setMessage] = useState('')
+
+    if (IS_DEMO_MODE) {
+        return (
+            <div className="min-h-screen w-full flex items-center justify-center bg-white p-6">
+                <div className="w-full max-w-md bg-white border border-gray-100 rounded-2xl shadow-xl p-8 sm:p-10 space-y-6">
+                    <div className="text-center space-y-2">
+                        <h1 className="text-2xl font-bold text-gray-900">Demo login</h1>
+                        <p className="text-sm text-gray-500">Choose a role without creating an account.</p>
+                    </div>
+                    <DemoRoleSelector />
+                    <Link to="/" className="block text-center text-sm text-[#42211D] font-bold hover:underline">
+                        Back to landing page
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
