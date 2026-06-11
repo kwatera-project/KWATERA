@@ -1,3 +1,4 @@
+import { useState, type ReactNode } from "react";
 import { Minus, Plus, SlidersHorizontal, X } from "lucide-react";
 import {
     COMMON_AMENITIES,
@@ -14,12 +15,10 @@ interface FilterSidebarProps {
     currency: string;
 }
 
-/* ─── Building blocks ──────────────────────────────────────────────────── */
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, compact = false }: { title: string; children: ReactNode; compact?: boolean }) {
     return (
-        <div className="py-5 border-b border-gray-100 last:border-0 last:pb-2">
-            <p className="text-[10px] font-bold text-[#7A7A7A] uppercase tracking-[0.12em] mb-3.5">
+        <div className={`${compact ? "py-3" : "py-5"} border-b border-gray-100 last:border-0 last:pb-2`}>
+            <p className={`text-[10px] font-bold text-[#7A7A7A] uppercase tracking-[0.12em] ${compact ? "mb-2.5" : "mb-3.5"}`}>
                 {title}
             </p>
             {children}
@@ -28,16 +27,18 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function CheckRow({
-    label,
-    checked,
-    onChange,
-}: {
+                      label,
+                      checked,
+                      onChange,
+                      compact = false,
+                  }: {
     label: string;
     checked: boolean;
     onChange: () => void;
+    compact?: boolean;
 }) {
     return (
-        <label className="flex items-center gap-3 cursor-pointer group select-none py-0.5">
+        <label className={`flex items-center gap-3 cursor-pointer group select-none ${compact ? "py-0" : "py-0.5"}`}>
             <input type="checkbox" checked={checked} onChange={onChange} className="sr-only" />
             <span
                 className={`w-[18px] h-[18px] rounded-[5px] flex-shrink-0 flex items-center justify-center border-2 transition-all duration-150 ${
@@ -59,7 +60,7 @@ function CheckRow({
                 )}
             </span>
             <span
-                className={`text-sm leading-snug transition-colors duration-150 ${
+                className={`${compact ? "text-[13px]" : "text-sm"} leading-snug transition-colors duration-150 ${
                     checked ? "text-[#42211D] font-semibold" : "text-[#3A3A3A] group-hover:text-[#42211D]"
                 }`}
             >
@@ -70,26 +71,28 @@ function CheckRow({
 }
 
 function Stepper({
-    label,
-    value,
-    min = 0,
-    onChange,
-}: {
+                     label,
+                     value,
+                     min = 0,
+                     onChange,
+                     compact = false,
+                 }: {
     label: string;
     value: number;
     min?: number;
     onChange: (val: number) => void;
+    compact?: boolean;
 }) {
     return (
-        <div className="flex items-center justify-between py-1">
-            <span className="text-sm text-[#3A3A3A] font-medium">{label}</span>
+        <div className={`flex items-center justify-between ${compact ? "py-0.5" : "py-1"}`}>
+            <span className={`${compact ? "text-[13px]" : "text-sm"} text-[#3A3A3A] font-medium`}>{label}</span>
             <div className="flex items-center gap-2.5">
                 <button
                     type="button"
                     onClick={() => onChange(Math.max(min, value - 1))}
                     disabled={value <= min}
                     aria-label={`Decrease ${label}`}
-                    className="w-8 h-8 rounded-full border-2 border-gray-200 flex items-center justify-center text-[#1A1A1A] hover:border-[#42211D] hover:text-[#42211D] disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                    className={`${compact ? "w-7 h-7" : "w-8 h-8"} rounded-full border-2 border-gray-200 flex items-center justify-center text-[#1A1A1A] hover:border-[#42211D] hover:text-[#42211D] disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer`}
                 >
                     <Minus className="w-3.5 h-3.5" strokeWidth={2.5} />
                 </button>
@@ -100,7 +103,7 @@ function Stepper({
                     type="button"
                     onClick={() => onChange(value + 1)}
                     aria-label={`Increase ${label}`}
-                    className="w-8 h-8 rounded-full border-2 border-gray-200 flex items-center justify-center text-[#1A1A1A] hover:border-[#42211D] hover:text-[#42211D] transition-all cursor-pointer"
+                    className={`${compact ? "w-7 h-7" : "w-8 h-8"} rounded-full border-2 border-gray-200 flex items-center justify-center text-[#1A1A1A] hover:border-[#42211D] hover:text-[#42211D] transition-all cursor-pointer`}
                 >
                     <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />
                 </button>
@@ -109,15 +112,16 @@ function Stepper({
     );
 }
 
-/* ─── Content (shared between desktop + mobile drawer) ─────────────────── */
-
 function SidebarContent({
-    filters,
-    onFiltersChange,
-    onClose,
-    currency,
-    isMobile,
-}: FilterSidebarProps & { isMobile: boolean }) {
+                            filters,
+                            onFiltersChange,
+                            onClose,
+                            currency,
+                            isMobile,
+                            onHideDesktop,
+                        }: FilterSidebarProps & { isMobile: boolean; onHideDesktop?: () => void }) {
+    const compact = !isMobile;
+
     const activeCount =
         filters.selectedAmenities.length +
         filters.propertyTypes.length +
@@ -135,8 +139,7 @@ function SidebarContent({
 
     return (
         <div className="flex flex-col h-full">
-            {/* Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-gray-100 flex-shrink-0">
+            <div className={`${compact ? "pb-3" : "pb-4"} flex items-center justify-between border-b border-gray-100 flex-shrink-0`}>
                 <div className="flex items-center gap-2.5">
                     <SlidersHorizontal className="w-4 h-4 text-[#42211D]" strokeWidth={2.5} />
                     <span className="text-sm font-bold text-[#1A1A1A]">Filters</span>
@@ -155,7 +158,7 @@ function SidebarContent({
                             Clear all
                         </button>
                     )}
-                    {isMobile && (
+                    {isMobile ? (
                         <button
                             onClick={onClose}
                             className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
@@ -163,52 +166,60 @@ function SidebarContent({
                         >
                             <X className="w-4 h-4 text-[#7A7A7A]" />
                         </button>
+                    ) : (
+                        <button
+                            onClick={onHideDesktop}
+                            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                            aria-label="Hide filters"
+                        >
+                            <X className="w-4 h-4 text-[#7A7A7A]" />
+                        </button>
                     )}
                 </div>
             </div>
 
-            {/* Scrollable body */}
-            <div className="flex-1 overflow-y-auto">
-                {/* Property Type */}
-                <Section title="Property Type">
-                    <div className="space-y-2">
+            <div className={isMobile ? "flex-1 overflow-y-auto" : "flex-1 overflow-visible"}>
+                <Section title="Property Type" compact={compact}>
+                    <div className={compact ? "space-y-1.5" : "space-y-2"}>
                         {PROPERTY_TYPES.map((type) => (
                             <CheckRow
                                 key={type}
                                 label={type}
                                 checked={filters.propertyTypes.includes(type)}
                                 onChange={() => toggle("propertyTypes", type)}
+                                compact={compact}
                             />
                         ))}
                     </div>
                 </Section>
 
-                {/* Capacity */}
-                <Section title="Capacity">
+                <Section title="Capacity" compact={compact}>
                     <div className="space-y-1 divide-y divide-gray-50">
                         <Stepper
                             label="Guests"
                             value={filters.guests}
                             min={1}
                             onChange={(v) => onFiltersChange({ ...filters, guests: v })}
+                            compact={compact}
                         />
                         <Stepper
                             label="Bedrooms"
                             value={filters.bedrooms}
                             min={0}
                             onChange={(v) => onFiltersChange({ ...filters, bedrooms: v })}
+                            compact={compact}
                         />
                         <Stepper
                             label="Beds"
                             value={filters.beds}
                             min={0}
                             onChange={(v) => onFiltersChange({ ...filters, beds: v })}
+                            compact={compact}
                         />
                     </div>
                 </Section>
 
-                {/* Price Range */}
-                <Section title="Price per Night">
+                <Section title="Price per Night" compact={compact}>
                     <div className="flex items-end gap-2.5">
                         <div className="flex-1">
                             <p className="text-[10px] font-semibold text-[#7A7A7A] uppercase tracking-wider mb-1.5">Min</p>
@@ -222,7 +233,7 @@ function SidebarContent({
                                     placeholder="0"
                                     value={filters.minPrice}
                                     onChange={(e) => onFiltersChange({ ...filters, minPrice: e.target.value })}
-                                    className="w-full pl-9 pr-2 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#42211D]/20 focus:border-[#42211D]/60 transition-all bg-white text-[#1A1A1A] appearance-none"
+                                    className={`${compact ? "py-2" : "py-2.5"} w-full pl-9 pr-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#42211D]/20 focus:border-[#42211D]/60 transition-all bg-white text-[#1A1A1A] appearance-none`}
                                 />
                             </div>
                         </div>
@@ -239,22 +250,22 @@ function SidebarContent({
                                     placeholder="Any"
                                     value={filters.maxPrice}
                                     onChange={(e) => onFiltersChange({ ...filters, maxPrice: e.target.value })}
-                                    className="w-full pl-9 pr-2 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#42211D]/20 focus:border-[#42211D]/60 transition-all bg-white text-[#1A1A1A] appearance-none"
+                                    className={`${compact ? "py-2" : "py-2.5"} w-full pl-9 pr-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#42211D]/20 focus:border-[#42211D]/60 transition-all bg-white text-[#1A1A1A] appearance-none`}
                                 />
                             </div>
                         </div>
                     </div>
                 </Section>
 
-                {/* Amenities */}
-                <Section title="Amenities">
-                    <div className="space-y-2">
+                <Section title="Amenities" compact={compact}>
+                    <div className={compact ? "space-y-1.5" : "space-y-2"}>
                         {COMMON_AMENITIES.map((amenity) => (
                             <CheckRow
                                 key={amenity}
                                 label={amenity}
                                 checked={filters.selectedAmenities.includes(amenity)}
                                 onChange={() => toggle("selectedAmenities", amenity)}
+                                compact={compact}
                             />
                         ))}
                     </div>
@@ -264,21 +275,35 @@ function SidebarContent({
     );
 }
 
-/* ─── Public component ──────────────────────────────────────────────────── */
-
 export default function FilterSidebar(props: FilterSidebarProps) {
     const { isOpen, onClose } = props;
+    const [isDesktopVisible, setIsDesktopVisible] = useState(true);
 
     return (
         <>
-            {/* Desktop sticky sidebar */}
-            <aside className="hidden md:block w-[268px] flex-shrink-0 self-start sticky top-24">
-                <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 7rem)' }}>
-                    <SidebarContent {...props} isMobile={false} />
-                </div>
-            </aside>
+            <div className="hidden md:block flex-shrink-0 self-start sticky top-20">
+                {isDesktopVisible ? (
+                    <aside className="w-[284px]">
+                        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 flex flex-col overflow-visible min-h-[calc(100vh-5.5rem)]">
+                            <SidebarContent
+                                {...props}
+                                isMobile={false}
+                                onHideDesktop={() => setIsDesktopVisible(false)}
+                            />
+                        </div>
+                    </aside>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={() => setIsDesktopVisible(true)}
+                        className="inline-flex items-center gap-2 bg-white border border-gray-100 rounded-xl shadow-sm px-4 py-3 text-sm font-bold text-[#42211D] hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
+                    >
+                        <SlidersHorizontal className="w-4 h-4" strokeWidth={2.5} />
+                        Show filters
+                    </button>
+                )}
+            </div>
 
-            {/* Mobile slide-over drawer */}
             {isOpen && (
                 <div className="md:hidden fixed inset-0 z-50 flex">
                     <div
