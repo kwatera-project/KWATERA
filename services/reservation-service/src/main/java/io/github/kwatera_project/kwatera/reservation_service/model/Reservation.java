@@ -66,4 +66,7 @@ public class Reservation {
   @Column(name = "payment_exchange_rate", nullable = false)
   @Positive
   private BigDecimal paymentExchangeRate;
+
+  @Column(name = "guest_message", columnDefinition = "TEXT")
+  private String guestMessage;
 }

@@ -26,4 +26,5 @@ public class ReservationDetailsDto {
   private String city;
   private String ownerName;
   private String ownerEmail;
+  private String guestMessage;
 }

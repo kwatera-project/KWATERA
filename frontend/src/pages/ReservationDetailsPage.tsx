@@ -179,6 +179,21 @@ export default function ReservationDetailsPage() {
                         </div>
                     </div>
 
+
+                    {reservation.guestMessage && (
+                        <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 space-y-4">
+                            <div className="flex items-center gap-2 border-b border-[#DACDCA] pb-3">
+                                <svg className="w-[18px] h-[18px] text-[#42211D]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                                </svg>
+                                <h2 className="text-lg font-bold text-[#1A1A1A] tracking-tight">Message from Guest</h2>
+                            </div>
+                            <p className="text-sm text-[#1A1A1A] leading-relaxed whitespace-pre-wrap">
+                                {reservation.guestMessage}
+                            </p>
+                        </div>
+                    )}
+
                     {/* Owner Information Card */}
                     {reservation.ownerName && (
                         <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 space-y-4">

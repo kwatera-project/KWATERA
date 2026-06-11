@@ -208,8 +208,8 @@ export default function CheckoutPage() {
                 lastName: form.lastName.trim(),
                 email: form.email.trim(),
                 phone: form.phone.trim(),
-                message: form.message.trim() || undefined
             },
+            guestMessage: form.message.trim() || undefined,
             adults: adultsVal,
             children: childrenVal,
             totalGuests,
