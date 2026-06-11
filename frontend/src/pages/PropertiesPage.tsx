@@ -25,8 +25,6 @@ const PROPERTIES_LOAD_ERROR = "Could not load properties. Please try again later
 const UNITS_FILTER_ERROR = "Could not load units for filtering. Please try again later.";
 const AVAILABILITY_FILTER_ERROR = "Could not verify availability. Please try again or adjust your filters.";
 
-
-
 function propertyMatchesCity(property: Property, city: string) {
     const normalize = (v: string) => v.toLowerCase().replace(/[,\s]+/g, " ").trim();
     const normalizedCity = normalize(city);
@@ -34,8 +32,6 @@ function propertyMatchesCity(property: Property, city: string) {
     const text = [property.city, property.country].filter(Boolean).join(" ");
     return normalize(text).includes(normalizedCity);
 }
-
-/* ─── Active filter badge ──────────────────────────────────────────────── */
 
 interface ActiveFilter {
     id: string;
@@ -58,10 +54,7 @@ function FilterBadge({ label, onRemove }: { label: string; onRemove: () => void 
     );
 }
 
-/* ─── Page ─────────────────────────────────────────────────────────────── */
-
 export default function PropertiesPage() {
-    /* ── Core data ── */
     const [properties, setProperties] = useState<Property[]>([]);
     const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -70,7 +63,6 @@ export default function PropertiesPage() {
     const [filterError, setFilterError] = useState<string | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
 
-    /* ── UI state ── */
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [mapBounds, setMapBounds] = useState<{
         minLat: number; maxLat: number; minLng: number; maxLng: number;
@@ -79,7 +71,6 @@ export default function PropertiesPage() {
     const [showMap, setShowMap] = useState(false);
     const [openPopupPropertyId, setOpenPopupPropertyId] = useState<string | null>(null);
 
-    /* ── Filter state (immediate — drives sidebar UI) ── */
     const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
 
     const debouncedFilters = useDebounce(filters, 450);
@@ -88,7 +79,6 @@ export default function PropertiesPage() {
     const [propertyPrices, setPropertyPrices] = useState<Record<string, number>>({});
     const [unitCapacities, setUnitCapacities] = useState<Record<string, { bedrooms: number; beds: number }>>({});
 
-    /* ── URL search values ── */
     const searchValues = useMemo(() => ({
         city: searchParams.get("city") ?? "",
         checkIn: parseSearchDate(searchParams.get("checkIn")),
@@ -442,10 +432,10 @@ export default function PropertiesPage() {
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 {showMap ? (
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                        d="M4 6h16M4 12h16M4 18h16" />
+                                          d="M4 6h16M4 12h16M4 18h16" />
                                 ) : (
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                                          d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                                 )}
                             </svg>
                             {showMap ? "Hide map" : "Show map"}
@@ -520,7 +510,7 @@ export default function PropertiesPage() {
                                         <div className="w-12 h-12 rounded-full bg-[#42211D]/10 flex items-center justify-center mx-auto mb-4">
                                             <svg className="w-6 h-6 text-[#42211D]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                                                    d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
+                                                      d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
                                             </svg>
                                         </div>
                                         <h2 className="text-lg font-bold text-[#1A1A1A]">No properties found</h2>
@@ -591,6 +581,20 @@ export default function PropertiesPage() {
                                                                     <p className="text-xs text-[#7A7A7A] mt-0.5 font-medium">
                                                                         {p.city}
                                                                     </p>
+                                                                    {p.amenities && p.amenities.length > 0 && (
+                                                                        <div className="flex flex-wrap gap-1 mt-1.5">
+                                                                            {p.amenities.slice(0, 3).map((a, idx) => (
+                                                                                <span key={idx} className="text-[10px] bg-[#f0eded] text-[#42211D] px-1.5 py-0.5 rounded font-medium line-clamp-1 break-all">
+                                                                                    {a}
+                                                                                </span>
+                                                                            ))}
+                                                                            {p.amenities.length > 3 && (
+                                                                                <span className="text-[10px] bg-[#f0eded] text-[#42211D] px-1.5 py-0.5 rounded font-medium">
+                                                                                    +{p.amenities.length - 3}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                                 <div className="text-right shrink-0 ml-4">
                                                                     <span className="text-[9px] text-[#7A7A7A] block font-bold uppercase tracking-wider leading-none mb-0.5">

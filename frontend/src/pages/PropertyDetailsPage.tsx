@@ -387,10 +387,31 @@ export default function PropertyDetailsPage() {
                                                     ? `${u.convertedPricePerNight.toFixed(2)} ${u.currencyInfo.displayCurrency} / night`
                                                     : `${u.pricePerNight} PLN / night`}
                                             </p>
-                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-brand-bg border border-brand-accent text-brand-muted">
-                                                Capacity: {u.capacity} {u.capacity === 1 ? "person" : "people"}
-                                            </span>
+                                            <div className="flex flex-wrap gap-2">
+                                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-brand-bg border border-brand-accent text-brand-muted">
+                                                    Capacity: {u.capacity} {u.capacity === 1 ? "person" : "people"}
+                                                </span>
+                                                {u.bedrooms !== undefined && (
+                                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-brand-bg border border-brand-accent text-brand-muted">
+                                                        Bedrooms: {u.bedrooms}
+                                                    </span>
+                                                )}
+                                                {u.beds !== undefined && (
+                                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-brand-bg border border-brand-accent text-brand-muted">
+                                                        Beds: {u.beds}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
+                                        {u.amenities && u.amenities.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 mt-3">
+                                                {u.amenities.map((amenity, idx) => (
+                                                    <span key={idx} className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                                                        {amenity}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 

@@ -6,6 +6,8 @@ export interface UnitFormData {
     description: string;
     pricePerNight: number;
     capacity: number;
+    bedrooms: number;
+    beds: number;
     unitType: string;
     unitNumber: string;
     floor: number;
@@ -48,6 +50,8 @@ export default function UnitForm({
             description: "",
             pricePerNight: "" as unknown as number,
             capacity: "" as unknown as number,
+            bedrooms: "" as unknown as number,
+            beds: "" as unknown as number,
             unitType: UNIT_TYPES[0],
             unitNumber: "",
             floor: "" as unknown as number,
@@ -72,6 +76,8 @@ export default function UnitForm({
             ...form,
             pricePerNight: Number(form.pricePerNight),
             capacity: Number(form.capacity),
+            bedrooms: Number(form.bedrooms),
+            beds: Number(form.beds),
             floor: Number(form.floor),
             amenities: form.amenities ?? []
         };
@@ -143,7 +149,7 @@ export default function UnitForm({
 
                 <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider mb-2 pt-2">Space & Location</span>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div className="space-y-1">
                         <input
                             type="number"
@@ -153,6 +159,32 @@ export default function UnitForm({
                             onChange={handleChange}
                             className={inputClasses}
                             min="1"
+                            required
+                        />
+                    </div>
+
+                    <div className="space-y-1">
+                        <input
+                            type="number"
+                            name="bedrooms"
+                            placeholder="Bedrooms"
+                            value={form.bedrooms === 0 || isNaN(form.bedrooms) ? "" : form.bedrooms}
+                            onChange={handleChange}
+                            className={inputClasses}
+                            min="0"
+                            required
+                        />
+                    </div>
+
+                    <div className="space-y-1">
+                        <input
+                            type="number"
+                            name="beds"
+                            placeholder="Beds"
+                            value={form.beds === 0 || isNaN(form.beds) ? "" : form.beds}
+                            onChange={handleChange}
+                            className={inputClasses}
+                            min="0"
                             required
                         />
                     </div>
