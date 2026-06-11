@@ -18,11 +18,16 @@ public interface PropertyRepository extends JpaRepository<Property, UUID> {
 
   @Query(
       value =
-          "SELECT * FROM properties WHERE "
-              + "(:minLat IS NULL OR latitude BETWEEN :minLat AND :maxLat) AND "
-              + "(:minLng IS NULL OR longitude BETWEEN :minLng AND :maxLng) AND "
+          "SELECT DISTINCT p.* FROM properties p WHERE "
+              + "(:minLat IS NULL OR p.latitude BETWEEN :minLat AND :maxLat) AND "
+              + "(:minLng IS NULL OR p.longitude BETWEEN :minLng AND :maxLng) AND "
               + "(COALESCE(:amenitiesLength, 0) = 0 OR "
-              + "amenities @> CAST(COALESCE(:amenitiesJson, '[]') AS jsonb))",
+              + "p.amenities @> CAST(COALESCE(:amenitiesJson, '[]') AS jsonb) OR "
+              + "EXISTS ("
+              + "  SELECT 1 FROM units u "
+              + "  WHERE u.property_id = p.id "
+              + "  AND u.amenities @> CAST(COALESCE(:amenitiesJson, '[]') AS jsonb)"
+              + "))",
       nativeQuery = true)
   List<Property> findByBoundingBoxAndAmenities(
       @Param("minLat") BigDecimal minLat,

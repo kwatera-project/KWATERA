@@ -151,7 +151,11 @@ export default function UnitForm({
 
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div className="space-y-1">
+                        <label htmlFor="capacity" className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
+                            Max Guests
+                        </label>
                         <input
+                            id="capacity"
                             type="number"
                             name="capacity"
                             placeholder="Max Guests"
@@ -164,7 +168,11 @@ export default function UnitForm({
                     </div>
 
                     <div className="space-y-1">
+                        <label htmlFor="bedrooms" className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
+                            Bedrooms
+                        </label>
                         <input
+                            id="bedrooms"
                             type="number"
                             name="bedrooms"
                             placeholder="Bedrooms"
@@ -177,7 +185,11 @@ export default function UnitForm({
                     </div>
 
                     <div className="space-y-1">
+                        <label htmlFor="beds" className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
+                            Beds
+                        </label>
                         <input
+                            id="beds"
                             type="number"
                             name="beds"
                             placeholder="Beds"
@@ -190,7 +202,11 @@ export default function UnitForm({
                     </div>
 
                     <div className="space-y-1">
+                        <label htmlFor="unitNumber" className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
+                            Unit Number
+                        </label>
                         <input
+                            id="unitNumber"
                             name="unitNumber"
                             placeholder="Unit Number (e.g. 104A)"
                             value={form.unitNumber}
@@ -201,7 +217,11 @@ export default function UnitForm({
                     </div>
 
                     <div className="space-y-1">
+                        <label htmlFor="floor" className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
+                            Floor
+                        </label>
                         <input
+                            id="floor"
                             type="number"
                             name="floor"
                             placeholder="Floor"
