@@ -2,17 +2,18 @@ package io.github.kwatera_project.kwatera.billing_service.service;
 
 import io.github.kwatera_project.kwatera.billing_service.client.OcrClient;
 import io.github.kwatera_project.kwatera.billing_service.client.PropertyClient;
-import io.github.kwatera_project.kwatera.billing_service.dto.MediaReadingStatusDto;
-import io.github.kwatera_project.kwatera.billing_service.dto.MediaReadingUploadAttemptDto;
-import io.github.kwatera_project.kwatera.billing_service.dto.OcrResponseDto;
-import io.github.kwatera_project.kwatera.billing_service.dto.UnitSettlementItemDto;
+import io.github.kwatera_project.kwatera.billing_service.client.ReservationClient;
+import io.github.kwatera_project.kwatera.billing_service.dto.*;
 import io.github.kwatera_project.kwatera.billing_service.model.*;
 import io.github.kwatera_project.kwatera.billing_service.repository.MediaReadingRepository;
 import io.github.kwatera_project.kwatera.billing_service.repository.MediaReadingUploadAttemptRepository;
+import io.github.kwatera_project.kwatera.billing_service.repository.SettlementRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -30,6 +31,8 @@ public class MediaReadingService {
   private final OcrClient ocrClient;
   private final MediaReadingUploadAttemptRepository uploadAttemptRepository;
   private final PropertyClient propertyClient;
+  private final SettlementRepository settlementRepository;
+  private final ReservationClient reservationClient;
 
   @Value("${ocr.confidence-threshold}")
   private BigDecimal ocrConfidenceThreshold;
@@ -228,18 +231,40 @@ public class MediaReadingService {
 
       return status;
     }
-
     ReadingStatus status = determineReadingStatus(finalConfidenceScore, isRetry);
-    reading.setFinalReadingStatus(status);
 
     if (status == ReadingStatus.AUTO_APPROVED) {
+      BigDecimal consumptionDifference = finalReading.subtract(reading.getInitialReading());
+
+      Settlement settlement = settlementRepository.findById(settlementId).orElseThrow();
+      ReservationDto reservation = reservationClient.getReservation(settlement.getReservationId());
+      UnitDto unit = propertyClient.getUnit(unitId);
+      int capacity = (unit != null && unit.getCapacity() != null) ? unit.getCapacity() : 1;
+
+      if (utilityType == UtilityType.WATER
+          && reservation != null
+          && reservation.getStartDate() != null
+          && reservation.getEndDate() != null
+          && isConsumptionSuspicious(
+              consumptionDifference,
+              reservation.getStartDate(),
+              reservation.getEndDate(),
+              capacity)) {
+        status = ReadingStatus.REQUEST_MANUAL_REVIEW;
+        reading.setFinalReadingStatus(status);
+        mediaReadingRepository.save(reading);
+        saveUploadAttempt(
+            reading.getId(), imageBytes, ocrValue, finalConfidenceScore, status, ReadingType.FINAL);
+        return status;
+      }
+
       reading.setFinalReading(finalReading);
       reading.setFinalConfidenceScore(finalConfidenceScore);
       reading.setFinalReadingSource(ReadingSource.OCR);
     }
 
+    reading.setFinalReadingStatus(status);
     mediaReadingRepository.save(reading);
-
     saveUploadAttempt(
         reading.getId(), imageBytes, ocrValue, finalConfidenceScore, status, ReadingType.FINAL);
 
@@ -364,6 +389,24 @@ public class MediaReadingService {
             () ->
                 new IllegalStateException(
                     "No tariff configured for unit " + unitId + " and utility " + utilityType));
+  }
+
+  private boolean isConsumptionSuspicious(
+      BigDecimal consumptionDifference, LocalDate startDate, LocalDate endDate, int capacity) {
+
+    long stayDays = ChronoUnit.DAYS.between(startDate, endDate);
+    stayDays = Math.max(stayDays, 1);
+
+    BigDecimal expectedUsage =
+        BigDecimal.valueOf(capacity)
+            .multiply(BigDecimal.valueOf(stayDays))
+            .multiply(new BigDecimal("0.1"));
+
+    BigDecimal minUsage = expectedUsage.multiply(new BigDecimal("0.2"));
+    BigDecimal maxUsage = expectedUsage.multiply(new BigDecimal("3.0"));
+
+    return consumptionDifference.compareTo(minUsage) < 0
+        || consumptionDifference.compareTo(maxUsage) > 0;
   }
 
   private String descriptionFor(UtilityType utilityType) {
