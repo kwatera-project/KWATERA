@@ -341,6 +341,22 @@ export default function PropertyDetailsPage() {
                 <p className="text-sm text-brand-muted mt-1 font-medium">{property.city}</p>
             </div>
 
+            {property.amenities && property.amenities.length > 0 && (
+                <div className="bg-white border border-brand-accent rounded-xl shadow-sm p-6">
+                    <h2 className="text-xl font-bold text-brand-main tracking-tight mb-4">Amenities</h2>
+                    <div className="flex flex-wrap gap-2">
+                        {property.amenities.map((amenity, idx) => (
+                            <span
+                                key={idx}
+                                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-brand-bg border border-brand-accent text-brand-muted"
+                            >
+                                {amenity}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             <div className="bg-white border border-brand-accent rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="max-w-md text-center md:text-left space-y-1">
                     <h3 className="font-bold text-xl text-brand-main tracking-tight">Select Stay Dates</h3>

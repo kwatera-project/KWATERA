@@ -255,9 +255,8 @@ export default function PropertiesPage() {
 
         if (debouncedFilters.propertyTypes.length > 0) {
             result = result.filter((p) =>
-                p.propertyType
-                    ? debouncedFilters.propertyTypes.includes(p.propertyType)
-                    : true
+                p.propertyType !== undefined &&
+                debouncedFilters.propertyTypes.includes(p.propertyType)
             );
         }
 
