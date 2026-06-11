@@ -319,6 +319,7 @@ public class ReservationService {
     reservation.setStartDate(request.getStartDate());
     reservation.setEndDate(request.getEndDate());
     reservation.setStatus(status);
+    reservation.setGuestMessage(request.getGuestMessage());
 
     BigDecimal pricePerNight = fetchUnitPrice(request.getUnitId(), token);
     BigDecimal totalPrice = pricePerNight.multiply(BigDecimal.valueOf(billableNights));
@@ -406,6 +407,7 @@ public class ReservationService {
     dto.setCreatedAt(reservation.getCreatedAt());
     dto.setPricePerNightSnapshot(reservation.getPricePerNightSnapshot());
     dto.setTotalPrice(reservation.getTotalPrice());
+    dto.setGuestMessage(reservation.getGuestMessage());
 
     CurrencyMetadataDto currencyInfo =
         createCurrencyInfo(

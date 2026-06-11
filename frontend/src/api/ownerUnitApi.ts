@@ -1,11 +1,13 @@
-import { GATEWAY_BASE_URL } from "./apiConfig";
-import type {UnitCreateRequest, UnitUpdateRequest} from "../types/property.ts";
+import { GATEWAY_BASE_URL, IS_DEMO_MODE } from "./apiConfig";
+import { getDemoUnits } from "../demo/demoProperties";
+import type { UnitCreateRequest, UnitUpdateRequest } from "../types/property.ts";
 
 const API_URL = `${GATEWAY_BASE_URL}/api/owner`;
 
 export async function getPropertyUnits(
     propertyId: string
 ) {
+    if (IS_DEMO_MODE) return getDemoUnits(propertyId);
 
     const token = localStorage.getItem("token");
 
@@ -29,6 +31,14 @@ export async function createUnit(
     propertyId: string,
     data: UnitCreateRequest
 ) {
+    if (IS_DEMO_MODE) {
+        return {
+            id: `demo-created-unit-${Date.now()}`,
+            propertyId,
+            ...data,
+        };
+    }
+
     const token = localStorage.getItem("token");
 
     const res = await fetch(
@@ -56,6 +66,15 @@ export async function updateUnit(
     data: UnitUpdateRequest,
     currency = "PLN"
 ) {
+    if (IS_DEMO_MODE) {
+        void currency;
+        return {
+            id: unitId,
+            propertyId,
+            ...data,
+        };
+    }
+
     const token = localStorage.getItem("token");
 
     const res = await fetch(
@@ -81,6 +100,12 @@ export async function deleteUnit(
     propertyId: string,
     unitId: string
 ) {
+    if (IS_DEMO_MODE) {
+        void propertyId;
+        void unitId;
+        return;
+    }
+
     const token = localStorage.getItem("token");
 
     const res = await fetch(
@@ -105,7 +130,7 @@ export async function deleteUnit(
 
         throw {
             status: res.status,
-            message: errorMessage
+            message: errorMessage,
         };
     }
 }
@@ -116,6 +141,14 @@ export async function uploadUnitImage(
     file: File,
     isMain: boolean
 ) {
+    if (IS_DEMO_MODE) {
+        void propertyId;
+        void unitId;
+        void file;
+        void isMain;
+        return;
+    }
+
     const token = localStorage.getItem("token");
 
     const formData = new FormData();
@@ -143,6 +176,13 @@ export async function deleteUnitImage(
     unitId: string,
     imageId: string
 ) {
+    if (IS_DEMO_MODE) {
+        void propertyId;
+        void unitId;
+        void imageId;
+        return;
+    }
+
     const token = localStorage.getItem("token");
 
     const res = await fetch(
@@ -166,6 +206,14 @@ export async function setUnitImageAsMain(
     imageId: string,
     isMain: boolean
 ) {
+    if (IS_DEMO_MODE) {
+        void propertyId;
+        void unitId;
+        void imageId;
+        void isMain;
+        return;
+    }
+
     const token = localStorage.getItem("token");
 
     const res = await fetch(

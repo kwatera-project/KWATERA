@@ -3,6 +3,7 @@ package io.github.kwatera_project.kwatera.billing_service.bdd;
 import io.cucumber.spring.CucumberContextConfiguration;
 import io.github.kwatera_project.kwatera.billing_service.client.OcrClient;
 import io.github.kwatera_project.kwatera.billing_service.client.PropertyClient;
+import io.github.kwatera_project.kwatera.billing_service.client.ReservationClient;
 import io.github.kwatera_project.kwatera.billing_service.event.SettlementEventPublisher;
 import io.github.kwatera_project.kwatera.billing_service.service.EmailNotificationService;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -47,4 +48,5 @@ public class CucumberSpringConfig {
   @MockitoBean protected EmailNotificationService emailNotificationService;
   @MockitoBean protected OcrClient ocrClient;
   @MockitoBean protected PropertyClient propertyClient;
+  @MockitoBean protected ReservationClient reservationClient;
 }

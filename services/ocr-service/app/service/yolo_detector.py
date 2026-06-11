@@ -23,10 +23,12 @@ def _has_red(frame: np.ndarray, box_x: float, box_y: float, box_w: float, box_h:
     patch = frame[y1:y2, x1:x2]
     if patch.size == 0:
         return False
+
     hsv = cv2.cvtColor(patch, cv2.COLOR_BGR2HSV)
     mask1 = cv2.inRange(hsv, np.array([0, 50, 50]), np.array([10, 255, 255]))
     mask2 = cv2.inRange(hsv, np.array([160, 50, 50]), np.array([180, 255, 255]))
     total = patch.shape[0] * patch.shape[1]
+
     return (np.sum(mask1 > 0) + np.sum(mask2 > 0)) / total > RED_RATIO_THRESH
 
 
@@ -34,43 +36,59 @@ class YOLODetector:
     """Detector class responsible for running inference on water meter digits."""
 
     def __init__(self, model_path: str = "models/digits.pt") -> None:
-        """Initialize the YOLO model with the given weights path."""
+        """Load YOLO model from the provided path."""
         self.model = YOLO(model_path)
 
     def read_digits_direct(self, frame: np.ndarray) -> tuple[str | None, float]:
-        """Perform direct digit recognition and filter out red components."""
+        """Perform direct digit recognition and include decimal digits."""
         results = self.model(
-            frame, conf=CONF_THRESHOLD, iou=IOU_THRESHOLD, agnostic_nms=True, verbose=False
+            frame,
+            conf=CONF_THRESHOLD,
+            iou=IOU_THRESHOLD,
+            agnostic_nms=True,
+            verbose=False,
         )
+
         boxes = results[0].boxes
         if boxes is None or len(boxes) == 0:
             return None, 0.0
 
-        fh, fw = frame.shape[:2]
         dets = []
         for b in boxes:
-            x, y = float(b.xywh[0][0]), float(b.xywh[0][1])
-            bw, bh = float(b.xywh[0][2]), float(b.xywh[0][3])
-            if not _has_red(frame, x, y, bw, bh):
-                dets.append({"x": x, "y": y, "digit": int(b.cls[0]), "conf": float(b.conf[0])})
+            x = float(b.xywh[0][0])
+            y = float(b.xywh[0][1])
+            bw = float(b.xywh[0][2])
+            bh = float(b.xywh[0][3])
 
-        if not dets:
-            return None, 0.0
+            dets.append(
+                {
+                    "x": x,
+                    "y": y,
+                    "digit": int(b.cls[0]),
+                    "conf": float(b.conf[0]),
+                    "is_red": _has_red(frame, x, y, bw, bh),
+                }
+            )
 
-        xs = []
-        ys = []
-        for d in dets:
-            xs.append(d["x"])
-            ys.append(d["y"])
-
-        is_horizontal = (max(xs) - min(xs)) > (max(ys) - min(ys))
+        is_horizontal = max(d["x"] for d in dets) - min(d["x"] for d in dets) > max(
+            d["y"] for d in dets
+        ) - min(d["y"] for d in dets)
         dets.sort(key=lambda d: d["x"] if is_horizontal else -d["y"])
 
         result = ""
         confs = []
+        decimal_started = False
+
         for d in dets:
+            if d["is_red"] and not decimal_started:
+                if result == "":
+                    result += "0"
+                result += "."
+                decimal_started = True
+
             result += str(d["digit"])
             confs.append(d["conf"])
 
         confidence = float(np.mean(confs))
+
         return result, confidence

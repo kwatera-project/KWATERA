@@ -92,7 +92,14 @@ export default function PropertySearchBar({
                     autoComplete="off"
                 />
                 {isCitySuggestionsOpen && filteredCitySuggestions.length > 0 && (
-                    <div className="absolute left-3 right-3 top-full mt-2 bg-white border border-[#DACDCA] rounded-2xl shadow-xl overflow-hidden z-[10000] py-1">
+                    <div
+                        className="absolute left-3 right-3 top-full mt-2 border border-[#DACDCA] rounded-2xl shadow-2xl overflow-hidden z-[10000] py-1 isolate"
+                        style={{
+                            backgroundColor: "#FFFFFF",
+                            opacity: 1,
+                            backgroundClip: "padding-box",
+                        }}
+                    >
                         {filteredCitySuggestions.map((suggestion) => (
                             <button
                                 key={suggestion}
@@ -102,7 +109,10 @@ export default function PropertySearchBar({
                                     setCity(suggestion);
                                     setIsCitySuggestionsOpen(false);
                                 }}
-                                className="w-full text-left px-4 py-2.5 text-sm font-semibold text-title hover:bg-gray-50 transition-colors"
+                                className="block w-full text-left px-4 py-2.5 text-sm font-semibold text-title hover:bg-[#F7F7F7] transition-colors border-b border-[#EFE7E5] last:border-b-0"
+                                style={{
+                                    backgroundColor: "#FFFFFF",
+                                }}
                             >
                                 {suggestion}
                             </button>

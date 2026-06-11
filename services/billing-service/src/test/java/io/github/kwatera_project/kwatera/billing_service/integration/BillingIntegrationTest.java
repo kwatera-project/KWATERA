@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import io.github.kwatera_project.kwatera.billing_service.client.OcrClient;
 import io.github.kwatera_project.kwatera.billing_service.client.PropertyClient;
+import io.github.kwatera_project.kwatera.billing_service.client.ReservationClient;
 import io.github.kwatera_project.kwatera.billing_service.dto.OcrResponseDto;
 import io.github.kwatera_project.kwatera.billing_service.event.SettlementEventPublisher;
 import io.github.kwatera_project.kwatera.billing_service.model.MediaReading;
@@ -81,6 +82,7 @@ class BillingIntegrationTest {
   @MockitoBean private EmailNotificationService emailNotificationService;
   @MockitoBean private OcrClient ocrClient;
   @MockitoBean private PropertyClient propertyClient;
+  @MockitoBean private ReservationClient reservationClient;
 
   private MultipartFile multipartFile;
 
@@ -94,6 +96,7 @@ class BillingIntegrationTest {
 
     multipartFile = mock(MultipartFile.class);
     when(multipartFile.getBytes()).thenReturn(new byte[0]);
+    when(reservationClient.getReservation(any())).thenReturn(null);
 
     ReflectionTestUtils.setField(
         mediaReadingService, "ocrConfidenceThreshold", new BigDecimal("0.70"));

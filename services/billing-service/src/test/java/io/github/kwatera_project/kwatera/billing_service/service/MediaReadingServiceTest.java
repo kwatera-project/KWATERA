@@ -34,6 +34,14 @@ class MediaReadingServiceTest {
   @Mock private PropertyClient propertyClient;
   @Mock private MultipartFile multipartFile;
 
+  @Mock
+  private io.github.kwatera_project.kwatera.billing_service.repository.SettlementRepository
+      settlementRepository;
+
+  @Mock
+  private io.github.kwatera_project.kwatera.billing_service.client.ReservationClient
+      reservationClient;
+
   @InjectMocks private MediaReadingService mediaReadingService;
 
   @BeforeEach
@@ -214,7 +222,10 @@ class MediaReadingServiceTest {
     when(ocrClient.readMeter(multipartFile))
         .thenReturn(new OcrResponseDto("150", new BigDecimal("0.99")));
     when(multipartFile.getBytes()).thenReturn(new byte[0]);
-
+    Settlement settlement = new Settlement();
+    settlement.setReservationId(UUID.randomUUID());
+    when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
+    when(reservationClient.getReservation(any())).thenReturn(null);
     ReadingStatus status =
         mediaReadingService.processFinalReadingUpload(
             settlementId, unitId, UtilityType.WATER, multipartFile);
@@ -247,6 +258,12 @@ class MediaReadingServiceTest {
     when(ocrClient.readMeter(multipartFile))
         .thenReturn(new OcrResponseDto("1250", new BigDecimal("0.99")));
     when(multipartFile.getBytes()).thenReturn(new byte[0]);
+
+    // DODAJ:
+    Settlement settlement = new Settlement();
+    settlement.setReservationId(UUID.randomUUID());
+    when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
+    when(reservationClient.getReservation(any())).thenReturn(null);
 
     mediaReadingService.processFinalReadingUpload(
         settlementId, unitId, UtilityType.ELECTRICITY, multipartFile);
@@ -837,5 +854,139 @@ class MediaReadingServiceTest {
 
     verify(settlementService, never())
         .addUtilitySettlementItem(any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void shouldRequestManualReviewWhenWaterConsumptionIsSuspiciouslyHigh() throws Exception {
+    UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    UUID reservationId = UUID.randomUUID();
+
+    MediaReading reading = new MediaReading();
+    reading.setInitialReading(new BigDecimal("100"));
+    reading.setInitialReadingStatus(ReadingStatus.AUTO_APPROVED);
+    reading.setFinalReadingStatus(ReadingStatus.PENDING);
+    reading.setUnitPrice(new BigDecimal("5.00"));
+
+    Settlement settlement = new Settlement();
+    settlement.setReservationId(reservationId);
+
+    io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto reservation =
+        new io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto();
+    reservation.setStartDate(java.time.LocalDate.of(2026, 1, 1));
+    reservation.setEndDate(java.time.LocalDate.of(2026, 1, 4)); // 3 days
+
+    io.github.kwatera_project.kwatera.billing_service.dto.UnitDto unit =
+        new io.github.kwatera_project.kwatera.billing_service.dto.UnitDto();
+    unit.setCapacity(2); // 2 persons
+    // expected = 2 * 3 * 0.1 = 0.6 m3, max = 0.6 * 3.0 = 1.8 m3
+    // consumption = 150 - 100 = 50 m3 → SUSPICIOUS (50 > 1.8)
+
+    when(mediaReadingRepository.findBySettlementIdAndUtilityType(settlementId, UtilityType.WATER))
+        .thenReturn(Optional.of(reading));
+    when(ocrClient.readMeter(multipartFile))
+        .thenReturn(new OcrResponseDto("150", new BigDecimal("0.99")));
+    when(multipartFile.getBytes()).thenReturn(new byte[0]);
+    when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
+    when(reservationClient.getReservation(reservationId)).thenReturn(reservation);
+    when(propertyClient.getUnit(unitId)).thenReturn(unit);
+
+    ReadingStatus status =
+        mediaReadingService.processFinalReadingUpload(
+            settlementId, unitId, UtilityType.WATER, multipartFile);
+
+    assertEquals(ReadingStatus.REQUEST_MANUAL_REVIEW, status);
+    assertNull(reading.getFinalReading());
+    verify(settlementService, never())
+        .addUtilitySettlementItem(any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void shouldRequestManualReviewWhenWaterConsumptionIsSuspiciouslyLow() throws Exception {
+    UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    UUID reservationId = UUID.randomUUID();
+
+    MediaReading reading = new MediaReading();
+    reading.setInitialReading(new BigDecimal("100.00"));
+    reading.setInitialReadingStatus(ReadingStatus.AUTO_APPROVED);
+    reading.setFinalReadingStatus(ReadingStatus.PENDING);
+    reading.setUnitPrice(new BigDecimal("5.00"));
+
+    Settlement settlement = new Settlement();
+    settlement.setReservationId(reservationId);
+
+    io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto reservation =
+        new io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto();
+    reservation.setStartDate(java.time.LocalDate.of(2026, 1, 1));
+    reservation.setEndDate(java.time.LocalDate.of(2026, 1, 11)); // 10 days
+
+    io.github.kwatera_project.kwatera.billing_service.dto.UnitDto unit =
+        new io.github.kwatera_project.kwatera.billing_service.dto.UnitDto();
+    unit.setCapacity(4); // 4 persons
+    // expected = 4 * 10 * 0.1 = 4.0 m3, min = 4.0 * 0.2 = 0.8 m3
+    // consumption = 100.01 - 100.00 = 0.01 m3 → SUSPICIOUS (0.01 < 0.8)
+
+    when(mediaReadingRepository.findBySettlementIdAndUtilityType(settlementId, UtilityType.WATER))
+        .thenReturn(Optional.of(reading));
+    when(ocrClient.readMeter(multipartFile))
+        .thenReturn(new OcrResponseDto("100.01", new BigDecimal("0.99")));
+    when(multipartFile.getBytes()).thenReturn(new byte[0]);
+    when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
+    when(reservationClient.getReservation(reservationId)).thenReturn(reservation);
+    when(propertyClient.getUnit(unitId)).thenReturn(unit);
+
+    ReadingStatus status =
+        mediaReadingService.processFinalReadingUpload(
+            settlementId, unitId, UtilityType.WATER, multipartFile);
+
+    assertEquals(ReadingStatus.REQUEST_MANUAL_REVIEW, status);
+    assertNull(reading.getFinalReading());
+    verify(settlementService, never())
+        .addUtilitySettlementItem(any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void shouldAutoApproveWhenWaterConsumptionIsNormal() throws Exception {
+    UUID settlementId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    UUID reservationId = UUID.randomUUID();
+
+    MediaReading reading = new MediaReading();
+    reading.setInitialReading(new BigDecimal("100.00"));
+    reading.setInitialReadingStatus(ReadingStatus.AUTO_APPROVED);
+    reading.setFinalReadingStatus(ReadingStatus.PENDING);
+    reading.setUnitPrice(new BigDecimal("5.00"));
+
+    Settlement settlement = new Settlement();
+    settlement.setReservationId(reservationId);
+
+    io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto reservation =
+        new io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto();
+    reservation.setStartDate(java.time.LocalDate.of(2026, 1, 1));
+    reservation.setEndDate(java.time.LocalDate.of(2026, 1, 8)); // 7 days
+
+    io.github.kwatera_project.kwatera.billing_service.dto.UnitDto unit =
+        new io.github.kwatera_project.kwatera.billing_service.dto.UnitDto();
+    unit.setCapacity(2); // 2 persons
+    // expected = 2 * 7 * 0.1 = 1.4 m3, min = 0.28, max = 4.2
+    // consumption = 101.0 - 100.0 = 1.0 m3 → NORMAL
+
+    when(mediaReadingRepository.findBySettlementIdAndUtilityType(settlementId, UtilityType.WATER))
+        .thenReturn(Optional.of(reading));
+    when(ocrClient.readMeter(multipartFile))
+        .thenReturn(new OcrResponseDto("101.00", new BigDecimal("0.99")));
+    when(multipartFile.getBytes()).thenReturn(new byte[0]);
+    when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
+    when(reservationClient.getReservation(reservationId)).thenReturn(reservation);
+    when(propertyClient.getUnit(unitId)).thenReturn(unit);
+
+    ReadingStatus status =
+        mediaReadingService.processFinalReadingUpload(
+            settlementId, unitId, UtilityType.WATER, multipartFile);
+
+    assertEquals(ReadingStatus.AUTO_APPROVED, status);
+    verify(settlementService)
+        .addUtilitySettlementItem(any(), any(), eq(SettlementItemType.WATER), any(), any(), any());
   }
 }
