@@ -81,6 +81,8 @@ class YOLODetector:
 
         for d in dets:
             if d["is_red"] and not decimal_started:
+                if result == "":
+                    result += "0"
                 result += "."
                 decimal_started = True
 
