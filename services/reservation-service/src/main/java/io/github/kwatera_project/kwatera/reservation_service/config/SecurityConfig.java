@@ -36,6 +36,9 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/v1/reservations")
                     .hasAnyAuthority("ROLE_GUEST", "ROLE_OWNER", "ROLE_ADMIN")
+                    .requestMatchers(
+                        "/api/v1/admin/system-events", "/api/v1/admin/system-events/**")
+                    .hasAuthority("ROLE_ADMIN")
                     .requestMatchers("/api/v1/admin/reservations", "/api/v1/admin/reservations/**")
                     .hasAnyAuthority("ROLE_ADMIN", "ROLE_OWNER")
                     .requestMatchers("/api/v1/admin/occupancy", "/api/v1/admin/occupancy/**")

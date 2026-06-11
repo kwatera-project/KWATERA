@@ -26,7 +26,7 @@ spring:
             - id: reservation-service-admin
               uri: lb://reservation-service
               predicates:
-                - Path=/api/v1/admin/reservations,/api/v1/admin/reservations/**,/api/v1/admin/occupancy,/api/v1/admin/occupancy/**,/api/v1/admin/dashboard/reservations,/api/v1/admin/dashboard/reservations/**
+                - Path=/api/v1/admin/reservations,/api/v1/admin/reservations/**,/api/v1/admin/occupancy,/api/v1/admin/occupancy/**,/api/v1/admin/dashboard/reservations,/api/v1/admin/dashboard/reservations/**,/api/v1/admin/system-events,/api/v1/admin/system-events/**
 
             - id: reservation-service-availability
               uri: lb://reservation-service

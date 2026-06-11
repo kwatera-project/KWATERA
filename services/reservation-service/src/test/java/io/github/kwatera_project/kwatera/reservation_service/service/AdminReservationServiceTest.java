@@ -5,6 +5,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventService;
+import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventType;
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationOverviewDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
@@ -38,12 +40,12 @@ class AdminReservationServiceTest {
 
   @Mock private EmailNotificationService emailNotificationService;
 
+  @Mock private SystemEventService systemEventService;
+
   @InjectMocks private AdminReservationService adminReservationService;
 
   @BeforeEach
-  void setUp() {
-    // restTemplate is injected via @InjectMocks (Lombok @RequiredArgsConstructor)
-  }
+  void setUp() {}
 
   @Test
   void shouldReturnAllReservations_whenUserIsAdmin() {
@@ -90,6 +92,31 @@ class AdminReservationServiceTest {
         .validateTransition(ReservationStatus.PENDING, ReservationStatus.CONFIRMED);
     verify(reservationRepository).save(reservation);
     verify(statusHistoryRepository).save(any(ReservationStatusHistory.class));
+  }
+
+  @Test
+  void shouldLogReservationStatusChangedEvent_whenAdminChangesReservationStatus() {
+    UUID resId = UUID.randomUUID();
+    UUID adminId = UUID.randomUUID();
+    Reservation reservation = createReservation();
+    reservation.setId(resId);
+    reservation.setStatus(ReservationStatus.PENDING);
+
+    when(reservationRepository.findById(resId)).thenReturn(Optional.of(reservation));
+
+    adminReservationService.updateReservationStatus(
+        resId, ReservationStatus.CONFIRMED, adminId, true);
+
+    verify(systemEventService)
+        .logSafely(
+            eq(SystemEventType.RESERVATION_STATUS_CHANGED),
+            eq(adminId),
+            eq(SystemEventService.ENTITY_TYPE_RESERVATION),
+            eq(resId),
+            argThat(
+                details ->
+                    details.contains("oldStatus=PENDING")
+                        && details.contains("newStatus=CONFIRMED")));
   }
 
   @Test

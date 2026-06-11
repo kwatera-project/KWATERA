@@ -1,6 +1,32 @@
 import { GATEWAY_BASE_URL, IS_DEMO_MODE } from "./apiConfig";
 import { demoOccupancy, demoAdminReservations } from "../demo/demoReservations";
 import { demoBillingMetrics, demoReservationMetrics } from "../demo/demoReports";
+import { demoSystemEvents } from "../demo/demoSystemEvents";
+
+export type SystemEventType =
+    | "RESERVATION_CREATED"
+    | "MANUAL_RESERVATION_CREATED"
+    | "UNIT_BLOCKED"
+    | "RESERVATION_STATUS_CHANGED"
+    | "EXPIRED_RESERVATION_CANCELLED"
+    | "OCR_READING_ATTEMPTED"
+    | "OCR_READING_SUCCEEDED"
+    | "OCR_READING_FAILED"
+    | "METER_READING_MANUALLY_CORRECTED"
+    | "MEDIA_SETTLEMENT_GENERATED"
+    | "PAYMENT_FAILED"
+    | "PAYMENT_CANCELLED"
+    | "BALANCE_CHANGED";
+
+export interface SystemEvent {
+    id: string;
+    timestamp: string;
+    actionType: SystemEventType;
+    actorUserId: string | null;
+    entityType: string | null;
+    entityId: string | null;
+    details: string | null;
+}
 
 export async function getOccupancy(startDate: string, endDate: string) {
     if (IS_DEMO_MODE) {
@@ -69,6 +95,53 @@ export async function getDashboardBillingMetrics(startDate?: string, endDate?: s
         }
     });
     if (!res.ok) throw new Error("Failed to fetch billing dashboard metrics");
+    return res.json();
+}
+
+export type SystemEventsQuery = {
+    actionType?: SystemEventType | "ALL";
+    from?: string | null;
+    to?: string | null;
+    limit?: number;
+};
+
+export async function getSystemEvents(query: SystemEventsQuery = {}): Promise<SystemEvent[]> {
+    const token = localStorage.getItem("token");
+    const params = new URLSearchParams();
+    const { actionType, from, to, limit = 100 } = query;
+
+    if (IS_DEMO_MODE) {
+        const fromTime = from ? new Date(from).getTime() : null;
+        const toTime = to ? new Date(to).getTime() : null;
+
+        return demoSystemEvents
+            .filter((event) => !actionType || actionType === "ALL" || event.actionType === actionType)
+            .filter((event) => {
+                const timestamp = new Date(event.timestamp).getTime();
+                return (fromTime === null || timestamp >= fromTime) && (toTime === null || timestamp <= toTime);
+            })
+            .sort((left, right) => new Date(right.timestamp).getTime() - new Date(left.timestamp).getTime())
+            .slice(0, limit);
+    }
+
+    if (actionType && actionType !== "ALL") {
+        params.append("actionType", actionType);
+    }
+    if (from) params.append("from", from);
+    if (to) params.append("to", to);
+    if (limit) params.append("limit", String(limit));
+
+    const queryString = params.toString();
+    const url = queryString
+        ? `${GATEWAY_BASE_URL}/api/v1/admin/system-events?${queryString}`
+        : `${GATEWAY_BASE_URL}/api/v1/admin/system-events`;
+
+    const res = await fetch(url, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+    if (!res.ok) throw new Error("Failed to fetch system events");
     return res.json();
 }
 
