@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from "react-router-dom";
-import { GATEWAY_BASE_URL } from '../api/apiConfig';
+import { getAdminReservations, updateAdminReservationStatus } from "../api/adminApi";
 import { getSettlementDetails } from '../api/settlementApi';
+import { getReservationDetails } from "../api/reservationApi";
 import { ChevronDown } from 'lucide-react';
 
 interface ReservationOverview {
@@ -17,29 +18,11 @@ export default function AdminReservationList() {
     const [reservations, setReservations] = useState<ReservationOverview[]>([]);
     const [statusFilter, setStatusFilter] = useState<string>("");
     const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
-    const API_BASE_URL = GATEWAY_BASE_URL;
     const [settlementIds, setSettlementIds] = useState<Record<string, string>>({});
     const [unitIds, setUnitIds] = useState<Record<string, string>>({});
 
     const fetchReservations = useCallback(() => {
-        const url = statusFilter
-            ? `${API_BASE_URL}/api/v1/admin/reservations?status=${statusFilter}`
-            : `${API_BASE_URL}/api/v1/admin/reservations`;
-
-        const token = localStorage.getItem("token");
-
-        fetch(url, {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json"
-            }
-        })
-            .then((res) => {
-                if (res.status === 401) console.error("Token is incorrect!");
-                if (!res.ok) throw new Error("Get data error");
-                return res.json();
-            })
+        getAdminReservations(statusFilter || undefined)
             .then((data) => {
                 setReservations(data);
                 data.forEach(async (res: ReservationOverview) => {
@@ -50,12 +33,7 @@ export default function AdminReservationList() {
                         console.error("Failed to load settlement details", err);
                     }
                     try {
-                        const t = localStorage.getItem("token");
-                        const resDetails = await fetch(
-                            `${API_BASE_URL}/api/v1/reservations/${res.id}`,
-                            { headers: { Authorization: `Bearer ${t}` } }
-                        );
-                        const resData = await resDetails.json();
+                        const resData = await getReservationDetails(res.id);
                         setUnitIds(prev => ({ ...prev, [res.id]: resData.unitId }));
                     } catch (err) {
                         console.error("Failed to load reservation details", err);
@@ -63,41 +41,21 @@ export default function AdminReservationList() {
                 });
             })
             .catch((err) => console.error(err));
-    }, [statusFilter, API_BASE_URL]);
+    }, [statusFilter]);
 
     useEffect(() => {
         fetchReservations();
     }, [fetchReservations]);
 
     const handleStatusChange = (id: string, newStatus: string) => {
-        const token = localStorage.getItem("token");
-        fetch(`${API_BASE_URL}/api/v1/admin/reservations/${id}/status`, {
-            method: "PATCH",
-            headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ newStatus })
-        })
-            .then(async (res) => {
-                if (res.ok) {
-                    setMessage({ text: "Reservation status updated successfully!", type: 'success' });
-                    setReservations(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
-                } else {
-                    const errorData = await res.json().catch(() => ({ message: "An error occurred" }));
-                    let errorMsg = errorData.message || "An error occurred";
-
-                    if (res.status === 400) errorMsg = "This status transition is not allowed";
-                    if (res.status === 401) errorMsg = "Session expired or invalid. Please log in again";
-                    if (res.status === 403) errorMsg = "You are not allowed to update this reservation";
-                    if (res.status === 404) errorMsg = "Reservation not found";
-
-                    setMessage({ text: errorMsg, type: 'error' });
-                }
+        updateAdminReservationStatus(id, newStatus)
+            .then(() => {
+                setMessage({ text: "Reservation status updated successfully!", type: 'success' });
+                setReservations(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
             })
             .catch((err) => {
                 console.error(err);
-                setMessage({ text: "Network error occurred", type: 'error' });
+                setMessage({ text: err instanceof Error ? err.message : "Network error occurred", type: 'error' });
             });
     };
 
@@ -292,4 +250,3 @@ export default function AdminReservationList() {
         </div>
     );
 }
-

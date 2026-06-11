@@ -1,9 +1,12 @@
-import { GATEWAY_BASE_URL } from "./apiConfig";
-import type {PropertyCreateRequest, PropertyUpdateRequest} from "../types/property.ts";
+import { GATEWAY_BASE_URL, IS_DEMO_MODE } from "./apiConfig";
+import { demoProperties } from "../demo/demoProperties";
+import type { PropertyCreateRequest, PropertyUpdateRequest } from "../types/property.ts";
 
 const API_URL = `${GATEWAY_BASE_URL}/api/owner`;
 
 export async function getMyProperties() {
+    if (IS_DEMO_MODE) return demoProperties;
+
     const token = localStorage.getItem("token");
 
     const res = await fetch(
@@ -23,6 +26,13 @@ export async function getMyProperties() {
 }
 
 export async function createProperty(data: PropertyCreateRequest) {
+    if (IS_DEMO_MODE) {
+        return {
+            id: `demo-created-property-${Date.now()}`,
+            ...data,
+        };
+    }
+
     const token = localStorage.getItem("token");
 
     const res = await fetch(
@@ -48,6 +58,13 @@ export async function updateProperty(
     propertyId: string,
     data: PropertyUpdateRequest
 ) {
+    if (IS_DEMO_MODE) {
+        return {
+            id: propertyId,
+            ...data,
+        };
+    }
+
     const token = localStorage.getItem("token");
 
     const res = await fetch(
@@ -72,6 +89,11 @@ export async function updateProperty(
 export async function deleteProperty(
     propertyId: string
 ) {
+    if (IS_DEMO_MODE) {
+        void propertyId;
+        return;
+    }
+
     const token = localStorage.getItem("token");
 
     const res = await fetch(
@@ -96,7 +118,7 @@ export async function deleteProperty(
 
         throw {
             status: res.status,
-            message: errorMessage
+            message: errorMessage,
         };
     }
 }
@@ -106,6 +128,13 @@ export async function uploadPropertyImage(
     file: File,
     isMain: boolean
 ) {
+    if (IS_DEMO_MODE) {
+        void propertyId;
+        void file;
+        void isMain;
+        return;
+    }
+
     const token = localStorage.getItem("token");
 
     const formData = new FormData();
@@ -132,6 +161,12 @@ export async function deletePropertyImage(
     propertyId: string,
     imageId: string
 ) {
+    if (IS_DEMO_MODE) {
+        void propertyId;
+        void imageId;
+        return;
+    }
+
     const token = localStorage.getItem("token");
 
     const res = await fetch(
@@ -154,6 +189,13 @@ export async function setPropertyImageAsMain(
     imageId: string,
     isMain: boolean
 ) {
+    if (IS_DEMO_MODE) {
+        void propertyId;
+        void imageId;
+        void isMain;
+        return;
+    }
+
     const token = localStorage.getItem("token");
 
     const res = await fetch(
