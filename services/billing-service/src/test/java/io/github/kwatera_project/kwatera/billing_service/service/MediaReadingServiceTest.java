@@ -289,7 +289,6 @@ class MediaReadingServiceTest {
         .thenReturn(new OcrResponseDto("1250", new BigDecimal("0.99")));
     when(multipartFile.getBytes()).thenReturn(new byte[0]);
 
-    // DODAJ:
     Settlement settlement = new Settlement();
     settlement.setReservationId(UUID.randomUUID());
     when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
