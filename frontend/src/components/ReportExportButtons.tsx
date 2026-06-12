@@ -272,7 +272,7 @@ export default function ReportExportButtons({
       pdf.setFont("Helvetica", "bold");
       pdf.setFontSize(8);
       pdf.setTextColor(255, 255, 255);
-      pdf.text("Lp.", 18.5, 103.5, { align: "center" });
+      pdf.text("No.", 18.5, 103.5, { align: "center" });
       pdf.text("Description of Service", 24, 103.5);
       pdf.text("Qty", 95, 103.5, { align: "center" });
       pdf.text("Unit Price (Net)", 127.5, 103.5, { align: "right" });
@@ -536,7 +536,7 @@ export default function ReportExportButtons({
       pdf.setFont("Helvetica", "bold");
       pdf.setFontSize(8);
       pdf.setTextColor(255, 255, 255);
-      pdf.text("Lp.", 18, 71.5, { align: "center" });
+      pdf.text("No.", 18, 71.5, { align: "center" });
       pdf.text("Guest Name", 23, 71.5);
       pdf.text("Unit Name", 53, 71.5);
       pdf.text("Check-in", 83, 71.5);
@@ -573,7 +573,7 @@ export default function ReportExportButtons({
           pdf.setFont("Helvetica", "bold");
           pdf.setFontSize(8);
           pdf.setTextColor(255, 255, 255);
-          pdf.text("Lp.", 18, 37.5, { align: "center" });
+          pdf.text("No.", 18, 37.5, { align: "center" });
           pdf.text("Guest Name", 23, 37.5);
           pdf.text("Unit Name", 53, 37.5);
           pdf.text("Check-in", 83, 37.5);
