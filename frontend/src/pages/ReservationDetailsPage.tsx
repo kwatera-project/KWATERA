@@ -316,12 +316,13 @@ export default function ReservationDetailsPage() {
                                     </div>
                                 )}
 
-                                <div className="py-3 border-b border-[#DACDCA]/40 space-y-2">
+                                <div className="py-3 border-b border-[#DACDCA]/40 space-y-2 overflow-visible">
                                     <div className="flex items-center justify-between gap-3">
                                         <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Water billing</span>
                                         {waterEstimate && (
                                             <WaterRateTooltip
                                                 text={waterEstimate.tooltip}
+                                                align="right"
                                                 iconClassName="border-[#DACDCA] text-[#7A7A7A] bg-white"
                                                 panelClassName="bg-white border-[#DACDCA] text-[#1A1A1A] shadow-lg"
                                             />

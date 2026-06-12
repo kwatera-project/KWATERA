@@ -739,7 +739,7 @@ export default function CheckoutPage() {
                                     <span className="text-lg">{displayTotalPrice}</span>
                                 </div>
 
-                                <div className="border-t border-dashed border-brand-accent pt-4 space-y-2">
+                                <div className="border-t border-dashed border-brand-accent pt-4 space-y-2 overflow-visible">
                                     <div>
                                         <h5 className="font-bold text-xs uppercase tracking-wider text-brand-muted">Water billing</h5>
                                         <p className="text-xs text-brand-muted mt-1">Water is billed separately after your stay.</p>
@@ -749,7 +749,7 @@ export default function CheckoutPage() {
                                         <p className="text-xs text-brand-muted font-medium">Checking water tariff...</p>
                                     ) : waterEstimate ? (
                                         <div className="space-y-1.5">
-                                            <div className="flex justify-between items-start gap-4">
+                                            <div className="relative flex justify-between items-start gap-4 overflow-visible">
                                                 <span className="text-brand-muted font-medium inline-flex items-center gap-1">
                                                     Rate
                                                     <WaterRateTooltip text={waterEstimate.tooltip} />
