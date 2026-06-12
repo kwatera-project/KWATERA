@@ -1,13 +1,17 @@
 import { useState } from "react";
+import TagInput from "../components/TagInput";
 
 export interface UnitFormData {
     name: string;
     description: string;
     pricePerNight: number;
     capacity: number;
+    bedrooms: number;
+    beds: number;
     unitType: string;
     unitNumber: string;
     floor: number;
+    amenities?: string[];
 }
 
 interface UnitFormProps {
@@ -34,17 +38,26 @@ export default function UnitForm({
                                      onSubmit,
                                      submitLabel,
                                  }: UnitFormProps) {
-    const [form, setForm] = useState<UnitFormData>(
-        initialValues ?? {
+    const [form, setForm] = useState<UnitFormData>(() => {
+        if (initialValues) {
+            return {
+                ...initialValues,
+                amenities: initialValues.amenities ?? [],
+            };
+        }
+        return {
             name: "",
             description: "",
             pricePerNight: "" as unknown as number,
             capacity: "" as unknown as number,
+            bedrooms: "" as unknown as number,
+            beds: "" as unknown as number,
             unitType: UNIT_TYPES[0],
             unitNumber: "",
             floor: "" as unknown as number,
-        }
-    );
+            amenities: [],
+        };
+    });
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -63,7 +76,10 @@ export default function UnitForm({
             ...form,
             pricePerNight: Number(form.pricePerNight),
             capacity: Number(form.capacity),
-            floor: Number(form.floor)
+            bedrooms: Number(form.bedrooms),
+            beds: Number(form.beds),
+            floor: Number(form.floor),
+            amenities: form.amenities ?? []
         };
         await onSubmit(payload);
     };
@@ -133,9 +149,13 @@ export default function UnitForm({
 
                 <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider mb-2 pt-2">Space & Location</span>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div className="space-y-1">
+                        <label htmlFor="capacity" className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
+                            Max Guests
+                        </label>
                         <input
+                            id="capacity"
                             type="number"
                             name="capacity"
                             placeholder="Max Guests"
@@ -148,7 +168,45 @@ export default function UnitForm({
                     </div>
 
                     <div className="space-y-1">
+                        <label htmlFor="bedrooms" className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
+                            Bedrooms
+                        </label>
                         <input
+                            id="bedrooms"
+                            type="number"
+                            name="bedrooms"
+                            placeholder="Bedrooms"
+                            value={form.bedrooms === 0 || isNaN(form.bedrooms) ? "" : form.bedrooms}
+                            onChange={handleChange}
+                            className={inputClasses}
+                            min="0"
+                            required
+                        />
+                    </div>
+
+                    <div className="space-y-1">
+                        <label htmlFor="beds" className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
+                            Beds
+                        </label>
+                        <input
+                            id="beds"
+                            type="number"
+                            name="beds"
+                            placeholder="Beds"
+                            value={form.beds === 0 || isNaN(form.beds) ? "" : form.beds}
+                            onChange={handleChange}
+                            className={inputClasses}
+                            min="0"
+                            required
+                        />
+                    </div>
+
+                    <div className="space-y-1">
+                        <label htmlFor="unitNumber" className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
+                            Unit Number
+                        </label>
+                        <input
+                            id="unitNumber"
                             name="unitNumber"
                             placeholder="Unit Number (e.g. 104A)"
                             value={form.unitNumber}
@@ -159,7 +217,11 @@ export default function UnitForm({
                     </div>
 
                     <div className="space-y-1">
+                        <label htmlFor="floor" className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
+                            Floor
+                        </label>
                         <input
+                            id="floor"
                             type="number"
                             name="floor"
                             placeholder="Floor"
@@ -170,6 +232,14 @@ export default function UnitForm({
                         />
                     </div>
                 </div>
+            </div>
+
+            <div className="border-t border-[#DACDCA]/50 my-6 pt-4">
+                <TagInput
+                    label="Amenities & Tags"
+                    tags={form.amenities ?? []}
+                    onChange={(tags) => setForm(prev => ({ ...prev, amenities: tags }))}
+                />
             </div>
 
             <div className="pt-4">

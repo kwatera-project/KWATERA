@@ -10,6 +10,8 @@ export interface Property {
     imageUrl: string;
     latitude: number;
     longitude: number;
+    amenities: string[];
+    propertyType?: string;
 }
 
 export interface PropertyCreateRequest {
@@ -20,6 +22,8 @@ export interface PropertyCreateRequest {
     postalCode: string;
     street: string;
     streetNumber: string;
+    amenities?: string[];
+    propertyType?: string;
 }
 
 export interface PropertyUpdateRequest {
@@ -30,6 +34,8 @@ export interface PropertyUpdateRequest {
     postalCode?: string;
     street?: string;
     streetNumber?: string;
+    amenities?: string[];
+    propertyType?: string;
 }
 
 export interface Unit {
@@ -50,6 +56,9 @@ export interface Unit {
     unitType: string;
     unitNumber: string;
     floor: number;
+    amenities: string[];
+    bedrooms: number;
+    beds: number;
 }
 
 export interface UnitCreateRequest {
@@ -60,6 +69,9 @@ export interface UnitCreateRequest {
     unitType: string;
     unitNumber: string;
     floor: number;
+    amenities?: string[];
+    bedrooms?: number;
+    beds?: number;
 }
 
 export interface UnitUpdateRequest {
@@ -70,4 +82,7 @@ export interface UnitUpdateRequest {
     unitType?: string;
     unitNumber?: string;
     floor?: number;
+    amenities?: string[];
+    bedrooms?: number;
+    beds?: number;
 }

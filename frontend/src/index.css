@@ -9,6 +9,10 @@
   --color-brand-bg: #F7F7F7;
 }
 
+body {
+  background-color: #F9F8F7;
+}
+
 .custom-popup .leaflet-popup-content-wrapper {
   padding: 0 !important;
   border-radius: 0.75rem !important;
