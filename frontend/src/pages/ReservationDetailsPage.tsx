@@ -1,15 +1,32 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getReservationDetails } from "../api/reservationApi";
+import { getUnit, getUnitSettlementItems } from "../api/propertyApi";
 import type { ReservationDetails } from "../types/reservation";
+import type { UnitSettlementItem } from "../types/property";
 import { getUserRoles } from "../utils/jwtUtils";
 import { Home, Calendar, User, CreditCard, Clock } from "lucide-react";
+import {
+    calculateStayNights,
+    calculateWaterUsageRange,
+    findWaterUsageTariff,
+    formatMoneyRange,
+    formatUsageRange,
+    formatWaterRate,
+    getRatePerLiterTooltip,
+} from "../utils/waterBilling";
 
 export default function ReservationDetailsPage() {
     const { id } = useParams();
     const [reservation, setReservation] = useState<ReservationDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [waterContext, setWaterContext] = useState<{
+        unitId?: string;
+        items: UnitSettlementItem[];
+        capacity?: number;
+        loaded: boolean;
+    }>({ items: [], loaded: false });
 
     useEffect(() => {
         if (!id) return;
@@ -19,6 +36,35 @@ export default function ReservationDetailsPage() {
             .catch((err) => setError(err.message))
             .finally(() => setLoading(false));
     }, [id]);
+
+    useEffect(() => {
+        if (!reservation?.unitId) return;
+
+        let isActive = true;
+        const displayCurrency = reservation.currencyInfo?.displayCurrency || "PLN";
+
+        Promise.all([
+            getUnit(reservation.unitId, displayCurrency),
+            getUnitSettlementItems(reservation.unitId),
+        ])
+            .then(([unit, items]) => {
+                if (!isActive) return;
+
+                setWaterContext({
+                    unitId: reservation.unitId,
+                    items,
+                    capacity: typeof unit?.capacity === "number" ? unit.capacity : undefined,
+                    loaded: true,
+                });
+            })
+            .catch(() => {
+                if (isActive) setWaterContext({ unitId: reservation.unitId, items: [], loaded: true });
+            });
+
+        return () => {
+            isActive = false;
+        };
+    }, [reservation?.unitId, reservation?.currencyInfo?.displayCurrency]);
 
     if (loading) return <div className="p-8 text-center text-gray-500 font-medium">Loading reservation details...</div>;
     if (error) return <div className="p-8 text-center text-red-600 font-semibold">{error}</div>;
@@ -30,6 +76,19 @@ export default function ReservationDetailsPage() {
     const displayCurrency = reservation.currencyInfo?.displayCurrency || 'PLN';
     const returnPath = isAdminOrOwner ? "/admin/reservations" : "/my-reservations";
     const returnLabel = isAdminOrOwner ? "Back to Reservations Overview" : "Back to My Reservations";
+    const currentWaterContext = waterContext.unitId === reservation.unitId ? waterContext : { items: [], capacity: undefined, loaded: false };
+    const waterTariff = findWaterUsageTariff(currentWaterContext.items);
+    const waterUsageRange = currentWaterContext.capacity
+        ? calculateWaterUsageRange(currentWaterContext.capacity, calculateStayNights(reservation.startDate, reservation.endDate))
+        : null;
+    const waterEstimate = waterTariff && waterUsageRange
+        ? {
+            rate: formatWaterRate(waterTariff.pricePerUnit),
+            usage: formatUsageRange(waterUsageRange),
+            cost: formatMoneyRange(waterUsageRange, waterTariff.pricePerUnit, reservation.currencyInfo),
+            tooltip: getRatePerLiterTooltip(waterTariff.pricePerUnit),
+        }
+        : null;
 
     const formatGuestName = (name: string) => {
         if (!name) return "";
@@ -255,6 +314,41 @@ export default function ReservationDetailsPage() {
                                         </span>
                                     </div>
                                 )}
+
+                                <div className="py-3 border-b border-[#DACDCA]/40 space-y-2">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Water billing</span>
+                                        {waterEstimate && (
+                                            <span
+                                                title={waterEstimate.tooltip}
+                                                className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#DACDCA] text-[10px] font-bold text-[#7A7A7A] cursor-help"
+                                            >
+                                                ?
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-[#7A7A7A] font-medium">
+                                        Water is billed separately after your stay.
+                                    </p>
+                                    {waterEstimate ? (
+                                        <div className="space-y-1 text-xs">
+                                            <div className="flex justify-between gap-3">
+                                                <span className="text-[#7A7A7A]">Rate</span>
+                                                <span className="font-bold text-[#1A1A1A]">{waterEstimate.rate}</span>
+                                            </div>
+                                            <div className="flex justify-between gap-3">
+                                                <span className="text-[#7A7A7A]">Estimated usage</span>
+                                                <span className="font-bold text-[#1A1A1A]">{waterEstimate.usage}</span>
+                                            </div>
+                                            <div className="flex justify-between gap-3">
+                                                <span className="text-[#7A7A7A]">Estimated cost</span>
+                                                <span className="font-bold text-[#1A1A1A]">{waterEstimate.cost}</span>
+                                            </div>
+                                        </div>
+                                    ) : currentWaterContext.loaded ? (
+                                        <p className="text-xs text-[#7A7A7A]">Final water cost is based on meter readings when configured.</p>
+                                    ) : null}
+                                </div>
                             </div>
                         </div>
 

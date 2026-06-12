@@ -61,6 +61,15 @@ export interface Unit {
     beds: number;
 }
 
+export interface UnitSettlementItem {
+    id: string;
+    unitId: string;
+    settlementItemType: "ACCOMMODATION" | "DEPOSIT" | "ELECTRICITY" | "WATER" | "CLEANING_FEE" | string;
+    pricePerUnit: number;
+    measurementUnit?: "M3" | "KWH" | string | null;
+    billingType: "FIXED" | "PER_USAGE" | string;
+}
+
 export interface UnitCreateRequest {
     name: string;
     description: string;
