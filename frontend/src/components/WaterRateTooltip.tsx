@@ -1,33 +1,91 @@
+import { useId, useState } from "react";
+import type { FocusEvent } from "react";
+
 type WaterRateTooltipProps = {
     text: string;
-    align?: "left" | "right";
+    value: string;
+    label?: string;
     iconClassName?: string;
     panelClassName?: string;
+    labelClassName?: string;
+    valueClassName?: string;
 };
 
 export default function WaterRateTooltip({
     text,
-    align = "left",
+    value,
+    label = "Rate",
     iconClassName = "border-brand-accent text-brand-muted bg-white",
-    panelClassName = "border-brand-accent bg-white text-brand-main shadow-xl",
+    panelClassName = "border-brand-accent bg-white text-brand-main shadow-sm",
+    labelClassName = "text-brand-muted font-medium",
+    valueClassName = "font-semibold text-brand-main",
 }: WaterRateTooltipProps) {
-    const alignmentClass = align === "right" ? "right-0" : "left-0";
+    const tooltipId = useId();
+    const [isHovered, setIsHovered] = useState(false);
+    const [isFocused, setIsFocused] = useState(false);
+    const [isPinned, setIsPinned] = useState(false);
+    const [isHoverSuppressed, setIsHoverSuppressed] = useState(false);
+    const isOpen = isHovered || isFocused || isPinned;
+
+    const handleBlur = (event: FocusEvent<HTMLDivElement>) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+            setIsFocused(false);
+            setIsPinned(false);
+        }
+    };
 
     return (
-        <span className="group relative isolate inline-flex overflow-visible">
-            <button
-                type="button"
-                aria-label="Water rate conversion"
-                className={`inline-flex h-4 w-4 items-center justify-center rounded-full border text-[10px] font-bold cursor-help focus:outline-none focus:ring-2 focus:ring-brand-primary/20 ${iconClassName}`}
-            >
-                ?
-            </button>
-            <span
-                role="tooltip"
-                className={`pointer-events-none absolute top-full ${alignmentClass} z-[9999] mt-2 hidden w-64 max-w-[min(16rem,calc(100vw-2rem))] rounded-lg border px-3 py-2 text-left text-xs font-medium leading-snug group-hover:block group-focus-within:block ${panelClassName}`}
-            >
-                {text}
-            </span>
-        </span>
+        <div
+            className="space-y-2 overflow-visible"
+            onMouseEnter={() => {
+                if (!isHoverSuppressed) setIsHovered(true);
+            }}
+            onMouseLeave={() => {
+                setIsHovered(false);
+                setIsPinned(false);
+                setIsHoverSuppressed(false);
+            }}
+            onFocus={() => setIsFocused(true)}
+            onBlur={handleBlur}
+        >
+            <div className="grid grid-cols-[auto,minmax(0,1fr)] items-start gap-x-4 gap-y-1">
+                <span className={`inline-flex items-center gap-1 min-w-0 ${labelClassName}`}>
+                    {label}
+                    <button
+                        type="button"
+                        aria-label="Water rate conversion"
+                        aria-expanded={isOpen}
+                        aria-controls={tooltipId}
+                        onClick={() => {
+                            if (isPinned) {
+                                setIsPinned(false);
+                                setIsFocused(false);
+                                setIsHovered(false);
+                                setIsHoverSuppressed(true);
+                            } else {
+                                setIsPinned(true);
+                                setIsHoverSuppressed(false);
+                            }
+                        }}
+                        className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold cursor-help focus:outline-none focus:ring-2 focus:ring-brand-primary/20 ${iconClassName}`}
+                    >
+                        ?
+                    </button>
+                </span>
+                <span className={`min-w-0 whitespace-normal break-words text-right leading-snug ${valueClassName}`}>
+                    {value}
+                </span>
+            </div>
+
+            {isOpen && (
+                <div
+                    id={tooltipId}
+                    role="tooltip"
+                    className={`w-full rounded-lg border px-3 py-2 text-xs font-medium leading-snug ${panelClassName}`}
+                >
+                    {text}
+                </div>
+            )}
+        </div>
     );
 }

@@ -319,24 +319,20 @@ export default function ReservationDetailsPage() {
                                 <div className="py-3 border-b border-[#DACDCA]/40 space-y-2 overflow-visible">
                                     <div className="flex items-center justify-between gap-3">
                                         <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Water billing</span>
-                                        {waterEstimate && (
-                                            <WaterRateTooltip
-                                                text={waterEstimate.tooltip}
-                                                align="right"
-                                                iconClassName="border-[#DACDCA] text-[#7A7A7A] bg-white"
-                                                panelClassName="bg-white border-[#DACDCA] text-[#1A1A1A] shadow-lg"
-                                            />
-                                        )}
                                     </div>
                                     <p className="text-xs text-[#7A7A7A] font-medium">
                                         Water is billed separately after your stay.
                                     </p>
                                     {waterEstimate ? (
                                         <div className="space-y-1 text-xs">
-                                            <div className="flex justify-between gap-3">
-                                                <span className="text-[#7A7A7A]">Rate</span>
-                                                <span className="font-bold text-[#1A1A1A]">{waterEstimate.rate}</span>
-                                            </div>
+                                            <WaterRateTooltip
+                                                text={waterEstimate.tooltip}
+                                                value={waterEstimate.rate}
+                                                iconClassName="border-[#DACDCA] text-[#7A7A7A] bg-white"
+                                                panelClassName="bg-white border-[#DACDCA] text-[#1A1A1A] shadow-sm"
+                                                labelClassName="text-[#7A7A7A]"
+                                                valueClassName="font-bold text-[#1A1A1A]"
+                                            />
                                             <div className="flex justify-between gap-3">
                                                 <span className="text-[#7A7A7A]">Estimated usage</span>
                                                 <span className="font-bold text-[#1A1A1A]">{waterEstimate.usage}</span>

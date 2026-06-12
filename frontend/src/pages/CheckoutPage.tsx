@@ -749,13 +749,7 @@ export default function CheckoutPage() {
                                         <p className="text-xs text-brand-muted font-medium">Checking water tariff...</p>
                                     ) : waterEstimate ? (
                                         <div className="space-y-1.5">
-                                            <div className="relative flex justify-between items-start gap-4 overflow-visible">
-                                                <span className="text-brand-muted font-medium inline-flex items-center gap-1">
-                                                    Rate
-                                                    <WaterRateTooltip text={waterEstimate.tooltip} />
-                                                </span>
-                                                <span className="font-semibold text-right">{waterEstimate.rate}</span>
-                                            </div>
+                                            <WaterRateTooltip text={waterEstimate.tooltip} value={waterEstimate.rate} />
                                             <div className="flex justify-between items-start gap-4">
                                                 <span className="text-brand-muted font-medium">Estimated usage</span>
                                                 <span className="font-semibold text-right">{waterEstimate.usage}</span>
