@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getReservationDetails } from "../api/reservationApi";
 import { getUnit, getUnitSettlementItems } from "../api/propertyApi";
+import WaterRateTooltip from "../components/WaterRateTooltip";
 import type { ReservationDetails } from "../types/reservation";
 import type { UnitSettlementItem } from "../types/property";
 import { getUserRoles } from "../utils/jwtUtils";
@@ -83,10 +84,10 @@ export default function ReservationDetailsPage() {
         : null;
     const waterEstimate = waterTariff && waterUsageRange
         ? {
-            rate: formatWaterRate(waterTariff.pricePerUnit),
+            rate: formatWaterRate(waterTariff.pricePerUnit, reservation.currencyInfo),
             usage: formatUsageRange(waterUsageRange),
             cost: formatMoneyRange(waterUsageRange, waterTariff.pricePerUnit, reservation.currencyInfo),
-            tooltip: getRatePerLiterTooltip(waterTariff.pricePerUnit),
+            tooltip: getRatePerLiterTooltip(waterTariff.pricePerUnit, reservation.currencyInfo),
         }
         : null;
 
@@ -319,12 +320,11 @@ export default function ReservationDetailsPage() {
                                     <div className="flex items-center justify-between gap-3">
                                         <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Water billing</span>
                                         {waterEstimate && (
-                                            <span
-                                                title={waterEstimate.tooltip}
-                                                className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#DACDCA] text-[10px] font-bold text-[#7A7A7A] cursor-help"
-                                            >
-                                                ?
-                                            </span>
+                                            <WaterRateTooltip
+                                                text={waterEstimate.tooltip}
+                                                iconClassName="border-[#DACDCA] text-[#7A7A7A] bg-white"
+                                                panelClassName="bg-white border-[#DACDCA] text-[#1A1A1A] shadow-lg"
+                                            />
                                         )}
                                     </div>
                                     <p className="text-xs text-[#7A7A7A] font-medium">

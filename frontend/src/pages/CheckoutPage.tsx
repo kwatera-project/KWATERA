@@ -4,6 +4,7 @@ import { createReservation } from "../api/reservationApi";
 import { createCheckoutSession } from "../api/billingApi";
 import { getUserProfile } from "../api/userApi";
 import { getUnitSettlementItems } from "../api/propertyApi";
+import WaterRateTooltip from "../components/WaterRateTooltip";
 import type { Property, Unit, UnitSettlementItem } from "../types/property";
 import { format, parseISO } from "date-fns";
 import { IS_DEMO_MODE } from "../api/apiConfig";
@@ -301,12 +302,15 @@ export default function CheckoutPage() {
         : undefined;
     const waterEstimate = waterTariff
         ? {
-            rate: formatWaterRate(waterTariff.pricePerUnit),
+            rate: formatWaterRate(waterTariff.pricePerUnit, waterCurrencyInfo),
             usage: formatUsageRange(waterUsageRange),
             cost: formatMoneyRange(waterUsageRange, waterTariff.pricePerUnit, waterCurrencyInfo),
-            tooltip: getRatePerLiterTooltip(waterTariff.pricePerUnit),
+            tooltip: getRatePerLiterTooltip(waterTariff.pricePerUnit, waterCurrencyInfo),
         }
         : null;
+    const waterBillingAcknowledgementCopy = waterTariffLoaded && !waterTariff
+        ? "I understand water may be billed separately after check-out."
+        : "I accept separate water billing after check-out.";
 
     const displayNightPrice = unit.convertedPricePerNight && unit.currencyInfo && unit.currencyInfo.displayCurrency !== "PLN"
         ? `${unit.convertedPricePerNight.toFixed(2)} ${unit.currencyInfo.displayCurrency}`
@@ -616,7 +620,7 @@ export default function CheckoutPage() {
                                     className="w-5 h-5 accent-brand-primary rounded border-brand-accent focus:ring-brand-primary text-brand-primary mt-0.5 cursor-pointer flex-shrink-0"
                                 />
                                 <label htmlFor="acceptWaterBilling" className="text-sm text-brand-muted font-medium select-none cursor-pointer leading-tight">
-                                    I accept separate water billing after check-out. <span className="text-red-500">*</span>
+                                    {waterBillingAcknowledgementCopy} <span className="text-red-500">*</span>
                                 </label>
                             </div>
                         </div>
@@ -731,7 +735,7 @@ export default function CheckoutPage() {
                                 </div>
 
                                 <div className="flex justify-between items-center border-t border-brand-accent pt-4 text-base font-bold text-brand-primary">
-                                    <span>Total Price</span>
+                                    <span>Accommodation total</span>
                                     <span className="text-lg">{displayTotalPrice}</span>
                                 </div>
 
@@ -748,12 +752,7 @@ export default function CheckoutPage() {
                                             <div className="flex justify-between items-start gap-4">
                                                 <span className="text-brand-muted font-medium inline-flex items-center gap-1">
                                                     Rate
-                                                    <span
-                                                        title={waterEstimate.tooltip}
-                                                        className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-brand-accent text-[10px] font-bold text-brand-muted cursor-help"
-                                                    >
-                                                        ?
-                                                    </span>
+                                                    <WaterRateTooltip text={waterEstimate.tooltip} />
                                                 </span>
                                                 <span className="font-semibold text-right">{waterEstimate.rate}</span>
                                             </div>

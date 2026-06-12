@@ -60,17 +60,29 @@ export function formatMoneyRange(
     return `${formatNumber(minCost)}-${formatNumber(maxCost)} ${currency}`;
 }
 
-export function formatWaterRate(pricePerUnitPln: number): string {
-    return `${formatNumber(pricePerUnitPln)} PLN/${M3_LABEL}`;
+export function formatWaterRate(pricePerUnitPln: number, currencyInfo?: CurrencyInfo): string {
+    const plnRate = `${formatNumber(pricePerUnitPln, 2, 2)} PLN/${M3_LABEL}`;
+
+    if (!currencyInfo || currencyInfo.displayCurrency === "PLN" || currencyInfo.exchangeRate <= 0) {
+        return plnRate;
+    }
+
+    const convertedRate = pricePerUnitPln / currencyInfo.exchangeRate;
+    return `${plnRate} (~${formatNumber(convertedRate, 2, 2)} ${currencyInfo.displayCurrency}/${M3_LABEL})`;
 }
 
-export function getRatePerLiterTooltip(pricePerUnitPln: number): string {
-    return `1 ${M3_LABEL} = 1000 L, so ${formatNumber(pricePerUnitPln)} PLN/${M3_LABEL} = ${formatNumber(pricePerUnitPln / 1000, 3)} PLN/L.`;
+export function getRatePerLiterTooltip(pricePerUnitPln: number, currencyInfo?: CurrencyInfo): string {
+    if (!currencyInfo || currencyInfo.displayCurrency === "PLN" || currencyInfo.exchangeRate <= 0) {
+        return `1 ${M3_LABEL} = 1000 L, so ${formatNumber(pricePerUnitPln, 2, 2)} PLN/${M3_LABEL} = ${formatNumber(pricePerUnitPln / 1000, 4, 4)} PLN/L.`;
+    }
+
+    const convertedRate = pricePerUnitPln / currencyInfo.exchangeRate;
+    return `1 ${M3_LABEL} = 1000 L. ${formatNumber(pricePerUnitPln, 2, 2)} PLN/${M3_LABEL} \u2248 ${formatNumber(convertedRate, 2, 2)} ${currencyInfo.displayCurrency}/${M3_LABEL}, so \u2248 ${formatNumber(convertedRate / 1000, 4, 4)} ${currencyInfo.displayCurrency}/L.`;
 }
 
-function formatNumber(value: number, maximumFractionDigits = 2): string {
+function formatNumber(value: number, maximumFractionDigits = 2, minimumFractionDigits = 0): string {
     return new Intl.NumberFormat("en-US", {
-        minimumFractionDigits: 0,
+        minimumFractionDigits,
         maximumFractionDigits,
     }).format(value);
 }
