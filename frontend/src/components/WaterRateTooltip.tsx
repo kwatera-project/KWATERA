@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { FocusEvent } from "react";
 
 type WaterRateTooltipProps = {
@@ -21,11 +21,28 @@ export default function WaterRateTooltip({
     valueClassName = "font-semibold text-brand-main",
 }: WaterRateTooltipProps) {
     const tooltipId = useId();
-    const [isHovered, setIsHovered] = useState(false);
+    const closeTimerRef = useRef<number | null>(null);
+    const [isIconHovered, setIsIconHovered] = useState(false);
+    const [isPanelHovered, setIsPanelHovered] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
     const [isPinned, setIsPinned] = useState(false);
-    const [isHoverSuppressed, setIsHoverSuppressed] = useState(false);
-    const isOpen = isHovered || isFocused || isPinned;
+    const [isIconHoverSuppressed, setIsIconHoverSuppressed] = useState(false);
+    const isOpen = isIconHovered || isPanelHovered || isFocused || isPinned;
+
+    const clearCloseTimer = () => {
+        if (closeTimerRef.current !== null) {
+            window.clearTimeout(closeTimerRef.current);
+            closeTimerRef.current = null;
+        }
+    };
+
+    useEffect(() => {
+        return () => {
+            if (closeTimerRef.current !== null) {
+                window.clearTimeout(closeTimerRef.current);
+            }
+        };
+    }, []);
 
     const handleBlur = (event: FocusEvent<HTMLDivElement>) => {
         if (!event.currentTarget.contains(event.relatedTarget)) {
@@ -37,14 +54,6 @@ export default function WaterRateTooltip({
     return (
         <div
             className="space-y-2 overflow-visible"
-            onMouseEnter={() => {
-                if (!isHoverSuppressed) setIsHovered(true);
-            }}
-            onMouseLeave={() => {
-                setIsHovered(false);
-                setIsPinned(false);
-                setIsHoverSuppressed(false);
-            }}
             onFocus={() => setIsFocused(true)}
             onBlur={handleBlur}
         >
@@ -56,15 +65,29 @@ export default function WaterRateTooltip({
                         aria-label="Water rate conversion"
                         aria-expanded={isOpen}
                         aria-controls={tooltipId}
+                        onMouseEnter={() => {
+                            clearCloseTimer();
+                            if (!isIconHoverSuppressed) {
+                                setIsIconHovered(true);
+                            }
+                        }}
+                        onMouseLeave={() => {
+                            clearCloseTimer();
+                            closeTimerRef.current = window.setTimeout(() => {
+                                setIsIconHovered(false);
+                                setIsIconHoverSuppressed(false);
+                            }, 120);
+                        }}
                         onClick={() => {
                             if (isPinned) {
                                 setIsPinned(false);
                                 setIsFocused(false);
-                                setIsHovered(false);
-                                setIsHoverSuppressed(true);
+                                setIsIconHovered(false);
+                                setIsPanelHovered(false);
+                                setIsIconHoverSuppressed(true);
                             } else {
                                 setIsPinned(true);
-                                setIsHoverSuppressed(false);
+                                setIsIconHoverSuppressed(false);
                             }
                         }}
                         className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold cursor-help focus:outline-none focus:ring-2 focus:ring-brand-primary/20 ${iconClassName}`}
@@ -81,6 +104,11 @@ export default function WaterRateTooltip({
                 <div
                     id={tooltipId}
                     role="tooltip"
+                    onMouseEnter={() => {
+                        clearCloseTimer();
+                        setIsPanelHovered(true);
+                    }}
+                    onMouseLeave={() => setIsPanelHovered(false)}
                     className={`w-full rounded-lg border px-3 py-2 text-xs font-medium leading-snug ${panelClassName}`}
                 >
                     {text}
