@@ -111,6 +111,7 @@ export default function DashboardPage() {
                   endDate={endDate}
                   placeholderText="Start"
                   className="bg-transparent text-sm font-bold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center"
+                  allowPastDates={true}
                 />
               </div>
             </div>
@@ -127,6 +128,7 @@ export default function DashboardPage() {
                   minDate={startDate}
                   placeholderText="End"
                   className="bg-transparent text-sm font-bold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center"
+                  allowPastDates={true}
                 />
               </div>
             </div>
