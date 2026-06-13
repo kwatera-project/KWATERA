@@ -57,7 +57,7 @@ class AdminReservationControllerTest {
   void shouldReturnReservations_whenValidAdminTokenProvided() throws Exception {
     UUID ownerId = UUID.randomUUID();
     when(adminReservationService.getReservationsOverview(
-            ownerId, ReservationStatus.CONFIRMED, true))
+            ownerId, ReservationStatus.CONFIRMED, true, null, null))
         .thenReturn(Collections.emptyList());
 
     mockMvc
@@ -68,7 +68,7 @@ class AdminReservationControllerTest {
         .andExpect(status().isOk());
 
     verify(adminReservationService)
-        .getReservationsOverview(ownerId, ReservationStatus.CONFIRMED, true);
+        .getReservationsOverview(ownerId, ReservationStatus.CONFIRMED, true, null, null);
   }
 
   @Test
@@ -163,7 +163,7 @@ class AdminReservationControllerTest {
     org.springframework.web.server.ResponseStatusException ex =
         assertThrows(
             org.springframework.web.server.ResponseStatusException.class,
-            () -> adminReservationController.getReservations(null, null));
+            () -> adminReservationController.getReservations(null, null, null, null));
     org.junit.jupiter.api.Assertions.assertEquals(
         org.springframework.http.HttpStatus.UNAUTHORIZED, ex.getStatusCode());
   }
@@ -176,7 +176,7 @@ class AdminReservationControllerTest {
     org.springframework.web.server.ResponseStatusException ex =
         assertThrows(
             org.springframework.web.server.ResponseStatusException.class,
-            () -> adminReservationController.getReservations(null, auth));
+            () -> adminReservationController.getReservations(null, null, null, auth));
     org.junit.jupiter.api.Assertions.assertEquals(
         org.springframework.http.HttpStatus.UNAUTHORIZED, ex.getStatusCode());
   }
@@ -190,7 +190,7 @@ class AdminReservationControllerTest {
     org.springframework.web.server.ResponseStatusException ex =
         assertThrows(
             org.springframework.web.server.ResponseStatusException.class,
-            () -> adminReservationController.getReservations(null, auth));
+            () -> adminReservationController.getReservations(null, null, null, auth));
     org.junit.jupiter.api.Assertions.assertEquals(
         org.springframework.http.HttpStatus.UNAUTHORIZED, ex.getStatusCode());
   }
@@ -204,7 +204,7 @@ class AdminReservationControllerTest {
     org.springframework.web.server.ResponseStatusException ex =
         org.junit.jupiter.api.Assertions.assertThrows(
             org.springframework.web.server.ResponseStatusException.class,
-            () -> adminReservationController.getReservations(null, auth));
+            () -> adminReservationController.getReservations(null, null, null, auth));
     org.junit.jupiter.api.Assertions.assertEquals(
         org.springframework.http.HttpStatus.UNAUTHORIZED, ex.getStatusCode());
   }

@@ -8,6 +8,7 @@ import io.github.kwatera_project.kwatera.reservation_service.model.ReservationSt
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatusHistory;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationStatusHistoryRepository;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,13 +56,26 @@ public class AdminReservationService {
   }
 
   public List<ReservationOverviewDto> getReservationsOverview(
-      UUID ownerId, ReservationStatus status, boolean isAdmin) {
+      UUID ownerId,
+      ReservationStatus status,
+      boolean isAdmin,
+      LocalDate startDate,
+      LocalDate endDate) {
 
     if (isAdmin) {
-      List<Reservation> reservations =
-          (status != null)
-              ? reservationRepository.findByStatus(status)
-              : reservationRepository.findAll();
+      List<Reservation> reservations;
+      if (startDate != null && endDate != null) {
+        reservations =
+            (status != null)
+                ? reservationRepository.findReservationsOverlappingWithStatus(
+                    status, startDate, endDate)
+                : reservationRepository.findReservationsOverlapping(startDate, endDate);
+      } else {
+        reservations =
+            (status != null)
+                ? reservationRepository.findByStatus(status)
+                : reservationRepository.findAll();
+      }
 
       return reservations.stream().map(this::mapToOverviewDto).toList();
     }
@@ -77,10 +91,20 @@ public class AdminReservationService {
         return Collections.emptyList();
       }
 
-      List<Reservation> reservations =
-          (status != null)
-              ? reservationRepository.findByUnitIdInAndStatus(ownerUnitIds, status)
-              : reservationRepository.findByUnitIdIn(ownerUnitIds);
+      List<Reservation> reservations;
+      if (startDate != null && endDate != null) {
+        reservations =
+            (status != null)
+                ? reservationRepository.findReservationsOverlappingForUnitsWithStatus(
+                    ownerUnitIds, status, startDate, endDate)
+                : reservationRepository.findReservationsOverlappingForUnits(
+                    ownerUnitIds, startDate, endDate);
+      } else {
+        reservations =
+            (status != null)
+                ? reservationRepository.findByUnitIdInAndStatus(ownerUnitIds, status)
+                : reservationRepository.findByUnitIdIn(ownerUnitIds);
+      }
 
       return reservations.stream().map(this::mapToOverviewDto).toList();
 

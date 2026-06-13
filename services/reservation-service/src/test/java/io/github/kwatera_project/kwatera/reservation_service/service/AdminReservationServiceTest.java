@@ -53,7 +53,7 @@ class AdminReservationServiceTest {
     when(reservationRepository.findAll()).thenReturn(List.of(reservation));
 
     List<ReservationOverviewDto> result =
-        adminReservationService.getReservationsOverview(UUID.randomUUID(), null, true);
+        adminReservationService.getReservationsOverview(UUID.randomUUID(), null, true, null, null);
 
     assertEquals(1, result.size());
     verify(reservationRepository).findAll();
@@ -67,10 +67,26 @@ class AdminReservationServiceTest {
 
     List<ReservationOverviewDto> result =
         adminReservationService.getReservationsOverview(
-            UUID.randomUUID(), ReservationStatus.CONFIRMED, true);
+            UUID.randomUUID(), ReservationStatus.CONFIRMED, true, null, null);
 
     assertEquals(1, result.size());
     verify(reservationRepository).findByStatus(ReservationStatus.CONFIRMED);
+  }
+
+  @Test
+  void shouldReturnFilteredReservationsByDateRange_whenUserIsAdminAndDatesProvided() {
+    LocalDate startDate = LocalDate.of(2026, 6, 1);
+    LocalDate endDate = LocalDate.of(2026, 6, 10);
+    Reservation reservation = createReservation();
+    when(reservationRepository.findReservationsOverlapping(startDate, endDate))
+        .thenReturn(List.of(reservation));
+
+    List<ReservationOverviewDto> result =
+        adminReservationService.getReservationsOverview(
+            UUID.randomUUID(), null, true, startDate, endDate);
+
+    assertEquals(1, result.size());
+    verify(reservationRepository).findReservationsOverlapping(startDate, endDate);
   }
 
   @Test
@@ -222,7 +238,7 @@ class AdminReservationServiceTest {
     when(reservationRepository.findByUnitIdIn(List.of(unitId))).thenReturn(List.of(reservation));
 
     List<ReservationOverviewDto> result =
-        adminReservationService.getReservationsOverview(ownerId, null, false);
+        adminReservationService.getReservationsOverview(ownerId, null, false, null, null);
 
     assertEquals(1, result.size());
     verify(reservationRepository).findByUnitIdIn(List.of(unitId));
@@ -242,7 +258,7 @@ class AdminReservationServiceTest {
 
     List<ReservationOverviewDto> result =
         adminReservationService.getReservationsOverview(
-            ownerId, ReservationStatus.CONFIRMED, false);
+            ownerId, ReservationStatus.CONFIRMED, false, null, null);
 
     assertEquals(1, result.size());
   }
@@ -251,7 +267,7 @@ class AdminReservationServiceTest {
   void shouldReturnEmptyList_whenOwnerHasNoUnits() {
     when(restTemplate.getForObject(anyString(), eq(UUID[].class))).thenReturn(new UUID[0]);
     List<ReservationOverviewDto> result =
-        adminReservationService.getReservationsOverview(UUID.randomUUID(), null, false);
+        adminReservationService.getReservationsOverview(UUID.randomUUID(), null, false, null, null);
     assertEquals(0, result.size());
   }
 
@@ -280,7 +296,7 @@ class AdminReservationServiceTest {
     when(restTemplate.getForObject(anyString(), any())).thenThrow(new RuntimeException("API Down"));
 
     List<ReservationOverviewDto> result =
-        adminReservationService.getReservationsOverview(UUID.randomUUID(), null, true);
+        adminReservationService.getReservationsOverview(UUID.randomUUID(), null, true, null, null);
     assertEquals(1, result.size());
     assertEquals(
         "Room " + reservation.getUnitId().toString().substring(0, 8), result.get(0).unitName());
@@ -293,7 +309,7 @@ class AdminReservationServiceTest {
         .thenThrow(new RuntimeException("Connection error"));
 
     List<ReservationOverviewDto> result =
-        adminReservationService.getReservationsOverview(ownerId, null, false);
+        adminReservationService.getReservationsOverview(ownerId, null, false, null, null);
 
     assertTrue(result.isEmpty());
   }
@@ -304,7 +320,7 @@ class AdminReservationServiceTest {
     when(restTemplate.getForObject(anyString(), eq(UUID[].class))).thenReturn(null);
 
     List<ReservationOverviewDto> result =
-        adminReservationService.getReservationsOverview(ownerId, null, false);
+        adminReservationService.getReservationsOverview(ownerId, null, false, null, null);
 
     assertTrue(result.isEmpty());
   }
