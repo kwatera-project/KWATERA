@@ -63,20 +63,7 @@ public class AdminReservationService {
       LocalDate endDate) {
 
     if (isAdmin) {
-      List<Reservation> reservations;
-      if (startDate != null && endDate != null) {
-        reservations =
-            (status != null)
-                ? reservationRepository.findReservationsOverlappingWithStatus(
-                    status, startDate, endDate)
-                : reservationRepository.findReservationsOverlapping(startDate, endDate);
-      } else {
-        reservations =
-            (status != null)
-                ? reservationRepository.findByStatus(status)
-                : reservationRepository.findAll();
-      }
-
+      List<Reservation> reservations = getAdminReservationsFromRepository(status, startDate, endDate);
       return reservations.stream().map(this::mapToOverviewDto).toList();
     }
 
@@ -91,27 +78,39 @@ public class AdminReservationService {
         return Collections.emptyList();
       }
 
-      List<Reservation> reservations;
-      if (startDate != null && endDate != null) {
-        reservations =
-            (status != null)
-                ? reservationRepository.findReservationsOverlappingForUnitsWithStatus(
-                    ownerUnitIds, status, startDate, endDate)
-                : reservationRepository.findReservationsOverlappingForUnits(
-                    ownerUnitIds, startDate, endDate);
-      } else {
-        reservations =
-            (status != null)
-                ? reservationRepository.findByUnitIdInAndStatus(ownerUnitIds, status)
-                : reservationRepository.findByUnitIdIn(ownerUnitIds);
-      }
-
+      List<Reservation> reservations = getOwnerReservationsFromRepository(ownerUnitIds, status, startDate, endDate);
       return reservations.stream().map(this::mapToOverviewDto).toList();
 
     } catch (Exception e) {
       log.error("Error connection with property-service", e);
       return Collections.emptyList();
     }
+  }
+
+  private List<Reservation> getAdminReservationsFromRepository(
+      ReservationStatus status, LocalDate startDate, LocalDate endDate) {
+    if (startDate != null && endDate != null) {
+      return (status != null)
+          ? reservationRepository.findReservationsOverlappingWithStatus(status, startDate, endDate)
+          : reservationRepository.findReservationsOverlapping(startDate, endDate);
+    }
+    return (status != null)
+        ? reservationRepository.findByStatus(status)
+        : reservationRepository.findAll();
+  }
+
+  private List<Reservation> getOwnerReservationsFromRepository(
+      List<UUID> ownerUnitIds, ReservationStatus status, LocalDate startDate, LocalDate endDate) {
+    if (startDate != null && endDate != null) {
+      return (status != null)
+          ? reservationRepository.findReservationsOverlappingForUnitsWithStatus(
+              ownerUnitIds, status, startDate, endDate)
+          : reservationRepository.findReservationsOverlappingForUnits(
+              ownerUnitIds, startDate, endDate);
+    }
+    return (status != null)
+        ? reservationRepository.findByUnitIdInAndStatus(ownerUnitIds, status)
+        : reservationRepository.findByUnitIdIn(ownerUnitIds);
   }
 
   public ReservationOverviewDto updateReservationStatus(
