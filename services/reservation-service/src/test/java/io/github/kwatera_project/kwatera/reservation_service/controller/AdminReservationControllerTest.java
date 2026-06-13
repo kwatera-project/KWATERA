@@ -13,6 +13,7 @@ import io.github.kwatera_project.kwatera.reservation_service.filter.JwtAuthFilte
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
 import io.github.kwatera_project.kwatera.reservation_service.service.AdminReservationService;
 import io.github.kwatera_project.kwatera.reservation_service.service.JwtService;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -69,6 +70,29 @@ class AdminReservationControllerTest {
 
     verify(adminReservationService)
         .getReservationsOverview(ownerId, ReservationStatus.CONFIRMED, true, null, null);
+  }
+
+  @Test
+  void shouldReturnReservationsWithDateRange_whenValidAdminTokenAndDatesProvided()
+      throws Exception {
+    UUID ownerId = UUID.randomUUID();
+    LocalDate startDate = LocalDate.of(2026, 6, 1);
+    LocalDate endDate = LocalDate.of(2026, 6, 10);
+    when(adminReservationService.getReservationsOverview(
+            ownerId, ReservationStatus.CONFIRMED, true, startDate, endDate))
+        .thenReturn(Collections.emptyList());
+
+    mockMvc
+        .perform(
+            get("/api/v1/admin/reservations")
+                .param("status", "CONFIRMED")
+                .param("startDate", "2026-06-01")
+                .param("endDate", "2026-06-10")
+                .with(authentication(buildAuth(ownerId, "ROLE_ADMIN"))))
+        .andExpect(status().isOk());
+
+    verify(adminReservationService)
+        .getReservationsOverview(ownerId, ReservationStatus.CONFIRMED, true, startDate, endDate);
   }
 
   @Test

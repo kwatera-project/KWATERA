@@ -63,7 +63,8 @@ public class AdminReservationService {
       LocalDate endDate) {
 
     if (isAdmin) {
-      List<Reservation> reservations = getAdminReservationsFromRepository(status, startDate, endDate);
+      List<Reservation> reservations =
+          getAdminReservationsFromRepository(status, startDate, endDate);
       return reservations.stream().map(this::mapToOverviewDto).toList();
     }
 
@@ -78,7 +79,8 @@ public class AdminReservationService {
         return Collections.emptyList();
       }
 
-      List<Reservation> reservations = getOwnerReservationsFromRepository(ownerUnitIds, status, startDate, endDate);
+      List<Reservation> reservations =
+          getOwnerReservationsFromRepository(ownerUnitIds, status, startDate, endDate);
       return reservations.stream().map(this::mapToOverviewDto).toList();
 
     } catch (Exception e) {
