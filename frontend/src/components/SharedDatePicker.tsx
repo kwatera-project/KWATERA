@@ -175,36 +175,7 @@ export default function SharedDatePicker({
         : (minDate ? (minDate.getTime() < today.getTime() ? today : minDate) : today);
 
     return (
-        <>
-            <style>{`
-                .custom-datepicker-has-header .react-datepicker__day--selected,
-                .custom-datepicker-has-header .react-datepicker__day--range-start,
-                .custom-datepicker-has-header .react-datepicker__day--range-end {
-                    background-color: #292524 !important; /* bg-stone-800 */
-                    color: #ffffff !important;
-                    border-radius: 6px !important;
-                }
-                .custom-datepicker-has-header .react-datepicker__day:hover {
-                    background-color: #f5f5f4 !important; /* hover:bg-stone-100 */
-                    color: #1c1917 !important; /* text-stone-900 */
-                    border-radius: 6px !important;
-                }
-                .custom-datepicker-has-header .react-datepicker__day--disabled {
-                    background-color: transparent !important;
-                    color: #d6d3d1 !important; /* text-stone-300 */
-                    cursor: not-allowed !important;
-                    text-decoration: none !important;
-                }
-                .custom-datepicker-has-header .react-datepicker__day--disabled:hover {
-                    background-color: transparent !important;
-                    color: #d6d3d1 !important;
-                }
-                .custom-datepicker-has-header .react-datepicker__day--keyboard-selected {
-                    background-color: #f5f5f4 !important;
-                    color: #1c1917 !important;
-                }
-            `}</style>
-            <DatePicker
+        <DatePicker
                 ref={datepickerRef}
                 selected={selected ?? undefined}
                 onChange={onChange}
@@ -226,6 +197,5 @@ export default function SharedDatePicker({
                     strategy: "fixed"
                 }}
             />
-        </>
     );
 }
