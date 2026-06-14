@@ -5,6 +5,7 @@ import {
     demoUnitsByProperty,
     getDemoUnits,
 } from "../demo/demoProperties";
+import type { UnitSettlementItem } from "../types/property";
 
 const API_URL = `${GATEWAY_BASE_URL}/api`;
 
@@ -88,6 +89,25 @@ export async function getUnit(unitId: string, currency: string = "PLN") {
     }
 
     const res = await fetch(`${API_URL}/properties/units/${unitId}?currency=${currency}`);
+    return res.json();
+}
+
+export async function getUnitSettlementItems(unitId: string): Promise<UnitSettlementItem[]> {
+    if (IS_DEMO_MODE) {
+        return [
+            {
+                id: `${unitId}-demo-water-tariff`,
+                unitId,
+                settlementItemType: "WATER",
+                pricePerUnit: 12,
+                measurementUnit: "M3",
+                billingType: "PER_USAGE",
+            },
+        ];
+    }
+
+    const res = await fetch(`${API_URL}/properties/units/${unitId}/settlement-items`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json();
 }
 
