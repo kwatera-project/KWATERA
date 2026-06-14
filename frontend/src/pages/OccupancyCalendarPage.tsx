@@ -246,77 +246,79 @@ export default function OccupancyCalendarPage() {
                 </button>
             </div>
 
-            <div className="w-full relative z-10 flex flex-col" ref={calendarRef}>
-                <div className="grid grid-cols-7 border border-brand-accent rounded-t-xl bg-brand-bg text-center py-3 font-bold text-xs uppercase tracking-wider border-b-0">
-                    <div className="text-brand-muted">Mon</div>
-                    <div className="text-brand-muted">Tue</div>
-                    <div className="text-brand-muted">Wed</div>
-                    <div className="text-brand-muted">Thu</div>
-                    <div className="text-brand-muted">Fri</div>
-                    <div className="text-brand-muted bg-gray-50/60">Sat</div>
-                    <div className="text-brand-muted bg-gray-50/60">Sun</div>
-                </div>
+            <div className="w-full overflow-x-auto relative z-10 whitespace-nowrap border border-brand-accent rounded-xl shadow-sm" ref={calendarRef}>
+                <div className="min-w-[800px] flex flex-col bg-white">
+                    <div className="grid grid-cols-7 bg-brand-bg text-center py-3 font-bold text-xs uppercase tracking-wider border-b border-brand-accent">
+                        <div className="text-brand-muted">Mon</div>
+                        <div className="text-brand-muted">Tue</div>
+                        <div className="text-brand-muted">Wed</div>
+                        <div className="text-brand-muted">Thu</div>
+                        <div className="text-brand-muted">Fri</div>
+                        <div className="text-brand-muted bg-gray-50/60">Sat</div>
+                        <div className="text-brand-muted bg-gray-50/60">Sun</div>
+                    </div>
 
-                <div className="w-full border border-brand-accent rounded-b-xl shadow-sm bg-white overflow-hidden divide-y divide-brand-accent/20">
-                    {weeks.map((weekDates, weekIdx) => (
-                        <div key={weekIdx} className="min-h-[110px] flex flex-col justify-between hover:bg-[#F7F7F7]/30 transition-colors">
-                            <div className="grid grid-cols-7 border-b border-brand-accent/10 bg-brand-bg/10">
-                                {weekDates.map((d, dayIdx) => {
-                                    const dateStr = format(d, 'yyyy-MM-dd');
-                                    const isCurrentMonth = format(d, 'MM') === format(anchorDate, 'MM');
-                                    const isToday = dateStr === todayStr;
-                                    const isSelected = selectedQuickActionDate && dateStr === format(selectedQuickActionDate, 'yyyy-MM-dd');
-                                    const isHighlighted = isToday || isSelected;
-                                    const isPast = isBefore(d, startOfToday()) && !isToday;
-                                    const isWeekend = dayIdx >= 5;
-                                    return (
-                                        <div 
-                                            key={d.toISOString()} 
-                                            className={`p-1.5 pr-2.5 text-right font-semibold text-xs border-r border-brand-accent/10 last:border-r-0 ${isWeekend ? 'bg-gray-50/60' : ''} ${
-                                                isHighlighted ? 'bg-brand-accent/20 border-t-4 border-t-brand-primary border-x border-brand-accent/30 shadow-sm' : ''
-                                            }`}
-                                        >
-                                            <span className={`${isPast ? 'text-gray-300' : isCurrentMonth ? 'text-brand-main' : 'text-gray-300'} ${isHighlighted ? 'font-black text-brand-primary' : ''}`}>
-                                                {format(d, 'd')}
-                                            </span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                            <div className="flex-1 relative min-h-[70px]">
-                                <div className="absolute inset-0 grid grid-cols-7">
+                    <div className="w-full bg-white divide-y divide-brand-accent/20">
+                        {weeks.map((weekDates, weekIdx) => (
+                            <div key={weekIdx} className="min-h-[110px] flex flex-col justify-between hover:bg-[#F7F7F7]/30 transition-colors">
+                                <div className="grid grid-cols-7 border-b border-brand-accent/10 bg-brand-bg/10">
                                     {weekDates.map((d, dayIdx) => {
                                         const dateStr = format(d, 'yyyy-MM-dd');
+                                        const isCurrentMonth = format(d, 'MM') === format(anchorDate, 'MM');
                                         const isToday = dateStr === todayStr;
                                         const isSelected = selectedQuickActionDate && dateStr === format(selectedQuickActionDate, 'yyyy-MM-dd');
                                         const isHighlighted = isToday || isSelected;
+                                        const isPast = isBefore(d, startOfToday()) && !isToday;
                                         const isWeekend = dayIdx >= 5;
                                         return (
-                                            <div
-                                                key={d.toISOString()}
-                                                onClick={() => {
-                                                    setQuickAction({ date: d });
-                                                    setSelectedQuickActionDate(d);
-                                                }}
-                                                className={`h-full border-r border-brand-accent/5 last:border-r-0 ${
-                                                    isWeekend ? "bg-gray-50/40" : ""
-                                                } ${
-                                                    isHighlighted ? "bg-brand-accent/10 border-x border-b border-brand-accent/30 shadow-inner" : ""
-                                                } cursor-pointer hover:bg-brand-accent/20 transition-colors`}
-                                            />
+                                            <div 
+                                                key={d.toISOString()} 
+                                                className={`p-1.5 pr-2.5 text-right font-semibold text-xs border-r border-brand-accent/10 last:border-r-0 ${isWeekend ? 'bg-gray-50/60' : ''} ${
+                                                    isHighlighted ? 'bg-brand-accent/20 border-t-4 border-t-brand-primary border-x border-brand-accent/30 shadow-sm' : ''
+                                                }`}
+                                            >
+                                                <span className={`${isPast ? 'text-gray-300' : isCurrentMonth ? 'text-brand-main' : 'text-gray-300'} ${isHighlighted ? 'font-black text-brand-primary' : ''}`}>
+                                                    {format(d, 'd')}
+                                                </span>
+                                            </div>
                                         );
                                     })}
                                 </div>
-                                <div className="relative z-[1] p-2 space-y-1 pointer-events-none">
-                                    {getLanesForChunk(weekDates).map((lane, laneIdx) => (
-                                        <div key={laneIdx} className="grid grid-cols-7 gap-1">
-                                            {renderLaneCellsForWeek(lane, weekDates)}
-                                        </div>
-                                    ))}
+                                <div className="flex-1 relative min-h-[70px]">
+                                    <div className="absolute inset-0 grid grid-cols-7">
+                                        {weekDates.map((d, dayIdx) => {
+                                            const dateStr = format(d, 'yyyy-MM-dd');
+                                            const isToday = dateStr === todayStr;
+                                            const isSelected = selectedQuickActionDate && dateStr === format(selectedQuickActionDate, 'yyyy-MM-dd');
+                                            const isHighlighted = isToday || isSelected;
+                                            const isWeekend = dayIdx >= 5;
+                                            return (
+                                                <div
+                                                    key={d.toISOString()}
+                                                    onClick={() => {
+                                                        setQuickAction({ date: d });
+                                                        setSelectedQuickActionDate(d);
+                                                    }}
+                                                    className={`h-full border-r border-brand-accent/5 last:border-r-0 ${
+                                                        isWeekend ? "bg-gray-50/40" : ""
+                                                    } ${
+                                                        isHighlighted ? "bg-brand-accent/10 border-x border-b border-brand-accent/30 shadow-inner" : ""
+                                                    } cursor-pointer hover:bg-brand-accent/20 transition-colors`}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="relative z-[1] p-2 space-y-1 pointer-events-none">
+                                        {getLanesForChunk(weekDates).map((lane, laneIdx) => (
+                                            <div key={laneIdx} className="grid grid-cols-7 gap-1">
+                                                {renderLaneCellsForWeek(lane, weekDates)}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             </div>
 

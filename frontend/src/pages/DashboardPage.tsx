@@ -284,7 +284,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
             {/* Chart 1: Occupancy Trend */}
-            <div id="occupancy-chart" className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4">
+            <div id="occupancy-chart" className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4 min-w-0 overflow-hidden">
               <div>
                 <h3 className="text-lg font-bold text-[#1A1A1A]">
                   Occupancy Trend
@@ -319,7 +319,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Chart 2: Base vs. Sold Price Analysis */}
-            <div className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4">
+            <div className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4 min-w-0 overflow-hidden">
               <div>
                 <h3 className="text-lg font-bold text-[#1A1A1A]">
                   Base vs. Sold Price Analysis
@@ -350,7 +350,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Chart 3: Net Profit & Utility Expenses */}
-            <div id="revenue-chart" className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4">
+            <div id="revenue-chart" className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4 min-w-0 overflow-hidden">
               <div>
                 <h3 className="text-lg font-bold text-[#1A1A1A]">
                   Net Profit & Utility Expenses
@@ -382,7 +382,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Chart 4: Unit Performance Ranking */}
-            <div className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4">
+            <div className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4 min-w-0 overflow-hidden">
               <div>
                 <h3 className="text-lg font-bold text-[#1A1A1A]">
                   Unit Profitability Ranking

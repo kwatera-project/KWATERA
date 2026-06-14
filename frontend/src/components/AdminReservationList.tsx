@@ -201,9 +201,9 @@ export default function AdminReservationList() {
                 </div>
             </div>
 
-            <div className="overflow-x-auto bg-white border border-[#DACDCA] rounded-xl shadow-sm">
-                <table className="min-w-full table-auto">
-                    <thead className="bg-[#F7F7F7] border-b border-[#DACDCA]">
+            <div className="bg-transparent md:bg-white md:border md:border-[#DACDCA] md:rounded-xl md:shadow-sm overflow-hidden">
+                <table className="min-w-full block md:table">
+                    <thead className="hidden md:table-header-group bg-[#F7F7F7] border-b border-[#DACDCA]">
                         <tr>
                             <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-left">Guest</th>
                             <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-left">Unit/Property</th>
@@ -212,7 +212,7 @@ export default function AdminReservationList() {
                             <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-center">Actions</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#DACDCA]/60 bg-white">
+                    <tbody className="block md:table-row-group divide-y-0 md:divide-y divide-[#DACDCA]/60 bg-transparent md:bg-white">
                         {filteredReservations.map((res) => {
                             const isMeterReadingsEnabled = !!settlementIds[res.id] && !!unitIds[res.id] && (res.status === "CONFIRMED" || res.status === "COMPLETED");
                             const isConfirmEnabled = res.status === "PENDING";
@@ -220,34 +220,46 @@ export default function AdminReservationList() {
                             const isCancelEnabled = res.status === "PENDING" || res.status === "CONFIRMED";
 
                             return (
-                                <tr key={res.id} className="hover:bg-[#F7F7F7] transition-colors">
-                                    <td className="px-6 py-4 text-sm font-semibold text-[#1A1A1A]">
-                                        {formatGuestName(res.guestName)}
+                                <tr key={res.id} className="block md:table-row bg-white md:bg-transparent rounded-xl border border-[#DACDCA] md:border-0 shadow-sm md:shadow-none mb-4 md:mb-0 p-5 md:p-0 space-y-3 md:space-y-0 hover:bg-transparent md:hover:bg-[#F7F7F7] transition-colors">
+                                    <td className="block md:table-cell px-0 md:px-6 py-2 md:py-4 text-sm font-semibold text-[#1A1A1A] border-b border-gray-100 md:border-0">
+                                        <div className="flex justify-between items-center md:block">
+                                            <span className="font-medium text-[#7A7A7A] md:hidden">Guest:</span>
+                                            <span>{formatGuestName(res.guestName)}</span>
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-[#1A1A1A]">
-                                        {res.unitName}
+                                    <td className="block md:table-cell px-0 md:px-6 py-2 md:py-4 text-sm text-[#1A1A1A] border-b border-gray-100 md:border-0">
+                                        <div className="flex justify-between items-center md:block">
+                                            <span className="font-medium text-[#7A7A7A] md:hidden">Unit/Property:</span>
+                                            <span className="font-bold md:font-normal">{res.unitName}</span>
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-[#1A1A1A] font-medium">
-                                        <span className="whitespace-nowrap">
-                                            {res.startDate} &rarr; {res.endDate}
-                                        </span>
+                                    <td className="block md:table-cell px-0 md:px-6 py-2 md:py-4 text-sm text-[#1A1A1A] font-medium border-b border-gray-100 md:border-0">
+                                        <div className="flex justify-between items-center md:block">
+                                            <span className="font-medium text-[#7A7A7A] md:hidden">Stay Dates:</span>
+                                            <span className="whitespace-nowrap font-bold md:font-medium">
+                                                {res.startDate} &rarr; {res.endDate}
+                                            </span>
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm">
-                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border uppercase tracking-wider ${
-                                            res.status === 'CONFIRMED' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
-                                            res.status === 'PENDING' ? 'bg-amber-50 border-amber-200 text-amber-800' :
-                                            res.status === 'COMPLETED' ? 'bg-blue-50 border-blue-200 text-blue-800' :
-                                            res.status === 'CANCELLED' ? 'bg-red-50 border-red-200 text-red-800' :
-                                            'bg-gray-50 border-gray-200 text-gray-800'
-                                        }`}>
-                                            {res.status}
-                                        </span>
+                                    <td className="block md:table-cell px-0 md:px-6 py-2 md:py-4 text-sm border-b border-gray-100 md:border-0">
+                                        <div className="flex justify-between items-center md:block">
+                                            <span className="font-medium text-[#7A7A7A] md:hidden">Status:</span>
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border uppercase tracking-wider ${
+                                                res.status === 'CONFIRMED' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
+                                                res.status === 'PENDING' ? 'bg-amber-50 border-amber-200 text-amber-800' :
+                                                res.status === 'COMPLETED' ? 'bg-blue-50 border-blue-200 text-blue-800' :
+                                                res.status === 'CANCELLED' ? 'bg-red-50 border-red-200 text-red-800' :
+                                                'bg-gray-50 border-gray-200 text-gray-800'
+                                            }`}>
+                                                {res.status}
+                                            </span>
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-center">
-                                        <div className="flex flex-wrap justify-center items-center gap-2">
+                                    <td className="block md:table-cell px-0 md:px-6 py-3 md:py-4 text-sm text-center">
+                                        <div className="flex flex-col sm:flex-row sm:flex-wrap md:justify-center items-stretch sm:items-center gap-2">
                                             <Link
                                                 to={`/reservations/${res.id}`}
-                                                className="px-3 py-1.5 text-xs font-semibold text-white bg-[#42211D] hover:bg-[#321815] rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1 shrink-0 cursor-pointer"
+                                                className="px-4 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-bold md:font-semibold text-white bg-[#42211D] hover:bg-[#321815] rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1 shrink-0 cursor-pointer text-center"
                                             >
                                                 View Details
                                             </Link>
@@ -255,14 +267,14 @@ export default function AdminReservationList() {
                                             {isMeterReadingsEnabled ? (
                                                 <Link
                                                     to={`/admin/settlements/${settlementIds[res.id]}/meter-readings?unitId=${unitIds[res.id]}`}
-                                                    className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1 shrink-0 cursor-pointer"
+                                                    className="px-4 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-bold md:font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1 shrink-0 cursor-pointer text-center"
                                                 >
                                                     Meter Readings
                                                 </Link>
                                             ) : (
                                                 <button
                                                     disabled
-                                                    className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
+                                                    className="px-4 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-bold md:font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
                                                 >
                                                     Meter Readings
                                                 </button>
@@ -271,7 +283,7 @@ export default function AdminReservationList() {
                                             <button
                                                 disabled={!isConfirmEnabled}
                                                 onClick={() => handleStatusChange(res.id, 'CONFIRMED')}
-                                                className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
+                                                className="px-4 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-bold md:font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
                                             >
                                                 Confirm
                                             </button>
@@ -279,7 +291,7 @@ export default function AdminReservationList() {
                                             <button
                                                 disabled={!isCompleteEnabled}
                                                 onClick={() => handleStatusChange(res.id, 'COMPLETED')}
-                                                className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
+                                                className="px-4 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-bold md:font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
                                             >
                                                 Complete
                                             </button>
@@ -287,7 +299,7 @@ export default function AdminReservationList() {
                                             <button
                                                 disabled={!isCancelEnabled}
                                                 onClick={() => handleStatusChange(res.id, 'CANCELLED')}
-                                                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-transparent transition-all inline-flex items-center justify-center gap-1 shrink-0 text-red-600 bg-red-50 hover:bg-red-100 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
+                                                className="px-4 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-bold md:font-semibold rounded-lg border border-transparent transition-all inline-flex items-center justify-center gap-1 shrink-0 text-red-600 bg-red-50 hover:bg-red-100 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
                                             >
                                                 Cancel
                                             </button>
@@ -297,8 +309,8 @@ export default function AdminReservationList() {
                             );
                         })}
                         {filteredReservations.length === 0 && (
-                            <tr>
-                                <td colSpan={5} className="px-6 py-8 text-center text-[#7A7A7A] font-medium bg-white">
+                            <tr className="block md:table-row bg-white rounded-xl border border-[#DACDCA] md:border-0 shadow-sm md:shadow-none p-6 md:p-0">
+                                <td colSpan={5} className="block md:table-cell px-6 py-8 text-center text-[#7A7A7A] font-medium bg-white">
                                     No reservations found.
                                 </td>
                             </tr>
