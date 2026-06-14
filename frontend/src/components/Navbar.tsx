@@ -4,7 +4,7 @@ import {useLogout} from "./Logout.tsx"
 import {getUserRoles, decodeJwt} from "../utils/jwtUtils.ts"
 import {useState, useEffect, useRef} from "react"
 import {useCurrency} from "../contexts/CurrencyContext"
-import {User, LogOut, LayoutDashboard, Calendar, Settings, Home, FileClock} from 'lucide-react'
+import {User, LogOut, LayoutDashboard, Calendar, Settings, Home, FileClock, Menu, X} from 'lucide-react'
 import {IS_DEMO_MODE} from "../api/apiConfig.ts"
 
 interface NavbarProps {
@@ -26,6 +26,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
     const {currency, setCurrency} = useCurrency();
     const [isCurrencyDropdownOpen, setIsCurrencyDropdownOpen] = useState(false);
     const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const location = useLocation();
     const isHomePage = location.pathname === '/';
     const [isScrolled, setIsScrolled] = useState(false);
@@ -65,6 +66,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
         const timer = setTimeout(() => {
             setIsProfileDropdownOpen(false);
             setIsCurrencyDropdownOpen(false);
+            setIsMobileMenuOpen(false);
         }, 0);
         return () => clearTimeout(timer);
     }, [location.pathname]);
@@ -252,8 +254,30 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                             )}
                         </div>
                     )}
+
+                    <button
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className={`lg:hidden p-2 rounded-lg transition-colors focus:outline-none cursor-pointer ${isScrolledActive ? 'text-stone-800 hover:bg-stone-100' : 'text-white hover:bg-white/10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]'}`}
+                    >
+                        {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+                    </button>
                 </div>
             </div>
+
+            {isMobileMenuOpen && (
+                <div className="lg:hidden absolute top-full left-0 w-full bg-white border-b border-gray-200 shadow-xl py-4 px-6 flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-200 z-[19000]">
+                    {navLinks.map((link) => (
+                        <Link
+                            key={link.name}
+                            to={link.path}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="font-bold text-base tracking-[0.1em] uppercase text-stone-800 hover:text-[#42211D] py-2.5 border-b border-gray-100 last:border-b-0"
+                        >
+                            {link.name}
+                        </Link>
+                    ))}
+                </div>
+            )}
         </nav>
     );
 }

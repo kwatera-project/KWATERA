@@ -501,7 +501,7 @@ export default function PropertiesPage() {
                         <div className="flex gap-6">
                             <div
                                 className={`flex-1 min-w-0 ${
-                                    showMap ? "md:max-w-[340px] lg:max-w-[400px] xl:max-w-[440px]" : ""
+                                    showMap ? "hidden md:block md:max-w-[340px] lg:max-w-[400px] xl:max-w-[440px]" : ""
                                 }`}
                             >
                                 {displayProperties.length === 0 ? (
@@ -620,8 +620,8 @@ export default function PropertiesPage() {
 
                             {showMap && (
                                 <div
-                                    className="hidden md:block flex-1 sticky top-6"
-                                    style={{ height: "calc(100vh - 200px)" }}
+                                    className="w-full md:flex-1 md:sticky md:top-6"
+                                    style={{ height: "calc(100vh - 240px)" }}
                                 >
                                     <div className="w-full h-full rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
                                         <PropertyMap

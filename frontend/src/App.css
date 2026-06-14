@@ -268,9 +268,9 @@
 
     .react-datepicker__day-name, 
     .react-datepicker__day {
-        width: 2.4rem !important;
-        line-height: 2.4rem !important;
-        margin: 0.08rem !important;
+        width: 2.0rem !important;
+        line-height: 2.0rem !important;
+        margin: 0.06rem !important;
         font-size: 0.85rem !important;
     }
 
@@ -286,10 +286,9 @@
     }
     .react-datepicker__day-name,
     .react-datepicker__day {
-        width: 9.8vw !important;
-        max-width: 38px !important;
-        line-height: 2.4rem !important;
-        margin: 0.4vw !important;
+        width: 1.85rem !important;
+        line-height: 1.85rem !important;
+        margin: 0.04rem !important;
         font-size: 0.8rem !important;
     }
 }

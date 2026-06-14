@@ -191,22 +191,22 @@ function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: stri
                 </div>
             </div>
 
-            <div className="flex gap-3 w-full lg:w-auto justify-end border-t border-gray-100 lg:border-none pt-4 lg:pt-0 shrink-0">
+            <div className="flex flex-wrap gap-2.5 w-full lg:w-auto justify-start sm:justify-end border-t border-gray-100 lg:border-none pt-4 lg:pt-0 shrink-0">
                 <Link
                     to={`/owner/properties/${propertyId}/units/${unit.id}/images`}
-                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all inline-flex items-center"
+                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all inline-flex items-center justify-center flex-grow sm:flex-grow-0 text-center"
                 >
                     Manage Images
                 </Link>
                 <Link
                     to={`/owner/properties/${propertyId}/units/${unit.id}/edit`}
-                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all"
+                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all text-center flex-grow sm:flex-grow-0"
                 >
                     Edit
                 </Link>
                 <button
                     onClick={() => onDelete(propertyId, unit.id)}
-                    className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 text-sm rounded-lg shadow-sm transition-all"
+                    className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 text-sm rounded-lg shadow-sm transition-all text-center flex-grow sm:flex-grow-0"
                 >
                     Delete
                 </button>

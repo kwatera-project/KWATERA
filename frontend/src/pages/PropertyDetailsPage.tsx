@@ -314,7 +314,7 @@ export default function PropertyDetailsPage() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto p-8 min-h-screen text-brand-main space-y-8">
+        <div className="max-w-7xl mx-auto p-4 md:p-8 min-h-screen text-brand-main space-y-8">
             <div>
                 <img
                     src={mainImage || property.imageUrl}
@@ -389,7 +389,7 @@ export default function PropertyDetailsPage() {
                         const lacksRequestedCapacity = !!initialSearch.guests && u.capacity < initialSearch.guests;
 
                         return (
-                            <div key={u.id} className="bg-white border border-brand-accent rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 flex flex-col lg:flex-row gap-8">
+                            <div key={u.id} className="bg-white border border-brand-accent rounded-xl shadow-sm p-4 md:p-6 hover:shadow-md transition-all duration-300 flex flex-col lg:flex-row gap-8">
                                 <div className="flex-1 space-y-4">
                                     {u.imageUrl && (
                                         <img src={u.imageUrl} className="w-full h-64 object-cover rounded-lg border border-brand-accent" alt={u.name} />

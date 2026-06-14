@@ -108,7 +108,7 @@ export default function ReservationDetailsPage() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto p-8 min-h-screen text-[#1A1A1A] space-y-6 flex flex-col">
+        <div className="max-w-7xl mx-auto p-4 md:p-8 min-h-screen text-[#1A1A1A] space-y-6 flex flex-col">
             {/* Top Navigation */}
             <Link
                 to={returnPath}
@@ -149,7 +149,7 @@ export default function ReservationDetailsPage() {
                 {/* Column 1 & 2: Content Cards */}
                 <div className="lg:col-span-2 space-y-6">
                     {/* Stay & Property Details Card */}
-                    <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 space-y-5">
+                    <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 md:p-6 hover:shadow-md transition-all duration-300 space-y-5">
                         <div className="flex items-center gap-2 border-b border-[#DACDCA] pb-3">
                             <Home size={18} className="text-[#42211D]" />
                             <h2 className="text-lg font-bold text-[#1A1A1A] tracking-tight">Stay & Property Info</h2>
@@ -209,7 +209,7 @@ export default function ReservationDetailsPage() {
                     </div>
 
                     {/* Guest Information Card */}
-                    <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 space-y-4">
+                    <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 md:p-6 hover:shadow-md transition-all duration-300 space-y-4">
                         <div className="flex items-center gap-2 border-b border-[#DACDCA] pb-3">
                             <User size={18} className="text-[#42211D]" />
                             <h2 className="text-lg font-bold text-[#1A1A1A] tracking-tight">Guest & Account Info</h2>
@@ -241,7 +241,7 @@ export default function ReservationDetailsPage() {
 
 
                     {reservation.guestMessage && (
-                        <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 space-y-4">
+                        <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 md:p-6 hover:shadow-md transition-all duration-300 space-y-4">
                             <div className="flex items-center gap-2 border-b border-[#DACDCA] pb-3">
                                 <svg className="w-[18px] h-[18px] text-[#42211D]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -256,7 +256,7 @@ export default function ReservationDetailsPage() {
 
                     {/* Owner Information Card */}
                     {reservation.ownerName && (
-                        <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 space-y-4">
+                        <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 md:p-6 hover:shadow-md transition-all duration-300 space-y-4">
                             <div className="flex items-center gap-2 border-b border-[#DACDCA] pb-3">
                                 <User size={18} className="text-[#42211D]" />
                                 <h2 className="text-lg font-bold text-[#1A1A1A] tracking-tight">Owner Info</h2>
@@ -281,7 +281,7 @@ export default function ReservationDetailsPage() {
 
                 {/* Column 3: Financial Summary Card */}
                 <div className="lg:col-span-1">
-                    <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 space-y-4 h-full flex flex-col justify-between">
+                    <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 md:p-6 hover:shadow-md transition-all duration-300 space-y-4 h-full flex flex-col justify-between">
                         <div className="space-y-4 w-full">
                             <div className="flex items-center gap-2 border-b border-[#DACDCA] pb-3">
                                 <CreditCard size={18} className="text-[#42211D]" />
