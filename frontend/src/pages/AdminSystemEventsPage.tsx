@@ -275,6 +275,7 @@ export default function AdminSystemEventsPage() {
                 className="w-24 cursor-pointer bg-transparent text-center text-sm font-bold text-[#1A1A1A] outline-none"
                 wrapperClassName="block"
                 popperPlacement="bottom-start"
+                allowPastDates={true}
               />
             </div>
           </div>
@@ -295,6 +296,7 @@ export default function AdminSystemEventsPage() {
                 className="w-24 cursor-pointer bg-transparent text-center text-sm font-bold text-[#1A1A1A] outline-none"
                 wrapperClassName="block"
                 popperPlacement="bottom-start"
+                allowPastDates={true}
               />
             </div>
           </div>

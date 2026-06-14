@@ -4,9 +4,11 @@ import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationOver
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationStatusUpdateRequest;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
 import io.github.kwatera_project.kwatera.reservation_service.service.AdminReservationService;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -24,6 +26,12 @@ public class AdminReservationController {
   @GetMapping
   public List<ReservationOverviewDto> getReservations(
       @RequestParam(name = "status", required = false) ReservationStatus status,
+      @RequestParam(name = "startDate", required = false)
+          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+          LocalDate startDate,
+      @RequestParam(name = "endDate", required = false)
+          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+          LocalDate endDate,
       Authentication authentication) {
 
     if (authentication == null || !authentication.isAuthenticated()) {
@@ -47,7 +55,8 @@ public class AdminReservationController {
         authentication.getAuthorities().stream()
             .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
-    return adminReservationService.getReservationsOverview(ownerId, status, isAdmin);
+    return adminReservationService.getReservationsOverview(
+        ownerId, status, isAdmin, startDate, endDate);
   }
 
   @PatchMapping("/{reservationId}/status")

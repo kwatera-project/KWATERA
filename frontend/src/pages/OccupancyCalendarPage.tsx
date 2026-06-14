@@ -207,6 +207,7 @@ export default function OccupancyCalendarPage() {
                                 selected={startDate}
                                 onChange={(date: Date | null) => { if (date) setDateRange([date, endOfMonth(date)]) }}
                                 placeholderText="Select Month"
+                                allowPastDates={true}
                             />
                         </div>
                     </div>

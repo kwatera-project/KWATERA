@@ -1,4 +1,9 @@
 .git
+.gitattributes
+.github
+.gitignore
+.agents
+.codex
 **/node_modules
 **/target
 **/.idea
@@ -9,3 +14,14 @@
 **/dist
 **/.gemini
 **/brain
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+**/__pycache__
+**/*.pyc
+**/*.log
+backend-storage
+config-repo
+docs
+scripts
+*.md

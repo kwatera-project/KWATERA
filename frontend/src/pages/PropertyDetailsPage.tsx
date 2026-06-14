@@ -371,7 +371,7 @@ export default function PropertyDetailsPage() {
                         selectsRange
                         inline
                         minDate={new Date()}
-                        calendarClassName="custom-datepicker-has-header"
+                        calendarClassName="custom-datepicker-has-header occupancy-calendar"
                         renderCustomHeader={(props) => <CustomCalendarHeader {...props} />}
                     />
                 </div>
@@ -453,7 +453,7 @@ export default function PropertyDetailsPage() {
                                                     minDate={new Date()}
                                                     filterDate={(date) => !isDateBlocked(date, u.id)}
                                                     dayClassName={(date) => getDayClass(date, u.id)}
-                                                    calendarClassName="custom-datepicker-has-header"
+                                                    calendarClassName="custom-datepicker-has-header occupancy-calendar"
                                                     renderCustomHeader={(props) => <CustomCalendarHeader {...props} />}
                                                     renderDayContents={(dayOfMonth, date) => {
                                                         const cls = getDayClass(date, u.id);
