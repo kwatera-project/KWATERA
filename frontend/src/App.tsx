@@ -1,5 +1,5 @@
 import './App.css'
-import {Routes, Route} from "react-router-dom"
+import {Routes, Route, useLocation} from "react-router-dom"
 import Navbar from "./components/Navbar"
 import RegisterForm from "./components/RegisterForm"
 import LoginForm from "./components/LoginForm.tsx";
@@ -30,176 +30,187 @@ import EditPropertyImages from "./pages/EditPropertyImages.tsx";
 import EditUnitImages from "./pages/EditUnitImages.tsx";
 import AboutPage from "./pages/AboutPage";
 import DemoModeBanner from "./components/DemoModeBanner";
+import Footer from "./components/landing/Footer";
+
+const FULL_SCREEN_ROUTES = ["/login", "/register", "/payment-cancel"];
 
 function App() {
+    const location = useLocation();
+    const showFooter = !FULL_SCREEN_ROUTES.some((path) => location.pathname.includes(path));
+
     return (
         <CurrencyProvider>
-            <DemoModeBanner/>
-            <Navbar/>
-            <Routes>
-                <Route path="/" element={<HomePage/>}/>
-                <Route path="/about" element={<AboutPage/>}/>
-                <Route path="/register" element={<RegisterForm/>}/>
-                <Route path="/login" element={<LoginForm/>}/>
-                <Route
-                    path="/admin/dashboard"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
-                            <DashboardPage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/admin/logs"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
-                            <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A]">
-                                <AdminSystemEventsPage/>
-                            </div>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/admin/reservations"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
-                            <AdminReservationList/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/admin/occupancy"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
-                            <OccupancyCalendarPage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/my-reservations"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_GUEST']}>
-                            <MyReservationsPage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/reservations/:id"
-                    element={
-                        <ProtectedRoute allowedRoles={[]}>
-                            <ReservationDetailsPage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/profile"
-                    element={
-                        <ProtectedRoute>
-                            <ProfilePage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route path="/properties" element={<PropertiesPage/>}/>
-                <Route path="/catalog" element={<PropertiesPage/>}/>
-                <Route path="/property/:id" element={<PropertyDetailsPage/>}/>
-                <Route
-                    path="/checkout"
-                    element={
-                        <ProtectedRoute>
-                            <CheckoutPage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route path="/payment-cancel" element={<PaymentCancelPage/>}/>
-                <Route
-                    path="/settlements/:id"
-                    element={
-                        <ProtectedRoute allowedRoles={[]}>
-                            <SettlementDetailsPage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/settlements/:settlementId/meter-readings"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_GUEST']}>
-                            <MeterReadingsPage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/admin/settlements/:settlementId/meter-readings"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
-                            <AdminMeterReadingsPage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/owner/properties"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
-                            <OwnerPropertiesPage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/owner/properties/:propertyId/units"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
-                            <OwnerPropertyUnitsPage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/owner/properties/new"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
-                            <CreatePropertyPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/owner/properties/:propertyId/edit"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
-                            <EditPropertyPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/owner/properties/:propertyId/units/new"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
-                            <CreateUnitPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/owner/properties/:propertyId/units/:unitId/edit"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
-                            <EditUnitPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/owner/properties/:propertyId/images"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
-                            <EditPropertyImages />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/owner/properties/:propertyId/units/:unitId/images"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
-                            <EditUnitImages />
-                        </ProtectedRoute>
-                    }
-                />
-            </Routes>
+            <div className="min-h-screen flex flex-col bg-card">
+                <DemoModeBanner/>
+                <Navbar/>
+                <main className="flex-1">
+                    <Routes>
+                        <Route path="/" element={<HomePage/>}/>
+                        <Route path="/about" element={<AboutPage/>}/>
+                        <Route path="/register" element={<RegisterForm/>}/>
+                        <Route path="/login" element={<LoginForm/>}/>
+                        <Route
+                            path="/admin/dashboard"
+                            element={
+                                <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
+                                    <DashboardPage/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/logs"
+                            element={
+                                <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
+                                    <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A]">
+                                        <AdminSystemEventsPage/>
+                                    </div>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/reservations"
+                            element={
+                                <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
+                                    <AdminReservationList/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/occupancy"
+                            element={
+                                <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
+                                    <OccupancyCalendarPage/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/my-reservations"
+                            element={
+                                <ProtectedRoute allowedRoles={['ROLE_GUEST']}>
+                                    <MyReservationsPage/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/reservations/:id"
+                            element={
+                                <ProtectedRoute allowedRoles={[]}>
+                                    <ReservationDetailsPage/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/profile"
+                            element={
+                                <ProtectedRoute>
+                                    <ProfilePage/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route path="/properties" element={<PropertiesPage/>}/>
+                        <Route path="/catalog" element={<PropertiesPage/>}/>
+                        <Route path="/property/:id" element={<PropertyDetailsPage/>}/>
+                        <Route
+                            path="/checkout"
+                            element={
+                                <ProtectedRoute>
+                                    <CheckoutPage/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route path="/payment-cancel" element={<PaymentCancelPage/>}/>
+                        <Route
+                            path="/settlements/:id"
+                            element={
+                                <ProtectedRoute allowedRoles={[]}>
+                                    <SettlementDetailsPage/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/settlements/:settlementId/meter-readings"
+                            element={
+                                <ProtectedRoute allowedRoles={['ROLE_GUEST']}>
+                                    <MeterReadingsPage/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/settlements/:settlementId/meter-readings"
+                            element={
+                                <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
+                                    <AdminMeterReadingsPage/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/owner/properties"
+                            element={
+                                <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                                    <OwnerPropertiesPage/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/owner/properties/:propertyId/units"
+                            element={
+                                <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                                    <OwnerPropertyUnitsPage/>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/owner/properties/new"
+                            element={
+                                <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                                    <CreatePropertyPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/owner/properties/:propertyId/edit"
+                            element={
+                                <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                                    <EditPropertyPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/owner/properties/:propertyId/units/new"
+                            element={
+                                <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                                    <CreateUnitPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/owner/properties/:propertyId/units/:unitId/edit"
+                            element={
+                                <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                                    <EditUnitPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/owner/properties/:propertyId/images"
+                            element={
+                                <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                                    <EditPropertyImages />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/owner/properties/:propertyId/units/:unitId/images"
+                            element={
+                                <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                                    <EditUnitImages />
+                                </ProtectedRoute>
+                            }
+                        />
+                    </Routes>
+                </main>
+                {showFooter && <Footer/>}
+            </div>
         </CurrencyProvider>
     )
 }

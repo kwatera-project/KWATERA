@@ -7,7 +7,6 @@ import ExploreSection from '../components/landing/ExploreSection';
 import BlogSection from '../components/landing/BlogSection';
 import NewsletterSection from '../components/landing/NewsletterSection';
 import TrustBadges from '../components/landing/TrustBadges';
-import Footer from '../components/landing/Footer';
 import DemoRoleSelector from "../components/DemoRoleSelector";
 import { IS_DEMO_MODE } from "../api/apiConfig";
 
@@ -58,7 +57,6 @@ export default function HomePage() {
             <BlogSection />
             <NewsletterSection />
             <TrustBadges />
-            <Footer />
         </div>
     );
 }
