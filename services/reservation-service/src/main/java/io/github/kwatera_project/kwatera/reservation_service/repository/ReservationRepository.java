@@ -59,4 +59,30 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
       ReservationStatus status, java.time.Instant threshold);
 
   List<Reservation> findByStartDateAndStatus(LocalDate startDate, ReservationStatus status);
+
+  @Query("SELECT r FROM Reservation r WHERE r.startDate <= :endDate AND r.endDate >= :startDate")
+  List<Reservation> findReservationsOverlapping(
+      @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+
+  @Query(
+      "SELECT r FROM Reservation r WHERE r.status = :status AND r.startDate <= :endDate AND r.endDate >= :startDate")
+  List<Reservation> findReservationsOverlappingWithStatus(
+      @Param("status") ReservationStatus status,
+      @Param("startDate") LocalDate startDate,
+      @Param("endDate") LocalDate endDate);
+
+  @Query(
+      "SELECT r FROM Reservation r WHERE r.unitId IN :unitIds AND r.startDate <= :endDate AND r.endDate >= :startDate")
+  List<Reservation> findReservationsOverlappingForUnits(
+      @Param("unitIds") List<UUID> unitIds,
+      @Param("startDate") LocalDate startDate,
+      @Param("endDate") LocalDate endDate);
+
+  @Query(
+      "SELECT r FROM Reservation r WHERE r.unitId IN :unitIds AND r.status = :status AND r.startDate <= :endDate AND r.endDate >= :startDate")
+  List<Reservation> findReservationsOverlappingForUnitsWithStatus(
+      @Param("unitIds") List<UUID> unitIds,
+      @Param("status") ReservationStatus status,
+      @Param("startDate") LocalDate startDate,
+      @Param("endDate") LocalDate endDate);
 }
