@@ -145,16 +145,26 @@ export async function getSystemEvents(query: SystemEventsQuery = {}): Promise<Sy
     return res.json();
 }
 
-export async function getAdminReservations(status?: string) {
+export async function getAdminReservations(status?: string, startDate?: string, endDate?: string) {
     if (IS_DEMO_MODE) {
-        return status
-            ? demoAdminReservations.filter((reservation) => reservation.status === status)
-            : demoAdminReservations;
+        let filtered = demoAdminReservations;
+        if (status) {
+            filtered = filtered.filter((reservation) => reservation.status === status);
+        }
+        if (startDate && endDate) {
+            filtered = filtered.filter((reservation) => reservation.startDate <= endDate && reservation.endDate >= startDate);
+        }
+        return filtered;
     }
 
     const token = localStorage.getItem("token");
-    const url = status
-        ? `${GATEWAY_BASE_URL}/api/v1/admin/reservations?status=${status}`
+    const params = new URLSearchParams();
+    if (status) params.append("status", status);
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+    const queryString = params.toString();
+    const url = queryString
+        ? `${GATEWAY_BASE_URL}/api/v1/admin/reservations?${queryString}`
         : `${GATEWAY_BASE_URL}/api/v1/admin/reservations`;
 
     const res = await fetch(url, {

@@ -4,6 +4,18 @@ import { getAdminReservations, updateAdminReservationStatus } from "../api/admin
 import { getSettlementDetails } from '../api/settlementApi';
 import { getReservationDetails } from "../api/reservationApi";
 import { ChevronDown } from 'lucide-react';
+import SharedDatePicker from "./SharedDatePicker";
+import { format } from "date-fns";
+
+const parseDateString = (str: string): Date | null => {
+    if (!str) return null;
+    const parts = str.split("-");
+    if (parts.length !== 3) return null;
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    return new Date(year, month, day);
+};
 
 interface ReservationOverview {
     id: string;
@@ -17,12 +29,14 @@ interface ReservationOverview {
 export default function AdminReservationList() {
     const [reservations, setReservations] = useState<ReservationOverview[]>([]);
     const [statusFilter, setStatusFilter] = useState<string>("");
+    const [startDate, setStartDate] = useState<string>("");
+    const [endDate, setEndDate] = useState<string>("");
     const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
     const [settlementIds, setSettlementIds] = useState<Record<string, string>>({});
     const [unitIds, setUnitIds] = useState<Record<string, string>>({});
 
     const fetchReservations = useCallback(() => {
-        getAdminReservations(statusFilter || undefined)
+        getAdminReservations(statusFilter || undefined, startDate || undefined, endDate || undefined)
             .then((data) => {
                 setReservations(data);
                 data.forEach(async (res: ReservationOverview) => {
@@ -41,7 +55,7 @@ export default function AdminReservationList() {
                 });
             })
             .catch((err) => console.error(err));
-    }, [statusFilter]);
+    }, [statusFilter, startDate, endDate]);
 
     useEffect(() => {
         fetchReservations();
@@ -108,37 +122,82 @@ export default function AdminReservationList() {
                 </div>
             )}
 
-            {/* Compact, Inline Toolbar Section */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#F7F7F7] border border-gray-100 rounded-xl p-4">
+            {/* Toolbar Section: Status and Date Range Filters */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#F7F7F7] border border-[#DACDCA] rounded-xl p-4 shadow-sm">
                 <div className="text-sm font-medium text-[#7A7A7A]">
                     Showing <span className="font-bold text-[#1A1A1A]">{filteredReservations.length}</span> reservation{filteredReservations.length === 1 ? '' : 's'}
                 </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <span className="text-sm font-medium text-gray-500 mr-2 shrink-0">Filter by Status:</span>
-                    <div className="relative w-full sm:w-44">
-                        <select
-                            className="appearance-none block w-full bg-white border border-gray-300 rounded-md py-2 pl-3 pr-10 text-sm text-[#1A1A1A] font-semibold focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-all shadow-sm cursor-pointer"
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                        >
-                            <option value="">All Statuses</option>
-                            <option value="PENDING">Pending</option>
-                            <option value="CONFIRMED">Confirmed</option>
-                            <option value="CANCELLED">Cancelled</option>
-                            <option value="COMPLETED">Completed</option>
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                            <ChevronDown className="h-4 w-4 text-[#7A7A7A]" />
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full md:w-auto">
+                    {/* Status Filter */}
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-500 shrink-0">Status:</span>
+                        <div className="relative w-full sm:w-36">
+                            <select
+                                className="appearance-none block w-full bg-white border border-[#DACDCA] rounded-lg py-2 pl-3 pr-10 text-sm text-[#1A1A1A] font-semibold focus:outline-none focus:ring-2 focus:ring-[#42211D]/20 focus:border-[#42211D] transition-all shadow-sm cursor-pointer"
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                            >
+                                <option value="">All Statuses</option>
+                                <option value="PENDING">Pending</option>
+                                <option value="CONFIRMED">Confirmed</option>
+                                <option value="CANCELLED">Cancelled</option>
+                                <option value="COMPLETED">Completed</option>
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                <ChevronDown className="h-4 w-4 text-[#7A7A7A]" />
+                            </div>
                         </div>
+                        {statusFilter && (
+                            <button
+                                onClick={() => setStatusFilter("")}
+                                className="text-sm font-medium text-gray-500 hover:text-[#42211D] transition-colors shrink-0 cursor-pointer"
+                            >
+                                Clear
+                            </button>
+                        )}
                     </div>
-                    {statusFilter && (
-                        <button
-                            onClick={() => setStatusFilter("")}
-                            className="text-sm font-medium text-gray-500 hover:text-brand-main transition-colors shrink-0 cursor-pointer"
-                        >
-                            Clear
-                        </button>
-                    )}
+
+                    {/* Date Filters */}
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-500 shrink-0">Dates:</span>
+                        <div className="flex items-center gap-2 bg-white border border-[#DACDCA] rounded-lg p-1.5 shadow-sm">
+                            <SharedDatePicker
+                                selected={parseDateString(startDate)}
+                                onChange={(date) => setStartDate(date ? format(date, "yyyy-MM-dd") : "")}
+                                selectsStart
+                                startDate={parseDateString(startDate)}
+                                endDate={parseDateString(endDate)}
+                                allowPastDates={true}
+                                placeholderText="Start Date"
+                                className="bg-transparent text-sm font-semibold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center"
+                                wrapperClassName="w-auto"
+                            />
+                            <span className="text-gray-400 font-medium text-xs">to</span>
+                            <SharedDatePicker
+                                selected={parseDateString(endDate)}
+                                onChange={(date) => setEndDate(date ? format(date, "yyyy-MM-dd") : "")}
+                                selectsEnd
+                                startDate={parseDateString(startDate)}
+                                endDate={parseDateString(endDate)}
+                                minDate={parseDateString(startDate)}
+                                allowPastDates={true}
+                                placeholderText="End Date"
+                                className="bg-transparent text-sm font-semibold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center"
+                                wrapperClassName="w-auto"
+                            />
+                        </div>
+                        {(startDate || endDate) && (
+                            <button
+                                onClick={() => {
+                                    setStartDate("");
+                                    setEndDate("");
+                                }}
+                                className="text-sm font-medium text-gray-500 hover:text-[#42211D] transition-colors shrink-0 cursor-pointer"
+                            >
+                                Clear Dates
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 
