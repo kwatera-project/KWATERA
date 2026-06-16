@@ -23,6 +23,14 @@ Run the local environment from the repository root:
 docker compose -f infra/compose/docker-compose.yml up --build
 ```
 
+For repeated local work, you can warm the Docker build cache without starting containers:
+
+```bash
+docker compose -f infra/compose/docker-compose.yml build
+```
+
+The Dockerfiles use BuildKit cache mounts for Maven, Bun, and pip package caches where supported by your Docker installation. The full-stack startup command above remains the canonical local run command.
+
 Then open the frontend:
 
 - [http://localhost:5173](http://localhost:5173)

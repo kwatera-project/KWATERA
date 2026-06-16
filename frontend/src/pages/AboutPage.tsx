@@ -1,5 +1,4 @@
 import { Brain, Scan, Calendar, LayoutDashboard, Server, Database, Code } from 'lucide-react';
-import Footer from '../components/landing/Footer';
 
 interface TeamMember {
     name: string;
@@ -388,7 +387,6 @@ export default function AboutPage() {
                 </div>
 
             </div>
-            <Footer />
         </div>
     );
 }

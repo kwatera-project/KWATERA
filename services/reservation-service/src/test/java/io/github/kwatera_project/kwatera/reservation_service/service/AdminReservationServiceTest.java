@@ -53,7 +53,7 @@ class AdminReservationServiceTest {
     when(reservationRepository.findAll()).thenReturn(List.of(reservation));
 
     List<ReservationOverviewDto> result =
-        adminReservationService.getReservationsOverview(UUID.randomUUID(), null, true);
+        adminReservationService.getReservationsOverview(UUID.randomUUID(), null, true, null, null);
 
     assertEquals(1, result.size());
     verify(reservationRepository).findAll();
@@ -67,10 +67,59 @@ class AdminReservationServiceTest {
 
     List<ReservationOverviewDto> result =
         adminReservationService.getReservationsOverview(
-            UUID.randomUUID(), ReservationStatus.CONFIRMED, true);
+            UUID.randomUUID(), ReservationStatus.CONFIRMED, true, null, null);
 
     assertEquals(1, result.size());
     verify(reservationRepository).findByStatus(ReservationStatus.CONFIRMED);
+  }
+
+  @Test
+  void shouldReturnFilteredReservationsByDateRange_whenUserIsAdminAndDatesProvided() {
+    LocalDate startDate = LocalDate.of(2026, 6, 1);
+    LocalDate endDate = LocalDate.of(2026, 6, 10);
+    Reservation reservation = createReservation();
+    when(reservationRepository.findReservationsOverlapping(startDate, endDate))
+        .thenReturn(List.of(reservation));
+
+    List<ReservationOverviewDto> result =
+        adminReservationService.getReservationsOverview(
+            UUID.randomUUID(), null, true, startDate, endDate);
+
+    assertEquals(1, result.size());
+    verify(reservationRepository).findReservationsOverlapping(startDate, endDate);
+  }
+
+  @Test
+  void
+      shouldReturnFilteredReservationsByDateRangeAndStatus_whenUserIsAdminAndDatesAndStatusProvided() {
+    LocalDate startDate = LocalDate.of(2026, 6, 1);
+    LocalDate endDate = LocalDate.of(2026, 6, 10);
+    Reservation reservation = createReservation();
+    when(reservationRepository.findReservationsOverlappingWithStatus(
+            ReservationStatus.CONFIRMED, startDate, endDate))
+        .thenReturn(List.of(reservation));
+
+    List<ReservationOverviewDto> result =
+        adminReservationService.getReservationsOverview(
+            UUID.randomUUID(), ReservationStatus.CONFIRMED, true, startDate, endDate);
+
+    assertEquals(1, result.size());
+    verify(reservationRepository)
+        .findReservationsOverlappingWithStatus(ReservationStatus.CONFIRMED, startDate, endDate);
+  }
+
+  @Test
+  void shouldFallbackToAllReservations_whenUserIsAdminAndOnlyStartDateProvided() {
+    LocalDate startDate = LocalDate.of(2026, 6, 1);
+    Reservation reservation = createReservation();
+    when(reservationRepository.findAll()).thenReturn(List.of(reservation));
+
+    List<ReservationOverviewDto> result =
+        adminReservationService.getReservationsOverview(
+            UUID.randomUUID(), null, true, startDate, null);
+
+    assertEquals(1, result.size());
+    verify(reservationRepository).findAll();
   }
 
   @Test
@@ -222,7 +271,7 @@ class AdminReservationServiceTest {
     when(reservationRepository.findByUnitIdIn(List.of(unitId))).thenReturn(List.of(reservation));
 
     List<ReservationOverviewDto> result =
-        adminReservationService.getReservationsOverview(ownerId, null, false);
+        adminReservationService.getReservationsOverview(ownerId, null, false, null, null);
 
     assertEquals(1, result.size());
     verify(reservationRepository).findByUnitIdIn(List.of(unitId));
@@ -242,16 +291,63 @@ class AdminReservationServiceTest {
 
     List<ReservationOverviewDto> result =
         adminReservationService.getReservationsOverview(
-            ownerId, ReservationStatus.CONFIRMED, false);
+            ownerId, ReservationStatus.CONFIRMED, false, null, null);
 
     assertEquals(1, result.size());
+  }
+
+  @Test
+  void shouldReturnFilteredOwnerReservationsByDateRange_whenUserIsOwnerAndDatesProvided() {
+    UUID ownerId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    UUID[] unitIds = {unitId};
+    LocalDate startDate = LocalDate.of(2026, 6, 1);
+    LocalDate endDate = LocalDate.of(2026, 6, 10);
+    Reservation reservation = createReservation();
+
+    when(restTemplate.getForObject(anyString(), eq(UUID[].class))).thenReturn(unitIds);
+    when(reservationRepository.findReservationsOverlappingForUnits(
+            List.of(unitId), startDate, endDate))
+        .thenReturn(List.of(reservation));
+
+    List<ReservationOverviewDto> result =
+        adminReservationService.getReservationsOverview(ownerId, null, false, startDate, endDate);
+
+    assertEquals(1, result.size());
+    verify(reservationRepository)
+        .findReservationsOverlappingForUnits(List.of(unitId), startDate, endDate);
+  }
+
+  @Test
+  void
+      shouldReturnFilteredOwnerReservationsByDateRangeAndStatus_whenUserIsOwnerAndDatesAndStatusProvided() {
+    UUID ownerId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    UUID[] unitIds = {unitId};
+    LocalDate startDate = LocalDate.of(2026, 6, 1);
+    LocalDate endDate = LocalDate.of(2026, 6, 10);
+    Reservation reservation = createReservation();
+
+    when(restTemplate.getForObject(anyString(), eq(UUID[].class))).thenReturn(unitIds);
+    when(reservationRepository.findReservationsOverlappingForUnitsWithStatus(
+            List.of(unitId), ReservationStatus.CONFIRMED, startDate, endDate))
+        .thenReturn(List.of(reservation));
+
+    List<ReservationOverviewDto> result =
+        adminReservationService.getReservationsOverview(
+            ownerId, ReservationStatus.CONFIRMED, false, startDate, endDate);
+
+    assertEquals(1, result.size());
+    verify(reservationRepository)
+        .findReservationsOverlappingForUnitsWithStatus(
+            List.of(unitId), ReservationStatus.CONFIRMED, startDate, endDate);
   }
 
   @Test
   void shouldReturnEmptyList_whenOwnerHasNoUnits() {
     when(restTemplate.getForObject(anyString(), eq(UUID[].class))).thenReturn(new UUID[0]);
     List<ReservationOverviewDto> result =
-        adminReservationService.getReservationsOverview(UUID.randomUUID(), null, false);
+        adminReservationService.getReservationsOverview(UUID.randomUUID(), null, false, null, null);
     assertEquals(0, result.size());
   }
 
@@ -280,7 +376,7 @@ class AdminReservationServiceTest {
     when(restTemplate.getForObject(anyString(), any())).thenThrow(new RuntimeException("API Down"));
 
     List<ReservationOverviewDto> result =
-        adminReservationService.getReservationsOverview(UUID.randomUUID(), null, true);
+        adminReservationService.getReservationsOverview(UUID.randomUUID(), null, true, null, null);
     assertEquals(1, result.size());
     assertEquals(
         "Room " + reservation.getUnitId().toString().substring(0, 8), result.get(0).unitName());
@@ -293,7 +389,7 @@ class AdminReservationServiceTest {
         .thenThrow(new RuntimeException("Connection error"));
 
     List<ReservationOverviewDto> result =
-        adminReservationService.getReservationsOverview(ownerId, null, false);
+        adminReservationService.getReservationsOverview(ownerId, null, false, null, null);
 
     assertTrue(result.isEmpty());
   }
@@ -304,7 +400,7 @@ class AdminReservationServiceTest {
     when(restTemplate.getForObject(anyString(), eq(UUID[].class))).thenReturn(null);
 
     List<ReservationOverviewDto> result =
-        adminReservationService.getReservationsOverview(ownerId, null, false);
+        adminReservationService.getReservationsOverview(ownerId, null, false, null, null);
 
     assertTrue(result.isEmpty());
   }
