@@ -805,7 +805,7 @@ INSERT INTO media_reading_upload_attempts (
 
 SELECT
     ir.id,
-    pg_read_binary_file('/images/check_in.jpg'),
+    pg_read_binary_file('/images/check_in.png'),
     '89.983000',
     0.784642,
     'AUTO_APPROVED',
