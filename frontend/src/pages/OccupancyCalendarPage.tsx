@@ -161,9 +161,11 @@ export default function OccupancyCalendarPage() {
                         key={occ.reservationId || occ.unitId + dateStr}
                         onClick={() => setSelectedOcc(occ)}
                         style={{ gridColumn: `${i + 1} / span ${span}` }}
-                        className={`h-8 ${roundedClass} ${bgColor} ${textColor} text-[10px] sm:text-xs font-bold flex items-center shadow-sm transition-colors truncate cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-primary pointer-events-auto`}
+                        className={`h-6 md:h-8 ${roundedClass} ${bgColor} ${textColor} text-[9px] md:text-xs font-bold flex items-center justify-center md:justify-start shadow-sm transition-colors truncate cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-primary pointer-events-auto min-w-0`}
+                        title={displayText}
                     >
-                        <span className="truncate">{displayText}</span>
+                        <span className="truncate hidden md:block">{displayText}</span>
+                        <span className="truncate md:hidden text-[8px] font-black px-0.5">{unitName.slice(0, 3)}</span>
                     </button>
                 );
                 i += span;
@@ -181,7 +183,7 @@ export default function OccupancyCalendarPage() {
     };
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen text-brand-main space-y-6">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen text-brand-main space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-[100]">
                 <div>
                     <h1 className="text-3xl font-bold text-brand-main">Occupancy Dashboard</h1>
@@ -247,20 +249,20 @@ export default function OccupancyCalendarPage() {
             </div>
 
             <div className="w-full overflow-x-auto relative z-10 whitespace-nowrap border border-brand-accent rounded-xl shadow-sm" ref={calendarRef}>
-                <div className="min-w-[800px] flex flex-col bg-white">
-                    <div className="grid grid-cols-7 bg-brand-bg text-center py-3 font-bold text-xs uppercase tracking-wider border-b border-brand-accent">
-                        <div className="text-brand-muted">Mon</div>
-                        <div className="text-brand-muted">Tue</div>
-                        <div className="text-brand-muted">Wed</div>
-                        <div className="text-brand-muted">Thu</div>
-                        <div className="text-brand-muted">Fri</div>
-                        <div className="text-brand-muted bg-gray-50/60">Sat</div>
-                        <div className="text-brand-muted bg-gray-50/60">Sun</div>
+                <div className="w-full md:min-w-[800px] min-w-0 flex flex-col bg-white">
+                    <div className="grid grid-cols-7 bg-brand-bg text-center py-2 md:py-3 font-bold text-xs uppercase tracking-wider border-b border-brand-accent">
+                        <div className="text-brand-muted"><span className="hidden md:inline">Mon</span><span className="md:hidden">M</span></div>
+                        <div className="text-brand-muted"><span className="hidden md:inline">Tue</span><span className="md:hidden">T</span></div>
+                        <div className="text-brand-muted"><span className="hidden md:inline">Wed</span><span className="md:hidden">W</span></div>
+                        <div className="text-brand-muted"><span className="hidden md:inline">Thu</span><span className="md:hidden">T</span></div>
+                        <div className="text-brand-muted"><span className="hidden md:inline">Fri</span><span className="md:hidden">F</span></div>
+                        <div className="text-brand-muted bg-gray-50/60"><span className="hidden md:inline">Sat</span><span className="md:hidden">S</span></div>
+                        <div className="text-brand-muted bg-gray-50/60"><span className="hidden md:inline">Sun</span><span className="md:hidden">S</span></div>
                     </div>
 
                     <div className="w-full bg-white divide-y divide-brand-accent/20">
                         {weeks.map((weekDates, weekIdx) => (
-                            <div key={weekIdx} className="min-h-[110px] flex flex-col justify-between hover:bg-[#F7F7F7]/30 transition-colors">
+                            <div key={weekIdx} className="min-h-[85px] md:min-h-[110px] flex flex-col justify-between hover:bg-[#F7F7F7]/30 transition-colors">
                                 <div className="grid grid-cols-7 border-b border-brand-accent/10 bg-brand-bg/10">
                                     {weekDates.map((d, dayIdx) => {
                                         const dateStr = format(d, 'yyyy-MM-dd');
@@ -284,7 +286,7 @@ export default function OccupancyCalendarPage() {
                                         );
                                     })}
                                 </div>
-                                <div className="flex-1 relative min-h-[70px]">
+                                <div className="flex-1 relative min-h-[50px] md:min-h-[70px]">
                                     <div className="absolute inset-0 grid grid-cols-7">
                                         {weekDates.map((d, dayIdx) => {
                                             const dateStr = format(d, 'yyyy-MM-dd');

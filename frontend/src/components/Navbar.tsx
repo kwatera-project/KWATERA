@@ -29,6 +29,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const location = useLocation();
     const isHomePage = location.pathname === '/';
+    const [isScrolled, setIsScrolled] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const profileDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -39,6 +40,15 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
         handleResize();
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 50);
+        };
+        handleScroll();
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
     useEffect(() => {
@@ -82,11 +92,11 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
     const isFullScreenPage = ['/login', '/register', '/payment-cancel'].some(path => location.pathname.includes(path));
     const positionClass = (isEffectiveSubpage && !isFullScreenPage) ? 'sticky top-0' : 'fixed top-0';
     
-    const isNavbarWhite = true;
+    const isNavbarWhite = isScrolled || isEffectiveSubpage || isFullScreenPage || isMobileMenuOpen;
 
-    const bgAndPaddingClass = isMobile
-        ? 'bg-white border-b border-gray-200 py-4 shadow-sm'
-        : 'bg-white/95 backdrop-blur-md border-b border-gray-200 py-4 shadow-sm';
+    const bgAndPaddingClass = isNavbarWhite
+        ? (isMobile ? 'bg-solid-white border-b border-gray-200 py-4 shadow-sm' : 'bg-white/95 backdrop-blur-md border-b border-gray-200 py-4 shadow-sm')
+        : 'bg-transparent py-5';
 
     const containerClass = "max-w-7xl mx-auto px-4 md:px-8 lg:px-16 flex justify-between items-center relative";
 
@@ -130,7 +140,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                         </button>
 
                         {isCurrencyDropdownOpen && (
-                            <div className="absolute top-full right-0 mt-3 w-28 bg-white rounded-2xl shadow-xl z-[21000] overflow-hidden py-1.5 border border-[#DACDCA]/40">
+                            <div className="absolute top-full right-0 mt-3 w-28 bg-solid-white rounded-2xl shadow-xl z-[21000] overflow-hidden py-1.5 border border-[#DACDCA]/40">
                                 {['PLN', 'EUR', 'USD'].map((curr) => (
                                     <button
                                         key={curr}
@@ -166,7 +176,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
 
                             {isProfileDropdownOpen && (
                                 <div
-                                    className="absolute top-full right-0 mt-3 w-56 bg-white rounded-2xl shadow-2xl z-[21000] overflow-hidden border border-[#DACDCA]/40 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                                    className="absolute top-full right-0 mt-3 w-56 bg-solid-white rounded-2xl shadow-2xl z-[21000] overflow-hidden border border-[#DACDCA]/40 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
                                     <div className="px-4 py-3 border-b border-gray-100 mb-1">
                                         <p className="text-xs font-bold uppercase tracking-wider text-details">My
                                             Account</p>
@@ -265,7 +275,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
             </div>
 
             {isMobileMenuOpen && (
-                <div className="lg:hidden absolute top-full left-0 w-full bg-white border-b border-gray-200 shadow-xl py-4 px-6 flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-200 z-[19000]">
+                <div className="lg:hidden absolute top-full left-0 w-full bg-solid-white border-b border-gray-200 shadow-xl py-4 px-6 flex flex-col gap-4 animate-in fade-in slide-in-from-top-2 duration-200 z-[19000]">
                     {navLinks.map((link) => (
                         <Link
                             key={link.name}

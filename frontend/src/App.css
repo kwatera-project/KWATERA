@@ -292,3 +292,7 @@
         font-size: 0.8rem !important;
     }
 }
+
+.bg-solid-white {
+    background-color: #ffffff !important;
+}
