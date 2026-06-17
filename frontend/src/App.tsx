@@ -17,6 +17,7 @@ import OccupancyCalendarPage from "./pages/OccupancyCalendarPage";
 import ProfilePage from "./pages/ProfilePage";
 import DashboardPage from "./pages/DashboardPage";
 import AdminSystemEventsPage from "./pages/AdminSystemEventsPage";
+import AdminUsersOverviewPage from "./pages/AdminUsersOverviewPage";
 import {CurrencyProvider} from "./contexts/CurrencyContext";
 import MeterReadingsPage from "./pages/MeterReadingsPage";
 import AdminMeterReadingsPage from "./pages/AdminMeterReadingsPage";
@@ -64,6 +65,14 @@ function App() {
                                     <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A]">
                                         <AdminSystemEventsPage/>
                                     </div>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/users"
+                            element={
+                                <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
+                                    <AdminUsersOverviewPage/>
                                 </ProtectedRoute>
                             }
                         />

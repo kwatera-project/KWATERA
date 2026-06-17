@@ -1,5 +1,6 @@
 package io.github.kwatera_project.kwatera.property_service.repository;
 
+import io.github.kwatera_project.kwatera.property_service.dto.OwnerPropertyCountDto;
 import io.github.kwatera_project.kwatera.property_service.model.Property;
 import java.math.BigDecimal;
 import java.util.List;
@@ -12,6 +13,16 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PropertyRepository extends JpaRepository<Property, UUID> {
   List<Property> findByOwnerId(UUID ownerId);
+
+  @Query(
+      "SELECT new io.github.kwatera_project.kwatera.property_service.dto.OwnerPropertyCountDto(p.ownerId, COUNT(p)) "
+          + "FROM Property p GROUP BY p.ownerId")
+  List<OwnerPropertyCountDto> countPropertiesGroupByOwnerId();
+
+  @Query(
+      "SELECT new io.github.kwatera_project.kwatera.property_service.dto.OwnerPropertyCountDto(p.ownerId, COUNT(p)) "
+          + "FROM Property p WHERE p.ownerId IN :ownerIds GROUP BY p.ownerId")
+  List<OwnerPropertyCountDto> countPropertiesByOwnerIds(@Param("ownerIds") List<UUID> ownerIds);
 
   List<Property> findByLatitudeBetweenAndLongitudeBetween(
       BigDecimal minLat, BigDecimal maxLat, BigDecimal minLng, BigDecimal maxLng);

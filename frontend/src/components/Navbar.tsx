@@ -4,7 +4,7 @@ import {useLogout} from "./Logout.tsx"
 import {getUserRoles, decodeJwt} from "../utils/jwtUtils.ts"
 import {useState, useEffect, useRef} from "react"
 import {useCurrency} from "../contexts/CurrencyContext"
-import {User, LogOut, LayoutDashboard, Calendar, Settings, Home, FileClock} from 'lucide-react'
+import {User, LogOut, LayoutDashboard, Calendar, Settings, Home, FileClock, Users} from 'lucide-react'
 import {IS_DEMO_MODE} from "../api/apiConfig.ts"
 
 interface NavbarProps {
@@ -197,11 +197,18 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                                             Dashboard
                                         </Link>
                                         {userRoles.includes("ROLE_ADMIN") && (
-                                            <Link to="/admin/logs"
-                                                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
-                                                <FileClock size={16}/>
-                                                System Logs
-                                            </Link>
+                                            <>
+                                                <Link to="/admin/users"
+                                                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
+                                                    <Users size={16}/>
+                                                    System Users
+                                                </Link>
+                                                <Link to="/admin/logs"
+                                                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
+                                                    <FileClock size={16}/>
+                                                    System Logs
+                                                </Link>
+                                            </>
                                         )}
                                         {userRoles.includes("ROLE_OWNER") && (
                                             <Link to="/owner/properties"
