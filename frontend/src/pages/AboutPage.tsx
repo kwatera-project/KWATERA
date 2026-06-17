@@ -145,8 +145,8 @@ export default function AboutPage() {
                                 </p>
                             </div>
 
-                            <div className="w-full bg-brand-bg/80 border border-brand-accent/50 rounded-2xl p-6 md:p-10 flex flex-col items-center overflow-x-auto">
-                                <div className="min-w-[700px] w-full max-w-4xl flex flex-col items-center py-4 relative">
+                            <div className="w-full bg-brand-bg/80 border border-brand-accent/50 rounded-2xl p-4 md:p-10 flex flex-col items-center overflow-x-auto">
+                                <div className="w-full max-w-4xl flex flex-col items-center py-4 relative md:min-w-[700px]">
 
                                     <div className="z-10 bg-white border border-brand-accent rounded-xl px-5 py-3 shadow-sm flex items-center gap-2.5 hover:border-brand-primary/40 transition-colors">
                                         <Code className="w-5 h-5 text-brand-primary" />
@@ -168,14 +168,14 @@ export default function AboutPage() {
 
                                     <div className="h-6 w-px border-l-2 border-dashed border-brand-accent my-1"></div>
 
-                                    <div className="w-full flex justify-between relative px-12 md:px-24">
+                                    <div className="w-full hidden md:flex justify-between relative px-12 md:px-24">
                                         <div className="absolute top-0 left-12 md:left-24 right-12 md:right-24 h-4 border-t-2 border-dashed border-brand-accent"></div>
                                         <div className="h-8 w-px border-l-2 border-dashed border-brand-accent"></div>
                                         <div className="h-8 w-px border-l-2 border-dashed border-brand-accent"></div>
                                         <div className="h-8 w-px border-l-2 border-dashed border-brand-accent"></div>
                                     </div>
 
-                                    <div className="w-full flex justify-between gap-4 px-2">
+                                    <div className="w-full flex flex-col md:flex-row justify-between gap-4 px-2">
 
                                         <div className="flex-1 bg-white border border-brand-accent rounded-xl p-4 shadow-sm flex flex-col items-center text-center space-y-2 hover:border-brand-primary/30 transition-colors">
                                             <div className="p-1.5 rounded-lg bg-brand-bg">
@@ -187,6 +187,8 @@ export default function AboutPage() {
                                             </div>
                                         </div>
 
+                                        <div className="h-6 w-px border-l-2 border-dashed border-brand-accent self-center md:hidden"></div>
+
                                         <div className="flex-1 bg-white border border-brand-accent rounded-xl p-4 shadow-sm flex flex-col items-center text-center space-y-2 hover:border-brand-primary/30 transition-colors">
                                             <div className="p-1.5 rounded-lg bg-brand-bg">
                                                 <Brain className="w-4 h-4 text-brand-primary" />
@@ -196,6 +198,8 @@ export default function AboutPage() {
                                                 <p className="text-[9px] text-brand-muted">Python / ML Engine</p>
                                             </div>
                                         </div>
+
+                                        <div className="h-6 w-px border-l-2 border-dashed border-brand-accent self-center md:hidden"></div>
 
                                         <div className="flex-1 bg-white border border-brand-accent rounded-xl p-4 shadow-sm flex flex-col items-center text-center space-y-2 hover:border-brand-primary/30 transition-colors">
                                             <div className="p-1.5 rounded-lg bg-brand-bg">
