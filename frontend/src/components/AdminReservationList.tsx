@@ -133,7 +133,7 @@ export default function AdminReservationList() {
                         <span className="text-sm font-medium text-gray-500 shrink-0">Status:</span>
                         <div className="relative w-full sm:w-36">
                             <select
-                                className="appearance-none block w-full bg-white border border-[#DACDCA] rounded-lg py-2 pl-3 pr-10 text-sm text-[#1A1A1A] font-semibold focus:outline-none focus:ring-2 focus:ring-[#42211D]/20 focus:border-[#42211D] transition-all shadow-sm cursor-pointer"
+                                className="appearance-none block w-full bg-solid-white border border-[#DACDCA] rounded-lg py-2 pl-3 pr-10 text-sm text-[#1A1A1A] font-semibold focus:outline-none focus:ring-2 focus:ring-[#42211D]/20 focus:border-[#42211D] transition-all shadow-sm cursor-pointer"
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
                             >
@@ -160,7 +160,7 @@ export default function AdminReservationList() {
                     {/* Date Filters */}
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-gray-500 shrink-0">Dates:</span>
-                        <div className="flex items-center gap-2 bg-white border border-[#DACDCA] rounded-lg p-1.5 shadow-sm">
+                        <div className="flex items-center gap-2 bg-solid-white border border-[#DACDCA] rounded-lg p-1.5 shadow-sm">
                             <SharedDatePicker
                                 selected={parseDateString(startDate)}
                                 onChange={(date) => setStartDate(date ? format(date, "yyyy-MM-dd") : "")}

@@ -71,7 +71,7 @@ export const CustomCalendarHeader = ({
 
     return (
         <div 
-            className="flex items-center justify-between px-3 py-2 bg-white relative border-b border-gray-100"
+            className="flex items-center justify-between px-3 py-2 bg-solid-white relative border-b border-gray-100"
             style={{ backgroundColor: "#FFFFFF" }}
         >
             <button
@@ -94,10 +94,10 @@ export const CustomCalendarHeader = ({
 
                 {isOpen && (
                     <div 
-                        className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-white border border-stone-200 rounded-lg shadow-xl z-50 p-3"
+                        className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-solid-white border border-stone-200 rounded-lg shadow-xl z-50 p-3"
                         style={{ backgroundColor: "#FFFFFF" }}
                     >
-                        <div className="flex items-center justify-between mb-4 bg-white" style={{ backgroundColor: "#FFFFFF" }}>
+                        <div className="flex items-center justify-between mb-4 bg-solid-white" style={{ backgroundColor: "#FFFFFF" }}>
                             <button
                                 type="button"
                                 onClick={() => setPickerYear(pickerYear - 1)}
@@ -115,7 +115,7 @@ export const CustomCalendarHeader = ({
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2 bg-white" style={{ backgroundColor: "#FFFFFF" }}>
+                        <div className="grid grid-cols-3 gap-2 bg-solid-white" style={{ backgroundColor: "#FFFFFF" }}>
                             {MONTHS.map((month, index) => {
                                 const isSelected = pickerYear === date.getFullYear() && index === date.getMonth();
                                 return (
@@ -184,11 +184,11 @@ export default function SharedDatePicker({
                 startDate={startDate ?? undefined}
                 endDate={endDate ?? undefined}
                 minDate={resolvedMinDate}
-                className={className || "bg-white text-sm font-bold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center border-b border-transparent hover:border-gray-300 focus:border-stone-500 transition-colors pb-1"}
+                className={className || "bg-solid-white text-sm font-bold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center border-b border-transparent hover:border-gray-300 focus:border-stone-500 transition-colors pb-1"}
                 dateFormat={dateFormat || "yyyy-MM-dd"}
                 placeholderText={placeholderText}
                 renderCustomHeader={(props) => <CustomCalendarHeader {...props} />}
-                calendarClassName="bg-white border border-gray-200 shadow-xl rounded-lg custom-datepicker-has-header"
+                calendarClassName="bg-solid-white border border-gray-200 shadow-xl rounded-lg custom-datepicker-has-header"
                 popperClassName="z-[9999]"
                 calendarStartDay={1}
                 wrapperClassName={wrapperClassName}

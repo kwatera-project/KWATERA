@@ -413,7 +413,7 @@ export default function PropertiesPage() {
                     <div className="flex items-center gap-2 shrink-0">
                         <button
                             onClick={() => setIsMobileSidebarOpen(true)}
-                            className="md:hidden relative flex items-center gap-2 bg-white border border-gray-200 text-[#1A1A1A] px-4 py-2.5 rounded-xl shadow-sm font-semibold text-sm hover:border-[#42211D]/40 cursor-pointer transition-all"
+                            className="md:hidden relative flex items-center gap-2 bg-solid-white border border-gray-200 text-[#1A1A1A] px-4 py-2.5 rounded-xl shadow-sm font-semibold text-sm hover:border-[#42211D]/40 cursor-pointer transition-all"
                         >
                             <SlidersHorizontal className="w-4 h-4" strokeWidth={2.5} />
                             Filters
