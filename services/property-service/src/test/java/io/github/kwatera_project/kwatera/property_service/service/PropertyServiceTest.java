@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
@@ -1306,5 +1307,59 @@ class PropertyServiceTest {
     assertEquals(1, result.size());
     assertEquals(2, result.get(0).getBedrooms());
     assertEquals(4, result.get(0).getBeds());
+  }
+
+  @Test
+  void countAllProperties_shouldReturnCount() {
+    when(propertyRepository.count()).thenReturn(15L);
+
+    long result = propertyService.countAllProperties();
+
+    assertEquals(15L, result);
+    verify(propertyRepository).count();
+  }
+
+  @Test
+  void getOwnerPropertyCounts_all_shouldReturnMappedCounts() {
+    UUID owner1 = UUID.randomUUID();
+    UUID owner2 = UUID.randomUUID();
+    OwnerPropertyCountDto dto1 = new OwnerPropertyCountDto(owner1, 3L);
+    OwnerPropertyCountDto dto2 = new OwnerPropertyCountDto(owner2, 5L);
+
+    when(propertyRepository.countPropertiesGroupByOwnerId()).thenReturn(List.of(dto1, dto2));
+
+    Map<UUID, Long> result = propertyService.getOwnerPropertyCounts();
+
+    assertEquals(2, result.size());
+    assertEquals(3L, result.get(owner1));
+    assertEquals(5L, result.get(owner2));
+    verify(propertyRepository).countPropertiesGroupByOwnerId();
+  }
+
+  @Test
+  void getOwnerPropertyCounts_withIds_shouldReturnMappedCounts() {
+    UUID owner1 = UUID.randomUUID();
+    UUID owner2 = UUID.randomUUID();
+    List<UUID> ownerIds = List.of(owner1, owner2);
+    OwnerPropertyCountDto dto1 = new OwnerPropertyCountDto(owner1, 2L);
+
+    when(propertyRepository.countPropertiesByOwnerIds(ownerIds)).thenReturn(List.of(dto1));
+
+    Map<UUID, Long> result = propertyService.getOwnerPropertyCounts(ownerIds);
+
+    assertEquals(2, result.size());
+    assertEquals(2L, result.get(owner1));
+    assertEquals(0L, result.get(owner2));
+    verify(propertyRepository).countPropertiesByOwnerIds(ownerIds);
+  }
+
+  @Test
+  void getOwnerPropertyCounts_withNullOrEmptyIds_shouldReturnEmptyMap() {
+    Map<UUID, Long> resultNull = propertyService.getOwnerPropertyCounts(null);
+    Map<UUID, Long> resultEmpty = propertyService.getOwnerPropertyCounts(List.of());
+
+    assertTrue(resultNull.isEmpty());
+    assertTrue(resultEmpty.isEmpty());
+    verify(propertyRepository, never()).countPropertiesByOwnerIds(any());
   }
 }

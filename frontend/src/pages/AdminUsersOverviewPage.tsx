@@ -34,59 +34,99 @@ export default function AdminUsersOverviewPage() {
         const handler = setTimeout(() => {
             setDebouncedSearch(searchQuery);
             setCurrentPage(0);
+            setLoadingUsers(true);
         }, 300);
 
         return () => clearTimeout(handler);
     }, [searchQuery]);
 
-    const fetchKpis = async () => {
-        setLoadingKpis(true);
-        try {
-            const data = await getAdminUserKpis();
-            setKpis(data);
-        } catch (err) {
-            console.error("Failed to load KPIs", err);
-        } finally {
-            setLoadingKpis(false);
-        }
-    };
-
-    const fetchUsers = async () => {
-        setLoadingUsers(true);
-        setError(null);
-        try {
-            const data = await getAdminUsers(currentPage, pageSize, selectedRole, debouncedSearch);
-            setUsers(data.content);
-            setTotalPages(data.totalPages);
-            setTotalElements(data.totalElements);
-        } catch (err: any) {
-            setError(err.message || "Failed to load users list");
-        } finally {
-            setLoadingUsers(false);
-        }
-    };
-
     useEffect(() => {
-        fetchKpis();
+        let active = true;
+        getAdminUserKpis()
+            .then((data) => {
+                if (active) {
+                    setKpis(data);
+                    setLoadingKpis(false);
+                }
+            })
+            .catch((err) => {
+                console.error("Failed to load KPIs", err);
+                if (active) {
+                    setLoadingKpis(false);
+                }
+            });
+        return () => {
+            active = false;
+        };
     }, []);
 
     useEffect(() => {
-        fetchUsers();
-    }, [currentPage, selectedRole, debouncedSearch]);
+        let active = true;
+        getAdminUsers(currentPage, pageSize, selectedRole, debouncedSearch)
+            .then((data) => {
+                if (active) {
+                    setUsers(data.content);
+                    setTotalPages(data.totalPages);
+                    setTotalElements(data.totalElements);
+                    setLoadingUsers(false);
+                }
+            })
+            .catch((err) => {
+                const message = err instanceof Error ? err.message : "Failed to load users list";
+                if (active) {
+                    setError(message);
+                    setLoadingUsers(false);
+                }
+            });
+        return () => {
+            active = false;
+        };
+    }, [currentPage, pageSize, selectedRole, debouncedSearch]);
 
     const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedRole(e.target.value);
         setCurrentPage(0);
+        setLoadingUsers(true);
     };
 
     const handleClearSearch = () => {
         setSearchQuery("");
+        setLoadingUsers(true);
     };
 
     const handlePageChange = (newPage: number) => {
         if (newPage >= 0 && newPage < totalPages) {
             setCurrentPage(newPage);
+            setLoadingUsers(true);
         }
+    };
+
+    const handleRefresh = () => {
+        setLoadingKpis(true);
+        setLoadingUsers(true);
+        
+        getAdminUserKpis()
+            .then((data) => {
+                setKpis(data);
+                setLoadingKpis(false);
+            })
+            .catch((err) => {
+                console.error("Failed to load KPIs", err);
+                setLoadingKpis(false);
+            });
+
+        getAdminUsers(currentPage, pageSize, selectedRole, debouncedSearch)
+            .then((data) => {
+                setUsers(data.content);
+                setTotalPages(data.totalPages);
+                setTotalElements(data.totalElements);
+                setLoadingUsers(false);
+            })
+            .catch((err) => {
+                const message = err instanceof Error ? err.message : "Failed to load users list";
+                setError(message);
+                setLoadingUsers(false);
+            });
     };
 
     const formatDate = (dateString?: string) => {
@@ -113,10 +153,7 @@ export default function AdminUsersOverviewPage() {
                 
                 <div className="flex items-end gap-3 ml-auto md:ml-0">
                     <button
-                        onClick={() => {
-                            fetchKpis();
-                            fetchUsers();
-                        }}
+                        onClick={handleRefresh}
                         className="px-5 py-2 bg-[#42211D] text-white font-bold hover:bg-[#2a1412] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm cursor-pointer flex items-center gap-2"
                     >
                         <RefreshCw size={16} className={`${loadingUsers || loadingKpis ? 'animate-spin' : ''}`} />
@@ -205,13 +242,13 @@ export default function AdminUsersOverviewPage() {
                 </div>
 
                 <div className="group bg-white p-6 rounded-xl border border-[#DACDCA] shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-bl-full pointer-events-none transition-all duration-300 group-hover:scale-110"></div>
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full pointer-events-none transition-all duration-300 group-hover:scale-110"></div>
                     <div className="flex flex-col justify-between h-full space-y-4">
                         <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
                                 Properties
                             </span>
-                            <span className="p-2 bg-indigo-100 text-indigo-700 rounded-xl">
+                            <span className="p-2 bg-amber-100 text-amber-700 rounded-xl">
                                 <Home className="w-5 h-5" />
                             </span>
                         </div>
