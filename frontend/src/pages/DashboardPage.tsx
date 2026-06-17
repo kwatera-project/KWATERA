@@ -67,7 +67,7 @@ export default function DashboardPage() {
   const paidPct = totalSettlements > 0 ? (paidSettlementsCount / totalSettlements) * 100 : 0;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-8">
+    <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-8">
       {/* Header section */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-[#DACDCA] pb-6">
         <div className="space-y-2">

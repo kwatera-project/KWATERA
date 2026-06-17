@@ -49,15 +49,15 @@ export default function OwnerPropertiesPage() {
     };
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
-            <div className="flex justify-between items-center border-b border-[#DACDCA] pb-4 mb-6">
+        <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[#DACDCA] pb-4 mb-6 gap-4">
                 <div>
                     <h1 className="text-3xl font-black text-[#1A1A1A] tracking-tight">My Properties</h1>
                     <p className="text-sm font-semibold text-[#7A7A7A] mt-1">Manage and configure your rental accommodations</p>
                 </div>
                 <Link
                     to="/owner/properties/new"
-                    className="px-5 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm"
+                    className="px-5 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm shrink-0"
                 >
                     Add Property
                 </Link>

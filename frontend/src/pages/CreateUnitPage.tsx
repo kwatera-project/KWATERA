@@ -21,7 +21,7 @@ export default function CreateUnitPage() {
     };
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
+        <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
             <div>
                 <Link
                     to={`/owner/properties/${propertyId}/units`}
@@ -40,7 +40,7 @@ export default function CreateUnitPage() {
                 </p>
             </div>
 
-            <div className="max-w-4xl mx-auto bg-white border border-[#DACDCA] rounded-xl shadow-sm p-8 mt-6">
+            <div className="max-w-4xl mx-auto bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 sm:p-8 mt-6">
                 <UnitForm
                     submitLabel="Create Unit"
                     onSubmit={handleCreate}

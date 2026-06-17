@@ -78,7 +78,7 @@ function App() {
                                 path="/admin/logs"
                                 element={
                                     <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
-                                        <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A]">
+                                        <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A]">
                                             <AdminSystemEventsPage/>
                                         </div>
                                     </ProtectedRoute>

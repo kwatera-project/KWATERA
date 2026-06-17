@@ -89,7 +89,7 @@ export default function AdminReservationList() {
     };
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
+        <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
             <div className="border-b border-[#DACDCA] pb-6 mb-6 space-y-2">
                 <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                     <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">Reservation Overview</h1>
@@ -129,9 +129,9 @@ export default function AdminReservationList() {
                 </div>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full md:w-auto">
                     {/* Status Filter */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
                         <span className="text-sm font-medium text-gray-500 shrink-0">Status:</span>
-                        <div className="relative w-full sm:w-36">
+                        <div className="relative flex-1 sm:flex-initial sm:w-36">
                             <select
                                 className="appearance-none block w-full bg-solid-white border border-[#DACDCA] rounded-lg py-2 pl-3 pr-10 text-sm text-[#1A1A1A] font-semibold focus:outline-none focus:ring-2 focus:ring-[#42211D]/20 focus:border-[#42211D] transition-all shadow-sm cursor-pointer"
                                 value={statusFilter}
@@ -158,9 +158,22 @@ export default function AdminReservationList() {
                     </div>
 
                     {/* Date Filters */}
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-500 shrink-0">Dates:</span>
-                        <div className="flex items-center gap-2 bg-solid-white border border-[#DACDCA] rounded-lg p-1.5 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                        <div className="flex items-center justify-between w-full sm:w-auto">
+                            <span className="text-sm font-medium text-gray-500">Dates:</span>
+                            {(startDate || endDate) && (
+                                <button
+                                    onClick={() => {
+                                        setStartDate("");
+                                        setEndDate("");
+                                    }}
+                                    className="text-sm font-medium text-gray-500 hover:text-[#42211D] transition-colors shrink-0 cursor-pointer sm:hidden"
+                                >
+                                    Clear Dates
+                                </button>
+                            )}
+                        </div>
+                        <div className="flex items-center justify-center gap-2 bg-solid-white border border-[#DACDCA] rounded-lg p-1.5 shadow-sm w-full sm:w-auto">
                             <SharedDatePicker
                                 selected={parseDateString(startDate)}
                                 onChange={(date) => setStartDate(date ? format(date, "yyyy-MM-dd") : "")}
@@ -192,7 +205,7 @@ export default function AdminReservationList() {
                                     setStartDate("");
                                     setEndDate("");
                                 }}
-                                className="text-sm font-medium text-gray-500 hover:text-[#42211D] transition-colors shrink-0 cursor-pointer"
+                                className="text-sm font-medium text-gray-500 hover:text-[#42211D] transition-colors shrink-0 cursor-pointer hidden sm:block"
                             >
                                 Clear Dates
                             </button>

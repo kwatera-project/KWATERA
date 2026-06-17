@@ -89,7 +89,7 @@ export default function EditPropertyImages() {
     }
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
+        <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
             <div>
                 <Link
                     to="/owner/properties"
@@ -110,7 +110,7 @@ export default function EditPropertyImages() {
 
             <div className="max-w-4xl mx-auto space-y-10">
 
-                <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-8 mt-6">
+                <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 sm:p-8 mt-6">
                     <ImageUploadForm
                         onSubmit={handleImageSubmit}
                         submitLabel="Upload Image"

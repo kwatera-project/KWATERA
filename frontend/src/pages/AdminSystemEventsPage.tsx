@@ -37,7 +37,7 @@ function formatAction(actionType: string) {
 }
 
 function formatDate(timestamp: string) {
-  return new Intl.DateTimeFormat("pl-PL", {
+  return new Intl.DateTimeFormat("en-GB", {
     dateStyle: "medium",
     timeStyle: "short"
   }).format(new Date(timestamp));
@@ -249,12 +249,12 @@ export default function AdminSystemEventsPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-end gap-3 rounded-lg border border-[#DACDCA] bg-white p-3 shadow-sm">
-          <div className="flex flex-col gap-1">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:flex lg:flex-wrap lg:items-end rounded-lg border border-[#DACDCA] bg-white p-3 shadow-sm">
+          <div className="flex flex-col gap-1 w-full lg:w-auto">
             <span className="text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
               Date from
             </span>
-            <div className="flex items-center rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-[#42211D]/20">
+            <div className="flex items-center justify-center rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-[#42211D]/20 w-full">
               <SharedDatePicker
                 selected={dateFrom}
                 onChange={(date: Date | null) => {
@@ -272,18 +272,18 @@ export default function AdminSystemEventsPage() {
                 startDate={dateFrom}
                 endDate={dateTo}
                 placeholderText="Start"
-                className="w-24 cursor-pointer bg-transparent text-center text-sm font-bold text-[#1A1A1A] outline-none"
-                wrapperClassName="block"
+                className="w-full cursor-pointer bg-transparent text-center text-sm font-bold text-[#1A1A1A] outline-none"
+                wrapperClassName="block w-full"
                 popperPlacement="bottom-start"
                 allowPastDates={true}
               />
             </div>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 w-full lg:w-auto">
             <span className="text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
               Date to
             </span>
-            <div className="flex items-center rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-[#42211D]/20">
+            <div className="flex items-center justify-center rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-[#42211D]/20 w-full">
               <SharedDatePicker
                 datepickerRef={dateToRef}
                 selected={dateTo}
@@ -293,14 +293,14 @@ export default function AdminSystemEventsPage() {
                 endDate={dateTo}
                 minDate={dateFrom}
                 placeholderText="End"
-                className="w-24 cursor-pointer bg-transparent text-center text-sm font-bold text-[#1A1A1A] outline-none"
-                wrapperClassName="block"
+                className="w-full cursor-pointer bg-transparent text-center text-sm font-bold text-[#1A1A1A] outline-none"
+                wrapperClassName="block w-full"
                 popperPlacement="bottom-start"
                 allowPastDates={true}
               />
             </div>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 w-full lg:w-auto">
             <span className="text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
               Time from
             </span>
@@ -308,10 +308,10 @@ export default function AdminSystemEventsPage() {
               type="time"
               value={timeFrom}
               onChange={(event) => setTimeFrom(event.target.value)}
-              className="rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 text-sm font-semibold text-[#1A1A1A] outline-none focus:ring-2 focus:ring-[#42211D]/20"
+              className="rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 text-sm font-semibold text-[#1A1A1A] outline-none focus:ring-2 focus:ring-[#42211D]/20 w-full text-center"
             />
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 w-full lg:w-auto">
             <span className="text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
               Time to
             </span>
@@ -319,13 +319,13 @@ export default function AdminSystemEventsPage() {
               type="time"
               value={timeTo}
               onChange={(event) => setTimeTo(event.target.value)}
-              className="rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 text-sm font-semibold text-[#1A1A1A] outline-none focus:ring-2 focus:ring-[#42211D]/20"
+              className="rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 text-sm font-semibold text-[#1A1A1A] outline-none focus:ring-2 focus:ring-[#42211D]/20 w-full text-center"
             />
           </div>
           <button
             type="button"
             onClick={clearDateFilters}
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#DACDCA] bg-white px-4 py-2 text-sm font-bold text-[#42211D] transition-colors hover:bg-[#F7F7F7]"
+            className="col-span-2 sm:col-span-4 lg:col-span-1 inline-flex items-center justify-center gap-2 rounded-lg border border-[#DACDCA] bg-white px-4 py-2.5 text-sm font-bold text-[#42211D] transition-colors hover:bg-[#F7F7F7] w-full lg:w-auto"
           >
             <X className="h-4 w-4" />
             Clear dates
@@ -357,69 +357,127 @@ export default function AdminSystemEventsPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-[#DACDCA]">
-              <thead className="bg-[#F7F7F7]">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setSortDirection((current) => (current === "desc" ? "asc" : "desc"))
-                      }
-                      className="font-black uppercase tracking-wider hover:text-[#42211D]"
-                    >
-                      Date {sortDirection === "desc" ? "Newest" : "Oldest"}
-                    </button>
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
-                    Action
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
-                    Actor
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
-                    Entity
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
-                    Details
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#F1F1F1]">
-                {filteredEvents.map((event) => (
-                  <tr key={event.id} className="hover:bg-[#F7F7F7]/70">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-[#1A1A1A]">
+          <>
+            <div className="block md:hidden divide-y divide-[#F1F1F1]">
+              {filteredEvents.map((event) => (
+                <div key={event.id} className="p-4 hover:bg-[#F7F7F7]/70 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-[#7A7A7A]">
                       {formatDate(event.timestamp)}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span
-                        className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${getActionBadgeClass(event.actionType)}`}
-                      >
-                        {formatAction(event.actionType)}
+                    </span>
+                    <span
+                      className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold ${getActionBadgeClass(event.actionType)}`}
+                    >
+                      {formatAction(event.actionType)}
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <span className="font-black text-[#7A7A7A] uppercase tracking-wider block text-[10px] mb-0.5">
+                        Actor
                       </span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#1A1A1A]">
-                      {event.actorUserId ? (
-                        <span title={event.actorUserId}>{compactId(event.actorUserId)}</span>
-                      ) : (
-                        "System"
-                      )}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-[#1A1A1A]">
-                      <div className="font-bold">{event.entityType ?? "-"}</div>
-                      <div className="text-xs text-[#7A7A7A]" title={event.entityId ?? undefined}>
-                        {compactId(event.entityId)}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[#1A1A1A] min-w-80">
-                      {event.details ?? "-"}
-                    </td>
+                      <span className="text-sm text-[#1A1A1A] font-medium">
+                        {event.actorUserId ? (
+                          <span title={event.actorUserId}>{compactId(event.actorUserId)}</span>
+                        ) : (
+                          "System"
+                        )}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-black text-[#7A7A7A] uppercase tracking-wider block text-[10px] mb-0.5">
+                        Entity
+                      </span>
+                      <span className="text-sm text-[#1A1A1A] block">
+                        <span className="font-bold block leading-tight">{event.entityType ?? "-"}</span>
+                        {event.entityId && (
+                          <span className="text-xs text-[#7A7A7A] block mt-0.5" title={event.entityId}>
+                            ({compactId(event.entityId)})
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  {event.details && (
+                    <div className="pt-2 border-t border-[#F1F1F1]">
+                      <span className="font-black text-[#7A7A7A] uppercase tracking-wider block text-[10px] mb-1">
+                        Details
+                      </span>
+                      <p className="text-xs text-[#1A1A1A] leading-relaxed break-words bg-[#F7F7F7] p-2.5 rounded-lg border border-[#DACDCA]/50 font-mono">
+                        {event.details}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-[#DACDCA]">
+                <thead className="bg-[#F7F7F7]">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSortDirection((current) => (current === "desc" ? "asc" : "desc"))
+                        }
+                        className="font-black uppercase tracking-wider hover:text-[#42211D]"
+                      >
+                        Date {sortDirection === "desc" ? "Newest" : "Oldest"}
+                      </button>
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
+                      Action
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
+                      Actor
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
+                      Entity
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
+                      Details
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-[#F1F1F1]">
+                  {filteredEvents.map((event) => (
+                    <tr key={event.id} className="hover:bg-[#F7F7F7]/70">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-[#1A1A1A]">
+                        {formatDate(event.timestamp)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span
+                          className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${getActionBadgeClass(event.actionType)}`}
+                        >
+                          {formatAction(event.actionType)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-[#1A1A1A]">
+                        {event.actorUserId ? (
+                          <span title={event.actorUserId}>{compactId(event.actorUserId)}</span>
+                        ) : (
+                          "System"
+                        )}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-[#1A1A1A]">
+                        <div className="font-bold">{event.entityType ?? "-"}</div>
+                        <div className="text-xs text-[#7A7A7A]" title={event.entityId ?? undefined}>
+                          {compactId(event.entityId)}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-[#1A1A1A] min-w-80">
+                        {event.details ?? "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>

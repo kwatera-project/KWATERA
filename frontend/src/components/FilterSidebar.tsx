@@ -305,7 +305,7 @@ export default function FilterSidebar(props: FilterSidebarProps) {
             </div>
 
             {isOpen && (
-                <div className="md:hidden fixed inset-0 z-50 flex">
+                <div className="md:hidden fixed inset-0 z-[10000] flex">
                     <div
                         className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
                         onClick={onClose}
