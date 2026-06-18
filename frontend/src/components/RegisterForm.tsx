@@ -88,12 +88,12 @@ export default function RegisterForm() {
                                 </div>
                             </div>
 
-                            <div className="flex gap-4">
-                                <div className="w-1/2 space-y-1.5">
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <div className="w-full sm:w-1/2 space-y-1.5">
                                     <label className="block text-sm font-medium text-gray-700">First Name</label>
                                     <input type="text" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42211D] outline-none" onChange={e => setFormData({...formData, firstName: e.target.value})} required />
                                 </div>
-                                <div className="w-1/2 space-y-1.5">
+                                <div className="w-full sm:w-1/2 space-y-1.5">
                                     <label className="block text-sm font-medium text-gray-700">Last Name</label>
                                     <input type="text" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42211D] outline-none" onChange={e => setFormData({...formData, lastName: e.target.value})} required />
                                 </div>

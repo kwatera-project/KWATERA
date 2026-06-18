@@ -177,10 +177,12 @@ export default function OccupancyCalendarPage() {
                     <button
                         key={occ.reservationId || occ.unitId + dateStr}
                         onClick={() => setSelectedOcc(occ)}
-                        style={{gridColumn: `${i + 1} / span ${span}`}}
-                        className={`h-8 ${roundedClass} ${bgColor} ${textColor} text-[10px] sm:text-xs font-bold flex items-center shadow-sm transition-colors truncate cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-primary pointer-events-auto`}
+                        style={{ gridColumn: `${i + 1} / span ${span}` }}
+                        className={`h-6 md:h-8 ${roundedClass} ${bgColor} ${textColor} text-[9px] md:text-xs font-bold flex items-center justify-center md:justify-start shadow-sm transition-colors truncate cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-primary pointer-events-auto min-w-0`}
+                        title={displayText}
                     >
-                        <span className="truncate">{displayText}</span>
+                        <span className="truncate hidden md:block">{displayText}</span>
+                        <span className="truncate md:hidden text-[8px] font-black px-0.5">{unitName.slice(0, 3)}</span>
                     </button>
                 );
                 i += span;
@@ -211,9 +213,8 @@ export default function OccupancyCalendarPage() {
     };
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen text-brand-main space-y-6">
-            <div
-                className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-[100]">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen text-brand-main space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-[100]">
                 <div>
                     <h1 className="text-3xl font-bold text-brand-main">Occupancy Dashboard</h1>
                     <p className="text-sm text-brand-muted mt-0.5">Manage occupancies, manual reservations, and
@@ -298,81 +299,63 @@ export default function OccupancyCalendarPage() {
                 </button>
             </div>
 
-            <div className="w-full relative z-10 flex flex-col" ref={calendarRef}>
-                <div
-                    className="grid grid-cols-7 border border-brand-accent rounded-t-xl bg-brand-bg text-center py-3 font-bold text-xs uppercase tracking-wider border-b-0">
-                    <div className="text-brand-muted">Mon</div>
-                    <div className="text-brand-muted">Tue</div>
-                    <div className="text-brand-muted">Wed</div>
-                    <div className="text-brand-muted">Thu</div>
-                    <div className="text-brand-muted">Fri</div>
-                    <div className="text-brand-muted bg-gray-50/60">Sat</div>
-                    <div className="text-brand-muted bg-gray-50/60">Sun</div>
-                </div>
+            <div className="w-full overflow-x-auto relative z-10 whitespace-nowrap border border-brand-accent rounded-xl shadow-sm" ref={calendarRef}>
+                <div className="w-full md:min-w-[800px] min-w-0 flex flex-col bg-white">
+                    <div className="grid grid-cols-7 bg-brand-bg text-center py-2 md:py-3 font-bold text-xs uppercase tracking-wider border-b border-brand-accent">
+                        <div className="text-brand-muted"><span className="hidden md:inline">Mon</span><span className="md:hidden">M</span></div>
+                        <div className="text-brand-muted"><span className="hidden md:inline">Tue</span><span className="md:hidden">T</span></div>
+                        <div className="text-brand-muted"><span className="hidden md:inline">Wed</span><span className="md:hidden">W</span></div>
+                        <div className="text-brand-muted"><span className="hidden md:inline">Thu</span><span className="md:hidden">T</span></div>
+                        <div className="text-brand-muted"><span className="hidden md:inline">Fri</span><span className="md:hidden">F</span></div>
+                        <div className="text-brand-muted bg-gray-50/60"><span className="hidden md:inline">Sat</span><span className="md:hidden">S</span></div>
+                        <div className="text-brand-muted bg-gray-50/60"><span className="hidden md:inline">Sun</span><span className="md:hidden">S</span></div>
+                    </div>
 
-                <div
-                    className="w-full border border-brand-accent rounded-b-xl shadow-sm bg-white overflow-hidden divide-y divide-brand-accent/20">
-                    {weeks.map((weekDates, weekIdx) => (
-                        <div key={weekIdx}
-                             className="min-h-[110px] flex flex-col justify-between hover:bg-[#F7F7F7]/30 transition-colors">
-                            <div className="grid grid-cols-7 border-b border-brand-accent/10 bg-brand-bg/10">
-                                {weekDates.map((d, dayIdx) => {
-                                    const dateStr = format(d, 'yyyy-MM-dd');
-                                    const isCurrentMonth = format(d, 'MM') === format(anchorDate, 'MM');
-                                    const isToday = dateStr === todayStr;
-                                    const isSelected = selectedQuickActionDate && dateStr === format(selectedQuickActionDate, 'yyyy-MM-dd');
-                                    const isHighlighted = isToday || isSelected;
-                                    const isPast = isBefore(d, startOfToday()) && !isToday;
-                                    const isWeekend = dayIdx >= 5;
-                                    return (
-                                        <div
-                                            key={d.toISOString()}
-                                            className={`p-1.5 pr-2.5 text-right font-semibold text-xs border-r border-brand-accent/10 last:border-r-0 ${isWeekend ? 'bg-gray-50/60' : ''} ${
-                                                isHighlighted ? 'bg-brand-accent/20 border-t-4 border-t-brand-primary border-x border-brand-accent/30 shadow-sm' : ''
-                                            }`}
-                                        >
-                                            <span
-                                                className={`${isPast ? 'text-gray-300' : isCurrentMonth ? 'text-brand-main' : 'text-gray-300'} ${isHighlighted ? 'font-black text-brand-primary' : ''}`}>
-                                                {format(d, 'd')}
-                                            </span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                            <div className="flex-1 relative min-h-[70px]">
-                                <div className="absolute inset-0 grid grid-cols-7">
-                                    {weekDates.map((d, dayIdx) => {
-                                        const dateStr = format(d, 'yyyy-MM-dd');
-                                        const isToday = dateStr === todayStr;
-                                        const isSelected = selectedQuickActionDate && dateStr === format(selectedQuickActionDate, 'yyyy-MM-dd');
-                                        const isHighlighted = isToday || isSelected;
-                                        const isWeekend = dayIdx >= 5;
-                                        return (
-                                            <div
-                                                key={d.toISOString()}
-                                                onClick={() => {
-                                                    setQuickAction({date: d});
-                                                    setSelectedQuickActionDate(d);
-                                                }}
-                                                className={`h-full border-r border-brand-accent/5 last:border-r-0 ${
-                                                    isWeekend ? "bg-gray-50/40" : ""
-                                                } ${
-                                                    isHighlighted ? "bg-brand-accent/10 border-x border-b border-brand-accent/30 shadow-inner" : ""
-                                                } cursor-pointer hover:bg-brand-accent/20 transition-colors`}
-                                            />
-                                        );
-                                    })}
-                                </div>
-                                <div className="relative z-[1] p-2 space-y-1 pointer-events-none">
-                                    {getLanesForChunk(weekDates).map((lane, laneIdx) => (
-                                        <div key={laneIdx} className="grid grid-cols-7 gap-1">
-                                            {renderLaneCellsForWeek(lane, weekDates)}
-                                        </div>
-                                    ))}
+                    <div className="w-full bg-white divide-y divide-brand-accent/20">
+                        {weeks.map((weekDates, weekIdx) => (
+                            <div key={weekIdx} className="min-h-[85px] md:min-h-[110px] flex flex-col justify-between hover:bg-[#F7F7F7]/30 transition-colors">
+                                <div className="flex-1 relative min-h-[85px] md:min-h-[110px]">
+                                    <div className="absolute inset-0 grid grid-cols-7">
+                                        {weekDates.map((d, dayIdx) => {
+                                            const dateStr = format(d, 'yyyy-MM-dd');
+                                            const isCurrentMonth = format(d, 'MM') === format(anchorDate, 'MM');
+                                            const isToday = dateStr === todayStr;
+                                            const isSelected = selectedQuickActionDate && dateStr === format(selectedQuickActionDate, 'yyyy-MM-dd');
+                                            const isHighlighted = isToday || isSelected;
+                                            const isPast = isBefore(d, startOfToday()) && !isToday;
+                                            const isWeekend = dayIdx >= 5;
+                                            return (
+                                                <div
+                                                    key={d.toISOString()}
+                                                    onClick={() => {
+                                                        setQuickAction({ date: d });
+                                                        setSelectedQuickActionDate(d);
+                                                    }}
+                                                    className={`p-1.5 pr-2.5 text-right font-semibold text-xs border-r border-brand-accent/10 last:border-r-0 cursor-pointer transition-colors ${
+                                                        isWeekend ? 'bg-gray-50/60' : ''
+                                                    } ${
+                                                        isHighlighted ? 'bg-brand-accent/20 border-t-4 border-t-brand-primary border-x border-brand-accent/30 shadow-sm hover:bg-brand-accent/30' : 'hover:bg-brand-accent/10'
+                                                    }`}
+                                                >
+                                                    <span
+                                                        className={`${isPast ? 'text-gray-300' : isCurrentMonth ? 'text-brand-main' : 'text-gray-300'} ${isHighlighted ? 'font-black text-brand-primary' : ''}`}>
+                                                        {format(d, 'd')}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="relative z-[1] p-2 space-y-1 pointer-events-none mt-6">
+                                        {getLanesForChunk(weekDates).map((lane, laneIdx) => (
+                                            <div key={laneIdx} className="grid grid-cols-7 gap-1">
+                                                {renderLaneCellsForWeek(lane, weekDates)}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -421,7 +404,6 @@ export default function OccupancyCalendarPage() {
                     <div
                         className="fixed top-0 right-0 w-full sm:w-[420px] h-full bg-[#FFFFFF] shadow-2xl z-[9999] border-l border-brand-accent flex flex-col justify-between animate-in slide-in-from-right duration-300">
 
-                        {/* Header */}
                         <div className="p-6 border-b border-brand-accent flex items-center justify-between">
                             <div>
                                 <span
@@ -441,10 +423,8 @@ export default function OccupancyCalendarPage() {
                             </button>
                         </div>
 
-                        {/* Content */}
                         <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
-                            {/* Status Badge */}
                             <div>
                                 <span className="block text-xs font-bold text-brand-muted uppercase tracking-wider mb-2">
                                     Reservation Status
@@ -478,7 +458,6 @@ export default function OccupancyCalendarPage() {
                                 )}
                             </div>
 
-                            {/* Accommodation Details */}
                             <div className="space-y-4">
                                 <span className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Stay & Accommodation</span>
 
@@ -511,7 +490,6 @@ export default function OccupancyCalendarPage() {
                                 </div>
                             </div>
 
-                            {/* Status Change Buttons Grouped in Row */}
                             <div className="flex flex-row items-center gap-2 pt-2">
                                 <button
                                     disabled={!isConfirmEnabled}
@@ -556,7 +534,6 @@ export default function OccupancyCalendarPage() {
                                 </div>
                             )}
 
-                            {/* Total Price */}
                             {selectedOcc.totalPrice !== undefined && selectedOcc.totalPrice !== null && (
                                 <div className="space-y-2">
                                     <span className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Financial Summary</span>
@@ -575,7 +552,6 @@ export default function OccupancyCalendarPage() {
 
                         </div>
 
-                        {/* Footer Action Buttons */}
                         <div className="p-6 border-t border-brand-accent bg-brand-bg/10 flex flex-col gap-3">
                             <Link
                                 to={`/reservations/${selectedOcc.reservationId}`}

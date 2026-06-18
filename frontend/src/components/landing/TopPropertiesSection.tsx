@@ -75,7 +75,7 @@ export default function TopPropertiesSection({ properties = [] }: TopPropertiesP
   return (
     <section className="bg-white py-24 px-4 md:px-8 lg:px-16 border-t border-[#DACDCA]/30">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-16">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16">
           <div className="flex flex-col items-start text-left">
             <span className="block text-xs md:text-sm font-bold uppercase tracking-widest mb-2.5" style={{ color: 'rgb(var(--color-burgundy))' }}>TOP BOOK NOW</span>
             <h2 className="text-3xl md:text-5xl font-bold text-title">Featured Properties</h2>

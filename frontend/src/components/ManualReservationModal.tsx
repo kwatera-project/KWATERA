@@ -245,7 +245,7 @@ export default function ManualReservationModal({
                         {errors.unitId && <p className="text-xs font-semibold text-red-500">{errors.unitId}</p>}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1">
                             <label htmlFor="checkIn" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Check-In</label>
                             <SharedDatePicker
@@ -297,7 +297,7 @@ export default function ManualReservationModal({
                     <div className="border-t border-brand-accent/50 pt-4 space-y-4">
                         <h3 className="text-sm font-black text-brand-main uppercase tracking-wider">Guest Information</h3>
                         
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1">
                                 <label htmlFor="firstName" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">First Name</label>
                                 <input
@@ -329,7 +329,7 @@ export default function ManualReservationModal({
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1">
                                 <label htmlFor="email" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Email Address</label>
                                 <input

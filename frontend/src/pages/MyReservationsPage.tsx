@@ -43,14 +43,14 @@ export default function MyReservationsPage() {
     if (error) return <div className="p-8 text-center text-red-600 font-semibold">Error: {error}</div>;
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
+        <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
             <div>
                 <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">My Reservations</h1>
                 <p className="text-sm text-[#7A7A7A] mt-1">Manage your booked stays, view settlement billing, and upload meter readings.</p>
             </div>
 
             {reservations.length === 0 ? (
-                <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-8 text-center space-y-4">
+                <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 sm:p-8 text-center space-y-4">
                     <p className="text-[#7A7A7A] font-medium">You don't have any reservations yet.</p>
                     <Link to="/properties" className="inline-block px-6 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#2a1412] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm">
                         Browse Catalog

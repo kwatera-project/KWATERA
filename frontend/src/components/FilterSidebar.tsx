@@ -44,7 +44,7 @@ function CheckRow({
                 className={`w-[18px] h-[18px] rounded-[5px] flex-shrink-0 flex items-center justify-center border-2 transition-all duration-150 ${
                     checked
                         ? "bg-[#42211D] border-[#42211D]"
-                        : "border-gray-300 bg-white group-hover:border-[#42211D]/50"
+                        : "border-gray-300 bg-solid-white group-hover:border-[#42211D]/50"
                 }`}
             >
                 {checked && (
@@ -233,7 +233,7 @@ function SidebarContent({
                                     placeholder="0"
                                     value={filters.minPrice}
                                     onChange={(e) => onFiltersChange({ ...filters, minPrice: e.target.value })}
-                                    className={`${compact ? "py-2" : "py-2.5"} w-full pl-9 pr-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#42211D]/20 focus:border-[#42211D]/60 transition-all bg-white text-[#1A1A1A] appearance-none`}
+                                    className={`${compact ? "py-2" : "py-2.5"} w-full pl-9 pr-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#42211D]/20 focus:border-[#42211D]/60 transition-all bg-solid-white text-[#1A1A1A] appearance-none`}
                                 />
                             </div>
                         </div>
@@ -250,7 +250,7 @@ function SidebarContent({
                                     placeholder="Any"
                                     value={filters.maxPrice}
                                     onChange={(e) => onFiltersChange({ ...filters, maxPrice: e.target.value })}
-                                    className={`${compact ? "py-2" : "py-2.5"} w-full pl-9 pr-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#42211D]/20 focus:border-[#42211D]/60 transition-all bg-white text-[#1A1A1A] appearance-none`}
+                                    className={`${compact ? "py-2" : "py-2.5"} w-full pl-9 pr-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#42211D]/20 focus:border-[#42211D]/60 transition-all bg-solid-white text-[#1A1A1A] appearance-none`}
                                 />
                             </div>
                         </div>
@@ -284,7 +284,7 @@ export default function FilterSidebar(props: FilterSidebarProps) {
             <div className="hidden md:block flex-shrink-0 self-start sticky top-20">
                 {isDesktopVisible ? (
                     <aside className="w-[284px]">
-                        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 flex flex-col overflow-visible min-h-[calc(100vh-5.5rem)]">
+                        <div className="bg-solid-white border border-gray-100 rounded-2xl shadow-sm p-4 flex flex-col overflow-visible min-h-[calc(100vh-5.5rem)]">
                             <SidebarContent
                                 {...props}
                                 isMobile={false}
@@ -296,7 +296,7 @@ export default function FilterSidebar(props: FilterSidebarProps) {
                     <button
                         type="button"
                         onClick={() => setIsDesktopVisible(true)}
-                        className="inline-flex items-center gap-2 bg-white border border-gray-100 rounded-xl shadow-sm px-4 py-3 text-sm font-bold text-[#42211D] hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
+                        className="inline-flex items-center gap-2 bg-solid-white border border-gray-100 rounded-xl shadow-sm px-4 py-3 text-sm font-bold text-[#42211D] hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
                     >
                         <SlidersHorizontal className="w-4 h-4" strokeWidth={2.5} />
                         Show filters
@@ -305,12 +305,12 @@ export default function FilterSidebar(props: FilterSidebarProps) {
             </div>
 
             {isOpen && (
-                <div className="md:hidden fixed inset-0 z-50 flex">
+                <div className="md:hidden fixed inset-0 z-[10000] flex">
                     <div
                         className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
                         onClick={onClose}
                     />
-                    <div className="relative z-10 w-[85vw] max-w-xs bg-white h-full shadow-2xl flex flex-col p-5 overflow-hidden">
+                    <div className="relative z-10 w-[85vw] max-w-xs bg-solid-white h-full shadow-2xl flex flex-col p-5 overflow-hidden">
                         <SidebarContent {...props} isMobile={true} />
                     </div>
                 </div>

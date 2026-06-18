@@ -413,7 +413,7 @@ export default function PropertiesPage() {
                     <div className="flex items-center gap-2 shrink-0">
                         <button
                             onClick={() => setIsMobileSidebarOpen(true)}
-                            className="md:hidden relative flex items-center gap-2 bg-white border border-gray-200 text-[#1A1A1A] px-4 py-2.5 rounded-xl shadow-sm font-semibold text-sm hover:border-[#42211D]/40 cursor-pointer transition-all"
+                            className="md:hidden relative flex items-center gap-2 bg-solid-white border border-gray-200 text-[#1A1A1A] px-4 py-2.5 rounded-xl shadow-sm font-semibold text-sm hover:border-[#42211D]/40 cursor-pointer transition-all"
                         >
                             <SlidersHorizontal className="w-4 h-4" strokeWidth={2.5} />
                             Filters
@@ -501,7 +501,7 @@ export default function PropertiesPage() {
                         <div className="flex gap-6">
                             <div
                                 className={`flex-1 min-w-0 ${
-                                    showMap ? "md:max-w-[340px] lg:max-w-[400px] xl:max-w-[440px]" : ""
+                                    showMap ? "hidden md:block md:max-w-[340px] lg:max-w-[400px] xl:max-w-[440px]" : ""
                                 }`}
                             >
                                 {displayProperties.length === 0 ? (
@@ -620,8 +620,8 @@ export default function PropertiesPage() {
 
                             {showMap && (
                                 <div
-                                    className="hidden md:block flex-1 sticky top-6"
-                                    style={{ height: "calc(100vh - 200px)" }}
+                                    className="w-full md:flex-1 md:sticky md:top-6"
+                                    style={{ height: "calc(100vh - 240px)" }}
                                 >
                                     <div className="w-full h-full rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
                                         <PropertyMap

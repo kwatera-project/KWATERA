@@ -153,14 +153,14 @@ export default function ProfilePage() {
     };
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen text-brand-main space-y-6">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen text-brand-main space-y-6">
             <div className="border-b border-brand-accent pb-4">
                 <h1 className="text-3xl font-bold text-brand-main tracking-tight">{getRoleTitle(userRole)}</h1>
                 <p className="text-sm text-brand-muted mt-1">{getRoleDescription(userRole)}</p>
             </div>
 
             <div className="bg-white border border-brand-accent rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
-                <div className="p-8 border-b border-brand-accent">
+                <div className="p-4 sm:p-8 border-b border-brand-accent">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                         <div className="flex items-center gap-6">
                             <div className={`w-20 h-20 rounded-full flex items-center justify-center shadow-md border border-brand-accent/50 ${getRoleColor(userRole)}`}>
@@ -181,7 +181,7 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
-                <div className="p-8">
+                <div className="p-4 sm:p-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="bg-brand-bg border border-brand-accent rounded-xl p-6 space-y-6">
                             <h3 className="text-sm font-bold text-brand-primary border-b border-brand-accent/60 pb-2">Basic Information</h3>

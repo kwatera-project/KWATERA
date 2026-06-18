@@ -250,7 +250,7 @@ export default function SettlementDetailsPage() {
     const isPaidOrZero = settlement.status === "PAID" || settlement.balanceDue === 0;
 
     return (
-        <div className="max-w-3xl mx-auto p-8 min-h-screen text-[#1A1A1A] space-y-6 flex flex-col">
+        <div className="max-w-3xl mx-auto p-4 md:p-8 min-h-screen text-[#1A1A1A] space-y-6 flex flex-col">
             <Link
                 to={returnPath}
                 className="px-4 py-2 text-xs font-bold text-[#42211D] bg-[#F7F7F7] border border-[#DACDCA] hover:bg-gray-100 rounded-lg transition-colors shadow-sm inline-flex items-center gap-1.5 w-fit"
@@ -258,7 +258,7 @@ export default function SettlementDetailsPage() {
                 &larr; {returnLabel}
             </Link>
 
-            <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-8 hover:shadow-md transition-all duration-300">
+            <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 md:p-8 hover:shadow-md transition-all duration-300">
                 <div className="border-b border-[#DACDCA] pb-4 mb-6">
                     <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">Settlement Details</h1>
                     <p className="text-sm text-[#7A7A7A] mt-1">Detailed pricing breakdown and settlement transactions.</p>
@@ -298,7 +298,7 @@ export default function SettlementDetailsPage() {
                     {isAdminOrOwner && displayCurrency !== 'PLN' && settlement.currencyInfo && (
                         <div className="space-y-1 md:col-span-2 bg-[#F7F7F7] border border-[#DACDCA] rounded-xl p-4 mt-2">
                             <p className="text-xs font-bold text-[#42211D] uppercase tracking-wider">Currency Snapshot Info (Admin/Owner)</p>
-                            <div className="grid grid-cols-2 gap-4 mt-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
                                 <div>
                                     <span className="block text-[10px] font-bold text-[#7A7A7A] uppercase tracking-wider">Guest Selected Currency</span>
                                     <p className="text-sm font-bold text-[#1A1A1A] mt-0.5">{displayCurrency}</p>
