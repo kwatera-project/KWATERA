@@ -10,6 +10,7 @@ import io.github.kwatera_project.kwatera.billing_service.dto.CheckoutRequest;
 import io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto;
 import io.github.kwatera_project.kwatera.billing_service.service.PaymentService;
+import io.github.kwatera_project.kwatera.billing_service.service.SettlementService;
 import io.github.kwatera_project.kwatera.billing_service.service.StripeService;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -42,6 +43,8 @@ class BillingControllerTest {
   @MockitoBean private PaymentService paymentService;
 
   @MockitoBean private StripeService stripeService;
+
+  @MockitoBean private SettlementService settlementService;
 
   @Autowired private ObjectMapper objectMapper;
 
