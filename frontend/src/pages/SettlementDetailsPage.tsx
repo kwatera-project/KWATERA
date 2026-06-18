@@ -5,6 +5,8 @@ import type {SettlementDetails, SettlementItemDetails} from "../types/settlement
 import {GATEWAY_BASE_URL, IS_DEMO_MODE} from "../api/apiConfig.ts";
 import {getReservationDetails} from "../api/reservationApi.ts";
 import {getUserRoles} from "../utils/jwtUtils";
+import {useTranslation} from "react-i18next"
+import {getLocaleCode} from "../utils/locale";
 import {createCheckoutSession} from "../api/billingApi";
 
 export default function SettlementDetailsPage() {
@@ -12,6 +14,7 @@ export default function SettlementDetailsPage() {
     const [settlement, setSettlement] = useState<SettlementDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const {t, i18n} = useTranslation();
 
     const [settlementState, setSettlementState] = useState<
         Record<string, { loading: boolean; success?: boolean, error?: string }>
@@ -167,9 +170,9 @@ export default function SettlementDetailsPage() {
     const roles = getUserRoles(token);
     const isAdminOrOwner = roles.includes("ROLE_ADMIN") || roles.includes("ROLE_OWNER");
     const returnPath = isAdminOrOwner ? "/admin/reservations" : "/my-reservations";
-    const returnLabel = isAdminOrOwner ? "Back to Reservations Overview" : "Back to My Reservations";
+    const returnLabel = isAdminOrOwner ? t('adminMeterReadings.backToReservations') : t('meterReadings.backToReservations');
 
-    if (loading) return <div className="p-6">Loading settlement details...</div>;
+    if (loading) return <div className="p-6">{t('settlement.loading')}</div>;
     if (error) {
         const isForbidden = error.toLowerCase().includes("forbidden") || error.toLowerCase().includes("access denied") || error.toLowerCase().includes("403");
 
@@ -188,9 +191,9 @@ export default function SettlementDetailsPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m0-6V9m0 12a9 9 0 110-18 9 9 0 010 18z" />
                             </svg>
                         </div>
-                        <h2 className="text-xl font-bold text-gray-900">Access Denied</h2>
+                        <h2 className="text-xl font-bold text-gray-900">{t('settlement.accessDenied')}</h2>
                         <p className="text-sm text-[#7A7A7A] max-w-md mx-auto leading-relaxed">
-                            You do not have permission to view this settlement billing page. If you believe this is an error, please contact support.
+                            {t('settlement.accessDeniedDesc')}
                         </p>
                     </div>
                 </div>
@@ -206,7 +209,7 @@ export default function SettlementDetailsPage() {
                     &larr; {returnLabel}
                 </Link>
                 <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 text-red-600 font-semibold">
-                    {error}
+                    {t("settlement.loadError")}
                 </div>
             </div>
         );
@@ -221,7 +224,7 @@ export default function SettlementDetailsPage() {
                     &larr; {returnLabel}
                 </Link>
                 <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 text-gray-500 font-semibold">
-                    Settlement not found.
+                    {t('settlement.notFound')}
                 </div>
             </div>
         );
@@ -248,6 +251,14 @@ export default function SettlementDetailsPage() {
     };
 
     const isPaidOrZero = settlement.status === "PAID" || settlement.balanceDue === 0;
+    const getItemDescription = (item: SettlementItemDetails) => {
+        if (item.type === "WATER" && item.description?.trim().toLowerCase() === "water usage") {
+            return t("settlement.waterUsage");
+        }
+        return item.description || t(`settlementItemTypes.${item.type}`, {
+            defaultValue: item.type
+        });
+    };
 
     return (
         <div className="max-w-3xl mx-auto p-4 md:p-8 min-h-screen text-[#1A1A1A] space-y-6 flex flex-col">
@@ -260,36 +271,38 @@ export default function SettlementDetailsPage() {
 
             <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 md:p-8 hover:shadow-md transition-all duration-300">
                 <div className="border-b border-[#DACDCA] pb-4 mb-6">
-                    <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">Settlement Details</h1>
-                    <p className="text-sm text-[#7A7A7A] mt-1">Detailed pricing breakdown and settlement transactions.</p>
+                    <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">{t('settlement.title')}</h1>
+                    <p className="text-sm text-[#7A7A7A] mt-1">{t('settlement.subtitle')}</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-1">
-                        <p className="text-sm font-semibold text-[#7A7A7A]">Settlement ID</p>
+                        <p className="text-sm font-semibold text-[#7A7A7A]">{t('settlement.settlementId')}</p>
                         <p className="font-mono text-base font-bold text-[#1A1A1A]" title={settlement.id}>
                             #SET-{settlement.id.slice(-8)}
                         </p>
                     </div>
                     <div className="space-y-1">
-                        <p className="text-sm font-semibold text-[#7A7A7A]">Reservation ID</p>
+                        <p className="text-sm font-semibold text-[#7A7A7A]">{t('myReservations.reservationId')}</p>
                         <p className="font-mono text-base font-bold text-[#1A1A1A]" title={settlement.reservationId}>
                             #RES-{settlement.reservationId.slice(-8)}
                         </p>
                     </div>
                     <div className="space-y-1">
-                        <p className="text-sm font-semibold text-[#7A7A7A]">Status</p>
+                        <p className="text-sm font-semibold text-[#7A7A7A]">{t('common.status')}</p>
                         <div className="pt-1">
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
                                 settlement.status === 'PAID' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
-                                'bg-amber-50 border-amber-200 text-amber-800'
+                                    'bg-amber-50 border-amber-200 text-amber-800'
                             }`}>
-                                {settlement.status}
+                                {t(`settlementStatuses.${settlement.status}`, {
+                                    defaultValue: settlement.status
+                                })}
                             </span>
                         </div>
                     </div>
                     <div className="space-y-1">
-                        <p className="text-sm font-semibold text-[#7A7A7A]">Balance Due</p>
+                        <p className="text-sm font-semibold text-[#7A7A7A]">{t('settlement.balanceDue')}</p>
                         <p className={`text-xl font-black ${isPaidOrZero ? "text-emerald-700" : "text-red-600 font-bold"}`}>
                             {renderAmount(settlement.convertedBalanceDue, settlement.balanceDue)}
                         </p>
@@ -297,14 +310,14 @@ export default function SettlementDetailsPage() {
 
                     {isAdminOrOwner && displayCurrency !== 'PLN' && settlement.currencyInfo && (
                         <div className="space-y-1 md:col-span-2 bg-[#F7F7F7] border border-[#DACDCA] rounded-xl p-4 mt-2">
-                            <p className="text-xs font-bold text-[#42211D] uppercase tracking-wider">Currency Snapshot Info (Admin/Owner)</p>
+                            <p className="text-xs font-bold text-[#42211D] uppercase tracking-wider">{t('settlement.currencySnapshot')}</p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
                                 <div>
-                                    <span className="block text-[10px] font-bold text-[#7A7A7A] uppercase tracking-wider">Guest Selected Currency</span>
+                                    <span className="block text-[10px] font-bold text-[#7A7A7A] uppercase tracking-wider">{t('settlement.guestCurrency')}</span>
                                     <p className="text-sm font-bold text-[#1A1A1A] mt-0.5">{displayCurrency}</p>
                                 </div>
                                 <div>
-                                    <span className="block text-[10px] font-bold text-[#7A7A7A] uppercase tracking-wider">Exchange Rate Snapshot</span>
+                                    <span className="block text-[10px] font-bold text-[#7A7A7A] uppercase tracking-wider">{t('reservationDetails.exchangeRate')}</span>
                                     <p className="text-sm font-bold text-[#1A1A1A] mt-0.5">{settlement.currencyInfo.exchangeRate.toFixed(4)} {displayCurrency}/PLN</p>
                                 </div>
                             </div>
@@ -312,16 +325,16 @@ export default function SettlementDetailsPage() {
                     )}
 
                     <div className="md:col-span-2 border-t border-[#DACDCA] mt-2 pt-6">
-                        <h3 className="text-lg font-bold text-[#1A1A1A] tracking-tight border-b border-[#DACDCA] pb-2 mb-4">Price Breakdown</h3>
+                        <h3 className="text-lg font-bold text-[#1A1A1A] tracking-tight border-b border-[#DACDCA] pb-2 mb-4">{t('settlement.priceBreakdown')}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-1">
-                                <p className="text-sm font-semibold text-[#7A7A7A]">Accommodation Amount</p>
+                                <p className="text-sm font-semibold text-[#7A7A7A]">{t('settlement.accommodation')}</p>
                                 <p className="font-bold text-base text-[#1A1A1A]">
                                     {renderAmount(settlement.convertedAccommodationAmount, settlement.accommodationAmount)}
                                 </p>
                             </div>
                             <div className="space-y-2">
-                                <p className="text-sm font-semibold text-[#7A7A7A]">Utilities Amount</p>
+                                <p className="text-sm font-semibold text-[#7A7A7A]">{t('settlement.utilities')}</p>
                                 <p className="font-bold text-base text-[#1A1A1A]">
                                     {renderAmount(settlement.convertedUtilitiesAmount, settlement.utilitiesAmount)}
                                 </p>
@@ -339,7 +352,7 @@ export default function SettlementDetailsPage() {
                                                     return (
                                                         <li key={item.id} className="text-xs text-[#7A7A7A] flex justify-between gap-4 font-medium">
                                                             <span>
-                                                                {item.description || item.type} ({item.quantity} x {displayCurrency !== 'PLN' ? Number((item.unitPrice / rate).toFixed(2)) : item.unitPrice} {displayCurrency})
+                                                                {getItemDescription(item)} ({item.quantity} x {displayCurrency !== 'PLN' ? Number((item.unitPrice / rate).toFixed(2)) : item.unitPrice} {displayCurrency})
                                                             </span>
                                                             <span className="font-bold text-[#1A1A1A]">
                                                                 {convertedAmount} {displayCurrency}
@@ -352,19 +365,19 @@ export default function SettlementDetailsPage() {
                                 )}
                             </div>
                             <div className="space-y-1">
-                                <p className="text-sm font-semibold text-[#7A7A7A]">Deposit Amount</p>
+                                <p className="text-sm font-semibold text-[#7A7A7A]">{t('settlement.deposit')}</p>
                                 <p className="font-bold text-base text-[#1A1A1A]">
                                     {renderAmount(settlement.convertedDepositAmount, settlement.depositAmount)}
                                 </p>
                             </div>
                             <div className="space-y-1">
-                                <p className="text-sm font-semibold text-[#7A7A7A]">Total Amount</p>
+                                <p className="text-sm font-semibold text-[#7A7A7A]">{t('settlement.total')}</p>
                                 <p className="font-black text-lg text-[#1A1A1A]">
                                     {renderAmount(settlement.convertedTotalAmount, settlement.totalAmount)}
                                 </p>
                             </div>
                             <div className="space-y-1 md:col-span-2">
-                                <p className="text-sm font-semibold text-[#7A7A7A]">Amount Paid</p>
+                                <p className="text-sm font-semibold text-[#7A7A7A]">{t('settlement.amountPaid')}</p>
                                 <p className="font-bold text-base text-emerald-700">
                                     {renderAmount(settlement.convertedAmountPaid, settlement.amountPaid)}
                                 </p>
@@ -374,12 +387,20 @@ export default function SettlementDetailsPage() {
 
                     <div className="md:col-span-2 border-t border-[#DACDCA] mt-2 pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-1">
-                            <p className="text-sm font-semibold text-[#7A7A7A]">Issued At</p>
-                            <p className="font-bold text-base text-[#1A1A1A]">{settlement.issuedAt ? new Date(settlement.issuedAt).toLocaleString() : 'N/A'}</p>
+                            <p className="text-sm font-semibold text-[#7A7A7A]">{t('settlement.issuedAt')}</p>
+                            <p className="font-bold text-base text-[#1A1A1A]">
+                                {settlement.issuedAt
+                                    ? new Date(settlement.issuedAt).toLocaleString(getLocaleCode(i18n.language))
+                                    : t("common.notAvailable")}
+                            </p>
                         </div>
                         <div className="space-y-1">
-                            <p className="text-sm font-semibold text-[#7A7A7A]">Paid At</p>
-                            <p className="font-bold text-base text-[#1A1A1A]">{settlement.paidAt ? new Date(settlement.paidAt).toLocaleString() : 'N/A'}</p>
+                            <p className="text-sm font-semibold text-[#7A7A7A]">{t('settlement.paidAt')}</p>
+                            <p className="font-bold text-base text-[#1A1A1A]">
+                                {settlement.paidAt
+                                    ? new Date(settlement.paidAt).toLocaleString(getLocaleCode(i18n.language))
+                                    : t("common.notAvailable")}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -388,8 +409,10 @@ export default function SettlementDetailsPage() {
             {settlement.status !== "PAID" && (
                 <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 space-y-4">
                     <p className="text-xs text-[#7A7A7A] leading-relaxed italic">
-                        * Note: Despite the selected display currency, the payment transaction on the Stripe gateway will be processed in the system's base currency (PLN). Any potential foreign exchange conversion fees depend on your bank.
-                        Exchange rate applied: {settlement.currencyInfo?.exchangeRate} {settlement.currencyInfo?.displayCurrency}/PLN.
+                        {t("settlement.stripeNote", {
+                            rate: settlement.currencyInfo?.exchangeRate,
+                            currency: settlement.currencyInfo?.displayCurrency
+                        })}
                     </p>
                     <div className="flex flex-wrap gap-3 border-t border-[#DACDCA] pt-4">
                         {paymentButtons.map((button) => {
@@ -418,10 +441,12 @@ export default function SettlementDetailsPage() {
                                     }`}
                                 >
                                     {state?.loading
-                                        ? "Processing..."
+                                        ? t('propertyDetails.processing')
                                         : state?.success
-                                            ? "Redirecting..."
-                                            : `Pay ${button.type}`}
+                                            ? t('propertyDetails.redirecting')
+                                            : `${t("settlement.pay")} ${t(`settlementItemTypes.${button.type}`, {
+                                                defaultValue: button.type
+                                            })}`}
                                 </button>
                             );
                         })}

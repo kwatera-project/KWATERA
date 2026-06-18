@@ -1,14 +1,16 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import UnitForm, { type UnitFormData } from "../contexts/UnitForm.tsx";
 import { createUnit } from "../api/ownerUnitApi.ts";
+import { useTranslation } from "react-i18next";
 
 export default function CreateUnitPage() {
     const navigate = useNavigate();
     const { propertyId } = useParams<{ propertyId: string }>();
+    const {t} = useTranslation();
 
     const handleCreate = async (data: UnitFormData) => {
         if (!propertyId) {
-            alert("Missing property ID");
+            alert(t("createUnit.missingPropertyId"));
             return;
         }
         try {
@@ -16,7 +18,7 @@ export default function CreateUnitPage() {
             navigate(`/owner/properties/${propertyId}/units`);
         } catch (error) {
             console.error(error);
-            alert("Failed to create unit");
+            alert(t("createUnit.failed"));
         }
     };
 
@@ -27,22 +29,22 @@ export default function CreateUnitPage() {
                     to={`/owner/properties/${propertyId}/units`}
                     className="inline-flex items-center text-sm font-semibold text-[#7A7A7A] hover:text-[#1A1A1A] transition-colors mb-2"
                 >
-                    ← Back to Units
+                    ← {t("createUnit.back")}
                 </Link>
             </div>
 
             <div className="border-b border-[#DACDCA] pb-4 mb-6">
                 <h1 className="text-3xl font-black text-[#1A1A1A] tracking-tight">
-                    Create Unit
+                    {t("createUnit.title")}
                 </h1>
                 <p className="text-sm font-semibold text-[#7A7A7A] mt-1">
-                    Add a new rental unit, room, or apartment to this property
+                    {t("createUnit.subtitle")}
                 </p>
             </div>
 
             <div className="max-w-4xl mx-auto bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 sm:p-8 mt-6">
                 <UnitForm
-                    submitLabel="Create Unit"
+                    submitLabel={t("createUnit.submit")}
                     onSubmit={handleCreate}
                 />
             </div>

@@ -16,6 +16,8 @@ import {
 import SharedDatePicker from "../components/SharedDatePicker";
 import ManualReservationModal from "../components/ManualReservationModal";
 import BlockDatesModal from "../components/BlockDatesModal";
+import {useTranslation} from "react-i18next"
+import {getDateFnsLocale, getLocaleCode} from "../utils/locale";
 
 interface Occupancy {
     reservationId: string;
@@ -34,6 +36,7 @@ export default function OccupancyCalendarPage() {
         startOfMonth(startOfToday()),
         endOfMonth(startOfToday())
     ]);
+    const {t, i18n} = useTranslation();
     const [startDate] = dateRange;
     const [selectedOcc, setSelectedOcc] = useState<Occupancy | null>(null);
     const [quickAction, setQuickAction] = useState<{ date: Date } | null>(null);
@@ -171,7 +174,7 @@ export default function OccupancyCalendarPage() {
                 }
 
                 const unitName = unitMap.get(occ.unitId) || occ.unitId;
-                const displayText = `${unitName} - ${occ.guestName || occ.status}`;
+                const displayText = `${unitName} - ${occ.guestName || t(`statuses.${occ.status}`, { defaultValue: occ.status })}`;
 
                 elements.push(
                     <button
@@ -194,7 +197,7 @@ export default function OccupancyCalendarPage() {
     };
 
     const formatGuestLabel = (name?: string) => {
-        if (!name || name === 'N/A') return 'Unassigned Guest';
+        if (!name || name === 'N/A') return t('occupancy.unassignedGuest');
         if (name.startsWith('Guest ') && name.length > 15) return `#GST-${name.slice(-8)}`;
         return name;
     };
@@ -202,13 +205,13 @@ export default function OccupancyCalendarPage() {
     const handleStatusChange = (id: string, newStatus: string) => {
         updateAdminReservationStatus(id, newStatus)
             .then(() => {
-                setMessage({text: "Reservation status updated successfully!", type: 'success'});
+                setMessage({text: t('adminReservations.statusUpdated'), type: 'success'});
                 setSelectedOcc(prev => prev && prev.reservationId === id ? {...prev, status: newStatus} : prev);
                 fetchOccupancyData();
             })
             .catch((err) => {
                 console.error(err);
-                setMessage({text: err instanceof Error ? err.message : "Network error occurred", type: 'error'});
+                setMessage({text: err instanceof Error ? err.message : t('adminReservations.networkError'), type: 'error'});
             });
     };
 
@@ -216,18 +219,17 @@ export default function OccupancyCalendarPage() {
         <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen text-brand-main space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-[100]">
                 <div>
-                    <h1 className="text-3xl font-bold text-brand-main">Occupancy Dashboard</h1>
-                    <p className="text-sm text-brand-muted mt-0.5">Manage occupancies, manual reservations, and
-                        maintenance blocks.</p>
+                    <h1 className="text-3xl font-bold text-brand-main">{t('occupancy.title')}</h1>
+                    <p className="text-sm text-brand-muted mt-0.5">{t('occupancy.subtitle')}</p>
                 </div>
                 <div className="flex bg-brand-bg p-1 rounded-lg border border-brand-accent shadow-sm">
                     <Link to="/admin/reservations"
                           className="px-4 py-2 text-sm font-medium rounded-md text-brand-muted hover:bg-[#FFFFFF] hover:text-brand-main hover:shadow-sm transition-all">
-                        List View
+                        {t('adminReservations.listView')}
                     </Link>
                     <span
                         className="px-4 py-2 text-sm font-bold rounded-md bg-[#FFFFFF] text-brand-main shadow border border-brand-accent cursor-default">
-                        Calendar View
+                        {t('adminReservations.calendarView')}
                     </span>
                 </div>
             </div>
@@ -236,7 +238,7 @@ export default function OccupancyCalendarPage() {
                 className="flex flex-col gap-4 relative z-[90] bg-[#FFFFFF] border border-brand-accent p-6 rounded-xl shadow-sm">
                 <div className="flex gap-6 items-center flex-wrap justify-between">
                     <div className="flex gap-4 items-center flex-wrap">
-                        <span className="text-sm font-bold text-brand-muted">Date Anchor</span>
+                        <span className="text-sm font-bold text-brand-muted">{t('occupancy.dateAnchor')}</span>
                         <div
                             className="flex items-center bg-brand-bg border border-brand-accent rounded-lg px-3 py-2 shadow-sm focus-within:ring-1 focus-within:ring-brand-primary z-[100] gap-2">
                             <svg className="w-4 h-4 text-brand-muted" fill="none" stroke="currentColor"
@@ -249,7 +251,7 @@ export default function OccupancyCalendarPage() {
                                 onChange={(date: Date | null) => {
                                     if (date) setDateRange([date, endOfMonth(date)])
                                 }}
-                                placeholderText="Select Month"
+                                placeholderText={t('occupancy.selectMonth')}
                                 allowPastDates={true}
                             />
                         </div>
@@ -263,7 +265,7 @@ export default function OccupancyCalendarPage() {
                                  viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
                             </svg>
-                            Add Reservation
+                            {t('occupancy.addReservation')}
                         </button>
                         <button
                             onClick={() => setIsBlockDatesOpen(true)}
@@ -274,7 +276,7 @@ export default function OccupancyCalendarPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round"
                                       d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
                             </svg>
-                            Block Dates
+                            {t('blockDates.title')}
                         </button>
                     </div>
                 </div>
@@ -289,7 +291,7 @@ export default function OccupancyCalendarPage() {
                     </svg>
                 </button>
                 <h2 className="text-xl font-black text-brand-main tracking-tight">
-                    {format(anchorDate, 'MMMM yyyy')}
+                    {format(anchorDate, 'LLLL yyyy', { locale: getDateFnsLocale(i18n.language) })}
                 </h2>
                 <button onClick={handleNextMonth}
                         className="p-2 border border-brand-accent rounded-lg hover:bg-gray-50 transition">
@@ -302,13 +304,13 @@ export default function OccupancyCalendarPage() {
             <div className="w-full overflow-x-auto relative z-10 whitespace-nowrap border border-brand-accent rounded-xl shadow-sm" ref={calendarRef}>
                 <div className="w-full md:min-w-[800px] min-w-0 flex flex-col bg-white">
                     <div className="grid grid-cols-7 bg-brand-bg text-center py-2 md:py-3 font-bold text-xs uppercase tracking-wider border-b border-brand-accent">
-                        <div className="text-brand-muted"><span className="hidden md:inline">Mon</span><span className="md:hidden">M</span></div>
-                        <div className="text-brand-muted"><span className="hidden md:inline">Tue</span><span className="md:hidden">T</span></div>
-                        <div className="text-brand-muted"><span className="hidden md:inline">Wed</span><span className="md:hidden">W</span></div>
-                        <div className="text-brand-muted"><span className="hidden md:inline">Thu</span><span className="md:hidden">T</span></div>
-                        <div className="text-brand-muted"><span className="hidden md:inline">Fri</span><span className="md:hidden">F</span></div>
-                        <div className="text-brand-muted bg-gray-50/60"><span className="hidden md:inline">Sat</span><span className="md:hidden">S</span></div>
-                        <div className="text-brand-muted bg-gray-50/60"><span className="hidden md:inline">Sun</span><span className="md:hidden">S</span></div>
+                        <div className="text-brand-muted"><span className="hidden md:inline">{t('occupancy.mon')}</span><span className="md:hidden">{t('occupancy.mon').slice(0, 1)}</span></div>
+                        <div className="text-brand-muted"><span className="hidden md:inline">{t('occupancy.tue')}</span><span className="md:hidden">{t('occupancy.tue').slice(0, 1)}</span></div>
+                        <div className="text-brand-muted"><span className="hidden md:inline">{t('occupancy.wed')}</span><span className="md:hidden">{t('occupancy.wed').slice(0, 1)}</span></div>
+                        <div className="text-brand-muted"><span className="hidden md:inline">{t('occupancy.thu')}</span><span className="md:hidden">{t('occupancy.thu').slice(0, 1)}</span></div>
+                        <div className="text-brand-muted"><span className="hidden md:inline">{t('occupancy.fri')}</span><span className="md:hidden">{t('occupancy.fri').slice(0, 1)}</span></div>
+                        <div className="text-brand-muted bg-gray-50/60"><span className="hidden md:inline">{t('occupancy.sat')}</span><span className="md:hidden">{t('occupancy.sat').slice(0, 1)}</span></div>
+                        <div className="text-brand-muted bg-gray-50/60"><span className="hidden md:inline">{t('occupancy.sun')}</span><span className="md:hidden">{t('occupancy.sun').slice(0, 1)}</span></div>
                     </div>
 
                     <div className="w-full bg-white divide-y divide-brand-accent/20">
@@ -368,31 +370,12 @@ export default function OccupancyCalendarPage() {
                     <div
                         className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] bg-[#FFFFFF] rounded-2xl shadow-2xl border border-brand-accent p-8 w-full max-w-sm space-y-6">
                         <div className="text-center space-y-1">
-                            <h3 className="text-lg font-bold text-brand-main">Quick Action</h3>
-                            <p className="text-sm text-brand-muted">Date: <span
-                                className="font-bold text-brand-main">{format(quickAction.date, 'EEEE, d MMMM yyyy')}</span>
-                            </p>
+                            <h3 className="text-lg font-bold text-brand-main">{t('occupancy.quickAction')}</h3>
+                            <p className="text-sm text-brand-muted">{t('occupancy.date')} <span className="font-bold text-brand-main">{format(quickAction.date, 'EEEE, d MMMM yyyy', { locale: getDateFnsLocale(i18n.language) })}</span></p>
                         </div>
-                        <button onClick={() => {
-                            setIsManualReservationOpen(true);
-                            setQuickAction(null);
-                        }}
-                                className="w-full py-3 bg-brand-primary text-white font-bold rounded-lg hover:opacity-90 transition cursor-pointer">New
-                            Booking
-                        </button>
-                        <button onClick={() => {
-                            setIsBlockDatesOpen(true);
-                            setQuickAction(null);
-                        }}
-                                className="w-full py-3 bg-[#FFFFFF] border border-brand-accent text-brand-main font-bold rounded-lg hover:bg-gray-50 transition cursor-pointer">Block
-                            Dates
-                        </button>
-                        <button onClick={() => {
-                            setQuickAction(null);
-                            setSelectedQuickActionDate(null);
-                        }}
-                                className="w-full py-3 border border-brand-accent rounded-lg text-brand-main font-bold hover:bg-gray-50 transition cursor-pointer">Cancel
-                        </button>
+                        <button onClick={() => { setIsManualReservationOpen(true); setQuickAction(null); }} className="w-full py-3 bg-brand-primary text-white font-bold rounded-lg hover:opacity-90 transition cursor-pointer">{t('occupancy.newBooking')}</button>
+                        <button onClick={() => { setIsBlockDatesOpen(true); setQuickAction(null); }} className="w-full py-3 bg-[#FFFFFF] border border-brand-accent text-brand-main font-bold rounded-lg hover:bg-gray-50 transition cursor-pointer">{t('blockDates.title')}</button>
+                        <button onClick={() => { setQuickAction(null); setSelectedQuickActionDate(null); }} className="w-full py-3 border border-brand-accent rounded-lg text-brand-main font-bold hover:bg-gray-50 transition cursor-pointer">{t('common.cancel')}</button>
                     </div>
                 </>
             )}
@@ -406,8 +389,7 @@ export default function OccupancyCalendarPage() {
 
                         <div className="p-6 border-b border-brand-accent flex items-center justify-between">
                             <div>
-                                <span
-                                    className="text-[10px] font-bold text-brand-muted uppercase tracking-widest block mb-1">Reservation Info</span>
+                                <span className="text-[10px] font-bold text-brand-muted uppercase tracking-widest block mb-1">{t('occupancy.reservationInfo')}</span>
                                 <h2 className="text-xl font-black text-brand-main tracking-tight">
                                     #RES-{selectedOcc.reservationId.slice(-8)}
                                 </h2>
@@ -427,44 +409,44 @@ export default function OccupancyCalendarPage() {
 
                             <div>
                                 <span className="block text-xs font-bold text-brand-muted uppercase tracking-wider mb-2">
-                                    Reservation Status
+                                    {t('occupancy.reservationStatus')}
                                 </span>
 
                                 {selectedOcc.status === 'CONFIRMED' ? (
                                     <span
                                         className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider bg-emerald-50 border-emerald-200 text-emerald-800 animate-fade-in">
-                                        Confirmed
+                                        {t('common.confirmed')}
                                     </span>
                                 ) : selectedOcc.status === 'PENDING' ? (
                                     <span
                                         className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider bg-amber-50 border-amber-200 text-amber-800 animate-fade-in">
-                                        Pending
+                                        {t('common.pending')}
                                     </span>
                                 ) : selectedOcc.status === 'COMPLETED' ? (
                                     <span
                                         className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider bg-blue-50 border-blue-200 text-blue-800 animate-fade-in">
-                                        Completed
+                                        {t('common.completed')}
                                     </span>
                                 ) : selectedOcc.status === 'CANCELLED' ? (
                                     <span
                                         className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider bg-red-50 border-red-200 text-red-800 animate-fade-in">
-                                        Cancelled
+                                        {t('common.cancelled')}
                                     </span>
                                 ) : (
                                     <span
                                         className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider bg-gray-50 border-gray-200 text-gray-800 animate-fade-in">
-                                        {selectedOcc.status}
+                                        {t(`statuses.${selectedOcc.status}`, { defaultValue: selectedOcc.status })}
                                     </span>
                                 )}
                             </div>
 
                             <div className="space-y-4">
-                                <span className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Stay & Accommodation</span>
+                                <span className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('occupancy.stayAccommodation')}</span>
 
                                 <div className="bg-white border border-brand-accent rounded-xl p-5 shadow-sm space-y-4">
                                     <div>
                                         <span
-                                            className="block text-[10px] font-bold text-brand-muted uppercase tracking-wider">Accommodation</span>
+                                            className="block text-[10px] font-bold text-brand-muted uppercase tracking-wider">{t('occupancy.accommodation')}</span>
                                         <p className="text-base font-bold text-brand-main mt-0.5">
                                             {unitMap.get(selectedOcc.unitId) || selectedOcc.unitName || selectedOcc.unitId}
                                         </p>
@@ -473,14 +455,14 @@ export default function OccupancyCalendarPage() {
                                     <div className="grid grid-cols-2 gap-4 pt-3 border-t border-brand-accent/20">
                                         <div>
                                             <span
-                                                className="block text-[10px] font-bold text-brand-muted uppercase tracking-wider">Guest</span>
+                                                className="block text-[10px] font-bold text-brand-muted uppercase tracking-wider">{t('adminReservations.guest')}</span>
                                             <p className="text-sm font-bold text-brand-main mt-0.5">
                                                 {formatGuestLabel(selectedOcc.guestName)}
                                             </p>
                                         </div>
                                         <div>
                                             <span
-                                                className="block text-[10px] font-bold text-brand-muted uppercase tracking-wider">Dates</span>
+                                                className="block text-[10px] font-bold text-brand-muted uppercase tracking-wider">{t('adminReservations.stayDates')}</span>
                                             <p className="text-xs font-semibold text-brand-main mt-1 whitespace-nowrap">
                                                 {selectedOcc.startDate} <span
                                                 className="text-brand-primary font-bold">→</span> {selectedOcc.endDate}
@@ -496,7 +478,7 @@ export default function OccupancyCalendarPage() {
                                     onClick={() => handleStatusChange(selectedOcc.reservationId, 'CONFIRMED')}
                                     className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
                                 >
-                                    Confirm
+                                    {t('common.confirm')}
                                 </button>
 
                                 <button
@@ -504,7 +486,7 @@ export default function OccupancyCalendarPage() {
                                     onClick={() => handleStatusChange(selectedOcc.reservationId, 'COMPLETED')}
                                     className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
                                 >
-                                    Complete
+                                    {t('common.complete')}
                                 </button>
 
                                 <button
@@ -512,7 +494,7 @@ export default function OccupancyCalendarPage() {
                                     onClick={() => handleStatusChange(selectedOcc.reservationId, 'CANCELLED')}
                                     className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-transparent transition-all inline-flex items-center justify-center gap-1 shrink-0 text-red-600 bg-red-50 hover:bg-red-100 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
                                 >
-                                    Cancel
+                                    {t('common.cancel')}
                                 </button>
                             </div>
 
@@ -536,12 +518,12 @@ export default function OccupancyCalendarPage() {
 
                             {selectedOcc.totalPrice !== undefined && selectedOcc.totalPrice !== null && (
                                 <div className="space-y-2">
-                                    <span className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Financial Summary</span>
+                                    <span className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('occupancy.financialSummary')}</span>
                                     <div className="bg-white border border-brand-accent rounded-xl p-5 shadow-sm">
                                         <span
-                                            className="text-[10px] font-bold text-brand-muted uppercase tracking-wider block">Total Price</span>
+                                            className="text-[10px] font-bold text-brand-muted uppercase tracking-wider block">{t('checkout.totalPrice')}</span>
                                         <p className="text-2xl text-brand-primary font-black mt-1 tracking-tight">
-                                            {selectedOcc.totalPrice.toLocaleString('pl-PL', {
+                                            {selectedOcc.totalPrice.toLocaleString(getLocaleCode(i18n.language), {
                                                 style: 'currency',
                                                 currency: 'PLN'
                                             })}
@@ -557,13 +539,13 @@ export default function OccupancyCalendarPage() {
                                 to={`/reservations/${selectedOcc.reservationId}`}
                                 className="w-full py-3.5 px-4 bg-brand-primary text-white font-bold text-center hover:bg-brand-primary-hover text-sm rounded-lg transition-colors border border-brand-accent shadow-sm flex items-center justify-center gap-2 cursor-pointer"
                             >
-                                View Full Details
+                                {t('occupancy.viewFullDetails')}
                             </Link>
                             <button
                                 onClick={() => setSelectedOcc(null)}
                                 className="w-full py-3 px-4 border border-brand-accent bg-white text-brand-main font-bold hover:bg-gray-50 text-sm rounded-lg transition-colors cursor-pointer"
                             >
-                                Close
+                                {t('occupancy.close')}
                             </button>
                         </div>
 

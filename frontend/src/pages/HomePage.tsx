@@ -9,6 +9,7 @@ import NewsletterSection from '../components/landing/NewsletterSection';
 import TrustBadges from '../components/landing/TrustBadges';
 import DemoRoleSelector from "../components/DemoRoleSelector";
 import { IS_DEMO_MODE } from "../api/apiConfig";
+import { useTranslation } from "react-i18next";
 
 interface PropertyData {
     id: string;
@@ -18,6 +19,7 @@ interface PropertyData {
 
 export default function HomePage() {
     const [properties, setProperties] = useState<PropertyData[]>([]);
+    const { t } = useTranslation();
 
     useEffect(() => {
         async function load() {
@@ -44,8 +46,8 @@ export default function HomePage() {
                 <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16 -mt-24 relative z-20 pb-10">
                     <div className="w-full bg-[#42211D] border border-white/20 shadow-xl rounded-xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center gap-4 justify-between">
                         <div>
-                            <p className="text-white text-lg font-black tracking-tight">Poster demo</p>
-                            <p className="text-white/80 text-sm font-medium">Choose a role and explore the main flows without a password.</p>
+                            <p className="text-white text-lg font-black tracking-tight">{t('demo.poster')}</p>
+                            <p className="text-white/80 text-sm font-medium">{t('demo.exploreWithoutPassword')}</p>
                         </div>
                         <DemoRoleSelector compact />
                     </div>

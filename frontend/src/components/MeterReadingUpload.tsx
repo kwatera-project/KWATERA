@@ -2,6 +2,8 @@ import { useState } from "react";
 import heic2any from "heic2any";
 import { uploadFinalMeterReading, uploadInitialMeterReading } from "../api/ocrApi";
 import type { MeterReadingResponse, UtilityType } from "../api/ocrApi";
+import {useTranslation} from "react-i18next"
+
 
 type Props = {
     settlementId: string;
@@ -22,6 +24,7 @@ export default function MeterReadingUpload({
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<MeterReadingResponse | null>(null);
     const [error, setError] = useState("");
+    const {t} = useTranslation();
 
     const convertHeicToJpegIfNeeded = async (selectedFile: File): Promise<File> => {
         const fileName = selectedFile.name.toLowerCase();
@@ -67,7 +70,7 @@ export default function MeterReadingUpload({
             setFile(preparedFile);
         } catch {
             setFile(null);
-            setError("Could not convert HEIF/HEIC image. Please upload JPG, PNG or WebP.");
+            setError(t('meterUpload.heicError'));
         }
     };
 
@@ -103,7 +106,7 @@ export default function MeterReadingUpload({
                 onSuccess();
             }
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : "Upload failed");
+            setError(err instanceof Error ? err.message : t('meterUpload.uploadFailed'));
             if (onSuccess) onSuccess();
         } finally {
             setLoading(false);
@@ -129,12 +132,11 @@ export default function MeterReadingUpload({
     };
 
     const fileInputId = `file-input-${readingType.toLowerCase()}-${utilityType.toLowerCase()}`;
-    const utilityName = utilityType.charAt(0) + utilityType.slice(1).toLowerCase();
-
+    const utilityName = t(`utilityTypes.${utilityType}`, { defaultValue: utilityType });
     return (
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
             <h3 className="font-bold text-lg text-brand-main tracking-tight mb-3">
-                {readingType === "INITIAL" ? "Check-in" : "Check-out"} Meter Reading ({utilityName})
+                {readingType === "INITIAL" ? t('manualReservation.checkIn') : t('manualReservation.checkOut')} {t('meterUpload.meterReading')} ({utilityName})
             </h3>
 
             <div className="flex items-center gap-3 mb-3">
@@ -145,7 +147,7 @@ export default function MeterReadingUpload({
                     <svg className="w-4.5 h-4.5 text-brand-muted" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                     </svg>
-                    Choose file
+                    {t('meterUpload.chooseFile')}
                 </label>
                 <input
                     id={fileInputId}
@@ -159,12 +161,12 @@ export default function MeterReadingUpload({
                         {file.name}
                     </span>
                 ) : (
-                    <span className="text-sm text-brand-muted">No file chosen</span>
+                    <span className="text-sm text-brand-muted">{t('meterUpload.noFile')}</span>
                 )}
             </div>
 
             <p className="text-xs text-brand-muted mb-4">
-                Supported formats: JPG, PNG, WebP, HEIF, HEIC.
+                {t('meterUpload.supportedFormats')}
             </p>
 
             <button
@@ -176,17 +178,17 @@ export default function MeterReadingUpload({
                         : "bg-brand-primary text-white hover:opacity-90 cursor-pointer"
                 }`}
             >
-                {loading ? "Uploading..." : "Upload Photo"}
+                {loading ? t('meterUpload.uploading') : t('meterUpload.upload')}
             </button>
 
             {error && <p className="mt-3 text-sm text-red-600 font-semibold">{error}</p>}
 
             {result && (
                 <div className={`mt-3 p-3 rounded border text-sm font-medium ${statusColor()}`}>
-                    {result.message}
+                    {t(`meterUpload.resultMessages.${result.status}`, { defaultValue: result.message })}
                     {result.status === "REQUEST_REUPLOAD" && (
                         <p className="mt-1 text-xs font-normal">
-                            Please take a clearer photo and try again.
+                            {t('meterUpload.retryHint')}
                         </p>
                     )}
                 </div>
