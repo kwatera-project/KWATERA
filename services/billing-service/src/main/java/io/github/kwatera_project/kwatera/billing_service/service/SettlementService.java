@@ -618,27 +618,51 @@ public class SettlementService {
               ? "background-color: #D1FAE5; color: #065F46;"
               : "background-color: #FEF3C7; color: #92400E;");
 
+      try {
+        org.springframework.core.io.ClassPathResource imgFile =
+            new org.springframework.core.io.ClassPathResource("kwatera.png");
+        if (imgFile.exists()) {
+          try (java.io.InputStream imgStream = imgFile.getInputStream()) {
+            byte[] bytes = org.springframework.util.StreamUtils.copyToByteArray(imgStream);
+            String base64Logo = java.util.Base64.getEncoder().encodeToString(bytes);
+            context.setVariable("logoBase64", "data:image/png;base64," + base64Logo);
+          }
+        } else {
+          log.warn("kwatera.png not found in classpath resources!");
+        }
+      } catch (java.io.IOException e) {
+        log.error("Failed to load logo image for invoice generation", e);
+      }
+
       String htmlContent = templateEngine.process("settlement-invoice", context);
 
       java.nio.file.Path targetPath =
           java.nio.file.Paths.get("storage", "invoices", settlement.getId().toString() + ".pdf")
               .toAbsolutePath()
               .normalize();
-      java.nio.file.Files.createDirectories(targetPath.getParent());
+      java.nio.file.Path targetParent = targetPath.getParent();
+      if (targetParent != null) {
+        java.nio.file.Files.createDirectories(targetParent);
+      }
 
       try (java.io.OutputStream os = java.nio.file.Files.newOutputStream(targetPath)) {
         com.openhtmltopdf.pdfboxout.PdfRendererBuilder builder =
             new com.openhtmltopdf.pdfboxout.PdfRendererBuilder();
-        builder.useFastMode();
         builder.withHtmlContent(htmlContent, null);
         builder.toStream(os);
-        builder.run();
+        try {
+          builder.run();
+        } catch (java.io.IOException e) {
+          throw e;
+        } catch (Exception e) {
+          throw new java.io.IOException("PDF generation failed: " + e.getMessage(), e);
+        }
       }
 
       settlement.setInvoicePdfPath(targetPath.toString());
       settlementRepository.save(settlement);
 
-    } catch (Exception e) {
+    } catch (java.io.IOException e) {
       log.error("Failed to generate PDF invoice for settlement: {}", settlementId, e);
     }
   }

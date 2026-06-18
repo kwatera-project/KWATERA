@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <title th:text="${invoiceNumber != null ? 'Invoice ' + invoiceNumber : 'Settlement Invoice'}">Invoice</title>
-    <style th:if="${invoiceNumber != null}">
+    <style>
         @page {
             size: A4;
             margin: 1.5cm;
@@ -21,20 +21,11 @@
             width: 100%;
             margin-bottom: 20px;
         }
-        .logo-circle {
+        .logo-image {
             width: 42px;
             height: 42px;
-            border-radius: 50%;
-            background-color: #42211D;
             display: inline-block;
             vertical-align: middle;
-            text-align: center;
-        }
-        .logo-svg {
-            width: 24px;
-            height: 24px;
-            margin-top: 9px;
-            fill: #FFFFFF;
         }
         .logo-text-container {
             display: inline-block;
@@ -212,18 +203,15 @@
 </head>
 <body>
 
-<div th:if="${invoiceNumber != null}">
+<div>
     <table class="header-table" border="0" cellpadding="0" cellspacing="0">
         <tr>
             <td width="60%" style="vertical-align: middle;">
                 <table border="0" cellpadding="0" cellspacing="0">
                     <tr>
                         <td style="vertical-align: middle;">
-                            <div class="logo-circle">
-                                <svg viewBox="0 -79 2000 2000" class="logo-svg" style="width: 24px; height: 24px; fill: #FFFFFF; margin-top: 9px;">
-                                    <path d="M 1001.8145 497.94141 C 989.27928 497.36938 976.614 502.27509 967.51953 512.4668 L 592.09375 933.18555 C 591.50163 933.8491 590.93365 934.52645 590.38867 935.21484 C 581.89305 942.6862 576.54688 953.64565 576.54688 965.90039 L 576.54688 1303.418 C 576.54688 1326.0369 594.75603 1344.2461 617.375 1344.2461 L 619.84961 1344.2461 C 642.46858 1344.2461 660.67969 1326.0369 660.67969 1303.418 L 660.67969 995.45898 L 1000.7637 614.3457 L 1079.8535 705.35352 C 1078.5346 706.41641 1077.2728 707.58187 1076.0801 708.84766 L 793.69727 1008.5312 C 788.97314 1013.5448 785.94625 1019.4865 784.5918 1025.6855 C 783.43366 1029.0742 782.80664 1032.7131 782.80664 1036.5039 L 782.80664 1311.3652 C 782.80664 1329.7854 797.63455 1344.6152 816.05469 1344.6152 L 833.6875 1344.6152 C 834.53571 1344.6152 835.3771 1344.5833 836.20898 1344.5215 L 836.20898 1344.8203 L 1373.168 1344.8203 C 1374.2347 1344.9076 1375.3144 1344.9531 1376.4043 1344.9531 L 1382.9395 1344.9531 C 1404.4337 1344.9531 1421.7383 1327.6486 1421.7383 1306.1543 L 1421.7383 985.41992 C 1421.7383 983.86824 1421.6481 982.33901 1421.4727 980.83594 C 1422.7897 968.69313 1419.2703 956.06425 1410.748 946.25781 L 1043.2305 523.35938 C 1041.5437 521.4184 1039.7304 519.66869 1037.8164 518.11133 C 1036.3094 516.18661 1034.6231 514.36015 1032.7578 512.6582 L 1029.082 509.30469 C 1021.2339 502.1439 1011.564 498.38631 1001.8145 497.94141 z M 1138.8477 773.23633 L 1337.6055 1001.9453 L 1337.6055 1259.998 L 866.9375 1259.998 L 866.9375 1061.8027 L 1138.8477 773.23633 z"/>
-                                </svg>
-                            </div>
+                            <!-- Show Kwatera Logo -->
+                            <img th:if="${logoBase64 != null}" th:src="${logoBase64}" class="logo-image" alt="Kwatera Logo" />
                         </td>
                         <td style="vertical-align: middle; padding-left: 10px;">
                             <div class="company-name">KWATERA</div>
@@ -354,126 +342,6 @@
             </td>
         </tr>
     </table>
-</div>
-
-<div th:if="${invoiceNumber == null}" th:replace="~{base-layout :: layout(~{::content})}">
-    <div th:fragment="content">
-        <div style="margin-bottom: 20px;">
-            <span th:text="${statusLabel}" 
-                  th:style="'display: inline-block; padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.05em; ' + ${statusStyle}">
-                ISSUED
-            </span>
-        </div>
-
-        <h2 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 700; color: #1A1A1A; letter-spacing: -0.02em;">
-            <span th:text="${title}">Settlement Invoice</span>
-        </h2>
-        
-        <p style="margin: 0 0 24px 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;" th:text="${message}">
-            A settlement invoice has been generated for your reservation stay.
-        </p>
-        
-        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F7F7F7; border: 1px solid #DACDCA; border-radius: 12px; margin-bottom: 24px; border-collapse: separate;">
-            <tr>
-                <td style="padding: 16px 20px; border-bottom: 1px solid #DACDCA;">
-                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #7A7A7A; font-weight: 600; display: block;">Settlement Details</span>
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 8px;">
-                        <tr>
-                            <td style="font-size: 14px; color: #7A7A7A; padding: 4px 0;">Settlement ID:</td>
-                            <td align="right" style="font-size: 14px; font-family: monospace; color: #1A1A1A; padding: 4px 0;" th:text="${settlement.id}">
-                                1234-5678
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="font-size: 14px; color: #7A7A7A; padding: 4px 0;">Reservation ID:</td>
-                            <td align="right" style="font-size: 14px; font-family: monospace; color: #1A1A1A; padding: 4px 0;" th:text="${settlement.reservationId}">
-                                8765-4321
-                            </td>
-                        </tr>
-                        <tr th:if="${oldStatus != null}">
-                            <td style="font-size: 14px; color: #7A7A7A; padding: 4px 0;">Status Update:</td>
-                            <td align="right" style="font-size: 14px; font-weight: 500; color: #1A1A1A; padding: 4px 0;">
-                                Changed from <span th:text="${oldStatus}" style="font-weight: 600; color: #7A7A7A;">ISSUED</span> to <span th:text="${newStatus}" style="font-weight: 600; color: #42211D;">PAID</span>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-            <tr>
-                <td style="padding: 16px 20px; border-bottom: 1px solid #DACDCA;">
-                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #7A7A7A; font-weight: 600; display: block;">Cost Breakdown</span>
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 8px;">
-                        <tr>
-                            <td style="font-size: 14px; color: #7A7A7A; padding: 4px 0;">Rent (Accommodation):</td>
-                            <td align="right" style="font-size: 14px; font-weight: 500; color: #1A1A1A; padding: 4px 0;" 
-                                th:text="${formattedAccommodation}">
-                                400.00 PLN
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="font-size: 14px; color: #7A7A7A; padding: 4px 0;">Media readings/utilities:</td>
-                            <td align="right" style="font-size: 14px; font-weight: 500; color: #1A1A1A; padding: 4px 0;" 
-                                th:text="${formattedUtilities}">
-                                50.00 PLN
-                            </td>
-                        </tr>
-                        <tr th:if="${settlement.depositAmount != null && settlement.depositAmount.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
-                            <td style="font-size: 14px; color: #7A7A7A; padding: 4px 0;">Deposit:</td>
-                            <td align="right" style="font-size: 14px; font-weight: 500; color: #1A1A1A; padding: 4px 0;" 
-                                th:text="${formattedDeposit}">
-                                100.00 PLN
-                            </td>
-                        </tr>
-                        <tr th:if="${settlement.discountAmount != null && settlement.discountAmount.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
-                            <td style="font-size: 14px; color: #7A7A7A; padding: 4px 0;">Discount:</td>
-                            <td align="right" style="font-size: 14px; font-weight: 500; color: #1A1A1A; padding: 4px 0;" 
-                                th:text="'-' + ${formattedDiscount}">
-                                -20.00 PLN
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-            <tr>
-                <td style="padding: 20px; background-color: #DACDCA; border-radius: 0 0 12px 12px; background-opacity: 0.2;">
-                    <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                        <tr>
-                            <td style="font-size: 14px; font-weight: 700; color: #42211D;">Total Amount:</td>
-                            <td align="right" style="font-size: 16px; font-weight: 800; color: #42211D;" 
-                                th:text="${formattedTotal}">
-                                450.00 PLN
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="font-size: 13px; color: #42211D; padding-top: 4px;">Amount Paid:</td>
-                            <td align="right" style="font-size: 13px; font-weight: 600; color: #10B981; padding-top: 4px;" 
-                                th:text="${formattedPaid}">
-                                0.00 PLN
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="font-size: 14px; font-weight: 800; color: #42211D; padding-top: 6px;">Balance Due:</td>
-                            <td align="right" style="font-size: 16px; font-weight: 800; color: #42211D; padding-top: 6px;" 
-                                th:text="${formattedBalanceDue}">
-                                450.00 PLN
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-        
-        <div th:if="${settlement.balanceDue.compareTo(T(java.math.BigDecimal).ZERO) > 0}" style="text-align: center; margin: 28px 0;">
-            <a th:href="${paymentUrl}" 
-               style="display: inline-block; padding: 12px 24px; font-size: 15px; font-weight: 700; color: #FFFFFF; background-color: #42211D; border-radius: 8px; text-decoration: none; box-shadow: 0 4px 6px rgba(66, 33, 29, 0.15); transition: background-color 0.2s;">
-                Pay Balance Due
-            </a>
-        </div>
-        
-        <p style="margin: 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;">
-            If you have any questions regarding your bill, please reach out to support. Thank you!
-        </p>
-    </div>
 </div>
 
 </body>

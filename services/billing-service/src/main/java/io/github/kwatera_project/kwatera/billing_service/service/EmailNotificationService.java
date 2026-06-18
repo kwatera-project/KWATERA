@@ -83,7 +83,7 @@ public class EmailNotificationService {
 
     setupFormattedAmounts(context, settlement, reservation);
 
-    String htmlBody = templateEngine.process("settlement-invoice", context);
+    String htmlBody = templateEngine.process("settlement-invoice-email", context);
     send(email, subject, htmlBody, String.valueOf(settlement.getId()));
   }
 
@@ -114,7 +114,7 @@ public class EmailNotificationService {
 
     setupFormattedAmounts(context, settlement, reservation);
 
-    String htmlBody = templateEngine.process("settlement-invoice", context);
+    String htmlBody = templateEngine.process("settlement-invoice-email", context);
     send(email, subject, htmlBody, String.valueOf(settlement.getId()));
   }
 

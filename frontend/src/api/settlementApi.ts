@@ -76,7 +76,8 @@ export async function downloadInvoice(reservationId: string): Promise<void> {
     });
 
     if (!res.ok) {
-        throw new Error("Failed to download invoice");
+        const errorData = await res.json().catch(() => ({})) as { message?: string };
+        throw new Error(errorData.message || `Failed to download invoice (${res.status})`);
     }
 
     const blob = await res.blob();

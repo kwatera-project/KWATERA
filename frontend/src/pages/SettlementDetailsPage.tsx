@@ -170,8 +170,8 @@ export default function SettlementDetailsPage() {
     const handleDownloadInvoice = async (reservationId: string) => {
         try {
             await downloadInvoice(reservationId);
-        } catch (err: any) {
-            alert(err.message || "Failed to download invoice");
+        } catch (err: unknown) {
+            alert(err instanceof Error ? err.message : "Failed to download invoice");
         }
     };
 

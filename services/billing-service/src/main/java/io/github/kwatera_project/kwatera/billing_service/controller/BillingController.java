@@ -8,6 +8,7 @@ import io.github.kwatera_project.kwatera.billing_service.dto.SettlementItemDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto;
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
 import io.github.kwatera_project.kwatera.billing_service.service.PaymentService;
+import io.github.kwatera_project.kwatera.billing_service.service.SettlementService;
 import io.github.kwatera_project.kwatera.billing_service.service.StripeService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -30,6 +31,7 @@ public class BillingController {
 
   private final PaymentService paymentService;
   private final StripeService stripeService;
+  private final SettlementService settlementService;
 
   @Value("${jwt.secret}")
   private String secret;
@@ -93,17 +95,47 @@ public class BillingController {
     SettlementResponseDto settlementResponse =
         paymentService.getSettlementWithItems(reservationId, token);
     SettlementDto settlement = settlementResponse.settlement();
+
+    if (settlement == null) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Settlement not found");
+    }
+
+    // If invoice was requested but PDF not yet generated, attempt lazy generation now.
+    // This covers cases where the Stripe webhook did not fire (e.g. local dev without Stripe CLI).
+    if ((settlement.invoicePdfPath() == null || settlement.invoicePdfPath().isBlank())
+        && Boolean.TRUE.equals(settlement.invoiceRequested())) {
+      settlementService.generateInvoicePdfIfNeeded(settlement.id());
+      // Re-fetch so we pick up the newly saved invoicePdfPath.
+      settlementResponse = paymentService.getSettlementWithItems(reservationId, token);
+      settlement = settlementResponse.settlement();
+    }
+
     if (settlement == null
         || settlement.invoicePdfPath() == null
         || settlement.invoicePdfPath().isBlank()) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found or not generated");
+      throw new ResponseStatusException(
+          HttpStatus.UNPROCESSABLE_ENTITY,
+          "Invoice could not be generated. Please try again later.");
+    }
+
+    java.nio.file.Path path = java.nio.file.Paths.get(settlement.invoicePdfPath());
+
+    // If the file is missing from disk (e.g. after a container restart with an ephemeral volume),
+    // attempt to re-generate before giving up.
+    if (!java.nio.file.Files.exists(path)) {
+      settlementService.generateInvoicePdfIfNeeded(settlement.id());
+      settlementResponse = paymentService.getSettlementWithItems(reservationId, token);
+      settlement = settlementResponse.settlement();
+      if (settlement != null && settlement.invoicePdfPath() != null) {
+        path = java.nio.file.Paths.get(settlement.invoicePdfPath());
+      }
+    }
+
+    if (!java.nio.file.Files.exists(path)) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice file not found");
     }
 
     try {
-      java.nio.file.Path path = java.nio.file.Paths.get(settlement.invoicePdfPath());
-      if (!java.nio.file.Files.exists(path)) {
-        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice file not found");
-      }
       org.springframework.core.io.Resource resource =
           new org.springframework.core.io.UrlResource(path.toUri());
       return ResponseEntity.ok()
@@ -112,9 +144,9 @@ public class BillingController {
               "attachment; filename=\"invoice-" + reservationId + ".pdf\"")
           .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
           .body(resource);
-    } catch (Exception e) {
+    } catch (java.net.MalformedURLException e) {
       throw new ResponseStatusException(
-          HttpStatus.INTERNAL_SERVER_ERROR, "Error downloading file", e);
+          HttpStatus.INTERNAL_SERVER_ERROR, "Error reading invoice file", e);
     }
   }
 

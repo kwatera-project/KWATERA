@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { getMyReservations, getReservationDetails } from '../api/reservationApi';
 import { getSettlementDetails, downloadInvoice } from '../api/settlementApi';
 import type {GuestReservation} from '../types/reservation';
+import type {SettlementDetails} from '../types/settlement';
 import { Home, Calendar, CreditCard, Info, Receipt, Droplet, FileText } from 'lucide-react';
 import {useTranslation} from "react-i18next"
 
@@ -10,14 +11,14 @@ export default function MyReservationsPage() {
     const [reservations, setReservations] = useState<GuestReservation[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [settlements, setSettlements] = useState<Record<string, any>>({});
+    const [settlements, setSettlements] = useState<Record<string, SettlementDetails>>({})
     const [unitNames, setUnitNames] = useState<Record<string, string>>({});
 
     const handleDownloadInvoice = async (reservationId: string) => {
         try {
             await downloadInvoice(reservationId);
-        } catch (err: any) {
-            alert(err.message || "Failed to download invoice");
+        } catch (err: unknown) {
+            alert(err instanceof Error ? err.message : "Failed to download invoice");
         }
     };
     const {t} = useTranslation();
