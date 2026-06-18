@@ -516,7 +516,7 @@ export default function OccupancyCalendarPage() {
                                 <button
                                     disabled={!isConfirmEnabled}
                                     onClick={() => handleStatusChange(selectedOcc.reservationId, 'CONFIRMED')}
-                                    className="flex-1 px-3 py-2 text-xs font-bold rounded-lg border transition-all inline-flex items-center justify-center text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer"
+                                    className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
                                 >
                                     Confirm
                                 </button>
@@ -524,7 +524,7 @@ export default function OccupancyCalendarPage() {
                                 <button
                                     disabled={!isCompleteEnabled}
                                     onClick={() => handleStatusChange(selectedOcc.reservationId, 'COMPLETED')}
-                                    className="flex-1 px-3 py-2 text-xs font-bold rounded-lg border transition-all inline-flex items-center justify-center text-blue-700 bg-blue-50 border-blue-200 hover:bg-blue-100 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer"
+                                    className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
                                 >
                                     Complete
                                 </button>
@@ -532,7 +532,7 @@ export default function OccupancyCalendarPage() {
                                 <button
                                     disabled={!isCancelEnabled}
                                     onClick={() => handleStatusChange(selectedOcc.reservationId, 'CANCELLED')}
-                                    className="flex-1 px-3 py-2 text-xs font-bold rounded-lg border transition-all inline-flex items-center justify-center text-red-600 bg-red-50 border-red-200 hover:bg-red-100 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer"
+                                    className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-transparent transition-all inline-flex items-center justify-center gap-1 shrink-0 text-red-600 bg-red-50 hover:bg-red-100 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
                                 >
                                     Cancel
                                 </button>
