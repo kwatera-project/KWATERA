@@ -137,8 +137,8 @@
   "meterApproval": {
     "invalidValue": "Podaj prawidłową wartość odczytu",
     "failed": "Zatwierdzenie nie powiodło się",
-    "initial": "Początkowy",
-    "final": "Końcowy",
+    "initial": "początkowy",
+    "final": "końcowy",
     "success": "Odczyt {{readingType}} dla {{utilityType}} został zatwierdzony.",
     "title": "Ręczne zatwierdzenie",
     "description": "OCR nie mógł odczytać licznika wiarygodnie. Wprowadź poprawny odczyt ręcznie.",
@@ -156,7 +156,12 @@
     "uploading": "Przesyłanie...",
     "upload": "Prześlij zdjęcie",
     "retryHint": "Zrób wyraźniejsze zdjęcie i spróbuj ponownie.",
-    "meterReading": "Odczyt licznika"
+    "meterReading": "Odczyt licznika",
+    "resultMessages": {
+      "AUTO_APPROVED": "Odczyt został zatwierdzony automatycznie.",
+      "REQUEST_MANUAL_REVIEW": "Odczyt został przesłany do ręcznej weryfikacji.",
+      "REQUEST_REUPLOAD": "Nie udało się wiarygodnie odczytać licznika. Prześlij nowe zdjęcie."
+    }
   },
 
   "propertyMap": {
@@ -171,7 +176,9 @@
     "checkOut": "Wymeldowanie",
     "addDates": "Dodaj daty",
     "guests": "Goście",
-    "addGuests": "Dodaj gości"
+    "addGuests": "Dodaj gości",
+    "searchProperties": "Szukaj noclegów",
+    "cityPlaceholder": "Dokąd jedziesz?"
   },
 
   "report": {
@@ -312,9 +319,11 @@
   },
 
   "ocrStatuses": {
-    "AUTO_APPROVED": "Zatwierdzony",
-    "REQUEST_MANUAL_REVIEW": "Wymaga weryfikacji",
-    "REQUEST_REUPLOAD": "Wymagane ponowne przesłanie"
+    "AUTO_APPROVED": "Zatwierdzony automatycznie",
+    "MANUALLY_APPROVED": "Zatwierdzony ręcznie",
+    "REQUEST_MANUAL_REVIEW": "Wymaga ręcznej weryfikacji",
+    "REQUEST_REUPLOAD": "Wymaga ponownego przesłania",
+    "PENDING": "Oczekuje"
   },
 
   "createUnit": {
@@ -363,7 +372,7 @@
     "unitRankingDescription": "Najlepiej działające jednostki według przychodu brutto z wynajmu.",
     "totalRevenue": "Łączny przychód",
     "noActiveRentals": "Brak aktywnych wynajmów lub jednostek w tym okresie",
-    "settlementsPaymentRatio": "Stosunek opłaconych rozliczeń",
+    "settlementsPaymentRatio": "Udział opłaconych rozliczeń",
     "settlementsPaymentRatioDescription": "Stosunek opłaconych i nieopłaconych rozliczeń w wybranym okresie.",
     "total": "Łącznie",
     "paidInvoices": "Opłacone faktury",
@@ -492,7 +501,7 @@
     "unitType": "Typ lokalu",
     "unitNumberShort": "Numer lokalu",
     "floorLevel": "Piętro",
-    "guestCapacity": "Pojemność",
+    "guestCapacity": "Maks. liczba gości",
     "guests": "gości",
     "currentPrice": "Aktualna cena",
     "perNight": "/ noc",
@@ -584,7 +593,7 @@
     "redirecting": "Przekierowywanie do płatności...",
     "capacityTooLow": "Za mała pojemność",
     "selectDatesToBook": "Wybierz daty, aby zarezerwować",
-    "bookDates": "Zarezerwuj te daty",
+    "bookDates": "Zarezerwuj",
     "unitCapacityError": "Ten lokal mieści maksymalnie {{capacity}} {{unit}}.",
     "notAvailable": "Lokal niedostępny w wybranych datach wyszukiwania.",
     "availabilityError": "Nie można potwierdzić dostępności dla wybranych dat.",
@@ -625,12 +634,12 @@
     "accessDenied": "Brak dostępu",
     "accessDeniedDesc": "Nie masz uprawnień do wyświetlenia tej strony rozliczenia. Jeśli uważasz, że to błąd, skontaktuj się z pomocą techniczną.",
     "title": "Szczegóły rozliczenia",
-    "subtitle": "Szczegółowy podział cen i transakcje rozliczeniowe.",
+    "subtitle": "Szczegółowe zestawienie kosztów i transakcji rozliczeniowych.",
     "settlementId": "ID rozliczenia",
     "balanceDue": "Pozostała kwota",
-    "currencySnapshot": "Informacje o kursie waluty (Admin/Właściciel)",
+    "currencySnapshot": "Informacje o kursie waluty (administrator/właściciel)",
     "guestCurrency": "Waluta wybrana przez gościa",
-    "priceBreakdown": "Podział ceny",
+    "priceBreakdown": "Zestawienie kosztów",
     "accommodation": "Kwota za zakwaterowanie",
     "utilities": "Kwota za media",
     "deposit": "Kwota kaucji",
@@ -705,7 +714,7 @@
     "badge": "Odkrywaj",
     "title": "Odkrywaj Polskę",
     "description": "Odkryj prawdziwe piękno Polski, od majestatycznych Tatr po tętniące życiem ulice Warszawy. Znajdź idealne miejsce na kolejny wyjazd i zanurz się w lokalnej kulturze.",
-    "button": "Zobacz wszystkie kierunki",
+    "button": "Zobacz wszystkie miejsca",
     "image1Alt": "Góry w Polsce",
     "image2Alt": "Polska dolina",
     "image3Alt": "Polski krajobraz"
@@ -726,7 +735,7 @@
     "support": "Wsparcie",
     "helpCenter": "Centrum pomocy",
     "reportIssue": "Zgłoś problem",
-    "privacyTerms": "Warunki prywatności",
+    "privacyTerms": "Zasady prywatności",
     "company": "Firma",
     "aboutUs": "O nas",
     "pressRoom": "Dla mediów",
@@ -750,12 +759,12 @@
     "description": "Dołącz do naszej społeczności i jako pierwszy otrzymuj informacje o wyjątkowych zniżkach, spersonalizowanych rekomendacjach i inspirujących kierunkach podróży.",
     "emailPlaceholder": "Wpisz swój adres e-mail",
     "subscribe": "Zapisz się",
-    "imageAlt": "Krajobraz kempingowy"
+    "imageAlt": "Krajobraz z namiotem"
   },
 
   "topPropertiesSection": {
-    "badge": "TOP REZERWACJE",
-    "title": "Polecane nieruchomości",
+    "badge": "POPULARNE OBIEKTY",
+    "title": "Polecane obiekty",
     "viewAll": "Zobacz wszystkie nieruchomości",
     "propertyImageAlt": "Zdjęcie nieruchomości",
     "fallbackTitle": "Przytulny obiekt",
@@ -765,6 +774,11 @@
 
   "trustBadges": {
     "secureCheckout": "Bezpieczna płatność"
+  },
+
+  "utilityTypes": {
+    "WATER": "wody",
+    "ELECTRICITY": "energii elektrycznej"
   }
 
 

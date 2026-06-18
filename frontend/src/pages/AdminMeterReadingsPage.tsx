@@ -84,7 +84,7 @@ export default function AdminMeterReadingsPage() {
                 isReupload ? 'bg-red-50 border-red-200 text-red-800' :
                 'bg-gray-50 border-gray-200 text-gray-800'
             }`}>
-                {t(`ocrStatuses.${status}`)}
+                {t(`ocrStatuses.${status}`, { defaultValue: status })}
             </span>
         );
     };
@@ -213,7 +213,7 @@ export default function AdminMeterReadingsPage() {
                                         )}
 
                                         <div className="space-y-1 pt-1">
-                                            <p className="text-xs font-bold text-[#7A7A7A] uppercase">{t('common.status')} <span className="normal-case font-semibold text-[#1A1A1A] ml-1">{attempt.status}</span></p>
+                                            <p className="text-xs font-bold text-[#7A7A7A] uppercase">{t('common.status')} <span className="normal-case font-semibold text-[#1A1A1A] ml-1">{t(`ocrStatuses.${attempt.status}`, { defaultValue: attempt.status })}</span></p>
                                             <p className="text-xs font-bold text-[#7A7A7A] uppercase">{t('adminMeterReadings.ocrValue')}<span className="font-mono font-bold text-[#1A1A1A] ml-1">{attempt.ocrValue ?? "-"}</span></p>
                                             <p className="text-xs font-bold text-[#7A7A7A] uppercase">{t('adminMeterReadings.confidence')}: <span className="font-semibold text-[#1A1A1A] ml-1">{formatConfidence(attempt.confidenceScore)}</span></p>
                                         </div>

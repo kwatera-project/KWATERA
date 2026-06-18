@@ -29,7 +29,7 @@ export default function MeterReadingsPage() {
         } finally {
             setLoading(false);
         }
-    }, [settlementId]);
+    }, [settlementId, t]);
 
     useEffect(() => {
         const timeoutId = window.setTimeout(() => {
@@ -78,7 +78,7 @@ export default function MeterReadingsPage() {
                 isReupload ? 'bg-red-50 border-red-200 text-red-800' :
                 'bg-gray-50 border-gray-200 text-gray-800'
             }`}>
-                {status}
+                {t(`ocrStatuses.${status}`, { defaultValue: status })}
             </span>
         );
     };

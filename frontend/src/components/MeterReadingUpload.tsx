@@ -132,8 +132,7 @@ export default function MeterReadingUpload({
     };
 
     const fileInputId = `file-input-${readingType.toLowerCase()}-${utilityType.toLowerCase()}`;
-    const utilityName = utilityType.charAt(0) + utilityType.slice(1).toLowerCase();
-
+    const utilityName = t(`utilityTypes.${utilityType}`, { defaultValue: utilityType });
     return (
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
             <h3 className="font-bold text-lg text-brand-main tracking-tight mb-3">
@@ -186,7 +185,7 @@ export default function MeterReadingUpload({
 
             {result && (
                 <div className={`mt-3 p-3 rounded border text-sm font-medium ${statusColor()}`}>
-                    {result.message}
+                    {t(`meterUpload.resultMessages.${result.status}`, { defaultValue: result.message })}
                     {result.status === "REQUEST_REUPLOAD" && (
                         <p className="mt-1 text-xs font-normal">
                             {t('meterUpload.retryHint')}

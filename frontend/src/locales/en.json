@@ -137,8 +137,8 @@
   "meterApproval": {
     "invalidValue": "Please enter a valid reading value",
     "failed": "Approval failed",
-    "initial": "Initial",
-    "final": "Final",
+    "initial": "initial",
+    "final": "final",
     "success": "{{readingType}} reading for {{utilityType}} approved successfully.",
     "title": "Manual Approval",
     "description": "OCR could not read this meter reliably. Please enter the correct reading manually.",
@@ -156,7 +156,12 @@
     "uploading": "Uploading...",
     "upload": "Upload Photo",
     "retryHint": "Please take a clearer photo and try again.",
-    "meterReading": "Meter Reading"
+    "meterReading": "Meter Reading",
+    "resultMessages": {
+      "AUTO_APPROVED": "The reading was approved automatically.",
+      "REQUEST_MANUAL_REVIEW": "The reading was sent for manual review.",
+      "REQUEST_REUPLOAD": "The meter could not be read reliably. Please upload a new photo."
+    }
   },
 
   "propertyMap": {
@@ -171,7 +176,9 @@
     "checkOut": "Check out",
     "addDates": "Add dates",
     "guests": "Guests",
-    "addGuests": "Add guests"
+    "addGuests": "Add guests",
+    "searchProperties": "Search properties",
+    "cityPlaceholder": "Where are you going?"
   },
 
   "report": {
@@ -312,9 +319,11 @@
   },
 
   "ocrStatuses": {
-    "AUTO_APPROVED": "Approved",
-    "REQUEST_MANUAL_REVIEW": "Requires review",
-    "REQUEST_REUPLOAD": "Reupload required"
+    "AUTO_APPROVED": "Auto approved",
+    "MANUALLY_APPROVED": "Manually approved",
+    "REQUEST_MANUAL_REVIEW": "Requires manual review",
+    "REQUEST_REUPLOAD": "Reupload required",
+    "PENDING": "Pending"
   },
 
   "createUnit": {
@@ -760,6 +769,11 @@
 
   "trustBadges": {
     "secureCheckout": "Secure Checkout"
+  },
+
+  "utilityTypes": {
+    "WATER": "water",
+    "ELECTRICITY": "electricity"
   }
 
 

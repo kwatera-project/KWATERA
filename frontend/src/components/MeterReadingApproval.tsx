@@ -49,7 +49,10 @@ export default function MeterReadingApproval({
         return (
             <div className="border rounded-xl p-4 bg-green-50 border-green-200">
                 <p className="text-green-700 font-medium text-sm">
-                    ✓ {t('meterApproval.success', {readingType: readingType === "INITIAL" ? t('meterApproval.initial') : t('meterApproval.final'), utilityType})}
+                    ✓ {t('meterApproval.success', {
+                    readingType: readingType === "INITIAL" ? t('meterApproval.initial') : t('meterApproval.final'),
+                    utilityType: t(`utilityTypes.${utilityType}`, { defaultValue: utilityType })
+                })}
                 </p>
             </div>
         );
@@ -58,7 +61,7 @@ export default function MeterReadingApproval({
     return (
         <div className="border rounded-xl p-4 bg-white shadow-sm">
             <h3 className="font-semibold text-gray-700 mb-1">
-                {t('meterApproval.title')} {utilityType} ({readingType === "INITIAL" ? t('manualReservation.checkIn') : t('manualReservation.checkOut')})
+                {t('meterApproval.title')} {t(`utilityTypes.${utilityType}`, { defaultValue: utilityType })} ({readingType === "INITIAL" ? t('manualReservation.checkIn') : t('manualReservation.checkOut')})
             </h3>
             <p className="text-xs text-gray-500 mb-3">
                 {t('meterApproval.description')}
