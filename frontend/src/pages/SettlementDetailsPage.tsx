@@ -1,11 +1,12 @@
 import {useEffect, useState, useCallback} from "react";
 import {useParams, Link} from "react-router-dom";
-import {getSettlementDetails} from "../api/settlementApi";
+import {getSettlementDetails, downloadInvoice} from "../api/settlementApi";
 import type {SettlementDetails, SettlementItemDetails} from "../types/settlement";
 import {GATEWAY_BASE_URL, IS_DEMO_MODE} from "../api/apiConfig.ts";
 import {getReservationDetails} from "../api/reservationApi.ts";
 import {getUserRoles} from "../utils/jwtUtils";
 import {createCheckoutSession} from "../api/billingApi";
+import {FileText} from "lucide-react";
 
 export default function SettlementDetailsPage() {
     const {id} = useParams();
@@ -163,6 +164,14 @@ export default function SettlementDetailsPage() {
         }
     };
 
+    const handleDownloadInvoice = async (reservationId: string) => {
+        try {
+            await downloadInvoice(reservationId);
+        } catch (err: any) {
+            alert(err.message || "Failed to download invoice");
+        }
+    };
+
     const token = localStorage.getItem("token");
     const roles = getUserRoles(token);
     const isAdminOrOwner = roles.includes("ROLE_ADMIN") || roles.includes("ROLE_OWNER");
@@ -251,12 +260,23 @@ export default function SettlementDetailsPage() {
 
     return (
         <div className="max-w-3xl mx-auto p-4 md:p-8 min-h-screen text-[#1A1A1A] space-y-6 flex flex-col">
-            <Link
-                to={returnPath}
-                className="px-4 py-2 text-xs font-bold text-[#42211D] bg-[#F7F7F7] border border-[#DACDCA] hover:bg-gray-100 rounded-lg transition-colors shadow-sm inline-flex items-center gap-1.5 w-fit"
-            >
-                &larr; {returnLabel}
-            </Link>
+            <div className="flex justify-between items-center gap-3">
+                <Link
+                    to={returnPath}
+                    className="px-4 py-2 text-xs font-bold text-[#42211D] bg-[#F7F7F7] border border-[#DACDCA] hover:bg-gray-100 rounded-lg transition-colors shadow-sm inline-flex items-center gap-1.5 w-fit"
+                >
+                    &larr; {returnLabel}
+                </Link>
+                {!!settlement.invoiceRequested && (settlement.status === "PAID" || settlement.balanceDue === 0) && (
+                    <button
+                        onClick={() => handleDownloadInvoice(settlement.reservationId)}
+                        className="px-4 py-2 text-xs font-bold bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1.5 shrink-0"
+                    >
+                        <FileText size={14} />
+                        Download Invoice
+                    </button>
+                )}
+            </div>
 
             <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 md:p-8 hover:shadow-md transition-all duration-300">
                 <div className="border-b border-[#DACDCA] pb-4 mb-6">

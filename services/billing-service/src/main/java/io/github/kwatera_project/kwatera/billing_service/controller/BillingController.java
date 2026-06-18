@@ -3,6 +3,7 @@ package io.github.kwatera_project.kwatera.billing_service.controller;
 import com.stripe.exception.StripeException;
 import io.github.kwatera_project.kwatera.billing_service.dto.CheckoutRequest;
 import io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto;
+import io.github.kwatera_project.kwatera.billing_service.dto.SettlementDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementItemDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto;
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
@@ -48,13 +49,7 @@ public class BillingController {
     authorizeAccess(token, reservation);
 
     String checkoutUrl =
-        paymentService.createCheckoutSession(
-            reservationId,
-            token,
-            checkoutRequest.getType(),
-            checkoutRequest.getDescription(),
-            checkoutRequest.getQuantity(),
-            checkoutRequest.getUnitPrice());
+        paymentService.createCheckoutSession(reservationId, token, checkoutRequest);
 
     return ResponseEntity.ok(checkoutUrl);
   }
@@ -86,6 +81,41 @@ public class BillingController {
         paymentService.getSettlementItemInfoByType(reservationId, settlementItemType, token);
 
     return ResponseEntity.ok(response);
+  }
+
+  @GetMapping("/settlements/{reservationId}/invoice")
+  public ResponseEntity<org.springframework.core.io.Resource> downloadInvoice(
+      @PathVariable("reservationId") UUID reservationId, HttpServletRequest request) {
+    String token = request.getHeader(AUTHORIZATION_HEADER);
+    ReservationDto reservation = stripeService.getReservation(reservationId, token);
+    authorizeAccess(token, reservation);
+
+    SettlementResponseDto settlementResponse =
+        paymentService.getSettlementWithItems(reservationId, token);
+    SettlementDto settlement = settlementResponse.settlement();
+    if (settlement == null
+        || settlement.invoicePdfPath() == null
+        || settlement.invoicePdfPath().isBlank()) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice not found or not generated");
+    }
+
+    try {
+      java.nio.file.Path path = java.nio.file.Paths.get(settlement.invoicePdfPath());
+      if (!java.nio.file.Files.exists(path)) {
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invoice file not found");
+      }
+      org.springframework.core.io.Resource resource =
+          new org.springframework.core.io.UrlResource(path.toUri());
+      return ResponseEntity.ok()
+          .header(
+              org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+              "attachment; filename=\"invoice-" + reservationId + ".pdf\"")
+          .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+          .body(resource);
+    } catch (Exception e) {
+      throw new ResponseStatusException(
+          HttpStatus.INTERNAL_SERVER_ERROR, "Error downloading file", e);
+    }
   }
 
   private void authorizeAccess(String authHeader, ReservationDto reservation) {

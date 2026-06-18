@@ -1,17 +1,24 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getMyReservations, getReservationDetails } from '../api/reservationApi';
-import { getSettlementDetails } from '../api/settlementApi';
+import { getSettlementDetails, downloadInvoice } from '../api/settlementApi';
 import type {GuestReservation} from '../types/reservation';
-import { Home, Calendar, CreditCard, Info, Receipt, Droplet } from 'lucide-react';
+import { Home, Calendar, CreditCard, Info, Receipt, Droplet, FileText } from 'lucide-react';
 
 export default function MyReservationsPage() {
     const [reservations, setReservations] = useState<GuestReservation[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [settlementIds, setSettlementIds] = useState<Record<string, string>>({});
+    const [settlements, setSettlements] = useState<Record<string, any>>({});
     const [unitNames, setUnitNames] = useState<Record<string, string>>({});
 
+    const handleDownloadInvoice = async (reservationId: string) => {
+        try {
+            await downloadInvoice(reservationId);
+        } catch (err: any) {
+            alert(err.message || "Failed to download invoice");
+        }
+    };
 
     useEffect(() => {
         getMyReservations()
@@ -21,7 +28,7 @@ export default function MyReservationsPage() {
                 data.forEach(async (res: GuestReservation) => {
                     try {
                         const settlement = await getSettlementDetails(res.id);
-                        setSettlementIds(prev => ({ ...prev, [res.id]: settlement.id }));
+                        setSettlements(prev => ({ ...prev, [res.id]: settlement }));
                     } catch (err) {
                         console.error("Failed to load settlement details", err);
                     }
@@ -59,13 +66,13 @@ export default function MyReservationsPage() {
             ) : (
                 <div className="grid gap-6">
                     {reservations.map(res => {
-                        const isBillEnabled = !!settlementIds[res.id];
-                        const isWaterMeterEnabled = !!settlementIds[res.id] && (res.status === "CONFIRMED" || res.status === "COMPLETED");
+                        const isBillEnabled = !!settlements[res.id]?.id;
+                        const isWaterMeterEnabled = !!settlements[res.id]?.id && (res.status === "CONFIRMED" || res.status === "COMPLETED");
+                        const showInvoice = !!settlements[res.id]?.invoiceRequested && (res.status === "COMPLETED" || settlements[res.id]?.status === "PAID");
 
                         return (
                             <div key={res.id} className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300">
                                 <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_auto] gap-6 items-center">
-                                    {/* Column 1: Unit Name & Reservation ID */}
                                     <div className="space-y-2.5">
                                         <div className="flex items-center gap-3">
                                             <div className="p-2.5 bg-[#F7F7F7] border border-[#DACDCA] rounded-xl text-[#42211D]">
@@ -82,9 +89,7 @@ export default function MyReservationsPage() {
                                         </div>
                                     </div>
 
-                                    {/* Column 2: Period (Dates) and Total Price */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:px-4">
-                                        {/* Period/Dates */}
                                         <div className="space-y-1">
                                             <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Stay Dates</span>
                                             <div className="flex items-center gap-2 text-sm text-[#1A1A1A]">
@@ -93,7 +98,6 @@ export default function MyReservationsPage() {
                                             </div>
                                         </div>
 
-                                        {/* Total Price */}
                                         {res.convertedTotalPrice && res.currencyInfo && (
                                             <div className="space-y-1">
                                                 <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Total Price</span>
@@ -107,9 +111,7 @@ export default function MyReservationsPage() {
                                         )}
                                     </div>
 
-                                    {/* Column 3: Status badge and Action buttons */}
                                     <div className="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end justify-between lg:justify-center gap-4 w-full lg:w-auto border-t lg:border-t-0 pt-4 lg:pt-0 border-[#DACDCA]">
-                                        {/* Status Badge */}
                                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border tracking-wider uppercase ${
                                             res.status === 'CONFIRMED' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
                                             res.status === 'PENDING' ? 'bg-amber-50 border-amber-200 text-amber-800' :
@@ -119,9 +121,7 @@ export default function MyReservationsPage() {
                                             {res.status}
                                         </span>
 
-                                        {/* Action Buttons */}
                                         <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-start sm:justify-end">
-                                            {/* 1. View Details (always active, solid background) */}
                                             <Link
                                                 to={`/reservations/${res.id}`}
                                                 className="px-4 py-2 text-xs font-bold text-white bg-[#42211D] hover:bg-[#321815] rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1.5 shrink-0"
@@ -130,7 +130,6 @@ export default function MyReservationsPage() {
                                                 View Details
                                             </Link>
 
-                                            {/* 2. View Bill (always rendered, conditionally disabled with Tailwind classes) */}
                                             {isBillEnabled ? (
                                                 <Link
                                                     to={`/settlements/${res.id}`}
@@ -149,10 +148,9 @@ export default function MyReservationsPage() {
                                                 </button>
                                             )}
 
-                                            {/* 3. Water Meter (always rendered, conditionally disabled with Tailwind classes) */}
                                             {isWaterMeterEnabled ? (
                                                 <Link
-                                                    to={`/settlements/${settlementIds[res.id]}/meter-readings?unitId=${res.unitId}`}
+                                                    to={`/settlements/${settlements[res.id]?.id}/meter-readings?unitId=${res.unitId}`}
                                                     className="px-4 py-2 text-xs font-bold bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1.5 shrink-0"
                                                 >
                                                     <Droplet size={14} />
@@ -165,6 +163,16 @@ export default function MyReservationsPage() {
                                                 >
                                                     <Droplet size={14} />
                                                     Water Meter
+                                                </button>
+                                            )}
+
+                                            {showInvoice && (
+                                                <button
+                                                    onClick={() => handleDownloadInvoice(res.id)}
+                                                    className="px-4 py-2 text-xs font-bold bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1.5 shrink-0"
+                                                >
+                                                    <FileText size={14} />
+                                                    Download Invoice
                                                 </button>
                                             )}
                                         </div>

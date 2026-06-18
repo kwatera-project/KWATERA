@@ -12,4 +12,8 @@ public class CheckoutRequest {
   private String description;
   private BigDecimal quantity;
   private BigDecimal unitPrice;
+  private boolean invoiceRequested;
+  private String companyName;
+  private String taxId;
+  private String companyAddress;
 }

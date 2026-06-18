@@ -84,12 +84,7 @@ class BillingControllerTest {
     request.setUnitPrice(new BigDecimal(100));
 
     when(paymentService.createCheckoutSession(
-            eq(reservationId),
-            eq("Bearer " + token),
-            eq(ACCOMMODATION),
-            eq("test"),
-            any(BigDecimal.class),
-            any(BigDecimal.class)))
+            eq(reservationId), eq("Bearer " + token), any(CheckoutRequest.class)))
         .thenReturn("https://stripe.checkout/session");
 
     UsernamePasswordAuthenticationToken auth =

@@ -47,9 +47,7 @@ public class PaymentWebhookService {
 
       case "checkout.session.async_payment_failed" -> handleCheckoutFailed(event, eventId);
 
-      default -> {
-        // ignore safely
-      }
+      default -> {}
     }
   }
 
@@ -106,7 +104,7 @@ public class PaymentWebhookService {
             session.getId());
 
     if (!created) {
-      return; // already processed
+      return;
     }
 
     try {
@@ -118,6 +116,8 @@ public class PaymentWebhookService {
           metadata.quantity(),
           metadata.unitPrice(),
           metadata.recipientEmail());
+
+      settlementService.generateInvoicePdfIfNeeded(metadata.settlementId());
 
     } catch (RuntimeException e) {
       paymentTransactionService.markFailed(

@@ -56,6 +56,21 @@ public class Settlement {
   @Column(name = "paid_at")
   private Instant paidAt;
 
+  @Column(name = "invoice_requested", nullable = false)
+  private boolean invoiceRequested;
+
+  @Column(name = "invoice_pdf_path")
+  private String invoicePdfPath;
+
+  @Column(name = "company_name")
+  private String companyName;
+
+  @Column(name = "tax_id")
+  private String taxId;
+
+  @Column(name = "company_address")
+  private String companyAddress;
+
   @Column(name = "created_at", nullable = false, updatable = false)
   @CreatedDate
   private Instant createdAt;
