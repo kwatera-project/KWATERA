@@ -1,4 +1,7 @@
+import {useTranslation} from "react-i18next"
 export default function PaymentCancelPage() {
+    const {t} = useTranslation();
+
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-8 text-[#1A1A1A]">
             <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-10 text-center max-w-md w-full space-y-6 hover:shadow-md transition-all duration-300">
@@ -10,10 +13,10 @@ export default function PaymentCancelPage() {
                 
                 <div className="space-y-2">
                     <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">
-                        Payment Cancelled
+                        {t('paymentCancel.title')}
                     </h1>
                     <p className="text-sm text-[#7A7A7A] font-medium leading-relaxed">
-                        Your payment transaction was cancelled. No charges were made to your account.
+                        {t('paymentCancel.subtitle')}
                     </p>
                 </div>
 
@@ -21,7 +24,7 @@ export default function PaymentCancelPage() {
                     href="/"
                     className="inline-block w-full px-6 py-3 bg-[#42211D] text-white font-bold hover:bg-[#2a1412] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm text-center cursor-pointer"
                 >
-                    Back to Homepage
+                    {t('paymentCancel.backHome')}
                 </a>
             </div>
         </div>

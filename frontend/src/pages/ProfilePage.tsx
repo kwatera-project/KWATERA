@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getUserProfile, updateUserProfile, type UserProfile } from "../api/userApi";
+import {useTranslation} from "react-i18next"
 
 export default function ProfilePage() {
     const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -11,6 +12,7 @@ export default function ProfilePage() {
     const [editLastName, setEditLastName] = useState("");
     const [saving, setSaving] = useState(false);
     const [saveError, setSaveError] = useState<string | null>(null);
+    const {t} = useTranslation();
 
     useEffect(() => {
         getUserProfile()
@@ -21,10 +23,10 @@ export default function ProfilePage() {
             .catch((err) => {
                 console.error(err);
                 const errMsg = err instanceof Error ? err.message : String(err);
-                setError(errMsg || "Failed to load profile details.");
+                setError(errMsg ||  t('profile.loadError'));
                 setLoading(false);
             });
-    }, []);
+    }, [t]);
 
     const handleStartEdit = () => {
         setEditFirstName(profile?.firstName || "");
@@ -40,7 +42,7 @@ export default function ProfilePage() {
 
     const handleSave = async () => {
         if (!editFirstName.trim() || !editLastName.trim()) {
-            setSaveError("First Name and Last Name are required.");
+            setSaveError(t('profile.nameRequired'));
             return;
         }
 
@@ -53,7 +55,7 @@ export default function ProfilePage() {
             setIsEditing(false);
         } catch (err) {
             console.error(err);
-            const errMsg = err instanceof Error ? err.message : "Failed to update profile details.";
+            const errMsg = err instanceof Error ? err.message : t('profile.updateError');
             setSaveError(errMsg);
         } finally {
             setSaving(false);
@@ -78,12 +80,16 @@ export default function ProfilePage() {
         return (
             <div className="p-6 max-w-7xl mx-auto text-[#1A1A1A]">
                 <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 text-center">
-                    <p className="text-red-600 font-semibold mb-4">Error: {error || "Profile could not be found."}</p>
+                    <p className="text-red-600 font-semibold mb-4">
+                        {error
+                            ? t('profile.error', { error })
+                            : t('profile.notFound')}
+                    </p>
                     <button
                         onClick={() => window.location.reload()}
                         className="bg-[#42211D] text-[#FFFFFF] font-bold py-2 px-4 rounded-lg hover:bg-[#2a1412] transition-colors"
                     >
-                        Try Again
+                        {t('profile.tryAgain')}
                     </button>
                 </div>
             </div>
@@ -95,24 +101,24 @@ export default function ProfilePage() {
     const getRoleTitle = (role: string) => {
         switch (role.toUpperCase()) {
             case "ADMIN":
-                return "Admin Profile";
+                return t('profile.adminTitle');
             case "OWNER":
-                return "Owner Profile";
+                return t('profile.ownerTitle');
             case "GUEST":
             default:
-                return "Guest Profile";
+                return t('profile.guestTitle');
         }
     };
 
     const getRoleDescription = (role: string) => {
         switch (role.toUpperCase()) {
             case "ADMIN":
-                return "Manage system configuration and administrative accounts.";
+                return t('profile.adminDesc');
             case "OWNER":
-                return "Manage your property owner details and notification preferences.";
+                return t('profile.ownerDesc');
             case "GUEST":
             default:
-                return "Manage your guest account details and notification preferences.";
+                return t('profile.guestDesc');
         }
     };
 
@@ -153,14 +159,14 @@ export default function ProfilePage() {
     };
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen text-brand-main space-y-6">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto min-h-screen text-brand-main space-y-6">
             <div className="border-b border-brand-accent pb-4">
                 <h1 className="text-3xl font-bold text-brand-main tracking-tight">{getRoleTitle(userRole)}</h1>
                 <p className="text-sm text-brand-muted mt-1">{getRoleDescription(userRole)}</p>
             </div>
 
             <div className="bg-white border border-brand-accent rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
-                <div className="p-8 border-b border-brand-accent">
+                <div className="p-4 sm:p-8 border-b border-brand-accent">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                         <div className="flex items-center gap-6">
                             <div className={`w-20 h-20 rounded-full flex items-center justify-center shadow-md border border-brand-accent/50 ${getRoleColor(userRole)}`}>
@@ -170,31 +176,31 @@ export default function ProfilePage() {
                                 <h2 className="text-2xl font-bold text-brand-main tracking-tight">
                                     {profile.firstName ? `${profile.firstName} ${profile.lastName}` : profile.username}
                                 </h2>
-                                <p className="text-sm text-brand-muted font-medium">Personal Account Details</p>
+                                <p className="text-sm text-brand-muted font-medium">{t('profile.personalDetails')}</p>
                             </div>
                         </div>
                         <div>
                             <span className="bg-brand-bg border border-brand-accent text-brand-primary font-bold text-xs uppercase tracking-wider px-3.5 py-2 rounded-full shadow-sm">
-                                {userRole}
+                                {t(`profile.roles.${userRole}`, { defaultValue: userRole })}
                             </span>
                         </div>
                     </div>
                 </div>
 
-                <div className="p-8">
+                <div className="p-4 sm:p-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="bg-brand-bg border border-brand-accent rounded-xl p-6 space-y-6">
-                            <h3 className="text-sm font-bold text-brand-primary border-b border-brand-accent/60 pb-2">Basic Information</h3>
+                            <h3 className="text-sm font-bold text-brand-primary border-b border-brand-accent/60 pb-2">{t('profile.basicInfo')}</h3>
                             <div className="space-y-4">
                                 <div className="space-y-1.5">
-                                    <label className="block text-sm font-medium text-brand-muted mb-1">First Name</label>
+                                    <label className="block text-sm font-medium text-brand-muted mb-1">{t('profile.firstName')}</label>
                                     {isEditing ? (
                                         <input
                                             type="text"
                                             value={editFirstName}
                                             onChange={(e) => setEditFirstName(e.target.value)}
                                             className="w-full p-2.5 border border-brand-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-primary text-brand-main font-semibold bg-white shadow-sm transition-all"
-                                            placeholder="Enter first name"
+                                            placeholder={t('profile.firstNamePlaceholder')}
                                             required
                                         />
                                     ) : (
@@ -202,14 +208,14 @@ export default function ProfilePage() {
                                     )}
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="block text-sm font-medium text-brand-muted mb-1">Last Name</label>
+                                    <label className="block text-sm font-medium text-brand-muted mb-1">{t('profile.lastName')}</label>
                                     {isEditing ? (
                                         <input
                                             type="text"
                                             value={editLastName}
                                             onChange={(e) => setEditLastName(e.target.value)}
                                             className="w-full p-2.5 border border-brand-accent rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-primary text-brand-main font-semibold bg-white shadow-sm transition-all"
-                                            placeholder="Enter last name"
+                                            placeholder={t('profile.lastNamePlaceholder')}
                                             required
                                         />
                                     ) : (
@@ -217,7 +223,7 @@ export default function ProfilePage() {
                                     )}
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="block text-sm font-medium text-brand-muted mb-1">Username</label>
+                                    <label className="block text-sm font-medium text-brand-muted mb-1">{t('profile.username')}</label>
                                     <p className="text-base font-medium text-brand-main">
                                         {profile.username}
                                     </p>
@@ -226,10 +232,10 @@ export default function ProfilePage() {
                         </div>
 
                         <div className="bg-brand-bg border border-brand-accent rounded-xl p-6 space-y-6">
-                            <h3 className="text-sm font-bold text-brand-primary border-b border-brand-accent/60 pb-2">Contact & Security</h3>
+                            <h3 className="text-sm font-bold text-brand-primary border-b border-brand-accent/60 pb-2">{t('profile.contactSecurity')}</h3>
                             <div className="space-y-4">
                                 <div className="space-y-1.5">
-                                    <label className="block text-sm font-medium text-brand-muted mb-1">Email Address</label>
+                                    <label className="block text-sm font-medium text-brand-muted mb-1">{t('profile.email')}</label>
                                     <p className="text-base font-medium text-brand-main mb-2">
                                         {profile.email}
                                     </p>
@@ -237,7 +243,7 @@ export default function ProfilePage() {
                                         <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
-                                        Active for Notifications
+                                        {t('profile.activeNotifications')}
                                     </span>
                                 </div>
                             </div>
@@ -262,7 +268,7 @@ export default function ProfilePage() {
                                     disabled={saving}
                                     className="px-6 py-2.5 text-sm font-bold text-brand-primary bg-brand-bg border border-brand-accent hover:bg-gray-100 rounded-lg transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                                 >
-                                    Cancel
+                                    {t('common.cancel')}
                                 </button>
                                 <button
                                     type="button"
@@ -270,7 +276,7 @@ export default function ProfilePage() {
                                     disabled={saving}
                                     className="px-6 py-2.5 bg-brand-primary text-white font-bold hover:bg-brand-primary-hover text-sm rounded-lg transition-colors border border-brand-accent shadow-sm disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                                 >
-                                    {saving ? "Saving..." : "Save Changes"}
+                                    {saving ? t('profile.saving') : t('editProperty.submit')}
                                 </button>
                             </>
                         ) : (
@@ -279,7 +285,7 @@ export default function ProfilePage() {
                                 onClick={handleStartEdit}
                                 className="px-6 py-2.5 bg-brand-primary text-white font-bold hover:bg-brand-primary-hover text-sm rounded-lg transition-colors border border-brand-accent shadow-sm disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                             >
-                                Edit Profile
+                                {t('profile.editProfile')}
                             </button>
                         )}
                     </div>

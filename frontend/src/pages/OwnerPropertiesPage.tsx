@@ -3,6 +3,7 @@ import {deleteProperty, getMyProperties} from "../api/ownerPropertyApi.ts";
 import type {Property} from "../types/property";
 import {Link} from "react-router-dom";
 import {getPropertyImages} from "../api/propertyApi.ts";
+import {useTranslation} from "react-i18next"
 
 type PropertyImage = {
     url: string;
@@ -11,7 +12,7 @@ type PropertyImage = {
 
 export default function OwnerPropertiesPage() {
     const [properties, setProperties] = useState<Property[]>([]);
-
+    const {t} = useTranslation();
     useEffect(() => {
         getMyProperties()
             .then(data => {
@@ -23,9 +24,7 @@ export default function OwnerPropertiesPage() {
     }, []);
 
     const handleDelete = async (propertyId: string) => {
-        const confirmed = window.confirm(
-            "Are you sure you want to delete this property?"
-        );
+        const confirmed = window.confirm(t('ownerProperties.deleteConfirm'));
 
         if (!confirmed) return;
 
@@ -40,26 +39,26 @@ export default function OwnerPropertiesPage() {
             const err = error as { status?: number; message?: string };
 
             if (err.status === 409) {
-                alert("Property contains units with reservations and cannot be deleted");
+                alert(t('ownerProperties.deleteHasReservations'));
                 return;
             }
 
-            alert("Failed to delete property");
+            alert(t('ownerProperties.deleteFailed'));
         }
     };
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
-            <div className="flex justify-between items-center border-b border-[#DACDCA] pb-4 mb-6">
+        <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[#DACDCA] pb-4 mb-6 gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-[#1A1A1A] tracking-tight">My Properties</h1>
-                    <p className="text-sm font-semibold text-[#7A7A7A] mt-1">Manage and configure your rental accommodations</p>
+                    <h1 className="text-3xl font-black text-[#1A1A1A] tracking-tight">{t('ownerProperties.title')}</h1>
+                    <p className="text-sm font-semibold text-[#7A7A7A] mt-1">{t('ownerProperties.subtitle')}</p>
                 </div>
                 <Link
                     to="/owner/properties/new"
-                    className="px-5 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm"
+                    className="px-5 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm shrink-0"
                 >
-                    Add Property
+                    {t('ownerProperties.addProperty')}
                 </Link>
             </div>
 
@@ -73,7 +72,7 @@ export default function OwnerPropertiesPage() {
                 ))}
                 {properties.length === 0 && (
                     <div className="text-gray-500 italic py-8 text-center bg-white border border-[#DACDCA] rounded-xl shadow-sm">
-                        No properties found. Click "Add Property" to create one.
+                        {t('ownerProperties.noProperties')}
                     </div>
                 )}
             </div>
@@ -83,6 +82,7 @@ export default function OwnerPropertiesPage() {
 
 function PropertyCard({ property, onDelete }: { property: Property, onDelete: (id: string) => void; }) {
     const [mainImage, setMainImage] = useState<string>("");
+    const {t} = useTranslation();
 
     useEffect(() => {
         getPropertyImages(property.id)
@@ -104,7 +104,7 @@ function PropertyCard({ property, onDelete }: { property: Property, onDelete: (i
                     {mainImage ? (
                         <img src={mainImage} alt={property.title} className="w-full h-full object-cover" />
                     ) : (
-                        <span className="text-gray-400 text-xs font-semibold uppercase tracking-wider">No Image</span>
+                        <span className="text-gray-400 text-xs font-semibold uppercase tracking-wider">{t('propertyMap.noImage')}</span>
                     )}
                 </div>
 
@@ -113,7 +113,7 @@ function PropertyCard({ property, onDelete }: { property: Property, onDelete: (i
                     <p className="text-[#7A7A7A] text-sm font-medium line-clamp-2">{property.description}</p>
                     
                     <div className="pt-2">
-                        <span className="block text-xxs font-bold text-[#7A7A7A] uppercase tracking-wider mb-1">Address</span>
+                        <span className="block text-xxs font-bold text-[#7A7A7A] uppercase tracking-wider mb-1">{t('ownerProperties.address')}</span>
                         <p className="text-sm font-semibold text-[#1A1A1A]">
                             {property.street} {property.streetNumber}, {property.postalCode} {property.city}, {property.country}
                         </p>
@@ -121,30 +121,30 @@ function PropertyCard({ property, onDelete }: { property: Property, onDelete: (i
                 </div>
             </div>
 
-            <div className="flex gap-3 w-full md:w-auto justify-end border-t border-gray-100 md:border-none pt-4 md:pt-0 shrink-0">
+            <div className="flex flex-wrap gap-2.5 w-full md:w-auto justify-start sm:justify-end border-t border-gray-100 md:border-none pt-4 md:pt-0 shrink-0">
                 <Link
                     to={`/owner/properties/${property.id}/units`}
-                    className="px-4 py-2 border border-[#42211D] bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg shadow-sm transition-all inline-flex items-center"
+                    className="px-4 py-2 border border-[#42211D] bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg shadow-sm transition-all inline-flex items-center justify-center flex-grow sm:flex-grow-0"
                 >
-                    Manage Units
+                    {t('ownerProperties.manageUnits')}
                 </Link>
                 <Link
                     to={`/owner/properties/${property.id}/images`}
-                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all inline-flex items-center"
+                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all inline-flex items-center justify-center flex-grow sm:flex-grow-0"
                 >
-                    Manage Images
+                    {t('ownerProperties.manageImages')}
                 </Link>
                 <Link
                     to={`/owner/properties/${property.id}/edit`}
-                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all"
+                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all text-center flex-grow sm:flex-grow-0"
                 >
-                    Edit
+                    {t('ownerProperties.edit')}
                 </Link>
                 <button
                     onClick={() => onDelete(property.id)}
-                    className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 text-sm rounded-lg shadow-sm transition-all"
+                    className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 text-sm rounded-lg shadow-sm transition-all text-center flex-grow sm:flex-grow-0"
                 >
-                    Delete
+                    {t('editPropertyImages.delete')}
                 </button>
             </div>
         </div>

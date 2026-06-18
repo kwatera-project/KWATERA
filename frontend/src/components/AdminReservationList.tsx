@@ -4,6 +4,7 @@ import { getAdminReservations, updateAdminReservationStatus } from "../api/admin
 import { getSettlementDetails } from '../api/settlementApi';
 import { getReservationDetails } from "../api/reservationApi";
 import { ChevronDown } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 import SharedDatePicker from "./SharedDatePicker";
 import { format } from "date-fns";
 
@@ -34,6 +35,7 @@ export default function AdminReservationList() {
     const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
     const [settlementIds, setSettlementIds] = useState<Record<string, string>>({});
     const [unitIds, setUnitIds] = useState<Record<string, string>>({});
+    const { t } = useTranslation();
 
     const fetchReservations = useCallback(() => {
         getAdminReservations(statusFilter || undefined, startDate || undefined, endDate || undefined)
@@ -64,12 +66,15 @@ export default function AdminReservationList() {
     const handleStatusChange = (id: string, newStatus: string) => {
         updateAdminReservationStatus(id, newStatus)
             .then(() => {
-                setMessage({ text: "Reservation status updated successfully!", type: 'success' });
+                setMessage({ text: t('adminReservations.statusUpdated'), type: 'success' });
                 setReservations(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
             })
             .catch((err) => {
                 console.error(err);
-                setMessage({ text: err instanceof Error ? err.message : "Network error occurred", type: 'error' });
+                setMessage({
+                    text: err instanceof Error ? err.message : t('adminReservations.networkError'),
+                    type: 'error'
+                });
             });
     };
 
@@ -89,23 +94,23 @@ export default function AdminReservationList() {
     };
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
+        <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
             <div className="border-b border-[#DACDCA] pb-6 mb-6 space-y-2">
                 <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                    <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">Reservation Overview</h1>
+                    <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">{t('adminReservations.title')}</h1>
                     <div className="flex bg-[#F7F7F7] p-1 rounded-lg border border-[#DACDCA] shadow-sm self-start sm:self-center">
                         <span className="px-4 py-2 text-sm font-bold rounded-md bg-[#FFFFFF] text-[#1A1A1A] shadow border border-[#DACDCA] cursor-default">
-                            List View
+                            {t('adminReservations.listView')}
                         </span>
                         <Link
                             to="/admin/occupancy"
                             className="px-4 py-2 text-sm font-medium rounded-md text-[#7A7A7A] hover:bg-[#FFFFFF] hover:text-[#1A1A1A] hover:shadow-sm transition-all"
                         >
-                            Calendar View
+                            {t('adminReservations.calendarView')}
                         </Link>
                     </div>
                 </div>
-                <p className="text-sm text-[#7A7A7A]">Manage guest reservations, occupancy status, and utility readings.</p>
+                <p className="text-sm text-[#7A7A7A]">{t('adminReservations.subtitle')}</p>
             </div>
 
             {message && (
@@ -114,7 +119,7 @@ export default function AdminReservationList() {
                 }`}>
                     <div className="flex items-center gap-3">
                         <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                         </svg>
                         <span className="text-sm font-semibold">{message.text}</span>
                     </div>
@@ -122,26 +127,25 @@ export default function AdminReservationList() {
                 </div>
             )}
 
-            {/* Toolbar Section: Status and Date Range Filters */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#F7F7F7] border border-[#DACDCA] rounded-xl p-4 shadow-sm">
                 <div className="text-sm font-medium text-[#7A7A7A]">
-                    Showing <span className="font-bold text-[#1A1A1A]">{filteredReservations.length}</span> reservation{filteredReservations.length === 1 ? '' : 's'}
+                    {t('adminReservations.showing')} <span className="font-bold text-[#1A1A1A]">{filteredReservations.length}</span> {t('adminReservations.reservation', { count: filteredReservations.length })}
                 </div>
+
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full md:w-auto">
-                    {/* Status Filter */}
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-500 shrink-0">Status:</span>
-                        <div className="relative w-full sm:w-36">
+                    <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
+                        <span className="text-sm font-medium text-gray-500 shrink-0">{t('common.status')}:</span>
+                        <div className="relative flex-1 sm:flex-initial sm:w-36">
                             <select
-                                className="appearance-none block w-full bg-white border border-[#DACDCA] rounded-lg py-2 pl-3 pr-10 text-sm text-[#1A1A1A] font-semibold focus:outline-none focus:ring-2 focus:ring-[#42211D]/20 focus:border-[#42211D] transition-all shadow-sm cursor-pointer"
+                                className="appearance-none block w-full bg-solid-white border border-[#DACDCA] rounded-lg py-2 pl-3 pr-10 text-sm text-[#1A1A1A] font-semibold focus:outline-none focus:ring-2 focus:ring-[#42211D]/20 focus:border-[#42211D] transition-all shadow-sm cursor-pointer"
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
                             >
-                                <option value="">All Statuses</option>
-                                <option value="PENDING">Pending</option>
-                                <option value="CONFIRMED">Confirmed</option>
-                                <option value="CANCELLED">Cancelled</option>
-                                <option value="COMPLETED">Completed</option>
+                                <option value="">{t('adminReservations.allStatuses')}</option>
+                                <option value="PENDING">{t('common.pending')}</option>
+                                <option value="CONFIRMED">{t('common.confirmed')}</option>
+                                <option value="CANCELLED">{t('common.cancelled')}</option>
+                                <option value="COMPLETED">{t('common.completed')}</option>
                             </select>
                             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                                 <ChevronDown className="h-4 w-4 text-[#7A7A7A]" />
@@ -152,15 +156,27 @@ export default function AdminReservationList() {
                                 onClick={() => setStatusFilter("")}
                                 className="text-sm font-medium text-gray-500 hover:text-[#42211D] transition-colors shrink-0 cursor-pointer"
                             >
-                                Clear
+                                {t('common.clear')}
                             </button>
                         )}
                     </div>
 
-                    {/* Date Filters */}
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-500 shrink-0">Dates:</span>
-                        <div className="flex items-center gap-2 bg-white border border-[#DACDCA] rounded-lg p-1.5 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                        <div className="flex items-center justify-between w-full sm:w-auto">
+                            <span className="text-sm font-medium text-gray-500">{t('adminReservations.stayDates')}:</span>
+                            {(startDate || endDate) && (
+                                <button
+                                    onClick={() => {
+                                        setStartDate("");
+                                        setEndDate("");
+                                    }}
+                                    className="text-sm font-medium text-gray-500 hover:text-[#42211D] transition-colors shrink-0 cursor-pointer sm:hidden"
+                                >
+                                    {t('common.clear')}
+                                </button>
+                            )}
+                        </div>
+                        <div className="flex items-center justify-center gap-2 bg-solid-white border border-[#DACDCA] rounded-lg p-1.5 shadow-sm w-full sm:w-auto">
                             <SharedDatePicker
                                 selected={parseDateString(startDate)}
                                 onChange={(date) => setStartDate(date ? format(date, "yyyy-MM-dd") : "")}
@@ -168,11 +184,11 @@ export default function AdminReservationList() {
                                 startDate={parseDateString(startDate)}
                                 endDate={parseDateString(endDate)}
                                 allowPastDates={true}
-                                placeholderText="Start Date"
+                                placeholderText={t('search.checkIn')}
                                 className="bg-transparent text-sm font-semibold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center"
                                 wrapperClassName="w-auto"
                             />
-                            <span className="text-gray-400 font-medium text-xs">to</span>
+                            <span className="text-gray-400 font-medium text-xs">→</span>
                             <SharedDatePicker
                                 selected={parseDateString(endDate)}
                                 onChange={(date) => setEndDate(date ? format(date, "yyyy-MM-dd") : "")}
@@ -181,7 +197,7 @@ export default function AdminReservationList() {
                                 endDate={parseDateString(endDate)}
                                 minDate={parseDateString(startDate)}
                                 allowPastDates={true}
-                                placeholderText="End Date"
+                                placeholderText={t('search.checkOut')}
                                 className="bg-transparent text-sm font-semibold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center"
                                 wrapperClassName="w-auto"
                             />
@@ -192,27 +208,27 @@ export default function AdminReservationList() {
                                     setStartDate("");
                                     setEndDate("");
                                 }}
-                                className="text-sm font-medium text-gray-500 hover:text-[#42211D] transition-colors shrink-0 cursor-pointer"
+                                className="text-sm font-medium text-gray-500 hover:text-[#42211D] transition-colors shrink-0 cursor-pointer hidden sm:block"
                             >
-                                Clear Dates
+                                {t('common.clear')}
                             </button>
                         )}
                     </div>
                 </div>
             </div>
 
-            <div className="overflow-x-auto bg-white border border-[#DACDCA] rounded-xl shadow-sm">
-                <table className="min-w-full table-auto">
-                    <thead className="bg-[#F7F7F7] border-b border-[#DACDCA]">
+            <div className="bg-transparent md:bg-white md:border md:border-[#DACDCA] md:rounded-xl md:shadow-sm overflow-hidden">
+                <table className="min-w-full block md:table">
+                    <thead className="hidden md:table-header-group bg-[#F7F7F7] border-b border-[#DACDCA]">
                         <tr>
-                            <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-left">Guest</th>
-                            <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-left">Unit/Property</th>
-                            <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-left">Stay Dates</th>
-                            <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-left">Status</th>
-                            <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-center">Actions</th>
+                            <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-left">{t('adminReservations.guest')}</th>
+                            <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-left">{t('adminReservations.unitProperty')}</th>
+                            <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-left">{t('adminReservations.stayDates')}</th>
+                            <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-left">{t('common.status')}</th>
+                            <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-center">{t('common.actions')}</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#DACDCA]/60 bg-white">
+                    <tbody className="block md:table-row-group divide-y-0 md:divide-y divide-[#DACDCA]/60 bg-transparent md:bg-white">
                         {filteredReservations.map((res) => {
                             const isMeterReadingsEnabled = !!settlementIds[res.id] && !!unitIds[res.id] && (res.status === "CONFIRMED" || res.status === "COMPLETED");
                             const isConfirmEnabled = res.status === "PENDING";
@@ -220,76 +236,88 @@ export default function AdminReservationList() {
                             const isCancelEnabled = res.status === "PENDING" || res.status === "CONFIRMED";
 
                             return (
-                                <tr key={res.id} className="hover:bg-[#F7F7F7] transition-colors">
-                                    <td className="px-6 py-4 text-sm font-semibold text-[#1A1A1A]">
-                                        {formatGuestName(res.guestName)}
+                                <tr key={res.id} className="block md:table-row bg-white md:bg-transparent rounded-xl border border-[#DACDCA] md:border-0 shadow-sm md:shadow-none mb-4 md:mb-0 p-5 md:p-0 space-y-3 md:space-y-0 hover:bg-transparent md:hover:bg-[#F7F7F7] transition-colors">
+                                    <td className="block md:table-cell px-0 md:px-6 py-2 md:py-4 text-sm font-semibold text-[#1A1A1A] border-b border-gray-100 md:border-0">
+                                        <div className="flex justify-between items-center md:block">
+                                            <span className="font-medium text-[#7A7A7A] md:hidden">{t('adminReservations.guest')}:</span>
+                                            <span>{formatGuestName(res.guestName)}</span>
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-[#1A1A1A]">
-                                        {res.unitName}
+                                    <td className="block md:table-cell px-0 md:px-6 py-2 md:py-4 text-sm text-[#1A1A1A] border-b border-gray-100 md:border-0">
+                                        <div className="flex justify-between items-center md:block">
+                                            <span className="font-medium text-[#7A7A7A] md:hidden">{t('adminReservations.unitProperty')}:</span>
+                                            <span className="font-bold md:font-normal">{res.unitName}</span>
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-[#1A1A1A] font-medium">
-                                        <span className="whitespace-nowrap">
-                                            {res.startDate} &rarr; {res.endDate}
-                                        </span>
+                                    <td className="block md:table-cell px-0 md:px-6 py-2 md:py-4 text-sm text-[#1A1A1A] font-medium border-b border-gray-100 md:border-0">
+                                        <div className="flex justify-between items-center md:block">
+                                            <span className="font-medium text-[#7A7A7A] md:hidden">{t('adminReservations.stayDates')}:</span>
+                                            <span className="whitespace-nowrap font-bold md:font-medium">
+                                                {res.startDate} &rarr; {res.endDate}
+                                            </span>
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm">
-                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border uppercase tracking-wider ${
-                                            res.status === 'CONFIRMED' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
-                                            res.status === 'PENDING' ? 'bg-amber-50 border-amber-200 text-amber-800' :
-                                            res.status === 'COMPLETED' ? 'bg-blue-50 border-blue-200 text-blue-800' :
-                                            res.status === 'CANCELLED' ? 'bg-red-50 border-red-200 text-red-800' :
-                                            'bg-gray-50 border-gray-200 text-gray-800'
-                                        }`}>
-                                            {res.status}
-                                        </span>
+                                    <td className="block md:table-cell px-0 md:px-6 py-2 md:py-4 text-sm border-b border-gray-100 md:border-0">
+                                        <div className="flex justify-between items-center md:block">
+                                            <span className="font-medium text-[#7A7A7A] md:hidden">{t('common.status')}:</span>
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border uppercase tracking-wider ${
+                                                res.status === 'CONFIRMED' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
+                                                res.status === 'PENDING' ? 'bg-amber-50 border-amber-200 text-amber-800' :
+                                                res.status === 'COMPLETED' ? 'bg-blue-50 border-blue-200 text-blue-800' :
+                                                res.status === 'CANCELLED' ? 'bg-red-50 border-red-200 text-red-800' :
+                                                'bg-gray-50 border-gray-200 text-gray-800'
+                                            }`}>
+                                                {t(`statuses.${res.status}`)}
+                                            </span>
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-center">
-                                        <div className="flex flex-wrap justify-center items-center gap-2">
+                                    <td className="block md:table-cell px-0 md:px-6 py-3 md:py-4 text-sm text-center">
+                                        <div className="flex flex-col sm:flex-row sm:flex-wrap md:justify-center items-stretch sm:items-center gap-2">
                                             <Link
                                                 to={`/reservations/${res.id}`}
-                                                className="px-3 py-1.5 text-xs font-semibold text-white bg-[#42211D] hover:bg-[#321815] rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1 shrink-0 cursor-pointer"
+                                                className="px-4 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-bold md:font-semibold text-white bg-[#42211D] hover:bg-[#321815] rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1 shrink-0 cursor-pointer text-center"
                                             >
-                                                View Details
+                                                {t('common.viewDetails')}
                                             </Link>
 
                                             {isMeterReadingsEnabled ? (
                                                 <Link
                                                     to={`/admin/settlements/${settlementIds[res.id]}/meter-readings?unitId=${unitIds[res.id]}`}
-                                                    className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1 shrink-0 cursor-pointer"
+                                                    className="px-4 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-bold md:font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1 shrink-0 cursor-pointer text-center"
                                                 >
-                                                    Meter Readings
+                                                    {t('common.meterReadings')}
                                                 </Link>
                                             ) : (
                                                 <button
                                                     disabled
-                                                    className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
+                                                    className="px-4 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-bold md:font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
                                                 >
-                                                    Meter Readings
+                                                    {t('common.meterReadings')}
                                                 </button>
                                             )}
 
                                             <button
                                                 disabled={!isConfirmEnabled}
                                                 onClick={() => handleStatusChange(res.id, 'CONFIRMED')}
-                                                className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
+                                                className="px-4 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-bold md:font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
                                             >
-                                                Confirm
+                                                {t('common.confirm')}
                                             </button>
 
                                             <button
                                                 disabled={!isCompleteEnabled}
                                                 onClick={() => handleStatusChange(res.id, 'COMPLETED')}
-                                                className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
+                                                className="px-4 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-bold md:font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
                                             >
-                                                Complete
+                                                {t('common.complete')}
                                             </button>
 
                                             <button
                                                 disabled={!isCancelEnabled}
                                                 onClick={() => handleStatusChange(res.id, 'CANCELLED')}
-                                                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-transparent transition-all inline-flex items-center justify-center gap-1 shrink-0 text-red-600 bg-red-50 hover:bg-red-100 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
+                                                className="px-4 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-bold md:font-semibold rounded-lg border border-transparent transition-all inline-flex items-center justify-center gap-1 shrink-0 text-red-600 bg-red-50 hover:bg-red-100 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
                                             >
-                                                Cancel
+                                                {t('common.cancel')}
                                             </button>
                                         </div>
                                     </td>
@@ -297,9 +325,9 @@ export default function AdminReservationList() {
                             );
                         })}
                         {filteredReservations.length === 0 && (
-                            <tr>
-                                <td colSpan={5} className="px-6 py-8 text-center text-[#7A7A7A] font-medium bg-white">
-                                    No reservations found.
+                            <tr className="block md:table-row bg-white rounded-xl border border-[#DACDCA] md:border-0 shadow-sm md:shadow-none p-6 md:p-0">
+                                <td colSpan={5} className="block md:table-cell px-6 py-8 text-center text-[#7A7A7A] font-medium bg-white">
+                                    {t('adminReservations.noReservations')}
                                 </td>
                             </tr>
                         )}

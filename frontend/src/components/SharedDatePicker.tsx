@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import type { ComponentProps } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { useTranslation } from "react-i18next";
+import { getDateFnsLocale, getLocaleCode } from "../utils/locale";
 
 interface SharedDatePickerProps {
     selected: Date | null;
@@ -20,10 +22,6 @@ interface SharedDatePickerProps {
     allowPastDates?: boolean;
 }
 
-const MONTHS = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-];
 
 export interface CustomCalendarHeaderProps {
     date: Date;
@@ -47,6 +45,13 @@ export const CustomCalendarHeader = ({
     const [isOpen, setIsOpen] = useState(false);
     const [pickerYear, setPickerYear] = useState(date.getFullYear());
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const { i18n } = useTranslation();
+    const localeCode = getLocaleCode(i18n.language);
+    const months = Array.from({ length: 12 }, (_, index) =>
+        new Date(2024, index, 1).toLocaleString(localeCode, {
+            month: "short",
+        })
+    );
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -71,7 +76,7 @@ export const CustomCalendarHeader = ({
 
     return (
         <div 
-            className="flex items-center justify-between px-3 py-2 bg-white relative border-b border-gray-100"
+            className="flex items-center justify-between px-3 py-2 bg-solid-white relative border-b border-gray-100"
             style={{ backgroundColor: "#FFFFFF" }}
         >
             <button
@@ -89,15 +94,18 @@ export const CustomCalendarHeader = ({
                     onClick={handleToggle}
                     className="text-stone-800 text-[15px] font-bold capitalize hover:bg-stone-100 px-3 py-1 rounded-md transition-colors cursor-pointer"
                 >
-                    {date.toLocaleString('en-US', { month: 'long' })} {date.getFullYear()}
+                    {date.toLocaleString(localeCode, {
+                        month: "long",
+                    })}{" "}
+                    {date.getFullYear()}
                 </button>
 
                 {isOpen && (
                     <div 
-                        className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-white border border-stone-200 rounded-lg shadow-xl z-50 p-3"
+                        className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 bg-solid-white border border-stone-200 rounded-lg shadow-xl z-50 p-3"
                         style={{ backgroundColor: "#FFFFFF" }}
                     >
-                        <div className="flex items-center justify-between mb-4 bg-white" style={{ backgroundColor: "#FFFFFF" }}>
+                        <div className="flex items-center justify-between mb-4 bg-solid-white" style={{ backgroundColor: "#FFFFFF" }}>
                             <button
                                 type="button"
                                 onClick={() => setPickerYear(pickerYear - 1)}
@@ -115,8 +123,8 @@ export const CustomCalendarHeader = ({
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2 bg-white" style={{ backgroundColor: "#FFFFFF" }}>
-                            {MONTHS.map((month, index) => {
+                        <div className="grid grid-cols-3 gap-2 bg-solid-white" style={{ backgroundColor: "#FFFFFF" }}>
+                            {months.map((month, index) => {
                                 const isSelected = pickerYear === date.getFullYear() && index === date.getMonth();
                                 return (
                                     <button
@@ -167,6 +175,7 @@ export default function SharedDatePicker({
     popperPlacement,
     allowPastDates = false
 }: SharedDatePickerProps) {
+    const { i18n } = useTranslation();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -184,15 +193,16 @@ export default function SharedDatePicker({
                 startDate={startDate ?? undefined}
                 endDate={endDate ?? undefined}
                 minDate={resolvedMinDate}
-                className={className || "bg-white text-sm font-bold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center border-b border-transparent hover:border-gray-300 focus:border-stone-500 transition-colors pb-1"}
+                className={className || "bg-solid-white text-sm font-bold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center border-b border-transparent hover:border-gray-300 focus:border-stone-500 transition-colors pb-1"}
                 dateFormat={dateFormat || "yyyy-MM-dd"}
                 placeholderText={placeholderText}
                 renderCustomHeader={(props) => <CustomCalendarHeader {...props} />}
-                calendarClassName="bg-white border border-gray-200 shadow-xl rounded-lg custom-datepicker-has-header"
+                calendarClassName="bg-solid-white border border-gray-200 shadow-xl rounded-lg custom-datepicker-has-header"
                 popperClassName="z-[9999]"
                 calendarStartDay={1}
                 wrapperClassName={wrapperClassName}
                 popperPlacement={popperPlacement}
+                locale={getDateFnsLocale(i18n.language)}
                 popperProps={{
                     strategy: "fixed"
                 }}

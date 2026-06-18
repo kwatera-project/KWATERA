@@ -5,11 +5,12 @@ import { formatSearchDate } from "../../utils/searchDates";
 import { getProperties } from "../../api/propertyApi";
 import type { Property } from "../../types/property";
 import { getCitySuggestions } from "../../utils/citySuggestions";
+import { useTranslation } from "react-i18next";
 
 export default function HeroSection() {
     const navigate = useNavigate();
     const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
-
+    const {t} = useTranslation();
     useEffect(() => {
         getProperties()
             .then((properties: Property[]) => {
@@ -39,18 +40,18 @@ export default function HeroSection() {
                 <div className="absolute inset-0 w-full h-full">
                     <img
                         src="https://images.pexels.com/photos/37100579/pexels-photo-37100579.jpeg"
-                        alt="Hero Background"
+                        alt={t("heroSection.backgroundAlt")}
                         className="w-full h-full object-cover opacity-90"
                     />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-black/60" />
             </div>
 
-            <div className="relative z-[9999] w-full bg-card rounded-t-[50px] pt-10 pb-16 px-4 md:px-8 lg:px-16 mt-auto">
+            <div className="relative z-[9999] w-full bg-card rounded-t-[50px] pt-24 pb-16 px-4 md:pt-10 md:px-8 lg:px-16 mt-auto">
                 <div className="max-w-7xl mx-auto flex flex-col items-center text-center">
-                    <h1 className="text-4xl md:text-5xl lg:text-7xl font-black text-title mb-6 drop-shadow-sm" style={{ color: 'rgb(var(--color-burgundy))' }}>Good Morning!</h1>
+                    <h1 className="text-4xl md:text-5xl lg:text-7xl font-black text-title mb-6 drop-shadow-sm" style={{ color: 'rgb(var(--color-burgundy))' }}>{t("heroSection.title")}</h1>
                     <p className="text-details text-lg md:text-2xl mb-8 max-w-2xl font-medium drop-shadow-sm">
-                        Explore beautiful places in the world with Kwatera
+                        {t("heroSection.subtitle")}
                     </p>
 
                     <PropertySearchBar

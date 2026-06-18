@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next"
 import TagInput from "../components/TagInput";
 
 export interface UnitFormData {
@@ -58,6 +59,7 @@ export default function UnitForm({
             amenities: [],
         };
     });
+    const {t} = useTranslation();
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -89,10 +91,10 @@ export default function UnitForm({
     return (
         <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1">
-                <label className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Unit Name</label>
+                <label className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">{t('unitForm.name')}</label>
                 <input
                     name="name"
-                    placeholder="e.g. Apartment 4B"
+                    placeholder={t('unitForm.namePlaceholder')}
                     value={form.name}
                     onChange={handleChange}
                     className={inputClasses}
@@ -101,10 +103,10 @@ export default function UnitForm({
             </div>
 
             <div className="space-y-1">
-                <label className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Description</label>
+                <label className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">{t('propertyForm.description')}</label>
                 <textarea
                     name="description"
-                    placeholder="Describe unit details, unique features, or bedding arrangements..."
+                    placeholder={t('unitForm.descriptionPlaceholder')}
                     value={form.description}
                     onChange={handleChange}
                     className={inputClasses}
@@ -113,14 +115,14 @@ export default function UnitForm({
             </div>
 
             <div className="border-t border-[#DACDCA]/50 my-6 pt-4 space-y-4">
-                <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider mb-2">Pricing & Type</span>
+                <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider mb-2">{t('unitForm.pricingType')}</span>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
                         <input
                             type="number"
                             name="pricePerNight"
-                            placeholder="Price per night"
+                            placeholder={t('unitForm.pricePerNight')}
                             value={form.pricePerNight === 0 || isNaN(form.pricePerNight) ? "" : form.pricePerNight}
                             onChange={handleChange}
                             className={inputClasses}
@@ -140,25 +142,25 @@ export default function UnitForm({
                         >
                             {UNIT_TYPES.map(type => (
                                 <option key={type} value={type}>
-                                    {type}
+                                    {t(`unitTypes.${type}`, { defaultValue: type })}
                                 </option>
                             ))}
                         </select>
                     </div>
                 </div>
 
-                <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider mb-2 pt-2">Space & Location</span>
+                <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider mb-2 pt-2">{t('unitForm.spaceLocation')}</span>
 
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div className="space-y-1">
                         <label htmlFor="capacity" className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
-                            Max Guests
+                            {t('unitForm.maxGuests')}
                         </label>
                         <input
                             id="capacity"
                             type="number"
                             name="capacity"
-                            placeholder="Max Guests"
+                            placeholder={t('unitForm.maxGuests')}
                             value={form.capacity === 0 || isNaN(form.capacity) ? "" : form.capacity}
                             onChange={handleChange}
                             className={inputClasses}
@@ -169,13 +171,13 @@ export default function UnitForm({
 
                     <div className="space-y-1">
                         <label htmlFor="bedrooms" className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
-                            Bedrooms
+                            {t('unitForm.bedrooms')}
                         </label>
                         <input
                             id="bedrooms"
                             type="number"
                             name="bedrooms"
-                            placeholder="Bedrooms"
+                            placeholder={t('unitForm.bedrooms')}
                             value={form.bedrooms === 0 || isNaN(form.bedrooms) ? "" : form.bedrooms}
                             onChange={handleChange}
                             className={inputClasses}
@@ -186,13 +188,13 @@ export default function UnitForm({
 
                     <div className="space-y-1">
                         <label htmlFor="beds" className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
-                            Beds
+                            {t('unitForm.beds')}
                         </label>
                         <input
                             id="beds"
                             type="number"
                             name="beds"
-                            placeholder="Beds"
+                            placeholder={t('unitForm.beds')}
                             value={form.beds === 0 || isNaN(form.beds) ? "" : form.beds}
                             onChange={handleChange}
                             className={inputClasses}
@@ -203,12 +205,12 @@ export default function UnitForm({
 
                     <div className="space-y-1">
                         <label htmlFor="unitNumber" className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
-                            Unit Number
+                            {t('unitForm.unitNumberShort')}
                         </label>
                         <input
                             id="unitNumber"
                             name="unitNumber"
-                            placeholder="Unit Number (e.g. 104A)"
+                            placeholder={t('unitForm.unitNumber')}
                             value={form.unitNumber}
                             onChange={handleChange}
                             className={inputClasses}
@@ -218,13 +220,13 @@ export default function UnitForm({
 
                     <div className="space-y-1">
                         <label htmlFor="floor" className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
-                            Floor
+                            {t('unitForm.floor')}
                         </label>
                         <input
                             id="floor"
                             type="number"
                             name="floor"
-                            placeholder="Floor"
+                            placeholder={t('unitForm.floor')}
                             value={isNaN(form.floor) ? "" : form.floor}
                             onChange={handleChange}
                             className={inputClasses}
@@ -236,7 +238,7 @@ export default function UnitForm({
 
             <div className="border-t border-[#DACDCA]/50 my-6 pt-4">
                 <TagInput
-                    label="Amenities & Tags"
+                    label={t('propertyForm.amenitiesTags')}
                     tags={form.amenities ?? []}
                     onChange={(tags) => setForm(prev => ({ ...prev, amenities: tags }))}
                 />

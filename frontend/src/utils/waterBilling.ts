@@ -1,4 +1,5 @@
 import type { UnitSettlementItem } from "../types/property";
+import type { TFunction } from "i18next";
 
 type CurrencyInfo = {
     displayCurrency: string;
@@ -71,13 +72,36 @@ export function formatWaterRate(pricePerUnitPln: number, currencyInfo?: Currency
     return `${plnRate} (~${formatNumber(convertedRate, 2, 2)} ${currencyInfo.displayCurrency}/${M3_LABEL})`;
 }
 
-export function getRatePerLiterTooltip(pricePerUnitPln: number, currencyInfo?: CurrencyInfo): string {
+export function getRatePerLiterTooltip(
+    pricePerUnitPln: number,
+    currencyInfo?: CurrencyInfo,
+    t?: TFunction
+): string {
+    const plnRate = formatNumber(pricePerUnitPln, 2, 2);
+    const plnLiterRate = formatNumber(pricePerUnitPln / 1000, 4, 4);
+
     if (!currencyInfo || currencyInfo.displayCurrency === "PLN" || currencyInfo.exchangeRate <= 0) {
-        return `1 ${M3_LABEL} = 1000 L, so ${formatNumber(pricePerUnitPln, 2, 2)} PLN/${M3_LABEL} = ${formatNumber(pricePerUnitPln / 1000, 4, 4)} PLN/L.`;
+        return t
+            ? t("checkout.waterRateTooltipPln", {
+                cubicMeter: M3_LABEL,
+                rate: plnRate,
+                literRate: plnLiterRate,
+            })
+            : `1 ${M3_LABEL} = 1000 L, so ${plnRate} PLN/${M3_LABEL} = ${plnLiterRate} PLN/L.`;
     }
 
     const convertedRate = pricePerUnitPln / currencyInfo.exchangeRate;
-    return `1 ${M3_LABEL} = 1000 L. ${formatNumber(pricePerUnitPln, 2, 2)} PLN/${M3_LABEL} \u2248 ${formatNumber(convertedRate, 2, 2)} ${currencyInfo.displayCurrency}/${M3_LABEL}, so \u2248 ${formatNumber(convertedRate / 1000, 4, 4)} ${currencyInfo.displayCurrency}/L.`;
+    const convertedRateText = formatNumber(convertedRate, 2, 2);
+    const convertedLiterRate = formatNumber(convertedRate / 1000, 4, 4);
+    return t
+        ? t("checkout.waterRateTooltipConverted", {
+            cubicMeter: M3_LABEL,
+            plnRate,
+            convertedRate: convertedRateText,
+            literRate: convertedLiterRate,
+            currency: currencyInfo.displayCurrency,
+        })
+        : `1 ${M3_LABEL} = 1000 L. ${plnRate} PLN/${M3_LABEL} \u2248 ${convertedRateText} ${currencyInfo.displayCurrency}/${M3_LABEL}, so \u2248 ${convertedLiterRate} ${currencyInfo.displayCurrency}/L.`;
 }
 
 function formatNumber(value: number, maximumFractionDigits = 2, minimumFractionDigits = 0): string {

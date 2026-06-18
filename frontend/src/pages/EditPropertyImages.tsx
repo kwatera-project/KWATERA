@@ -3,6 +3,7 @@ import {useEffect, useState} from "react";
 import { getPropertyImages } from "../api/propertyApi.ts";
 import { deletePropertyImage, setPropertyImageAsMain, uploadPropertyImage } from "../api/ownerPropertyApi.ts";
 import ImageUploadForm from "../contexts/ImageUploadForm.tsx";
+import { useTranslation } from "react-i18next";
 
 interface PropertyImage {
     id: string;
@@ -13,7 +14,7 @@ interface PropertyImage {
 export default function EditPropertyImages() {
     const { propertyId } = useParams();
     const navigate = useNavigate();
-
+    const {t} = useTranslation();
     const [loading, setLoading] = useState(true);
     const [images, setImages] = useState<PropertyImage[]>([]);
     const [refreshKey, setRefreshKey] = useState(0);
@@ -42,28 +43,28 @@ export default function EditPropertyImages() {
 
         try {
             await uploadPropertyImage(propertyId, data.file, data.isMain);
-            alert("Image uploaded successfully!");
+            alert(t('editPropertyImages.uploadSuccess'));
             navigate("/owner/properties");
         } catch (error) {
             console.error(error);
-            alert("Failed to upload property image");
+            alert(t('editPropertyImages.uploadFailed'));
         }
     };
 
     const handleDeleteImage = async (imageId: string) => {
         if (!propertyId) return;
 
-        if (!confirm("Are you sure you want to delete this image?")) {
+        if (!confirm(t('editPropertyImages.deleteConfirm'))) {
             return;
         }
 
         try {
             await deletePropertyImage(propertyId, imageId);
-            alert("Image deleted successfully!");
+            alert(t('editPropertyImages.deleteSuccess'));
             triggerRefresh();
         } catch (error) {
             console.error(error);
-            alert("Failed to delete image");
+            alert(t('editPropertyImages.deleteFailed'));
         }
     };
 
@@ -72,59 +73,59 @@ export default function EditPropertyImages() {
 
         try {
             await setPropertyImageAsMain(propertyId, imageId, true);
-            alert("Main image updated successfully!");
+            alert(t('editPropertyImages.mainSuccess'));
             triggerRefresh();
         } catch (error) {
             console.error(error);
-            alert("Failed to update main image");
+            alert(t('editPropertyImages.mainFailed'));
         }
     };
 
     if (loading && images.length === 0) {
         return (
             <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#7A7A7A] font-semibold text-sm">
-                Loading...
+                {t('editPropertyImages.loading')}...
             </div>
         );
     }
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
+        <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
             <div>
                 <Link
                     to="/owner/properties"
                     className="inline-flex items-center text-sm font-semibold text-[#7A7A7A] hover:text-[#1A1A1A] transition-colors mb-2"
                 >
-                    ← Back to Properties
+                    ← {t('createProperty.back')}
                 </Link>
             </div>
 
             <div className="border-b border-[#DACDCA] pb-4 mb-6">
                 <h1 className="text-3xl font-black text-[#1A1A1A] tracking-tight">
-                    Manage Property Images
+                    {t('editPropertyImages.title')}
                 </h1>
                 <p className="text-sm font-semibold text-[#7A7A7A] mt-1">
-                    Upload new gallery photos and select the primary image for your property listing
+                    {t('editPropertyImages.subtitle')}
                 </p>
             </div>
 
             <div className="max-w-4xl mx-auto space-y-10">
 
-                <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-8 mt-6">
+                <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 sm:p-8 mt-6">
                     <ImageUploadForm
                         onSubmit={handleImageSubmit}
-                        submitLabel="Upload Image"
+                        submitLabel={t('editPropertyImages.uploadLabel')}
                     />
                 </div>
 
                 <div className="space-y-4">
                     <h2 className="text-xl font-black text-[#1A1A1A] tracking-tight uppercase tracking-wider text-xs font-bold text-[#7A7A7A]">
-                        Current Gallery
+                        {t('editPropertyImages.currentGallery')}
                     </h2>
 
                     {images.length === 0 ? (
                         <div className="text-gray-500 italic py-8 text-center bg-white border border-[#DACDCA] rounded-xl shadow-sm">
-                            No images uploaded yet for this property.
+                            {t('editPropertyImages.noImages')}
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -137,13 +138,13 @@ export default function EditPropertyImages() {
                                         <div className="relative border-b border-[#DACDCA]/30">
                                             <img
                                                 src={img.url}
-                                                alt="Property"
+                                                alt={t('editPropertyImages.imageAlt')}
                                                 className="w-full h-48 object-cover"
                                             />
 
                                             {img.isMain && (
                                                 <span className="absolute top-3 left-3 bg-[#42211D] border border-[#DACDCA]/40 text-white text-xxs font-bold uppercase tracking-wider px-2.5 py-1 rounded-md shadow-sm">
-                                                    Main Image
+                                                    {t('editPropertyImages.mainImage')}
                                                 </span>
                                             )}
                                         </div>
@@ -158,7 +159,7 @@ export default function EditPropertyImages() {
                                                         : "bg-white text-[#42211D] border-[#42211D] hover:bg-gray-50"
                                                 }`}
                                             >
-                                                {img.isMain ? "✓ Active Main" : "Set as Main"}
+                                                {img.isMain ? t('editPropertyImages.activeMain') : t('editPropertyImages.setMain')}
                                             </button>
                                         </div>
                                     </div>
@@ -171,7 +172,7 @@ export default function EditPropertyImages() {
                                             onClick={() => img?.id && handleDeleteImage(img.id)}
                                             className="px-3 py-1 border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 text-xs rounded-lg shadow-sm transition-all"
                                         >
-                                            Delete
+                                            {t('editPropertyImages.delete')}
                                         </button>
                                     </div>
                                 </div>

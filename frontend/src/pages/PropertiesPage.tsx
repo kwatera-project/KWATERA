@@ -8,6 +8,7 @@ import { formatSearchDate, parseGuests, parseSearchDate } from "../utils/searchD
 import { getCitySuggestions } from "../utils/citySuggestions";
 import PropertyMap from "../components/PropertyMap";
 import { useCurrency } from "../contexts/CurrencyContext";
+import { useTranslation } from "react-i18next";
 import FilterSidebar from "../components/FilterSidebar";
 import {
     EMPTY_FILTERS,
@@ -21,9 +22,9 @@ interface AvailabilityResponse {
     message: string;
 }
 
-const PROPERTIES_LOAD_ERROR = "Could not load properties. Please try again later.";
-const UNITS_FILTER_ERROR = "Could not load units for filtering. Please try again later.";
-const AVAILABILITY_FILTER_ERROR = "Could not verify availability. Please try again or adjust your filters.";
+const PROPERTIES_LOAD_ERROR = "properties.loadError";
+const UNITS_FILTER_ERROR = "properties.unitsFilterError";
+const AVAILABILITY_FILTER_ERROR = "properties.availabilityFilterError";
 
 function propertyMatchesCity(property: Property, city: string) {
     const normalize = (v: string) => v.toLowerCase().replace(/[,\s]+/g, " ").trim();
@@ -62,6 +63,7 @@ export default function PropertiesPage() {
     const [propertiesError, setPropertiesError] = useState<string | null>(null);
     const [filterError, setFilterError] = useState<string | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
+    const { t } = useTranslation();
 
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [mapBounds, setMapBounds] = useState<{
@@ -312,7 +314,7 @@ export default function PropertiesPage() {
         filters.propertyTypes.forEach((type) =>
             result.push({
                 id: `type-${type}`,
-                label: type,
+                label: t(`propertyTypes.${type}`, { defaultValue: type }),
                 onRemove: () =>
                     setFilters((f) => ({
                         ...f,
@@ -324,42 +326,42 @@ export default function PropertiesPage() {
         if (filters.guests > 1)
             result.push({
                 id: "guests",
-                label: `${filters.guests}+ guests`,
+                label: t('filters.activeGuests', { count: filters.guests }),
                 onRemove: () => setFilters((f) => ({ ...f, guests: 1 })),
             });
 
         if (filters.bedrooms > 0)
             result.push({
                 id: "bedrooms",
-                label: `${filters.bedrooms}+ bedrooms`,
+                label: t('filters.activeBedrooms', { count: filters.bedrooms }),
                 onRemove: () => setFilters((f) => ({ ...f, bedrooms: 0 })),
             });
 
         if (filters.beds > 0)
             result.push({
                 id: "beds",
-                label: `${filters.beds}+ beds`,
+                label: t('filters.activeBeds', { count: filters.beds }),
                 onRemove: () => setFilters((f) => ({ ...f, beds: 0 })),
             });
 
         if (filters.minPrice !== "")
             result.push({
                 id: "minPrice",
-                label: `Min ${filters.minPrice} ${currency}`,
+                label: t('filters.activeMin', { value: filters.minPrice, currency }),
                 onRemove: () => setFilters((f) => ({ ...f, minPrice: "" })),
             });
 
         if (filters.maxPrice !== "")
             result.push({
                 id: "maxPrice",
-                label: `Max ${filters.maxPrice} ${currency}`,
+                label: t('filters.activeMax', { value: filters.maxPrice, currency }),
                 onRemove: () => setFilters((f) => ({ ...f, maxPrice: "" })),
             });
 
         filters.selectedAmenities.forEach((amenity) =>
             result.push({
                 id: `amenity-${amenity}`,
-                label: amenity,
+                label: t(`amenities.${amenity}`, { defaultValue: amenity }),
                 onRemove: () =>
                     setFilters((f) => ({
                         ...f,
@@ -369,7 +371,7 @@ export default function PropertiesPage() {
         );
 
         return result;
-    }, [filters, currency]);
+    }, [filters, currency, t]);
 
     const handleSearch = ({ city, checkIn, checkOut, guests }: PropertySearchValues) => {
         const params = new URLSearchParams();
@@ -405,18 +407,16 @@ export default function PropertiesPage() {
             <div className="bg-[#F9F8F7] px-4 md:px-8 pt-6 pb-4 max-w-[1440px] mx-auto">
                 <div className="flex justify-between items-start mb-5">
                     <div>
-                        <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">Properties</h1>
-                        <p className="text-sm text-[#7A7A7A] mt-1">
-                            Explore our curated selection of properties.
-                        </p>
+                        <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">{t('properties.title')}</h1>
+                        <p className="text-sm text-[#7A7A7A] mt-1">{t('properties.subtitle')}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                         <button
                             onClick={() => setIsMobileSidebarOpen(true)}
-                            className="md:hidden relative flex items-center gap-2 bg-white border border-gray-200 text-[#1A1A1A] px-4 py-2.5 rounded-xl shadow-sm font-semibold text-sm hover:border-[#42211D]/40 cursor-pointer transition-all"
+                            className="md:hidden relative flex items-center gap-2 bg-solid-white border border-gray-200 text-[#1A1A1A] px-4 py-2.5 rounded-xl shadow-sm font-semibold text-sm hover:border-[#42211D]/40 cursor-pointer transition-all"
                         >
                             <SlidersHorizontal className="w-4 h-4" strokeWidth={2.5} />
-                            Filters
+                            {t('filters.title')}
                             {activeFilterCount > 0 && (
                                 <span className="absolute -top-1.5 -right-1.5 bg-[#42211D] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
                                     {activeFilterCount}
@@ -437,7 +437,7 @@ export default function PropertiesPage() {
                                           d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                                 )}
                             </svg>
-                            {showMap ? "Hide map" : "Show map"}
+                            {showMap ? t('properties.hideMap') : t('properties.showMap')}
                         </button>
                     </div>
                 </div>
@@ -454,7 +454,7 @@ export default function PropertiesPage() {
             {(isLoading || isFilteringAvailability) && (
                 <div className="px-4 md:px-8 max-w-[1440px] mx-auto mb-4">
                     <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 text-center text-[#7A7A7A] font-medium animate-pulse">
-                        {isLoading ? "Loading properties…" : "Checking availability…"}
+                        {isLoading ? t('properties.loading') : t('properties.checkingAvailability')}
                     </div>
                 </div>
             )}
@@ -462,7 +462,7 @@ export default function PropertiesPage() {
             {(propertiesError || filterError) && (
                 <div className="px-4 md:px-8 max-w-[1440px] mx-auto mb-4">
                     <div className="bg-red-50 border border-red-200 rounded-xl p-5 text-red-700 font-semibold">
-                        {propertiesError || filterError}
+                        {t(propertiesError || filterError || "")}
                     </div>
                 </div>
             )}
@@ -492,7 +492,7 @@ export default function PropertiesPage() {
                                         onClick={() => setFilters(EMPTY_FILTERS)}
                                         className="shrink-0 text-xs font-semibold text-[#7A7A7A] hover:text-[#42211D] border border-dashed border-gray-300 rounded-full px-3 py-1 transition-colors cursor-pointer whitespace-nowrap"
                                     >
-                                        Clear all
+                                        {t('common.clear')}
                                     </button>
                                 )}
                             </div>
@@ -501,7 +501,7 @@ export default function PropertiesPage() {
                         <div className="flex gap-6">
                             <div
                                 className={`flex-1 min-w-0 ${
-                                    showMap ? "md:max-w-[340px] lg:max-w-[400px] xl:max-w-[440px]" : ""
+                                    showMap ? "hidden md:block md:max-w-[340px] lg:max-w-[400px] xl:max-w-[440px]" : ""
                                 }`}
                             >
                                 {displayProperties.length === 0 ? (
@@ -512,23 +512,23 @@ export default function PropertiesPage() {
                                                       d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
                                             </svg>
                                         </div>
-                                        <h2 className="text-lg font-bold text-[#1A1A1A]">No properties found</h2>
+                                        <h2 className="text-lg font-bold text-[#1A1A1A]">{t('properties.noResults')}</h2>
                                         <p className="text-sm text-[#7A7A7A] mt-1.5">
-                                            Try adjusting your search or clearing filters.
+                                            {t('properties.noResultsHint')}
                                         </p>
                                         {activeFilterCount > 0 && (
                                             <button
                                                 onClick={() => setFilters(EMPTY_FILTERS)}
                                                 className="mt-4 text-sm font-semibold text-[#42211D] hover:underline cursor-pointer"
                                             >
-                                                Clear all filters
+                                                {t('common.clear')}
                                             </button>
                                         )}
                                     </div>
                                 ) : showMap && visibleProperties.length === 0 ? (
                                     <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-10 text-center">
-                                        <h2 className="text-lg font-bold text-[#1A1A1A]">No properties in this area</h2>
-                                        <p className="text-sm text-[#7A7A7A] mt-1.5">Pan or zoom out on the map.</p>
+                                        <h2 className="text-lg font-bold text-[#1A1A1A]">{t('properties.noMapResults')}</h2>
+                                        <p className="text-sm text-[#7A7A7A] mt-1.5">{t('properties.noMapResultsHint')}</p>
                                     </div>
                                 ) : (
                                     <div
@@ -597,15 +597,15 @@ export default function PropertiesPage() {
                                                                 </div>
                                                                 <div className="text-right shrink-0 ml-4">
                                                                     <span className="text-[9px] text-[#7A7A7A] block font-bold uppercase tracking-wider leading-none mb-0.5">
-                                                                        From
+                                                                        {t('propertyMap.from')}
                                                                     </span>
                                                                     <span className="font-black text-base text-[#42211D]">
                                                                         {propertyPrices[p.id] !== undefined ? (
                                                                             `${Math.round(propertyPrices[p.id])} ${currency}`
                                                                         ) : (
-                                                                            <span className="text-xs font-normal text-[#7A7A7A]">…</span>
+                                                                            <span className="text-xs font-normal text-[#7A7A7A]">...</span>
                                                                         )}
-                                                                        <span className="text-[10px] text-[#7A7A7A] font-normal ml-0.5">/night</span>
+                                                                        <span className="text-[10px] text-[#7A7A7A] font-normal ml-0.5">{t('propertyMap.perNight')}</span>
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -620,8 +620,8 @@ export default function PropertiesPage() {
 
                             {showMap && (
                                 <div
-                                    className="hidden md:block flex-1 sticky top-6"
-                                    style={{ height: "calc(100vh - 200px)" }}
+                                    className="w-full md:flex-1 md:sticky md:top-6"
+                                    style={{ height: "calc(100vh - 240px)" }}
                                 >
                                     <div className="w-full h-full rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
                                         <PropertyMap
@@ -651,14 +651,14 @@ export default function PropertiesPage() {
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
-                            Hide map
+                            {t('properties.hideMap')}
                         </>
                     ) : (
                         <>
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                             </svg>
-                            Show map
+                            {t('properties.showMap')}
                         </>
                     )}
                 </button>

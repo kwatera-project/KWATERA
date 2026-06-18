@@ -5,10 +5,11 @@ import type { Property, Unit } from "../types/property";
 import {deleteUnit, getPropertyUnits, updateUnit} from "../api/ownerUnitApi.ts";
 import { getPredictedPrice } from "../api/predictionApi.ts";
 import { Wand2 } from "lucide-react";
+import {useTranslation} from "react-i18next"
 
 export default function OwnerPropertyUnitsPage() {
     const { propertyId } = useParams();
-
+    const {t} = useTranslation();
     const [property, setProperty] = useState<Property>();
     const [units, setUnits] = useState<Unit[]>([]);
 
@@ -20,10 +21,7 @@ export default function OwnerPropertyUnitsPage() {
     }, [propertyId]);
 
     const handleDelete = async (propetryId: string, unitId: string) => {
-        const confirmed = window.confirm(
-            "Are you sure you want to delete this unit?"
-        );
-
+        const confirmed = window.confirm( t('ownerUnits.deleteConfirm'));
         if (!confirmed) return;
 
         try {
@@ -37,33 +35,33 @@ export default function OwnerPropertyUnitsPage() {
             const err = error as { status?: number; message?: string };
 
             if (err.status === 409) {
-                alert("Unit has reservations and cannot be deleted");
+                alert(t('ownerUnits.deleteHasReservations'));
                 return;
             }
 
-            alert("Failed to delete unit");
+            alert(t('ownerUnits.deleteFailed'));
         }
     };
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
+        <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
             <div>
                 <Link to="/owner/properties" className="inline-flex items-center text-sm font-bold text-[#7A7A7A] hover:text-[#1A1A1A] transition-colors mb-4">
-                    ← Back to Properties
+                    ← {t('createProperty.back')}
                 </Link>
             </div>
 
-            <div className="flex justify-between items-center border-b border-[#DACDCA] pb-4 mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[#DACDCA] pb-4 mb-6 gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-[#1A1A1A] tracking-tight">{property?.title || "Loading Accommodation..."}</h1>
-                    <p className="text-sm font-semibold text-[#7A7A7A] uppercase tracking-wider mt-1.5">Manage Accommodation Units</p>
+                    <h1 className="text-3xl font-black text-[#1A1A1A] tracking-tight">{property?.title || t('ownerUnits.loading')}</h1>
+                    <p className="text-sm font-semibold text-[#7A7A7A] uppercase tracking-wider mt-1.5">{t('ownerUnits.subtitle')}</p>
                 </div>
 
                 <Link
                     to={`/owner/properties/${propertyId}/units/new`}
-                    className="px-5 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm"
+                    className="px-5 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm shrink-0"
                 >
-                    Add Unit
+                    {t('ownerUnits.addUnit')}
                 </Link>
             </div>
 
@@ -78,7 +76,7 @@ export default function OwnerPropertyUnitsPage() {
                 ))}
                 {units.length === 0 && (
                     <div className="text-gray-500 italic py-8 text-center bg-white border border-[#DACDCA] rounded-xl shadow-sm">
-                        No accommodation units found for this property. Click "Add Unit" to get started.
+                        {t('ownerUnits.noUnits')}
                     </div>
                 )}
             </div>
@@ -91,7 +89,7 @@ function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: stri
     const [loadingPrediction, setLoadingPrediction] = useState(true);
     const [currentPrice, setCurrentPrice] = useState<number>(unit.pricePerNight);
     const [isUpdatingPrice, setIsUpdatingPrice] = useState(false);
-
+    const {t} = useTranslation();
     useEffect(() => {
         getPredictedPrice(propertyId, unit.id, undefined)
             .then((price) => {
@@ -113,10 +111,10 @@ function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: stri
             await updateUnit(propertyId, unit.id, { pricePerNight: predictedPrice });
 
             setCurrentPrice(predictedPrice);
-            alert("Price updated successfully!");
+            alert(t('ownerUnits.priceUpdated'));
         } catch (error) {
             console.error("Failed to update price:", error);
-            alert("Failed to update price. Please try again.");
+            alert(t('ownerUnits.priceUpdateFailed'));
         } finally {
             setIsUpdatingPrice(false);
         }
@@ -132,36 +130,36 @@ function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: stri
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2 text-xs font-bold text-gray-500 border-t border-gray-50/50">
                     <div>
-                        <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-0.5">Unit Type</span>
+                        <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-0.5">{t('ownerUnits.unitType')}</span>
                         <span className="text-sm font-bold text-[#1A1A1A]">{unit.unitType}</span>
                     </div>
                     <div>
-                        <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-0.5">Unit Number</span>
+                        <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-0.5">{t('ownerUnits.unitNumberShort')}</span>
                         <span className="text-sm font-bold text-[#1A1A1A]">{unit.unitNumber}</span>
                     </div>
                     <div>
-                        <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-0.5">Floor Level</span>
+                        <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-0.5">{t('ownerUnits.floorLevel')}</span>
                         <span className="text-sm font-bold text-[#1A1A1A]">{unit.floor}</span>
                     </div>
                     <div>
-                        <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-0.5">Guest Capacity</span>
-                        <span className="text-sm font-bold text-[#1A1A1A]">{unit.capacity} guests</span>
+                        <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-0.5">{t('ownerUnits.guestCapacity')}</span>
+                        <span className="text-sm font-bold text-[#1A1A1A]">{unit.capacity} {t('ownerUnits.guests')}</span>
                     </div>
                 </div>
 
                 <div className="pt-4 flex flex-wrap gap-x-10 gap-y-4 items-center border-t border-gray-100 mt-4">
                     <div>
-                        <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-1">Current Price</span>
+                        <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-1">{t('ownerUnits.currentPrice')}</span>
                         <div className="text-sm font-bold text-[#7A7A7A]">
-                            <span className="text-xl font-black text-[#1A1A1A]">{currentPrice.toFixed(2)} PLN</span> / night
+                            <span className="text-xl font-black text-[#1A1A1A]">{currentPrice.toFixed(2)} PLN</span> {t('ownerUnits.perNight')}
                         </div>
                     </div>
 
                     <div>
-                        <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-1">Suggested Price (AI)</span>
+                        <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-1"> {t('ownerUnits.suggestedPrice')}</span>
                         <div className="text-sm font-bold text-[#7A7A7A] flex items-center gap-1.5">
                             {loadingPrediction ? (
-                                <span className="text-gray-400 text-sm animate-pulse font-semibold">Calculating...</span>
+                                <span className="text-gray-400 text-sm animate-pulse font-semibold">{t('ownerUnits.calculating')}</span>
                             ) : predictedPrice !== null ? (
                                     <div className="flex items-center gap-3">
                                         <span className="text-xl font-black text-indigo-600">{predictedPrice.toFixed(2)} PLN</span>
@@ -173,42 +171,42 @@ function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: stri
                                                 className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-md border border-indigo-200 hover:bg-indigo-100 transition-colors disabled:opacity-50"
                                             >
                                                 {isUpdatingPrice ? (
-                                                    "Applying..."
+                                                    t('ownerUnits.applying')
                                                 ) : (
                                                     <>
                                                         <Wand2 className="w-3.5 h-3.5" />
-                                                        Apply AI Price
+                                                        {t('ownerUnits.applyAiPrice')}
                                                     </>
                                                 )}
                                             </button>
                                         )}
                                     </div>
                             ) : (
-                                <span className="text-amber-600 text-sm font-semibold">Unavailable</span>
+                                <span className="text-amber-600 text-sm font-semibold">{t('ownerUnits.unavailable')}</span>
                             )}
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="flex gap-3 w-full lg:w-auto justify-end border-t border-gray-100 lg:border-none pt-4 lg:pt-0 shrink-0">
+            <div className="flex flex-wrap gap-2.5 w-full lg:w-auto justify-start sm:justify-end border-t border-gray-100 lg:border-none pt-4 lg:pt-0 shrink-0">
                 <Link
                     to={`/owner/properties/${propertyId}/units/${unit.id}/images`}
-                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all inline-flex items-center"
+                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all inline-flex items-center justify-center flex-grow sm:flex-grow-0 text-center"
                 >
-                    Manage Images
+                    {t('ownerProperties.manageImages')}
                 </Link>
                 <Link
                     to={`/owner/properties/${propertyId}/units/${unit.id}/edit`}
-                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all"
+                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all text-center flex-grow sm:flex-grow-0"
                 >
-                    Edit
+                    {t('ownerProperties.edit')}
                 </Link>
                 <button
                     onClick={() => onDelete(propertyId, unit.id)}
-                    className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 text-sm rounded-lg shadow-sm transition-all"
+                    className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 text-sm rounded-lg shadow-sm transition-all text-center flex-grow sm:flex-grow-0"
                 >
-                    Delete
+                    {t('editPropertyImages.delete')}
                 </button>
             </div>
         </div>

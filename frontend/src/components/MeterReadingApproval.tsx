@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { approveMediaReading } from "../api/ocrApi";
 import type { ReadingType, UtilityType } from "../api/ocrApi";
+import {useTranslation} from "react-i18next"
+
 type Props = {
     settlementId: string;
     unitId: string;
@@ -20,11 +22,12 @@ export default function MeterReadingApproval({
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
+    const {t} = useTranslation();
 
     const handleApprove = async () => {
         const value = parseFloat(correctedReading);
         if (isNaN(value) || value < 0) {
-            setError("Please enter a valid reading value");
+            setError(t('meterApproval.invalidValue'));
             return;
         }
 
@@ -36,7 +39,7 @@ export default function MeterReadingApproval({
             setSuccess(true);
             if (onSuccess) onSuccess();
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : "Approval failed");
+            setError(err instanceof Error ? err.message : t('meterApproval.failed'));
         } finally {
             setLoading(false);
         }
@@ -46,7 +49,10 @@ export default function MeterReadingApproval({
         return (
             <div className="border rounded-xl p-4 bg-green-50 border-green-200">
                 <p className="text-green-700 font-medium text-sm">
-                    ✓ {readingType === "INITIAL" ? "Initial" : "Final"} reading for {utilityType} approved successfully.
+                    ✓ {t('meterApproval.success', {
+                    readingType: readingType === "INITIAL" ? t('meterApproval.initial') : t('meterApproval.final'),
+                    utilityType: t(`utilityTypes.${utilityType}`, { defaultValue: utilityType })
+                })}
                 </p>
             </div>
         );
@@ -55,10 +61,10 @@ export default function MeterReadingApproval({
     return (
         <div className="border rounded-xl p-4 bg-white shadow-sm">
             <h3 className="font-semibold text-gray-700 mb-1">
-                Manual Approval {utilityType} ({readingType === "INITIAL" ? "Check-in" : "Check-out"})
+                {t('meterApproval.title')} {t(`utilityTypes.${utilityType}`, { defaultValue: utilityType })} ({readingType === "INITIAL" ? t('manualReservation.checkIn') : t('manualReservation.checkOut')})
             </h3>
             <p className="text-xs text-gray-500 mb-3">
-                OCR could not read this meter reliably. Please enter the correct reading manually.
+                {t('meterApproval.description')}
             </p>
 
             <div className="flex gap-2 items-center">
@@ -68,7 +74,7 @@ export default function MeterReadingApproval({
                     step="0.001"
                     value={correctedReading}
                     onChange={(e) => setCorrectedReading(e.target.value)}
-                    placeholder="Enter meter reading"
+                    placeholder={t('meterApproval.placeholder')}
                     className="border rounded px-3 py-2 text-sm w-48 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />
                 <button
@@ -76,7 +82,7 @@ export default function MeterReadingApproval({
                     disabled={!correctedReading || loading}
                     className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
                 >
-                    {loading ? "Approving..." : "Approve"}
+                    {loading ? t('meterApproval.approving') : t('meterApproval.approve')}
                 </button>
             </div>
 

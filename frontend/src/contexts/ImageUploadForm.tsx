@@ -1,4 +1,5 @@
 import {useRef, useState} from "react";
+import {useTranslation} from "react-i18next"
 
 export interface ImageUploadFormData {
     file: File | null;
@@ -12,9 +13,10 @@ interface ImageUploadFormProps {
 
 export default function ImageUploadForm({
                                             onSubmit,
-                                            submitLabel = "Upload Image",
+                                            submitLabel,
                                         }: ImageUploadFormProps) {
-
+    const {t} = useTranslation();
+    const buttonLabel = submitLabel ?? t("imageUpload.upload");
     const [file, setFile] = useState<File | null>(null);
     const [isMain, setIsMain] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
@@ -31,7 +33,7 @@ export default function ImageUploadForm({
 
             const allowedExtensions = ["image/jpeg", "image/jpg", "image/png"];
             if (!allowedExtensions.includes(selectedFile.type)) {
-                setError("Only JPG, JPEG, and PNG files are allowed.");
+                setError(t('imageUpload.invalidFormat'));
                 setFile(null);
                 return;
             }
@@ -44,7 +46,7 @@ export default function ImageUploadForm({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!file) {
-            setError("Please select a file first.");
+            setError(t('imageUpload.noFile'));
             return;
         }
 
@@ -60,7 +62,7 @@ export default function ImageUploadForm({
                 e.target.reset();
             }
         } catch {
-            setError("Something went wrong during the upload.");
+            setError(t('imageUpload.error'));
         } finally {
             setLoading(false);
         }
@@ -72,7 +74,7 @@ export default function ImageUploadForm({
             className="space-y-5"
         >
             <h3 className="text-xl font-black text-[#1A1A1A] tracking-tight border-b border-[#DACDCA]/50 pb-2 mb-4">
-                Upload New Image
+                {t('imageUpload.title')}
             </h3>
 
             {error && (
@@ -83,7 +85,7 @@ export default function ImageUploadForm({
 
             <div className="space-y-1">
                 <label className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider mb-1">
-                    Select Image File (JPG, PNG)
+                    {t('imageUpload.label')}
                 </label>
 
                 <input
@@ -101,10 +103,10 @@ export default function ImageUploadForm({
                         onClick={handleCustomButtonClick}
                         className="py-1.5 px-4 rounded-md text-xs font-bold uppercase tracking-wider bg-[#42211D] text-white hover:bg-[#5C2E29] transition-colors"
                     >
-                        Choose file
+                        {t('imageUpload.chooseFile')}
                     </button>
                     <span className="text-sm font-semibold text-[#1A1A1A] truncate">
-            {file ? file.name : "No file chosen"}
+            {file ? file.name : t('imageUpload.noFile') }
         </span>
                 </div>
             </div>
@@ -122,7 +124,7 @@ export default function ImageUploadForm({
                     htmlFor="isMain"
                     className="text-sm font-semibold text-[#1A1A1A] select-none cursor-pointer"
                 >
-                    Set as main image for this property/unit
+                    {t('imageUpload.setMain')}
                 </label>
             </div>
 
@@ -132,7 +134,7 @@ export default function ImageUploadForm({
                     disabled={loading || !file}
                     className="w-full md:w-auto px-6 py-3 bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg transition-all border border-[#DACDCA] shadow-sm tracking-tight disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed disabled:shadow-none"
                 >
-                    {loading ? "Uploading..." : submitLabel}
+                    {loading ? t('imageUpload.uploading') : buttonLabel}
                 </button>
             </div>
         </form>
