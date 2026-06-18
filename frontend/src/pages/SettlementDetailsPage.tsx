@@ -11,7 +11,7 @@ import {createCheckoutSession} from "../api/billingApi";
 export default function SettlementDetailsPage() {
     const {id} = useParams();
     const [settlement, setSettlement] = useState<SettlementDetails | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(Boolean(id));
     const [error, setError] = useState("");
     const {t} = useTranslation();
 
@@ -20,10 +20,7 @@ export default function SettlementDetailsPage() {
     >({});
 
     useEffect(() => {
-        if (!id) {
-            setLoading(false);
-            return;
-        }
+        if (!id) return;
 
         getSettlementDetails(id)
             .then(setSettlement)
@@ -287,7 +284,7 @@ export default function SettlementDetailsPage() {
                         <div className="pt-1">
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
                                 settlement.status === 'PAID' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
-                                'bg-amber-50 border-amber-200 text-amber-800'
+                                    'bg-amber-50 border-amber-200 text-amber-800'
                             }`}>
                                 {t(`settlementStatuses.${settlement.status}`, {
                                     defaultValue: settlement.status

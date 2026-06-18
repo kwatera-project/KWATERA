@@ -1,5 +1,4 @@
 import { Brain, Scan, Calendar, LayoutDashboard, Server, Database, Code } from 'lucide-react';
-import Footer from '../components/landing/Footer';
 import {useTranslation} from "react-i18next"
 
 interface TeamMember {

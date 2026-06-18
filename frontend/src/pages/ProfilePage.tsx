@@ -26,7 +26,7 @@ export default function ProfilePage() {
                 setError(errMsg ||  t('profile.loadError'));
                 setLoading(false);
             });
-    }, []);
+    }, [t]);
 
     const handleStartEdit = () => {
         setEditFirstName(profile?.firstName || "");
