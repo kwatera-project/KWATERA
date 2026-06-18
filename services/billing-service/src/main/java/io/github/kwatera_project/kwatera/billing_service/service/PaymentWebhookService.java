@@ -47,9 +47,7 @@ public class PaymentWebhookService {
 
       case "checkout.session.async_payment_failed" -> handleCheckoutFailed(event, eventId);
 
-      default -> {
-        // ignore safely
-      }
+      default -> {}
     }
   }
 
@@ -90,7 +88,15 @@ public class PaymentWebhookService {
   private void handleCheckoutCompleted(Event event, String eventId) throws StripeException {
 
     Session eventSession = deserializeSession(event);
-    Session session = stripeClient.retrieveSession(eventSession.getId());
+    Session session;
+    try {
+      session = stripeClient.retrieveSession(eventSession.getId());
+    } catch (StripeException e) {
+      session = eventSession;
+    }
+    if (session == null || session.getMetadata() == null || session.getMetadata().isEmpty()) {
+      session = eventSession;
+    }
 
     PaymentMetadataDto metadata = PaymentMetadataDto.from(session.getMetadata());
 
@@ -106,7 +112,7 @@ public class PaymentWebhookService {
             session.getId());
 
     if (!created) {
-      return; // already processed
+      return;
     }
 
     try {
@@ -118,6 +124,8 @@ public class PaymentWebhookService {
           metadata.quantity(),
           metadata.unitPrice(),
           metadata.recipientEmail());
+
+      settlementService.generateInvoicePdfIfNeeded(metadata.settlementId());
 
     } catch (RuntimeException e) {
       paymentTransactionService.markFailed(

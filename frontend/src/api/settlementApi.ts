@@ -59,3 +59,34 @@ export async function getSettlementItemInfoByType(id: string, type: string) {
 
     return res.json();
 }
+
+export async function downloadInvoice(reservationId: string): Promise<void> {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("Log in to download invoice");
+
+    if (IS_DEMO_MODE) {
+        alert("Demo Mode: Invoice download is simulated.");
+        return;
+    }
+
+    const res = await fetch(`${GATEWAY_BASE_URL}/api/billing/settlements/${reservationId}/invoice`, {
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
+    });
+
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => ({})) as { message?: string };
+        throw new Error(errorData.message || `Failed to download invoice (${res.status})`);
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `invoice-${reservationId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+}

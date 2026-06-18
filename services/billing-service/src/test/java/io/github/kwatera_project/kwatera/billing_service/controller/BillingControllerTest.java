@@ -8,13 +8,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.kwatera_project.kwatera.billing_service.dto.CheckoutRequest;
 import io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto;
+import io.github.kwatera_project.kwatera.billing_service.dto.SettlementDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto;
 import io.github.kwatera_project.kwatera.billing_service.service.PaymentService;
+import io.github.kwatera_project.kwatera.billing_service.service.SettlementService;
 import io.github.kwatera_project.kwatera.billing_service.service.StripeService;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.Key;
 import java.util.List;
 import java.util.UUID;
@@ -42,6 +46,8 @@ class BillingControllerTest {
   @MockitoBean private PaymentService paymentService;
 
   @MockitoBean private StripeService stripeService;
+
+  @MockitoBean private SettlementService settlementService;
 
   @Autowired private ObjectMapper objectMapper;
 
@@ -84,12 +90,7 @@ class BillingControllerTest {
     request.setUnitPrice(new BigDecimal(100));
 
     when(paymentService.createCheckoutSession(
-            eq(reservationId),
-            eq("Bearer " + token),
-            eq(ACCOMMODATION),
-            eq("test"),
-            any(BigDecimal.class),
-            any(BigDecimal.class)))
+            eq(reservationId), eq("Bearer " + token), any(CheckoutRequest.class)))
         .thenReturn("https://stripe.checkout/session");
 
     UsernamePasswordAuthenticationToken auth =
@@ -344,5 +345,256 @@ class BillingControllerTest {
             get("/api/billing/settlements/" + reservationId)
                 .header("Authorization", "Bearer " + token))
         .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void shouldDownloadInvoiceWhenPdfFileExists() throws Exception {
+    UUID reservationId = UUID.randomUUID();
+    UUID guestId = UUID.randomUUID();
+    String token = createToken("guest", guestId.toString(), List.of("ROLE_USER"));
+
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setUserId(guestId);
+
+    when(stripeService.getReservation(reservationId, "Bearer " + token)).thenReturn(reservationDto);
+
+    Path tempFile = Files.createTempFile("invoice", ".pdf");
+    Files.write(tempFile, "pdf content".getBytes());
+
+    SettlementDto settlementDto = mock(SettlementDto.class);
+    when(settlementDto.id()).thenReturn(UUID.randomUUID());
+    when(settlementDto.reservationId()).thenReturn(reservationId);
+    when(settlementDto.invoiceRequested()).thenReturn(true);
+    when(settlementDto.invoicePdfPath()).thenReturn(tempFile.toString());
+
+    SettlementResponseDto responseDto = new SettlementResponseDto(settlementDto, List.of());
+
+    when(paymentService.getSettlementWithItems(reservationId, "Bearer " + token))
+        .thenReturn(responseDto);
+
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(
+            "guest", null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+    SecurityContextHolder.getContext().setAuthentication(auth);
+
+    mockMvc
+        .perform(
+            get("/api/billing/settlements/" + reservationId + "/invoice")
+                .header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_PDF))
+        .andExpect(
+            header()
+                .string(
+                    "Content-Disposition",
+                    "attachment; filename=\"invoice-" + reservationId + ".pdf\""))
+        .andExpect(content().bytes("pdf content".getBytes()));
+
+    Files.deleteIfExists(tempFile);
+  }
+
+  @Test
+  void shouldGenerateInvoiceLazilyWhenInvoiceRequestedAndPdfPathMissing() throws Exception {
+    UUID reservationId = UUID.randomUUID();
+    UUID guestId = UUID.randomUUID();
+    String token = createToken("guest", guestId.toString(), List.of("ROLE_USER"));
+
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setUserId(guestId);
+
+    when(stripeService.getReservation(reservationId, "Bearer " + token)).thenReturn(reservationDto);
+
+    SettlementDto initialSettlement = mock(SettlementDto.class);
+    UUID sid = UUID.randomUUID();
+    when(initialSettlement.id()).thenReturn(sid);
+    when(initialSettlement.reservationId()).thenReturn(reservationId);
+    when(initialSettlement.invoiceRequested()).thenReturn(true);
+    when(initialSettlement.invoicePdfPath()).thenReturn(null);
+
+    SettlementResponseDto initialResponse = new SettlementResponseDto(initialSettlement, List.of());
+
+    Path tempFile = Files.createTempFile("invoice", ".pdf");
+    Files.write(tempFile, "pdf content".getBytes());
+
+    SettlementDto updatedSettlement = mock(SettlementDto.class);
+    when(updatedSettlement.id()).thenReturn(sid);
+    when(updatedSettlement.reservationId()).thenReturn(reservationId);
+    when(updatedSettlement.invoiceRequested()).thenReturn(true);
+    when(updatedSettlement.invoicePdfPath()).thenReturn(tempFile.toString());
+
+    SettlementResponseDto updatedResponse = new SettlementResponseDto(updatedSettlement, List.of());
+
+    when(paymentService.getSettlementWithItems(reservationId, "Bearer " + token))
+        .thenReturn(initialResponse, updatedResponse);
+
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(
+            "guest", null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+    SecurityContextHolder.getContext().setAuthentication(auth);
+
+    mockMvc
+        .perform(
+            get("/api/billing/settlements/" + reservationId + "/invoice")
+                .header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk());
+
+    verify(settlementService).generateInvoicePdfIfNeeded(sid);
+
+    Files.deleteIfExists(tempFile);
+  }
+
+  @Test
+  void shouldRegenerateInvoiceWhenStoredPdfFileDoesNotExist() throws Exception {
+    UUID reservationId = UUID.randomUUID();
+    UUID guestId = UUID.randomUUID();
+    String token = createToken("guest", guestId.toString(), List.of("ROLE_USER"));
+
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setUserId(guestId);
+
+    when(stripeService.getReservation(reservationId, "Bearer " + token)).thenReturn(reservationDto);
+
+    SettlementDto initialSettlement = mock(SettlementDto.class);
+    UUID sid = UUID.randomUUID();
+    when(initialSettlement.id()).thenReturn(sid);
+    when(initialSettlement.reservationId()).thenReturn(reservationId);
+    when(initialSettlement.invoiceRequested()).thenReturn(true);
+    when(initialSettlement.invoicePdfPath()).thenReturn("non_existing_path.pdf");
+
+    SettlementResponseDto initialResponse = new SettlementResponseDto(initialSettlement, List.of());
+
+    Path tempFile = Files.createTempFile("invoice", ".pdf");
+    Files.write(tempFile, "pdf content".getBytes());
+
+    SettlementDto updatedSettlement = mock(SettlementDto.class);
+    when(updatedSettlement.id()).thenReturn(sid);
+    when(updatedSettlement.reservationId()).thenReturn(reservationId);
+    when(updatedSettlement.invoiceRequested()).thenReturn(true);
+    when(updatedSettlement.invoicePdfPath()).thenReturn(tempFile.toString());
+
+    SettlementResponseDto updatedResponse = new SettlementResponseDto(updatedSettlement, List.of());
+
+    when(paymentService.getSettlementWithItems(reservationId, "Bearer " + token))
+        .thenReturn(initialResponse, updatedResponse);
+
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(
+            "guest", null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+    SecurityContextHolder.getContext().setAuthentication(auth);
+
+    mockMvc
+        .perform(
+            get("/api/billing/settlements/" + reservationId + "/invoice")
+                .header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk());
+
+    verify(settlementService).generateInvoicePdfIfNeeded(sid);
+
+    Files.deleteIfExists(tempFile);
+  }
+
+  @Test
+  void shouldReturnUnprocessableEntityWhenInvoiceWasNotGenerated() throws Exception {
+    UUID reservationId = UUID.randomUUID();
+    UUID guestId = UUID.randomUUID();
+    String token = createToken("guest", guestId.toString(), List.of("ROLE_USER"));
+
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setUserId(guestId);
+
+    when(stripeService.getReservation(reservationId, "Bearer " + token)).thenReturn(reservationDto);
+
+    SettlementDto settlementDto = mock(SettlementDto.class);
+    when(settlementDto.id()).thenReturn(UUID.randomUUID());
+    when(settlementDto.reservationId()).thenReturn(reservationId);
+    when(settlementDto.invoiceRequested()).thenReturn(false);
+    when(settlementDto.invoicePdfPath()).thenReturn(null);
+
+    SettlementResponseDto responseDto = new SettlementResponseDto(settlementDto, List.of());
+
+    when(paymentService.getSettlementWithItems(reservationId, "Bearer " + token))
+        .thenReturn(responseDto);
+
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(
+            "guest", null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+    SecurityContextHolder.getContext().setAuthentication(auth);
+
+    mockMvc
+        .perform(
+            get("/api/billing/settlements/" + reservationId + "/invoice")
+                .header("Authorization", "Bearer " + token))
+        .andExpect(status().isUnprocessableEntity());
+  }
+
+  @Test
+  void shouldReturnNotFoundWhenSettlementIsNull() throws Exception {
+    UUID reservationId = UUID.randomUUID();
+    UUID guestId = UUID.randomUUID();
+    String token = createToken("guest", guestId.toString(), List.of("ROLE_USER"));
+
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setUserId(guestId);
+
+    when(stripeService.getReservation(reservationId, "Bearer " + token)).thenReturn(reservationDto);
+
+    SettlementResponseDto responseDto = new SettlementResponseDto(null, List.of());
+
+    when(paymentService.getSettlementWithItems(reservationId, "Bearer " + token))
+        .thenReturn(responseDto);
+
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(
+            "guest", null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+    SecurityContextHolder.getContext().setAuthentication(auth);
+
+    mockMvc
+        .perform(
+            get("/api/billing/settlements/" + reservationId + "/invoice")
+                .header("Authorization", "Bearer " + token))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void shouldReturnNotFoundWhenPdfFileStillDoesNotExistAfterRegeneration() throws Exception {
+    UUID reservationId = UUID.randomUUID();
+    UUID guestId = UUID.randomUUID();
+    String token = createToken("guest", guestId.toString(), List.of("ROLE_USER"));
+
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setId(reservationId);
+    reservationDto.setUserId(guestId);
+
+    when(stripeService.getReservation(reservationId, "Bearer " + token)).thenReturn(reservationDto);
+
+    SettlementDto initialSettlement = mock(SettlementDto.class);
+    UUID sid = UUID.randomUUID();
+    when(initialSettlement.id()).thenReturn(sid);
+    when(initialSettlement.reservationId()).thenReturn(reservationId);
+    when(initialSettlement.invoiceRequested()).thenReturn(true);
+    when(initialSettlement.invoicePdfPath()).thenReturn("non_existing_path.pdf");
+
+    SettlementResponseDto initialResponse = new SettlementResponseDto(initialSettlement, List.of());
+
+    when(paymentService.getSettlementWithItems(reservationId, "Bearer " + token))
+        .thenReturn(initialResponse, initialResponse);
+
+    UsernamePasswordAuthenticationToken auth =
+        new UsernamePasswordAuthenticationToken(
+            "guest", null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+    SecurityContextHolder.getContext().setAuthentication(auth);
+
+    mockMvc
+        .perform(
+            get("/api/billing/settlements/" + reservationId + "/invoice")
+                .header("Authorization", "Bearer " + token))
+        .andExpect(status().isNotFound());
+
+    verify(settlementService).generateInvoicePdfIfNeeded(sid);
   }
 }

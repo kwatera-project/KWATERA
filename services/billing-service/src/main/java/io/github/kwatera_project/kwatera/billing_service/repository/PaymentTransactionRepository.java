@@ -11,4 +11,6 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
   Optional<PaymentTransaction> findByStripeSessionId(String sessionId);
 
   Optional<PaymentTransaction> findByStripeEventId(String eventId);
+
+  java.util.List<PaymentTransaction> findBySettlementId(UUID settlementId);
 }

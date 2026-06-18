@@ -151,12 +151,12 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                     <div className="relative hidden lg:block">
                         <button
                             onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
-                            className={`font-medium text-sm tracking-wide transition-all duration-300 focus:outline-none ${isNavbarWhite ? 'text-stone-800 hover:text-brand-primary' : 'text-white hover:text-white/80 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]'}`}
+                            className={`font-medium text-sm transition-all uppercase tracking-widest flex items-center gap-1.5 focus:outline-none ${isNavbarWhite ? 'text-stone-800 hover:text-[#8B4513]' : 'text-white hover:text-white/80 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]'}`}
                         >
                             {languageOptions.find(({code}) => code === currentLang)?.label ?? 'ENG'}
                         </button>
                         {isLangDropdownOpen && (
-                            <div className="absolute top-full right-0 mt-3 w-28 bg-card rounded-2xl shadow-xl z-50 overflow-hidden py-1.5 border border-[#DACDCA]/40">
+                            <div className="absolute top-full right-0 mt-3 w-28 bg-solid-white rounded-2xl shadow-xl z-[21000] overflow-hidden py-1.5 border border-[#DACDCA]/40">
                                 {languageOptions.map(({code, label}) => (
                                     <button
                                         key={code}
@@ -166,7 +166,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                                             setCurrentLang(code);
                                             setIsLangDropdownOpen(false);
                                         }}
-                                        className={`w-full text-left px-4 py-2 text-sm font-medium transition-colors ${currentLang === code ? 'text-[rgb(var(--color-burgundy))] bg-gray-100' : 'text-title hover:bg-gray-50 opacity-80 hover:opacity-100'}`}
+                                        className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${currentLang === code ? 'font-black text-[rgb(var(--color-burgundy))] bg-gray-50' : 'text-title font-medium'}`}
                                     >
                                         {label}
                                     </button>

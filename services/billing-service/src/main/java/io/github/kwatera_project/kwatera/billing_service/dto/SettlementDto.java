@@ -27,7 +27,9 @@ public record SettlementDto(
     Instant issuedAt,
     Instant paidAt,
     Instant createdAt,
-    Instant updatedAt) {
+    Instant updatedAt,
+    Boolean invoiceRequested,
+    String invoicePdfPath) {
 
   public static SettlementDto from(
       Settlement s,
@@ -59,6 +61,8 @@ public record SettlementDto(
         s.getIssuedAt(),
         s.getPaidAt(),
         s.getCreatedAt(),
-        s.getUpdatedAt());
+        s.getUpdatedAt(),
+        s.isInvoiceRequested(),
+        s.getInvoicePdfPath());
   }
 }

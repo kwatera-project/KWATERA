@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.github.kwatera_project.kwatera.billing_service.client.PropertyClient;
+import io.github.kwatera_project.kwatera.billing_service.client.ReservationClient;
 import io.github.kwatera_project.kwatera.billing_service.client.SystemEventClient;
 import io.github.kwatera_project.kwatera.billing_service.dto.CurrencyMetadataDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto;
@@ -15,19 +16,25 @@ import io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseD
 import io.github.kwatera_project.kwatera.billing_service.dto.UnitSettlementItemDto;
 import io.github.kwatera_project.kwatera.billing_service.event.SettlementEventPublisher;
 import io.github.kwatera_project.kwatera.billing_service.model.*;
+import io.github.kwatera_project.kwatera.billing_service.repository.PaymentTransactionRepository;
 import io.github.kwatera_project.kwatera.billing_service.repository.SettlementItemRepository;
 import io.github.kwatera_project.kwatera.billing_service.repository.SettlementRepository;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
 @ExtendWith(MockitoExtension.class)
 class SettlementServiceTest {
@@ -43,6 +50,12 @@ class SettlementServiceTest {
   @Mock private EmailNotificationService emailNotificationService;
 
   @Mock private SystemEventClient systemEventClient;
+
+  @Mock private ReservationClient reservationClient;
+
+  @Mock private TemplateEngine templateEngine;
+
+  @Mock private PaymentTransactionRepository paymentTransactionRepository;
 
   @InjectMocks private SettlementService settlementService;
 
@@ -1058,5 +1071,141 @@ class SettlementServiceTest {
 
     assertEquals(SettlementStatus.PAID, settlement.getStatus());
     verify(settlementRepository).save(settlement);
+  }
+
+  @Test
+  void shouldSkipInvoicePdfGenerationWhenInvoiceWasNotRequested() {
+    UUID settlementId = UUID.randomUUID();
+    Settlement settlement = new Settlement();
+    settlement.setId(settlementId);
+    settlement.setInvoiceRequested(false);
+
+    when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
+
+    settlementService.generateInvoicePdfIfNeeded(settlementId);
+
+    verify(reservationClient, never()).getReservation(any());
+    verify(templateEngine, never()).process(anyString(), any(Context.class));
+    verify(paymentTransactionRepository, never()).findBySettlementId(any());
+    verify(settlementRepository, never()).save(any());
+  }
+
+  @Test
+  void shouldGenerateInvoicePdfWhenInvoiceWasRequested() throws Exception {
+    UUID settlementId = UUID.randomUUID();
+    UUID reservationId = UUID.randomUUID();
+
+    Settlement settlement = new Settlement();
+    settlement.setId(settlementId);
+    settlement.setReservationId(reservationId);
+    settlement.setInvoiceRequested(true);
+    settlement.setCompanyName("Test Company");
+    settlement.setTaxId("1234567890");
+    settlement.setCompanyAddress("Test Street 1, 00-000 City");
+    settlement.setAccommodationAmount(BigDecimal.valueOf(100));
+    settlement.setUtilitiesAmount(BigDecimal.valueOf(20));
+    settlement.setDepositAmount(BigDecimal.valueOf(50));
+    settlement.setDiscountAmount(BigDecimal.ZERO);
+    settlement.setTotalAmount(BigDecimal.valueOf(170));
+    settlement.setAmountPaid(BigDecimal.valueOf(170));
+    settlement.setBalanceDue(BigDecimal.ZERO);
+    settlement.setStatus(SettlementStatus.PAID);
+
+    when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
+
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setGuestName("John Doe");
+    reservationDto.setGuestEmail("john@example.com");
+    reservationDto.setUnitName("Apartment A");
+    reservationDto.setOwnerName("Jane Smith");
+    reservationDto.setOwnerEmail("jane@example.com");
+    reservationDto.setStartDate(java.time.LocalDate.now());
+    reservationDto.setEndDate(java.time.LocalDate.now().plusDays(2));
+    reservationDto.setCurrencyInfo(
+        new CurrencyMetadataDto("PLN", "EUR", BigDecimal.valueOf(4.0), null));
+
+    when(reservationClient.getReservation(reservationId)).thenReturn(reservationDto);
+
+    PaymentTransaction pt = new PaymentTransaction();
+    pt.setStripeSessionId("cs_test_123");
+    when(paymentTransactionRepository.findBySettlementId(settlementId)).thenReturn(List.of(pt));
+
+    when(templateEngine.process(eq("settlement-invoice"), any(Context.class)))
+        .thenReturn("<html><body>Invoice</body></html>");
+
+    settlementService.generateInvoicePdfIfNeeded(settlementId);
+
+    assertNotNull(settlement.getInvoicePdfPath());
+    assertTrue(Files.exists(Path.of(settlement.getInvoicePdfPath())));
+    Files.deleteIfExists(Path.of(settlement.getInvoicePdfPath()));
+
+    verify(settlementRepository).save(settlement);
+
+    ArgumentCaptor<Context> contextCaptor = ArgumentCaptor.forClass(Context.class);
+    verify(templateEngine).process(eq("settlement-invoice"), contextCaptor.capture());
+
+    Context context = contextCaptor.getValue();
+    assertNotNull(context.getVariable("invoiceNumber"));
+    assertEquals("Test Company", context.getVariable("buyerName"));
+    assertEquals("1234567890", context.getVariable("buyerTaxId"));
+    assertEquals("Test Street 1, 00-000 City", context.getVariable("buyerAddress"));
+    assertEquals("cs_test_123", context.getVariable("stripeReference"));
+  }
+
+  @Test
+  void shouldFallbackToGuestDataWhenCompanyDataIsMissing() throws Exception {
+    UUID settlementId = UUID.randomUUID();
+    UUID reservationId = UUID.randomUUID();
+
+    Settlement settlement = new Settlement();
+    settlement.setId(settlementId);
+    settlement.setReservationId(reservationId);
+    settlement.setInvoiceRequested(true);
+    settlement.setCompanyName("");
+    settlement.setTaxId(null);
+    settlement.setCompanyAddress(null);
+    settlement.setAccommodationAmount(BigDecimal.valueOf(100));
+    settlement.setUtilitiesAmount(BigDecimal.ZERO);
+    settlement.setDepositAmount(BigDecimal.ZERO);
+    settlement.setDiscountAmount(BigDecimal.ZERO);
+    settlement.setTotalAmount(BigDecimal.valueOf(100));
+    settlement.setAmountPaid(BigDecimal.valueOf(100));
+    settlement.setBalanceDue(BigDecimal.ZERO);
+    settlement.setStatus(SettlementStatus.PAID);
+
+    when(settlementRepository.findById(settlementId)).thenReturn(Optional.of(settlement));
+
+    ReservationDto reservationDto = new ReservationDto();
+    reservationDto.setGuestName("John Doe");
+    reservationDto.setGuestEmail("john@example.com");
+    reservationDto.setUnitName("Apartment A");
+    reservationDto.setOwnerName("Jane Smith");
+    reservationDto.setOwnerEmail("jane@example.com");
+    reservationDto.setStartDate(java.time.LocalDate.now());
+    reservationDto.setEndDate(java.time.LocalDate.now().plusDays(2));
+    reservationDto.setCurrencyInfo(
+        new CurrencyMetadataDto("PLN", "EUR", BigDecimal.valueOf(4.0), null));
+
+    when(reservationClient.getReservation(reservationId)).thenReturn(reservationDto);
+    when(paymentTransactionRepository.findBySettlementId(settlementId)).thenReturn(List.of());
+
+    when(templateEngine.process(eq("settlement-invoice"), any(Context.class)))
+        .thenReturn("<html><body>Invoice fallback</body></html>");
+
+    settlementService.generateInvoicePdfIfNeeded(settlementId);
+
+    assertNotNull(settlement.getInvoicePdfPath());
+    assertTrue(Files.exists(Path.of(settlement.getInvoicePdfPath())));
+    Files.deleteIfExists(Path.of(settlement.getInvoicePdfPath()));
+
+    verify(settlementRepository).save(settlement);
+
+    ArgumentCaptor<Context> contextCaptor = ArgumentCaptor.forClass(Context.class);
+    verify(templateEngine).process(eq("settlement-invoice"), contextCaptor.capture());
+
+    Context context = contextCaptor.getValue();
+    assertEquals("John Doe", context.getVariable("buyerName"));
+    assertEquals("", context.getVariable("buyerTaxId"));
+    assertEquals("", context.getVariable("buyerAddress"));
   }
 }

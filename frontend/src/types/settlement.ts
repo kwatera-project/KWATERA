@@ -36,7 +36,8 @@ export interface SettlementDetails {
     paidAt: string | null;
     createdAt: string;
     updatedAt: string;
-
+    invoiceRequested?: boolean;
+    invoicePdfPath?: string;
     finalized: boolean;
     items?: SettlementItemDetails[];
 }

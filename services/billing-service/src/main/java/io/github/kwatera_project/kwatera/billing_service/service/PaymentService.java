@@ -8,7 +8,6 @@ import io.github.kwatera_project.kwatera.billing_service.model.Settlement;
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
 import io.github.kwatera_project.kwatera.billing_service.repository.SettlementRepository;
 import jakarta.transaction.Transactional;
-import java.math.BigDecimal;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -44,18 +43,25 @@ public class PaymentService {
   public String createCheckoutSession(
       UUID reservationId,
       String token,
-      SettlementItemType type,
-      String description,
-      BigDecimal quantity,
-      BigDecimal unitPrice)
+      io.github.kwatera_project.kwatera.billing_service.dto.CheckoutRequest checkoutRequest)
       throws StripeException {
 
     Settlement settlement = getOrCreateByReservation(reservationId, token);
+    settlement.setInvoiceRequested(checkoutRequest.isInvoiceRequested());
+    settlement.setCompanyName(checkoutRequest.getCompanyName());
+    settlement.setTaxId(checkoutRequest.getTaxId());
+    settlement.setCompanyAddress(checkoutRequest.getCompanyAddress());
+    settlementRepository.save(settlement);
 
     ReservationDto reservationDto = stripeService.getReservation(reservationId, token);
 
     return stripeService.createCheckoutSession(
-        settlement, type, description, quantity, unitPrice, reservationDto);
+        settlement,
+        checkoutRequest.getType(),
+        checkoutRequest.getDescription(),
+        checkoutRequest.getQuantity(),
+        checkoutRequest.getUnitPrice(),
+        reservationDto);
   }
 
   public SettlementResponseDto getSettlementWithItems(UUID reservationId, String token) {

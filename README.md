@@ -162,7 +162,7 @@ Direct service URLs are also available during local development:
 - AI Pricing Service Swagger UI: [http://localhost:8087/swagger-ui.html](http://localhost:8087/swagger-ui.html)
 - OCR Service FastAPI docs: [http://localhost:8085/docs](http://localhost:8085/docs)
 
-## Additional Documentation
+## Additional Documentation 
 
 - [Stage 3 demo flow](docs/stage-3-demo-flow.md)
 - [CI quality pipeline](docs/ci/CI_QUALITY_PIPELINE.md)

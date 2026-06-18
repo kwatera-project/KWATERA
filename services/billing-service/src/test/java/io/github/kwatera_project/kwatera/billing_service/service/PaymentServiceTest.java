@@ -46,14 +46,14 @@ class PaymentServiceTest {
     when(stripeService.createCheckoutSession(any(), any(), any(), any(), any(), any()))
         .thenReturn("https://checkout.stripe.com/session");
 
-    String url =
-        paymentService.createCheckoutSession(
-            reservationId,
-            "token",
-            SettlementItemType.ACCOMMODATION,
-            "Test",
-            BigDecimal.ONE,
-            BigDecimal.TEN);
+    io.github.kwatera_project.kwatera.billing_service.dto.CheckoutRequest req =
+        new io.github.kwatera_project.kwatera.billing_service.dto.CheckoutRequest();
+    req.setType(SettlementItemType.ACCOMMODATION);
+    req.setDescription("Test");
+    req.setQuantity(BigDecimal.ONE);
+    req.setUnitPrice(BigDecimal.TEN);
+
+    String url = paymentService.createCheckoutSession(reservationId, "token", req);
 
     assertEquals("https://checkout.stripe.com/session", url);
   }

@@ -7,6 +7,7 @@ import io.github.kwatera_project.kwatera.billing_service.client.PropertyClient;
 import io.github.kwatera_project.kwatera.billing_service.client.SystemEventClient;
 import io.github.kwatera_project.kwatera.billing_service.dto.*;
 import io.github.kwatera_project.kwatera.billing_service.event.SettlementEventPublisher;
+import io.github.kwatera_project.kwatera.billing_service.model.PaymentTransaction;
 import io.github.kwatera_project.kwatera.billing_service.model.Settlement;
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementItem;
 import io.github.kwatera_project.kwatera.billing_service.model.SettlementItemType;
@@ -40,6 +41,12 @@ public class SettlementService {
   private final PropertyClient propertyClient;
   private final EmailNotificationService emailNotificationService;
   private final SystemEventClient systemEventClient;
+  private final io.github.kwatera_project.kwatera.billing_service.client.ReservationClient
+      reservationClient;
+  private final org.thymeleaf.TemplateEngine templateEngine;
+  private final io.github.kwatera_project.kwatera.billing_service.repository
+          .PaymentTransactionRepository
+      paymentTransactionRepository;
 
   private static final String SETTLEMENT_NOT_FOUND = "Settlement not found";
 
@@ -507,5 +514,174 @@ public class SettlementService {
             .collect(Collectors.toSet());
 
     return existingTypes.containsAll(requiredTypes);
+  }
+
+  @Transactional
+  public void generateInvoicePdfIfNeeded(UUID settlementId) {
+    Settlement settlement =
+        settlementRepository
+            .findById(settlementId)
+            .orElseThrow(() -> new RuntimeException(SETTLEMENT_NOT_FOUND));
+
+    if (!settlement.isInvoiceRequested()) {
+      return;
+    }
+
+    try {
+      ReservationDto reservation = reservationClient.getReservation(settlement.getReservationId());
+
+      org.thymeleaf.context.Context context = new org.thymeleaf.context.Context();
+
+      String year = String.valueOf(LocalDate.now().getYear());
+      String month = String.format("%02d", LocalDate.now().getMonthValue());
+      String invoiceNumber =
+          "FV/"
+              + year
+              + "/"
+              + month
+              + "/"
+              + settlement.getId().toString().substring(0, 8).toUpperCase();
+      context.setVariable("invoiceNumber", invoiceNumber);
+
+      context.setVariable(
+          "ownerName",
+          reservation.getOwnerName() != null
+              ? reservation.getOwnerName()
+              : "Kwatera Property Management");
+      context.setVariable(
+          "ownerEmail",
+          reservation.getOwnerEmail() != null
+              ? reservation.getOwnerEmail()
+              : "billing@kwatera.local");
+
+      String guestName =
+          reservation.getGuestName() != null
+              ? reservation.getGuestName()
+              : (reservation.getGuestEmail() != null ? reservation.getGuestEmail() : "Guest");
+      context.setVariable(
+          "buyerName",
+          settlement.getCompanyName() != null && !settlement.getCompanyName().isBlank()
+              ? settlement.getCompanyName()
+              : guestName);
+      context.setVariable("buyerTaxId", settlement.getTaxId() != null ? settlement.getTaxId() : "");
+      context.setVariable(
+          "buyerAddress",
+          settlement.getCompanyAddress() != null ? settlement.getCompanyAddress() : "");
+
+      context.setVariable("guestEmail", reservation.getGuestEmail());
+      context.setVariable("unitName", reservation.getUnitName());
+      context.setVariable("startDate", reservation.getStartDate());
+      context.setVariable("endDate", reservation.getEndDate());
+
+      String currency =
+          (reservation.getCurrencyInfo() != null
+                  && reservation.getCurrencyInfo().displayCurrency() != null)
+              ? reservation.getCurrencyInfo().displayCurrency()
+              : "PLN";
+      context.setVariable("currency", currency);
+
+      BigDecimal rate =
+          (reservation.getCurrencyInfo() != null
+                  && reservation.getCurrencyInfo().exchangeRate() != null)
+              ? reservation.getCurrencyInfo().exchangeRate()
+              : BigDecimal.ONE;
+
+      String stripeSessionId = "";
+      List<PaymentTransaction> txs =
+          paymentTransactionRepository.findBySettlementId(settlement.getId());
+      if (!txs.isEmpty()) {
+        stripeSessionId = txs.get(0).getStripeSessionId();
+      }
+      context.setVariable("stripeReference", stripeSessionId);
+
+      context.setVariable("settlement", settlement);
+      context.setVariable("reservation", reservation);
+      context.setVariable(
+          "formattedAccommodation",
+          formatPrice(settlement.getAccommodationAmount(), currency, rate));
+      context.setVariable(
+          "formattedUtilities", formatPrice(settlement.getUtilitiesAmount(), currency, rate));
+      context.setVariable(
+          "formattedDeposit", formatPrice(settlement.getDepositAmount(), currency, rate));
+      context.setVariable(
+          "formattedDiscount", formatPrice(settlement.getDiscountAmount(), currency, rate));
+      context.setVariable(
+          "formattedTotal", formatPrice(settlement.getTotalAmount(), currency, rate));
+      context.setVariable("formattedPaid", formatPrice(settlement.getAmountPaid(), currency, rate));
+      context.setVariable(
+          "formattedBalanceDue", formatPrice(settlement.getBalanceDue(), currency, rate));
+
+      context.setVariable("statusLabel", settlement.getStatus().name());
+      context.setVariable(
+          "statusStyle",
+          settlement.getStatus() == SettlementStatus.PAID
+              ? "background-color: #D1FAE5; color: #065F46;"
+              : "background-color: #FEF3C7; color: #92400E;");
+
+      try {
+        org.springframework.core.io.ClassPathResource imgFile =
+            new org.springframework.core.io.ClassPathResource("kwatera.png");
+        if (imgFile.exists()) {
+          try (java.io.InputStream imgStream = imgFile.getInputStream()) {
+            byte[] bytes = org.springframework.util.StreamUtils.copyToByteArray(imgStream);
+            String base64Logo = java.util.Base64.getEncoder().encodeToString(bytes);
+            context.setVariable("logoBase64", "data:image/png;base64," + base64Logo);
+          }
+        } else {
+          log.warn("kwatera.png not found in classpath resources!");
+        }
+      } catch (java.io.IOException e) {
+        log.error("Failed to load logo image for invoice generation", e);
+      }
+
+      String htmlContent = templateEngine.process("settlement-invoice", context);
+
+      java.nio.file.Path targetPath =
+          java.nio.file.Paths.get("storage", "invoices", settlement.getId().toString() + ".pdf")
+              .toAbsolutePath()
+              .normalize();
+      java.nio.file.Path targetParent = targetPath.getParent();
+      if (targetParent != null) {
+        java.nio.file.Files.createDirectories(targetParent);
+      }
+
+      try (java.io.OutputStream os = java.nio.file.Files.newOutputStream(targetPath)) {
+        com.openhtmltopdf.pdfboxout.PdfRendererBuilder builder =
+            new com.openhtmltopdf.pdfboxout.PdfRendererBuilder();
+        builder.withHtmlContent(htmlContent, null);
+        builder.toStream(os);
+        try {
+          builder.run();
+        } catch (java.io.IOException e) {
+          throw e;
+        } catch (Exception e) {
+          throw new java.io.IOException("PDF generation failed: " + e.getMessage(), e);
+        }
+      }
+
+      settlement.setInvoicePdfPath(targetPath.toString());
+      settlementRepository.save(settlement);
+
+    } catch (java.io.IOException e) {
+      log.error("Failed to generate PDF invoice for settlement: {}", settlementId, e);
+    }
+  }
+
+  private String formatPrice(BigDecimal amount, String currency, BigDecimal rate) {
+    if (amount == null) return "0.00 PLN";
+    String formatted = String.format(java.util.Locale.US, "%.2f PLN", amount);
+    if (currency != null
+        && !"PLN".equalsIgnoreCase(currency)
+        && rate != null
+        && rate.compareTo(BigDecimal.ZERO) > 0) {
+      BigDecimal converted = amount.divide(rate, 2, java.math.RoundingMode.HALF_UP);
+      formatted +=
+          String.format(
+              java.util.Locale.US,
+              " (%.2f %s)",
+              converted,
+              currency.toUpperCase(java.util.Locale.ROOT));
+    }
+    return formatted;
   }
 }
