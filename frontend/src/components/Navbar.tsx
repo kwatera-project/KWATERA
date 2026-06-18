@@ -22,8 +22,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
     const payload = token ? decodeJwt(token) : null;
     const sub = payload?.sub as string | undefined;
     const firstName = payload?.firstName as string | undefined;
-    const lastName = payload?.lastName as string | undefined;
-    const displayName = (firstName && lastName) ? `${firstName} ${lastName}` : (sub ? sub.split('@')[0] : t('navbar.myProfile'));
+    const displayName = firstName || (sub ? sub.split('@')[0] : t('navbar.myProfile'));
 
     const logout = useLogout()
     const {currency, setCurrency} = useCurrency();
@@ -246,7 +245,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                                             <Link to="/admin/logs"
                                                   className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
                                                 <FileClock size={16}/>
-                                                System Logs
+                                                {t('navbar.systemLogs')}
                                             </Link>
                                         )}
                                         {userRoles.includes("ROLE_OWNER") && (
@@ -278,7 +277,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                                     to="/login"
                                     className={`font-bold text-sm tracking-wide uppercase transition-all duration-300 ${isNavbarWhite ? 'text-stone-800 hover:bg-stone-100 px-4 py-2 rounded-full' : 'text-white hover:text-gray-200 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]'}`}
                                 >
-                                    DEMO LOGIN
+                                    {t('navbar.demoLogin')}
                                 </Link>
                             ) : (
                                 <>
@@ -322,7 +321,30 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                     ))}
 
                     <div className="py-2.5 flex flex-col gap-2">
-                        <span className="text-xs font-bold uppercase tracking-wider text-stone-400">Currency</span>
+                        <span className="text-xs font-bold uppercase tracking-wider text-stone-400">{t('navbar.language')}</span>
+                        <div className="flex gap-2">
+                            {['en', 'pl'].map((lang) => (
+                                <button
+                                    key={lang}
+                                    onClick={() => {
+                                        i18n.changeLanguage(lang);
+                                        localStorage.setItem('language', lang);
+                                        setCurrentLang(lang);
+                                    }}
+                                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                                        currentLang === lang
+                                            ? 'bg-[rgb(var(--color-burgundy))] text-white shadow-sm'
+                                            : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                                    }`}
+                                >
+                                    {lang.toUpperCase()}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="py-2.5 flex flex-col gap-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-stone-400">{t('navbar.currency')}</span>
                         <div className="flex gap-2">
                             {['PLN', 'EUR', 'USD'].map((curr) => (
                                 <button

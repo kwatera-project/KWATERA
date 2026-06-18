@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import ReportExportButtons from "../components/ReportExportButtons";
 import { useDashboardData } from "../hooks/useDashboardData";
+import { getLocaleCode } from "../utils/locale";
 
 export default function DashboardPage() {
   const {
@@ -48,7 +49,8 @@ export default function DashboardPage() {
     refreshData
   } = useDashboardData();
   const dateToRef = useRef<DatePicker | null>(null);
-  const {t} = useTranslation();
+  const {t, i18n} = useTranslation();
+  const localeCode = getLocaleCode(i18n.language);
   const totalReservations = resMetrics.totalReservations;
   const occupancyRate = resMetrics.occupancyRate;
   const occupiedDays = resMetrics.occupiedDays;
@@ -249,7 +251,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <h2 className="text-3xl font-extrabold text-[#1A1A1A] tracking-tight">
-                    {revenueFromSettlements.toLocaleString("pl-PL", { style: "currency", currency: "PLN" })}
+                    {revenueFromSettlements.toLocaleString(localeCode, { style: "currency", currency: "PLN" })}
                   </h2>
                   <p className="text-xs text-[#7A7A7A] mt-2 font-medium">
                       {t("dashboard.paidSettlementsAndDeposits")}
@@ -271,7 +273,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <h2 className="text-3xl font-extrabold text-[#1A1A1A] tracking-tight">
-                    {unpaidBalance.toLocaleString("pl-PL", { style: "currency", currency: "PLN" })}
+                    {unpaidBalance.toLocaleString(localeCode, { style: "currency", currency: "PLN" })}
                   </h2>
                   <p className="text-xs text-[#7A7A7A] mt-2 font-medium">
                       {t("dashboard.pendingInvoiceSettlements")}
@@ -527,7 +529,7 @@ export default function DashboardPage() {
                             {t("dashboard.collectedRevenue")}
                         </span>
                         <span className="font-bold text-gray-900">
-                          {revenueFromSettlements.toLocaleString("pl-PL", { style: "currency", currency: "PLN" })}
+                          {revenueFromSettlements.toLocaleString(localeCode, { style: "currency", currency: "PLN" })}
                         </span>
                       </div>
                       <div className="w-full bg-[#F7F7F7] border border-[#DACDCA] h-6 rounded-lg overflow-hidden relative shadow-inner">
@@ -551,7 +553,7 @@ export default function DashboardPage() {
                             {t("dashboard.outstandingReceivables")}
                         </span>
                         <span className="font-bold text-gray-900">
-                          {unpaidBalance.toLocaleString("pl-PL", { style: "currency", currency: "PLN" })}
+                          {unpaidBalance.toLocaleString(localeCode, { style: "currency", currency: "PLN" })}
                         </span>
                       </div>
                       <div className="w-full bg-[#F7F7F7] border border-[#DACDCA] h-6 rounded-lg overflow-hidden relative shadow-inner">
@@ -571,7 +573,7 @@ export default function DashboardPage() {
                     <div className="border-t border-gray-100 pt-4 flex justify-between text-xs text-[#7A7A7A] font-bold">
                         <span>{t("dashboard.totalSettlementsVolume")}</span>
                       <span>
-                        {(revenueFromSettlements + unpaidBalance).toLocaleString("pl-PL", { style: "currency", currency: "PLN" })}
+                        {(revenueFromSettlements + unpaidBalance).toLocaleString(localeCode, { style: "currency", currency: "PLN" })}
                       </span>
                     </div>
                   </div>
@@ -615,7 +617,8 @@ const CustomOccupancyTooltip = ({ active, payload, label }: CustomTooltipProps) 
 };
 
 const CustomPricingTooltip = ({ active, payload, label }: CustomTooltipProps) => {
-    const {t} = useTranslation();
+    const {t, i18n} = useTranslation();
+    const localeCode = getLocaleCode(i18n.language);
     if (active && payload && payload.length) {
     const staticVal = payload.find(p => p.dataKey === 'staticAdr')?.value ?? 0;
     const aiVal = payload.find(p => p.dataKey === 'aiAdr')?.value ?? 0;
@@ -630,18 +633,18 @@ const CustomPricingTooltip = ({ active, payload, label }: CustomTooltipProps) =>
               <span className="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
                 {t("dashboard.baseStaticPrice")}:
             </span>
-            <span>zł{Number(staticVal).toLocaleString("pl-PL", { minimumFractionDigits: 2 })}</span>
+            <span>zł{Number(staticVal).toLocaleString(localeCode, { minimumFractionDigits: 2 })}</span>
           </p>
           <p className="flex items-center justify-between gap-4 font-semibold text-indigo-600">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
                 {t("dashboard.actualSoldPriceAdr")}:
             </span>
-            <span>zł{Number(aiVal).toLocaleString("pl-PL", { minimumFractionDigits: 2 })}</span>
+            <span>zł{Number(aiVal).toLocaleString(localeCode, { minimumFractionDigits: 2 })}</span>
           </p>
           <div className="border-t border-gray-100 pt-1.5 mt-1.5 flex items-center justify-between gap-4 font-bold text-emerald-600">
             <span>{t("dashboard.pricingMargin")}:</span>
-            <span>+zł{diff.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} ({pct.toFixed(1)}%)</span>
+            <span>+zł{diff.toLocaleString(localeCode, { minimumFractionDigits: 2 })} ({pct.toFixed(1)}%)</span>
           </div>
         </div>
       </div>
@@ -651,7 +654,8 @@ const CustomPricingTooltip = ({ active, payload, label }: CustomTooltipProps) =>
 };
 
 const CustomProfitTooltip = ({ active, payload, label }: CustomTooltipProps) => {
-    const {t} = useTranslation();
+    const {t, i18n} = useTranslation();
+    const localeCode = getLocaleCode(i18n.language);
     if (active && payload && payload.length) {
     const gross = payload.find(p => p.dataKey === 'grossRevenue')?.value ?? 0;
     const utilities = payload.find(p => p.dataKey === 'utilityCosts')?.value ?? 0;
@@ -665,18 +669,18 @@ const CustomProfitTooltip = ({ active, payload, label }: CustomTooltipProps) => 
               <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
                 {t("dashboard.grossRevenue")}:
             </span>
-            <span>zł{Number(gross).toLocaleString("pl-PL")}</span>
+            <span>zł{Number(gross).toLocaleString(localeCode)}</span>
           </p>
           <p className="flex items-center justify-between gap-4 font-semibold text-red-600">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
                 {t("dashboard.utilityCosts")}:
             </span>
-            <span>zł{Number(utilities).toLocaleString("pl-PL")}</span>
+            <span>zł{Number(utilities).toLocaleString(localeCode)}</span>
           </p>
           <div className="border-t border-gray-100 pt-1.5 mt-1.5 flex items-center justify-between gap-4 font-bold text-emerald-600">
             <span>{t("dashboard.netProfit")}:</span>
-            <span>zł{net.toLocaleString("pl-PL")}</span>
+            <span>zł{net.toLocaleString(localeCode)}</span>
           </div>
         </div>
       </div>
@@ -686,7 +690,8 @@ const CustomProfitTooltip = ({ active, payload, label }: CustomTooltipProps) => 
 };
 
 const CustomRankingTooltip = ({ active, payload }: CustomTooltipProps) => {
-    const {t} = useTranslation();
+    const {t, i18n} = useTranslation();
+    const localeCode = getLocaleCode(i18n.language);
     if (active && payload && payload.length) {
     const revenue = payload.find(p => p.dataKey === 'revenue')?.value ?? 0;
     const itemPayload = payload[0]?.payload || {};
@@ -697,7 +702,7 @@ const CustomRankingTooltip = ({ active, payload }: CustomTooltipProps) => {
         <p className="text-gray-900 font-extrabold">{uName}</p>
         <p className="text-sm font-bold text-gray-700 flex justify-between gap-4">
             <span>{t("dashboard.totalRevenue")}:</span>
-          <span className="text-[#42211D]">zł{Number(revenue).toLocaleString("pl-PL")}</span>
+          <span className="text-[#42211D]">zł{Number(revenue).toLocaleString(localeCode)}</span>
         </p>
           <p className="text-xs text-gray-500 flex justify-between gap-4">
               <span>{t("dashboard.bookingsCount")}:</span>

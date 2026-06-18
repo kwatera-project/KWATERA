@@ -8,6 +8,7 @@ import type { UnitSettlementItem } from "../types/property";
 import { getUserRoles } from "../utils/jwtUtils";
 import { Home, Calendar, User, CreditCard, Clock } from "lucide-react";
 import { useTranslation } from "react-i18next"
+import { getLocaleCode } from "../utils/locale";
 import {
     calculateStayNights,
     calculateWaterUsageRange,
@@ -23,7 +24,7 @@ export default function ReservationDetailsPage() {
     const [reservation, setReservation] = useState<ReservationDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const {t} = useTranslation();
+    const {t, i18n} = useTranslation();
     const [waterContext, setWaterContext] = useState<{
         unitId?: string;
         items: UnitSettlementItem[];
@@ -207,7 +208,7 @@ export default function ReservationDetailsPage() {
                                     {t('reservationDetails.bookedOn')}
                                 </span>
                                 <span className="font-semibold text-[#1A1A1A]">
-                                    {new Date(reservation.createdAt).toLocaleString()}
+                                    {new Date(reservation.createdAt).toLocaleString(getLocaleCode(i18n.language))}
                                 </span>
                             </div>
                         </div>
@@ -324,10 +325,10 @@ export default function ReservationDetailsPage() {
 
                                 <div className="py-3 border-b border-[#DACDCA]/40 space-y-2 overflow-visible">
                                     <div className="flex items-center justify-between gap-3">
-                                        <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Water billing</span>
+                                        <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">{t('checkout.waterBilling')}</span>
                                     </div>
                                     <p className="text-xs text-[#7A7A7A] font-medium">
-                                        Water is billed separately after your stay.
+                                        {t('checkout.waterBilledSeparately')}
                                     </p>
                                     {waterEstimate ? (
                                         <div className="space-y-1 text-xs">
@@ -340,16 +341,16 @@ export default function ReservationDetailsPage() {
                                                 valueClassName="font-bold text-[#1A1A1A]"
                                             />
                                             <div className="flex justify-between gap-3">
-                                                <span className="text-[#7A7A7A]">Estimated usage</span>
+                                                <span className="text-[#7A7A7A]">{t('checkout.estimatedUsage')}</span>
                                                 <span className="font-bold text-[#1A1A1A]">{waterEstimate.usage}</span>
                                             </div>
                                             <div className="flex justify-between gap-3">
-                                                <span className="text-[#7A7A7A]">Estimated cost</span>
+                                                <span className="text-[#7A7A7A]">{t('checkout.estimatedCost')}</span>
                                                 <span className="font-bold text-[#1A1A1A]">{waterEstimate.cost}</span>
                                             </div>
                                         </div>
                                     ) : currentWaterContext.loaded ? (
-                                        <p className="text-xs text-[#7A7A7A]">Final water cost is based on meter readings when configured.</p>
+                                        <p className="text-xs text-[#7A7A7A]">{t('checkout.finalWaterCostMeterReadings')}</p>
                                     ) : null}
                                 </div>
                             </div>

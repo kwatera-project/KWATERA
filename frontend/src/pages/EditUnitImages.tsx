@@ -142,7 +142,7 @@ export default function EditUnitImages() {
                                         <div className="relative border-b border-[#DACDCA]/30">
                                             <img
                                                 src={img.url}
-                                                alt="Unit"
+                                                alt={t('editUnitImages.imageAlt')}
                                                 className="w-full h-48 object-cover"
                                             />
 

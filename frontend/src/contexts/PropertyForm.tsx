@@ -91,7 +91,7 @@ export default function PropertyForm({
             </div>
 
             <div className="border-t border-[#DACDCA]/50 my-6 pt-4 space-y-3">
-                <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Property Type</span>
+                <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">{t('propertyForm.propertyType')}</span>
                 <div className="flex flex-wrap gap-2">
                     {(["Apartment", "House", "Villa", "Studio", "Room"] as const).map((type) => {
                         const selected = form.propertyType === type;
@@ -106,20 +106,20 @@ export default function PropertyForm({
                                         : "bg-white border-[#DACDCA] text-[#3A3A3A] hover:border-[#42211D]/50"
                                 }`}
                             >
-                                {type}
+                                {t(`propertyTypes.${type}`, { defaultValue: type })}
                             </button>
                         );
                     })}
                 </div>
                 {form.propertyType && (
                     <p className="text-xs text-[#7A7A7A] font-medium">
-                        Selected: <span className="font-bold text-[#42211D]">{form.propertyType}</span>
+                        {t('propertyForm.selected')}: <span className="font-bold text-[#42211D]">{t(`propertyTypes.${form.propertyType}`, { defaultValue: form.propertyType })}</span>
                         <button
                             type="button"
                             onClick={() => setForm(prev => ({ ...prev, propertyType: "" }))}
                             className="ml-2 text-[#7A7A7A] hover:text-[#42211D] underline cursor-pointer"
                         >
-                            clear
+                            {t('common.clear')}
                         </button>
                     </p>
                 )}
@@ -184,7 +184,7 @@ export default function PropertyForm({
 
             <div className="border-t border-[#DACDCA]/50 my-6 pt-4">
                 <TagInput
-                    label="Amenities & Tags"
+                    label={t('propertyForm.amenitiesTags')}
                     tags={form.amenities ?? []}
                     onChange={(tags) => setForm(prev => ({ ...prev, amenities: tags }))}
                 />

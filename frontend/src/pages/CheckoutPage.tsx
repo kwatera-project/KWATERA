@@ -9,6 +9,7 @@ import type { Property, Unit, UnitSettlementItem } from "../types/property";
 import { format, parseISO } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { IS_DEMO_MODE } from "../api/apiConfig";
+import { getDateFnsLocale } from "../utils/locale";
 import {
     calculateStayNights,
     calculateWaterUsageRange,
@@ -86,7 +87,7 @@ export default function CheckoutPage() {
     const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
     const [settlementItems, setSettlementItems] = useState<UnitSettlementItem[]>([]);
     const [waterTariffLoaded, setWaterTariffLoaded] = useState(false);
-    const {t} = useTranslation();
+    const {t, i18n} = useTranslation();
 
     useEffect(() => {
         getUserProfile()
@@ -275,7 +276,7 @@ export default function CheckoutPage() {
 
             if (IS_DEMO_MODE) {
                 void checkoutUrl;
-                setSubmitSuccess("Demo booking confirmed. Payment status: simulated success.");
+                setSubmitSuccess(t('checkout.demoSuccess'));
                 setIsSubmitting(false);
                 return;
             }
@@ -290,7 +291,7 @@ export default function CheckoutPage() {
 
     const formatDate = (dateStr: string) => {
         try {
-            return format(parseISO(dateStr), "EEEE, MMM dd, yyyy");
+            return format(parseISO(dateStr), "PPPP", { locale: getDateFnsLocale(i18n.language) });
         } catch {
             return dateStr;
         }
@@ -311,8 +312,8 @@ export default function CheckoutPage() {
         }
         : null;
     const waterBillingAcknowledgementCopy = waterTariffLoaded && !waterTariff
-        ? "I understand water may be billed separately after check-out."
-        : "I accept separate water billing after check-out.";
+        ? t('checkout.waterBillingMayApply')
+        : t('checkout.acceptWaterBilling');
 
     const displayNightPrice = unit.convertedPricePerNight && unit.currencyInfo && unit.currencyInfo.displayCurrency !== "PLN"
         ? `${unit.convertedPricePerNight.toFixed(2)} ${unit.currencyInfo.displayCurrency}`
@@ -681,7 +682,7 @@ export default function CheckoutPage() {
                                 )}
                             </button>
                             {isRequiredAcknowledgementUnchecked && (
-                                <p className="text-center text-xs text-brand-muted mt-2 font-medium">Please accept all required acknowledgements to proceed to payment.</p>
+                                <p className="text-center text-xs text-brand-muted mt-2 font-medium">{t('checkout.acknowledgementsRequired')}</p>
                             )}
                         </div>
                     </form>
@@ -743,33 +744,33 @@ export default function CheckoutPage() {
                                 </div>
 
                                 <div className="flex justify-between items-center border-t border-brand-accent pt-4 text-base font-bold text-brand-primary">
-                                    <span>Accommodation total</span>
+                                    <span>{t('checkout.accommodationTotal')}</span>
                                     <span className="text-lg">{displayTotalPrice}</span>
                                 </div>
 
                                 <div className="border-t border-dashed border-brand-accent pt-4 space-y-2 overflow-visible">
                                     <div>
-                                        <h5 className="font-bold text-xs uppercase tracking-wider text-brand-muted">Water billing</h5>
-                                        <p className="text-xs text-brand-muted mt-1">Water is billed separately after your stay.</p>
+                                        <h5 className="font-bold text-xs uppercase tracking-wider text-brand-muted">{t('checkout.waterBilling')}</h5>
+                                        <p className="text-xs text-brand-muted mt-1">{t('checkout.waterBilledSeparately')}</p>
                                     </div>
 
                                     {!waterTariffLoaded ? (
-                                        <p className="text-xs text-brand-muted font-medium">Checking water tariff...</p>
+                                        <p className="text-xs text-brand-muted font-medium">{t('checkout.checkingWaterTariff')}</p>
                                     ) : waterEstimate ? (
                                         <div className="space-y-1.5">
                                             <WaterRateTooltip text={waterEstimate.tooltip} value={waterEstimate.rate} />
                                             <div className="flex justify-between items-start gap-4">
-                                                <span className="text-brand-muted font-medium">Estimated usage</span>
+                                                <span className="text-brand-muted font-medium">{t('checkout.estimatedUsage')}</span>
                                                 <span className="font-semibold text-right">{waterEstimate.usage}</span>
                                             </div>
                                             <div className="flex justify-between items-start gap-4">
-                                                <span className="text-brand-muted font-medium">Estimated cost</span>
+                                                <span className="text-brand-muted font-medium">{t('checkout.estimatedCost')}</span>
                                                 <span className="font-semibold text-right">{waterEstimate.cost}</span>
                                             </div>
-                                            <p className="text-xs text-brand-muted">Final cost may be lower or higher based on meter readings.</p>
+                                            <p className="text-xs text-brand-muted">{t('checkout.finalWaterCostMayVary')}</p>
                                         </div>
                                     ) : (
-                                        <p className="text-xs text-brand-muted font-medium">Water may be billed separately after your stay if configured for this unit.</p>
+                                        <p className="text-xs text-brand-muted font-medium">{t('checkout.waterMayBeBilled')}</p>
                                     )}
                                 </div>
                             </div>
@@ -804,7 +805,7 @@ export default function CheckoutPage() {
                                     )}
                                 </button>
                                 {isRequiredAcknowledgementUnchecked && (
-                                    <p className="text-center text-xs text-brand-muted mt-2 font-medium">Please accept all required acknowledgements in the form above to proceed.</p>
+                                    <p className="text-center text-xs text-brand-muted mt-2 font-medium">{t('checkout.acknowledgementsRequiredMobile')}</p>
                                 )}
                             </div>
                         </div>

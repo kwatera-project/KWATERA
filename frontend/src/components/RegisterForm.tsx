@@ -24,12 +24,12 @@ export default function RegisterForm() {
             <div className="min-h-screen w-full flex items-center justify-center bg-white p-6">
                 <div className="w-full max-w-md bg-white border border-gray-100 rounded-2xl shadow-xl p-8 sm:p-10 space-y-6">
                     <div className="text-center space-y-2">
-                        <h1 className="text-2xl font-bold text-gray-900">Demo login</h1>
-                        <p className="text-sm text-gray-500">Choose a role without creating an account.</p>
+                        <h1 className="text-2xl font-bold text-gray-900">{t('demo.login')}</h1>
+                        <p className="text-sm text-gray-500">{t('demo.chooseRole')}</p>
                     </div>
                     <DemoRoleSelector />
                     <Link to="/" className="block text-center text-sm text-[#42211D] font-bold hover:underline">
-                        Back to landing page
+                        {t('demo.backToLanding')}
                     </Link>
                 </div>
             </div>
@@ -134,7 +134,7 @@ export default function RegisterForm() {
                 </div>
 
                 <div className="hidden lg:block lg:col-span-7 relative overflow-hidden">
-                    <img src="https://images.pexels.com/photos/5358783/pexels-photo-5358783.jpeg" className="w-full h-full object-cover" alt="Villa" />
+                    <img src="https://images.pexels.com/photos/5358783/pexels-photo-5358783.jpeg" className="w-full h-full object-cover" alt={t('register.imageAlt')} />
                 </div>
             </div>
         </div>

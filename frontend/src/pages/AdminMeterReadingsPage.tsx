@@ -4,6 +4,7 @@ import MeterReadingApproval from "../components/MeterReadingApproval";
 import { getMediaReadings, getMediaReadingAttempts } from "../api/ocrApi";
 import type { MediaReadingStatus, MediaReadingUploadAttempt } from "../api/ocrApi";
 import {useTranslation} from "react-i18next"
+import {getLocaleCode} from "../utils/locale";
 
 export default function AdminMeterReadingsPage() {
     const { settlementId } = useParams();
@@ -15,7 +16,7 @@ export default function AdminMeterReadingsPage() {
     const [attempts, setAttempts] = useState<MediaReadingUploadAttempt[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const {t} = useTranslation();
+    const {t, i18n} = useTranslation();
 
     const loadReadings = useCallback(async () => {
         if (!settlementId) return;
@@ -196,14 +197,14 @@ export default function AdminMeterReadingsPage() {
 
                                             </p>
                                             <p className="text-xs font-semibold text-[#7A7A7A]">
-                                                {new Date(attempt.attemptedAt).toLocaleString()}
+                                                {new Date(attempt.attemptedAt).toLocaleString(getLocaleCode(i18n.language))}
                                             </p>
                                         </div>
 
                                         {attempt.imageBase64 ? (
                                             <img
                                                 src={`data:image/jpeg;base64,${attempt.imageBase64}`}
-                                                alt="Meter upload attempt"
+                                                alt={t('adminMeterReadings.uploadAttemptAlt')}
                                                 className="w-full max-h-64 object-contain border border-[#DACDCA] rounded-lg bg-gray-50 shadow-sm"
                                             />
                                         ) : (

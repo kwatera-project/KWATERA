@@ -153,7 +153,7 @@ export default function AboutPage() {
                                     <div className="z-10 bg-white border border-brand-accent rounded-xl px-5 py-3 shadow-sm flex items-center gap-2.5 hover:border-brand-primary/40 transition-colors">
                                         <Code className="w-5 h-5 text-brand-primary" />
                                         <div className="text-left">
-                                            <h4 className="text-sm font-bold text-brand-main leading-none">React Client App</h4>
+                                            <h4 className="text-sm font-bold text-brand-main leading-none">{t('about.reactClient')}</h4>
                                             <span className="text-[10px] text-brand-muted">Vite • Tailwind CSS</span>
                                         </div>
                                     </div>
@@ -163,8 +163,8 @@ export default function AboutPage() {
                                     <div className="z-10 bg-white border border-brand-accent rounded-xl px-6 py-2.5 shadow-sm flex items-center gap-2.5 hover:border-brand-primary/40 transition-colors">
                                         <Server className="w-4 h-4 text-brand-primary" />
                                         <div className="text-left">
-                                            <h4 className="text-sm font-bold text-brand-main leading-none">API Gateway</h4>
-                                            <span className="text-[9px] text-brand-muted">Security & Routing</span>
+                                            <h4 className="text-sm font-bold text-brand-main leading-none">{t('about.apiGateway')}</h4>
+                                            <span className="text-[9px] text-brand-muted">{t('about.securityRouting')}</span>
                                         </div>
                                     </div>
 
@@ -184,7 +184,7 @@ export default function AboutPage() {
                                                 <Database className="w-3.5 h-3.5 md:w-4 h-4 text-brand-primary animate-pulse" />
                                             </div>
                                             <div>
-                                                <h5 className="text-[9px] md:text-xs font-bold text-brand-main leading-tight break-words">Core & Property Service</h5>
+                                                <h5 className="text-[9px] md:text-xs font-bold text-brand-main leading-tight break-words">{t('about.corePropertyService')}</h5>
                                                 <p className="text-[7px] md:text-[9px] text-brand-muted leading-tight mt-0.5">Java / Spring Boot</p>
                                             </div>
                                         </div>
@@ -194,7 +194,7 @@ export default function AboutPage() {
                                                 <Brain className="w-3.5 h-3.5 md:w-4 h-4 text-brand-primary animate-pulse" />
                                             </div>
                                             <div>
-                                                <h5 className="text-[9px] md:text-xs font-bold text-brand-main leading-tight break-words">AI Dynamic Pricing</h5>
+                                                <h5 className="text-[9px] md:text-xs font-bold text-brand-main leading-tight break-words">{t('about.aiDynamicPricing')}</h5>
                                                 <p className="text-[7px] md:text-[9px] text-brand-muted leading-tight mt-0.5">Python / ML Engine</p>
                                             </div>
                                         </div>
@@ -204,7 +204,7 @@ export default function AboutPage() {
                                                 <Scan className="w-3.5 h-3.5 md:w-4 h-4 text-brand-primary animate-pulse" />
                                             </div>
                                             <div>
-                                                <h5 className="text-[9px] md:text-xs font-bold text-brand-main leading-tight break-words">OCR Utility Billing</h5>
+                                                <h5 className="text-[9px] md:text-xs font-bold text-brand-main leading-tight break-words">{t('about.ocrUtilityBilling')}</h5>
                                                 <p className="text-[7px] md:text-[9px] text-brand-muted leading-tight mt-0.5">Python / YOLOv8</p>
                                             </div>
                                         </div>

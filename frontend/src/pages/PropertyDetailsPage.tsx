@@ -10,6 +10,7 @@ import { useCurrency } from "../contexts/CurrencyContext";
 import { CustomCalendarHeader } from "../components/SharedDatePicker";
 import { formatSearchDate, parseGuests, parseSearchDate } from "../utils/searchDates";
 import { useTranslation } from "react-i18next"
+import { getDateFnsLocale } from "../utils/locale";
 
 interface AvailabilityResponse {
     available: boolean;
@@ -40,7 +41,7 @@ export default function PropertyDetailsPage() {
     const [selectedDates, setSelectedDates] = useState<Record<string, [Date | null, Date | null]>>({});
     const [globalDates, setGlobalDates] = useState<[Date | null, Date | null]>([initialSearch.checkIn, initialSearch.checkOut]);
     const [showCalendar, setShowCalendar] = useState<Record<string, boolean>>({});
-    const {t} = useTranslation();
+    const {t, i18n} = useTranslation();
     const [bookingState, setBookingState] = useState<
         Record<string, { loading: boolean; success?: boolean; error?: string }>
     >({});
@@ -366,7 +367,7 @@ export default function PropertyDetailsPage() {
 
             {property.amenities && property.amenities.length > 0 && (
                 <div className="bg-white border border-brand-accent rounded-xl shadow-sm p-6">
-                    <h2 className="text-xl font-bold text-brand-main tracking-tight mb-4">Amenities</h2>
+                    <h2 className="text-xl font-bold text-brand-main tracking-tight mb-4">{t('propertyDetails.amenities')}</h2>
                     <div className="flex flex-wrap gap-2">
                         {property.amenities.map((amenity, idx) => (
                             <span
@@ -435,12 +436,12 @@ export default function PropertyDetailsPage() {
                                                 </span>
                                                 {u.bedrooms !== undefined && (
                                                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-brand-bg border border-brand-accent text-brand-muted">
-                                                        Bedrooms: {u.bedrooms}
+                                                        {t('propertyDetails.bedrooms')}: {u.bedrooms}
                                                     </span>
                                                 )}
                                                 {u.beds !== undefined && (
                                                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-brand-bg border border-brand-accent text-brand-muted">
-                                                        Beds: {u.beds}
+                                                        {t('propertyDetails.beds')}: {u.beds}
                                                     </span>
                                                 )}
                                             </div>
@@ -510,8 +511,8 @@ export default function PropertyDetailsPage() {
                                     {unitStart && unitEnd && nights > 0 && (
                                         <div className="w-full bg-brand-bg border border-brand-accent rounded-xl p-4 mt-6 text-sm flex flex-col gap-2">
                                             <p className="text-xs font-bold text-brand-main tracking-wider border-b border-brand-accent pb-2 mb-1">{t('propertyDetails.stayDetailsSummary')}</p>
-                                            <p className="flex justify-between"><span className="text-brand-muted font-medium">{t('manualReservation.checkIn')}:</span> <span className="font-semibold text-brand-main">{format(unitStart, "EEEE, MMM dd, yyyy")}</span></p>
-                                            <p className="flex justify-between"><span className="text-brand-muted font-medium">{t('manualReservation.checkOut')}:</span> <span className="font-semibold text-brand-main">{format(unitEnd, "EEEE, MMM dd, yyyy")}</span></p>
+                                            <p className="flex justify-between"><span className="text-brand-muted font-medium">{t('manualReservation.checkIn')}:</span> <span className="font-semibold text-brand-main">{format(unitStart, "PPPP", { locale: getDateFnsLocale(i18n.language) })}</span></p>
+                                            <p className="flex justify-between"><span className="text-brand-muted font-medium">{t('manualReservation.checkOut')}:</span> <span className="font-semibold text-brand-main">{format(unitEnd, "PPPP", { locale: getDateFnsLocale(i18n.language) })}</span></p>
                                             <p className="flex justify-between"><span className="text-brand-muted font-medium">{t('checkout.duration')}:</span> <span className="font-semibold text-brand-main">{nights} {t("checkout.night", { count: nights })}</span></p>
                                             <div className="mt-2 pt-2 border-t border-brand-accent text-base font-bold text-brand-primary flex justify-between items-center">
                                                 <span>{t('propertyDetails.totalPrice')}:</span>
@@ -524,7 +525,7 @@ export default function PropertyDetailsPage() {
                                                             {u.currencyInfo.displayCurrency}
                                                         </div>
                                                     ) : (
-                                                        <span>{totalPrice.toFixed(2)} PLN</span>
+                                                        <span>{totalPrice} PLN</span>
                                                     )}
                                                 </div>
                                             </div>

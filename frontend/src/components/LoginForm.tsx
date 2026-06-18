@@ -48,7 +48,7 @@ export default function LoginForm() {
 
                         {IS_DEMO_MODE && (
                             <div className="space-y-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-                                <p className="text-xs font-black uppercase tracking-wider text-amber-900 text-center">Demo login</p>
+                                <p className="text-xs font-black uppercase tracking-wider text-amber-900 text-center">{t('demo.login')}</p>
                                 <DemoRoleSelector />
                             </div>
                         )}
@@ -58,7 +58,7 @@ export default function LoginForm() {
                                 <label className="block text-sm font-medium text-gray-700">{t('login.email')}</label>
                                 <input
                                     type="email"
-                                    placeholder="name@example.com"
+                                    placeholder={t('login.emailPlaceholder')}
                                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42211D] focus:border-[#42211D] outline-none transition"
                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                                     required
@@ -102,7 +102,7 @@ export default function LoginForm() {
                 <div className="hidden lg:block lg:col-span-7 relative overflow-hidden">
                     <img
                         src="https://images.pexels.com/photos/5364965/pexels-photo-5364965.jpeg"
-                        alt="Interior"
+                        alt={t('login.imageAlt')}
                         className="w-full h-full object-cover"
                     />
                 </div>

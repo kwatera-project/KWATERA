@@ -185,7 +185,7 @@ export default function PropertySearchBar({
                 </div>
                 <button
                     type="submit"
-                    aria-label="Search properties"
+                    aria-label={t('search.searchProperties')}
                     className="bg-[rgb(var(--color-burgundy))] text-white p-5 rounded-full hover:bg-[rgb(var(--color-burgundy-hover))] transition-all shadow-lg flex-shrink-0 ml-4"
                 >
                     <Search size={24} />

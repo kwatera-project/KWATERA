@@ -4,6 +4,9 @@ import { AlertCircle, FileClock, Loader2, Search, X } from "lucide-react";
 import { getSystemEvents } from "../api/adminApi";
 import type { SystemEvent, SystemEventType } from "../api/adminApi";
 import SharedDatePicker from "../components/SharedDatePicker";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
+import { getLocaleCode } from "../utils/locale";
 
 const ACTION_TYPES: Array<SystemEventType | "ALL"> = [
   "ALL",
@@ -28,16 +31,12 @@ type SystemEventsLoadState = {
   error: string | null;
 };
 
-function formatAction(actionType: string) {
-  return actionType
-    .toLowerCase()
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
+function formatAction(actionType: string, t: TFunction) {
+  return t(`systemEvents.actions.${actionType}`, { defaultValue: actionType });
 }
 
-function formatDate(timestamp: string) {
-  return new Intl.DateTimeFormat("en-GB", {
+function formatDate(timestamp: string, language: string) {
+  return new Intl.DateTimeFormat(getLocaleCode(language), {
     dateStyle: "medium",
     timeStyle: "short"
   }).format(new Date(timestamp));
@@ -104,6 +103,7 @@ function getActionBadgeClass(actionType: SystemEventType) {
 }
 
 export default function AdminSystemEventsPage() {
+  const { t, i18n } = useTranslation();
   const [loadState, setLoadState] = useState<SystemEventsLoadState>({
     requestKey: null,
     events: [],
@@ -123,10 +123,10 @@ export default function AdminSystemEventsPage() {
     const to = buildLocalIso(dateTo, timeTo, "23:59", true);
     const error =
       from && to && new Date(from).getTime() > new Date(to).getTime()
-        ? "Date from must be before or equal to Date to."
+        ? t('systemEvents.invalidRange')
         : null;
     return { from, to, error };
-  }, [dateFrom, dateTo, timeFrom, timeTo]);
+  }, [dateFrom, dateTo, timeFrom, timeTo, t]);
 
   const requestKey = useMemo(() => {
     if (range.error) {
@@ -170,7 +170,7 @@ export default function AdminSystemEventsPage() {
           setLoadState({
             requestKey: requestedKey,
             events: [],
-            error: err instanceof Error ? err.message : "Failed to fetch system events"
+            error: err instanceof Error ? err.message : t('systemEvents.loadError')
           });
         }
       });
@@ -178,7 +178,7 @@ export default function AdminSystemEventsPage() {
     return () => {
       cancelled = true;
     };
-  }, [actionType, range.from, range.to, requestKey]);
+  }, [actionType, range.from, range.to, requestKey, t]);
 
   const filteredEvents = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -189,9 +189,9 @@ export default function AdminSystemEventsPage() {
         }
         return [
           event.actionType,
-          formatAction(event.actionType),
-          formatDate(event.timestamp),
-          event.actorUserId ?? "System",
+          formatAction(event.actionType, t),
+          formatDate(event.timestamp, i18n.language),
+          event.actorUserId ?? t('systemEvents.system'),
           event.entityType ?? "",
           event.entityId ?? "",
           event.details ?? ""
@@ -205,7 +205,7 @@ export default function AdminSystemEventsPage() {
           new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime();
         return sortDirection === "asc" ? result : -result;
       });
-  }, [events, search, sortDirection]);
+  }, [events, search, sortDirection, t, i18n.language]);
 
   const clearDateFilters = () => {
     setDateFrom(null);
@@ -219,9 +219,9 @@ export default function AdminSystemEventsPage() {
       <div className="flex flex-col gap-4">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h2 className="text-xl font-extrabold text-[#1A1A1A]">System Logs</h2>
+            <h2 className="text-xl font-extrabold text-[#1A1A1A]">{t('systemEvents.title')}</h2>
             <p className="text-sm text-[#7A7A7A]">
-              Admin-only reservation and system event history.
+              {t('systemEvents.subtitle')}
             </p>
           </div>
 
@@ -231,7 +231,7 @@ export default function AdminSystemEventsPage() {
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search logs"
+                placeholder={t('systemEvents.search')}
                 className="w-full sm:w-72 rounded-lg border border-[#DACDCA] bg-white pl-9 pr-3 py-2 text-sm font-medium text-[#1A1A1A] outline-none focus:ring-2 focus:ring-[#42211D]/20"
               />
             </label>
@@ -242,7 +242,7 @@ export default function AdminSystemEventsPage() {
             >
               {ACTION_TYPES.map((type) => (
                 <option key={type} value={type}>
-                  {type === "ALL" ? "All actions" : formatAction(type)}
+                  {type === "ALL" ? t('systemEvents.allActions') : formatAction(type, t)}
                 </option>
               ))}
             </select>
@@ -252,7 +252,7 @@ export default function AdminSystemEventsPage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:flex lg:flex-wrap lg:items-end rounded-lg border border-[#DACDCA] bg-white p-3 shadow-sm">
           <div className="flex flex-col gap-1 w-full lg:w-auto">
             <span className="text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
-              Date from
+              {t('systemEvents.dateFrom')}
             </span>
             <div className="flex items-center justify-center rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-[#42211D]/20 w-full">
               <SharedDatePicker
@@ -271,7 +271,7 @@ export default function AdminSystemEventsPage() {
                 selectsStart
                 startDate={dateFrom}
                 endDate={dateTo}
-                placeholderText="Start"
+                placeholderText={t('dashboard.start')}
                 className="w-full cursor-pointer bg-transparent text-center text-sm font-bold text-[#1A1A1A] outline-none"
                 wrapperClassName="block w-full"
                 popperPlacement="bottom-start"
@@ -281,7 +281,7 @@ export default function AdminSystemEventsPage() {
           </div>
           <div className="flex flex-col gap-1 w-full lg:w-auto">
             <span className="text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
-              Date to
+              {t('systemEvents.dateTo')}
             </span>
             <div className="flex items-center justify-center rounded-lg border border-[#DACDCA] bg-[#F7F7F7] px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-[#42211D]/20 w-full">
               <SharedDatePicker
@@ -292,7 +292,7 @@ export default function AdminSystemEventsPage() {
                 startDate={dateFrom}
                 endDate={dateTo}
                 minDate={dateFrom}
-                placeholderText="End"
+                placeholderText={t('dashboard.end')}
                 className="w-full cursor-pointer bg-transparent text-center text-sm font-bold text-[#1A1A1A] outline-none"
                 wrapperClassName="block w-full"
                 popperPlacement="bottom-start"
@@ -302,7 +302,7 @@ export default function AdminSystemEventsPage() {
           </div>
           <div className="flex flex-col gap-1 w-full lg:w-auto">
             <span className="text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
-              Time from
+              {t('systemEvents.timeFrom')}
             </span>
             <input
               type="time"
@@ -313,7 +313,7 @@ export default function AdminSystemEventsPage() {
           </div>
           <div className="flex flex-col gap-1 w-full lg:w-auto">
             <span className="text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
-              Time to
+              {t('systemEvents.timeTo')}
             </span>
             <input
               type="time"
@@ -328,7 +328,7 @@ export default function AdminSystemEventsPage() {
             className="col-span-2 sm:col-span-4 lg:col-span-1 inline-flex items-center justify-center gap-2 rounded-lg border border-[#DACDCA] bg-white px-4 py-2.5 text-sm font-bold text-[#42211D] transition-colors hover:bg-[#F7F7F7] w-full lg:w-auto"
           >
             <X className="h-4 w-4" />
-            Clear dates
+            {t('systemEvents.clearDates')}
           </button>
           {range.error && (
             <p className="w-full text-sm font-semibold text-red-700">{range.error}</p>
@@ -351,9 +351,9 @@ export default function AdminSystemEventsPage() {
         ) : filteredEvents.length === 0 ? (
           <div className="h-64 flex flex-col items-center justify-center text-center px-6">
             <FileClock className="w-10 h-10 text-[#DACDCA] mb-3" />
-            <p className="text-sm font-bold text-[#1A1A1A]">No system events found</p>
+            <p className="text-sm font-bold text-[#1A1A1A]">{t('systemEvents.empty')}</p>
             <p className="text-xs text-[#7A7A7A] mt-1">
-              Adjust the search, action, or date filters to inspect a different slice.
+              {t('systemEvents.emptyHint')}
             </p>
           </div>
         ) : (
@@ -363,31 +363,31 @@ export default function AdminSystemEventsPage() {
                 <div key={event.id} className="p-4 hover:bg-[#F7F7F7]/70 space-y-3">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-semibold text-[#7A7A7A]">
-                      {formatDate(event.timestamp)}
+                      {formatDate(event.timestamp, i18n.language)}
                     </span>
                     <span
                       className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold ${getActionBadgeClass(event.actionType)}`}
                     >
-                      {formatAction(event.actionType)}
+                      {formatAction(event.actionType, t)}
                     </span>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div>
                       <span className="font-black text-[#7A7A7A] uppercase tracking-wider block text-[10px] mb-0.5">
-                        Actor
+                        {t('systemEvents.actor')}
                       </span>
                       <span className="text-sm text-[#1A1A1A] font-medium">
                         {event.actorUserId ? (
                           <span title={event.actorUserId}>{compactId(event.actorUserId)}</span>
                         ) : (
-                          "System"
+                          t('systemEvents.system')
                         )}
                       </span>
                     </div>
                     <div>
                       <span className="font-black text-[#7A7A7A] uppercase tracking-wider block text-[10px] mb-0.5">
-                        Entity
+                        {t('systemEvents.entity')}
                       </span>
                       <span className="text-sm text-[#1A1A1A] block">
                         <span className="font-bold block leading-tight">{event.entityType ?? "-"}</span>
@@ -403,7 +403,7 @@ export default function AdminSystemEventsPage() {
                   {event.details && (
                     <div className="pt-2 border-t border-[#F1F1F1]">
                       <span className="font-black text-[#7A7A7A] uppercase tracking-wider block text-[10px] mb-1">
-                        Details
+                        {t('systemEvents.details')}
                       </span>
                       <p className="text-xs text-[#1A1A1A] leading-relaxed break-words bg-[#F7F7F7] p-2.5 rounded-lg border border-[#DACDCA]/50 font-mono">
                         {event.details}
@@ -426,20 +426,20 @@ export default function AdminSystemEventsPage() {
                         }
                         className="font-black uppercase tracking-wider hover:text-[#42211D]"
                       >
-                        Date {sortDirection === "desc" ? "Newest" : "Oldest"}
+                        {t('systemEvents.date')} {sortDirection === "desc" ? t('systemEvents.newest') : t('systemEvents.oldest')}
                       </button>
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
-                      Action
+                      {t('systemEvents.action')}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
-                      Actor
+                      {t('systemEvents.actor')}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
-                      Entity
+                      {t('systemEvents.entity')}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-wider text-[#7A7A7A]">
-                      Details
+                      {t('systemEvents.details')}
                     </th>
                   </tr>
                 </thead>
@@ -447,20 +447,20 @@ export default function AdminSystemEventsPage() {
                   {filteredEvents.map((event) => (
                     <tr key={event.id} className="hover:bg-[#F7F7F7]/70">
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-[#1A1A1A]">
-                        {formatDate(event.timestamp)}
+                        {formatDate(event.timestamp, i18n.language)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span
                           className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-bold ${getActionBadgeClass(event.actionType)}`}
                         >
-                          {formatAction(event.actionType)}
+                          {formatAction(event.actionType, t)}
                         </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-[#1A1A1A]">
                         {event.actorUserId ? (
                           <span title={event.actorUserId}>{compactId(event.actorUserId)}</span>
                         ) : (
-                          "System"
+                          t('systemEvents.system')
                         )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-[#1A1A1A]">

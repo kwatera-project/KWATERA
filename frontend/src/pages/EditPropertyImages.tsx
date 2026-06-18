@@ -138,7 +138,7 @@ export default function EditPropertyImages() {
                                         <div className="relative border-b border-[#DACDCA]/30">
                                             <img
                                                 src={img.url}
-                                                alt="Property"
+                                                alt={t('editPropertyImages.imageAlt')}
                                                 className="w-full h-48 object-cover"
                                             />
 

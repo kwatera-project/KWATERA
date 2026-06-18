@@ -10,19 +10,25 @@
     "manageProperties": "Zarządzaj nieruchomościami",
     "logout": "Wyloguj",
     "login": "ZALOGUJ",
-    "signUp": "ZAREJESTRUJ"
+    "signUp": "ZAREJESTRUJ",
+    "systemLogs": "Dziennik systemowy",
+    "demoLogin": "LOGOWANIE DEMO",
+    "language": "Język",
+    "currency": "Waluta"
   },
 
   "login": {
     "title": "Zaloguj się",
     "subtitle": "Witaj z powrotem! Wprowadź swoje dane aby uzyskać dostęp do konta.",
     "email": "Adres e-mail",
+    "emailPlaceholder": "nazwa@przyklad.pl",
     "password": "Hasło",
     "submit": "Zaloguj się",
     "noAccount": "Nie masz konta?",
     "signUp": "Zarejestruj się",
     "serverError": "Błąd połączenia z serwerem",
-    "loginFailed": "Logowanie nie powiodło się"
+    "loginFailed": "Logowanie nie powiodło się",
+    "imageAlt": "Wnętrze"
   },
 
   "register": {
@@ -36,7 +42,21 @@
     "username": "Nazwa użytkownika",
     "submit": "Zarejestruj się",
     "hasAccount": "Masz już konto?",
-    "registrationFailed": "Rejestracja nie powiodła się"
+    "registrationFailed": "Rejestracja nie powiodła się",
+    "imageAlt": "Willa"
+  },
+
+  "demo": {
+    "login": "Logowanie demo",
+    "chooseRole": "Wybierz rolę bez tworzenia konta.",
+    "backToLanding": "Powrót do strony głównej",
+    "poster": "Tryb demonstracyjny",
+    "exploreWithoutPassword": "Wybierz rolę i poznaj główne funkcje bez hasła.",
+    "roles": {
+      "guest": "Kontynuuj jako gość",
+      "owner": "Kontynuuj jako właściciel",
+      "admin": "Kontynuuj jako administrator"
+    }
   },
 
   "common": {
@@ -188,7 +208,75 @@
     "loadingAssets": "Ładowanie zasobów...",
     "capturingCharts": "Przechwytywanie wykresów...",
     "generatingPdf": "Generowanie PDF...",
-    "error": "Wystąpił błąd podczas generowania raportu PDF. Spróbuj ponownie."
+    "error": "Wystąpił błąd podczas generowania raportu PDF. Spróbuj ponownie.",
+    "userProfile": "Profil użytkownika",
+    "csvTitle": "KWATERA — RAPORT SYSTEMU ZARZĄDZANIA NIERUCHOMOŚCIAMI",
+    "generatedOnValue": "Wygenerowano: {{value}}",
+    "periodValue": "Okres: {{start}}–{{end}}",
+    "roleValue": "Rola: {{role}}",
+    "generatedByValue": "Wygenerował(a): {{name}}",
+    "reservationMetrics": "DANE REZERWACJI",
+    "metric": "Wskaźnik",
+    "value": "Wartość",
+    "totalReservations": "Łączna liczba rezerwacji",
+    "occupancyRate": "Poziom obłożenia",
+    "occupiedDays": "Zajęte dni",
+    "totalScopedUnits": "Łączna liczba nieruchomości/lokali",
+    "billingMetrics": "DANE ROZLICZENIOWE",
+    "valuePln": "Wartość (PLN)",
+    "collectedRevenue": "Łączny uzyskany przychód",
+    "unpaidBalance": "Saldo nieopłaconych należności",
+    "paidInvoicesCount": "Liczba opłaconych faktur",
+    "unpaidInvoicesCount": "Liczba nieopłaconych faktur",
+    "platform": "PLATFORMA ZARZĄDZANIA NIERUCHOMOŚCIAMI",
+    "invoiceSummary": "RAPORT PODSUMOWANIA ROZLICZEŃ",
+    "systemGeneratedSettlement": "Rozliczenie wygenerowane przez system",
+    "issuer": "WYSTAWCA / SPRZEDAWCA:",
+    "client": "KLIENT / ODBIORCA:",
+    "emailValue": "E-mail: {{email}}",
+    "documentType": "TYP DOKUMENTU: ZESTAWIENIE USŁUG I ROZLICZEŃ",
+    "documentNumberValue": "Numer dokumentu: {{number}}",
+    "issueDateValue": "Data wystawienia: {{date}}",
+    "monitoredUnitsValue": "Monitorowane nieruchomości/lokale: {{count}}",
+    "itemizedEntries": "SZCZEGÓŁOWE POZYCJE ROZLICZENIA",
+    "numberShort": "Lp.",
+    "serviceDescription": "Opis usługi",
+    "quantityShort": "Ilość",
+    "unitPriceNet": "Cena jednostkowa netto",
+    "netValue": "Wartość netto",
+    "grossValue": "Wartość brutto",
+    "accommodationService": "Usługi zakwaterowania i obsługi pobytu",
+    "outstandingReceivables": "Saldo należności pozostałych do zapłaty",
+    "netTotal": "Suma netto:",
+    "vatTotal": "Suma VAT (8%):",
+    "grossTotal": "Suma brutto:",
+    "remarksStats": "UWAGI I STATYSTYKI DOSTĘPU",
+    "bookingOrdersValue": "Rezerwacje: zarejestrowane pobyty — {{count}}",
+    "settlementStatusValue": "Status rozliczeń: opłacone {{paid}} / nieopłacone {{unpaid}}",
+    "signature": "Podpis i pieczęć osoby upoważnionej",
+    "chartAnalytics": "ANALIZA WYKRESÓW I TRENDÓW",
+    "occupancySnapshot": "Podsumowanie trendu obłożenia",
+    "revenueExpenseBreakdown": "Podział przychodów i kosztów mediów",
+    "reservationsRegister": "SZCZEGÓŁOWY REJESTR REZERWACJI",
+    "totalRegisteredStays": "ŁĄCZNA LICZBA POBYTÓW",
+    "reservationsCount_one": "{{count}} rezerwacja",
+    "reservationsCount_few": "{{count}} rezerwacje",
+    "reservationsCount_many": "{{count}} rezerwacji",
+    "reservationsCount_other": "{{count}} rezerwacji",
+    "totalRegisterValue": "ŁĄCZNA WARTOŚĆ REJESTRU",
+    "averageStayValue": "ŚREDNIA WARTOŚĆ POBYTU",
+    "reservationsLog": "REJESTR REZERWACJI",
+    "guestName": "Gość",
+    "unitName": "Lokal",
+    "nights": "Noce",
+    "pricePerNight": "Cena/noc",
+    "reservationsRegisterContinued": "SZCZEGÓŁOWY REJESTR REZERWACJI (CD.)",
+    "footer": "Raport Kwatera Property Management © {{year}}",
+    "pageValue": "Strona {{page}} z {{total}}",
+    "roles": {
+      "ADMIN": "Administrator globalny",
+      "OWNER": "Właściciel nieruchomości"
+    }
   },
 
   "slider": {
@@ -217,7 +305,10 @@
     "country": "Kraj",
     "postalCode": "Kod pocztowy",
     "street": "Ulica",
-    "streetNumber": "Numer"
+    "streetNumber": "Numer",
+    "propertyType": "Typ nieruchomości",
+    "selected": "Wybrano",
+    "amenitiesTags": "Udogodnienia i tagi"
   },
 
   "unitForm": {
@@ -229,7 +320,95 @@
     "spaceLocation": "Przestrzeń i lokalizacja",
     "maxGuests": "Maks. goście",
     "unitNumber": "Numer jednostki (np. 104A)",
-    "floor": "Piętro"
+    "floor": "Piętro",
+    "bedrooms": "Sypialnie",
+    "beds": "Łóżka",
+    "unitNumberShort": "Numer lokalu"
+  },
+
+  "unitTypes": {
+    "Entire rental unit": "Cały lokal na wynajem",
+    "Private room in rental unit": "Prywatny pokój w lokalu na wynajem",
+    "Private room in home": "Prywatny pokój w domu",
+    "Entire townhouse": "Cały dom szeregowy",
+    "Entire home": "Cały dom",
+    "Entire condo": "Całe mieszkanie własnościowe",
+    "Entire guest suite": "Cały apartament gościnny",
+    "Private room in guest suite": "Prywatny pokój w apartamencie gościnnym",
+    "Shared room in home": "Pokój współdzielony w domu",
+    "Shared room in hostel": "Pokój współdzielony w hostelu",
+    "Entire serviced apartment": "Cały apartament z obsługą",
+    "Entire villa": "Cała willa",
+    "Private room in townhouse": "Prywatny pokój w domu szeregowym",
+    "Private room in hostel": "Prywatny pokój w hostelu",
+    "Room in aparthotel": "Pokój w aparthotelu",
+    "Entire loft": "Cały loft",
+    "Private room": "Prywatny pokój",
+    "Room in serviced apartment": "Pokój w apartamencie z obsługą",
+    "Private room in condo": "Prywatny pokój w mieszkaniu",
+    "Shared room in rental unit": "Pokój współdzielony w lokalu na wynajem",
+    "Entire place": "Cały obiekt",
+    "Room in hotel": "Pokój w hotelu",
+    "Entire apartment": "Cały apartament",
+    "Entire guesthouse": "Cały pensjonat",
+    "Room in boutique hotel": "Pokój w hotelu butikowym",
+    "Private room in villa": "Prywatny pokój w willi",
+    "Entire chalet": "Cały domek górski",
+    "Room in hostel": "Pokój w hostelu",
+    "Private room in bed and breakfast": "Prywatny pokój ze śniadaniem",
+    "Entire cottage": "Cały domek",
+    "Tiny home": "Mały domek",
+    "Private room in serviced apartment": "Prywatny pokój w apartamencie z obsługą",
+    "Entire bungalow": "Cały bungalow",
+    "Entire home/apt": "Cały dom lub apartament"
+  },
+
+  "tagInput": {
+    "placeholder": "Dodaj tag (np. WiFi, parking)...",
+    "hint": "Naciśnij Enter lub przecinek, aby dodać tag."
+  },
+
+  "filters": {
+    "title": "Filtry",
+    "clearAll": "Wyczyść wszystko",
+    "close": "Zamknij filtry",
+    "hide": "Ukryj filtry",
+    "show": "Pokaż filtry",
+    "propertyType": "Typ nieruchomości",
+    "capacity": "Pojemność",
+    "guests": "Goście",
+    "bedrooms": "Sypialnie",
+    "beds": "Łóżka",
+    "pricePerNight": "Cena za noc",
+    "min": "Min.",
+    "max": "Maks.",
+    "any": "Dowolna",
+    "amenities": "Udogodnienia",
+    "activeGuests": "goście: {{count}}+",
+    "activeBedrooms": "sypialnie: {{count}}+",
+    "activeBeds": "łóżka: {{count}}+",
+    "activeMin": "Min. {{value}} {{currency}}",
+    "activeMax": "Maks. {{value}} {{currency}}"
+  },
+
+  "propertyTypes": {
+    "Apartment": "Apartament",
+    "House": "Dom",
+    "Villa": "Willa",
+    "Studio": "Studio",
+    "Room": "Pokój"
+  },
+
+  "amenities": {
+    "WiFi": "WiFi",
+    "Parking": "Parking",
+    "Pet Friendly": "Przyjazne zwierzętom",
+    "TV": "Telewizor",
+    "AC": "Klimatyzacja",
+    "Kitchen": "Kuchnia",
+    "Pool": "Basen",
+    "Gym": "Siłownia",
+    "Breakfast": "Śniadanie"
   },
 
   "adminMeterReadings": {
@@ -247,7 +426,8 @@
     "uploadedPhotos": "Przesłane zdjęcia licznika",
     "noAttempts": "Brak prób przesłania.",
     "noImage": "Brak zdjęcia.",
-    "ocrValue": "Wartość OCR"
+    "ocrValue": "Wartość OCR",
+    "uploadAttemptAlt": "Próba przesłania zdjęcia licznika"
   },
 
   "checkout": {
@@ -307,7 +487,23 @@
     "messageHost": "Wiadomość do gospodarza (opcjonalnie)",
     "companyNamePlaceholder": "np. Kwatera Sp. z o.o.",
     "taxIdPlaceholder": "np. 1234567890",
-    "companyAddressPlaceholder": "np. ul. Wiejska 1, 00-001 Warszawa"
+    "companyAddressPlaceholder": "np. ul. Wiejska 1, 00-001 Warszawa",
+    "demoSuccess": "Rezerwacja demonstracyjna została potwierdzona. Status płatności: symulowane powodzenie.",
+    "waterBillingMayApply": "Rozumiem, że woda może zostać rozliczona osobno po wymeldowaniu.",
+    "acceptWaterBilling": "Akceptuję osobne rozliczenie wody po wymeldowaniu.",
+    "acknowledgementsRequired": "Zaakceptuj wszystkie wymagane oświadczenia, aby przejść do płatności.",
+    "acknowledgementsRequiredMobile": "Zaakceptuj wszystkie wymagane oświadczenia w formularzu powyżej, aby kontynuować.",
+    "accommodationTotal": "Łączna kwota za zakwaterowanie",
+    "waterBilling": "Rozliczenie wody",
+    "waterBilledSeparately": "Woda jest rozliczana osobno po zakończeniu pobytu.",
+    "checkingWaterTariff": "Sprawdzanie taryfy wody...",
+    "estimatedUsage": "Szacowane zużycie",
+    "estimatedCost": "Szacowany koszt",
+    "finalWaterCostMayVary": "Końcowy koszt może być niższy lub wyższy w zależności od odczytów licznika.",
+    "waterMayBeBilled": "Woda może zostać rozliczona osobno po pobycie, jeśli skonfigurowano ją dla tego lokalu.",
+    "finalWaterCostMeterReadings": "Końcowy koszt wody jest ustalany na podstawie odczytów licznika, jeśli je skonfigurowano.",
+    "rate": "Stawka",
+    "waterRateConversion": "Przeliczenie stawki za wodę"
   },
 
   "createProperty": {
@@ -416,7 +612,8 @@
     "mainImage": "Główne zdjęcie",
     "activeMain": "✓ Aktywne główne",
     "setMain": "Ustaw jako główne",
-    "delete": "Usuń"
+    "delete": "Usuń",
+    "imageAlt": "Nieruchomość"
   },
 
   "editProperty": {
@@ -432,7 +629,8 @@
     "subtitle": "Prześlij zdjęcia i zarządzaj galerią dla tego lokalu",
     "back": "Powrót do lokali",
     "noImages": "Nie przesłano jeszcze żadnych zdjęć dla tego lokalu.",
-    "uploadFailed": "Nie udało się przesłać zdjęcia lokalu"
+    "uploadFailed": "Nie udało się przesłać zdjęcia lokalu",
+    "imageAlt": "Lokal"
   },
 
   "editUnit": {
@@ -602,7 +800,10 @@
     "overlap": "Wybrane daty pokrywają się z istniejącą rezerwacją.",
     "selectValidRange": "Wybierz prawidłowy zakres dat w kalendarzu",
     "loginRequired": "Zaloguj się, aby zarezerwować ten lokal",
-    "thumbnailAlt": "Miniatura nieruchomości {{number}}"
+    "thumbnailAlt": "Miniatura nieruchomości {{number}}",
+    "amenities": "Udogodnienia",
+    "bedrooms": "Sypialnie",
+    "beds": "Łóżka"
   },
 
   "reservationDetails": {
@@ -667,6 +868,45 @@
     "CLEANING_FEE": "opłatę za sprzątanie"
   },
 
+  "systemEvents": {
+    "title": "Dziennik systemowy",
+    "subtitle": "Historia rezerwacji i zdarzeń systemowych dostępna dla administratora.",
+    "search": "Szukaj w dzienniku",
+    "allActions": "Wszystkie akcje",
+    "dateFrom": "Data od",
+    "dateTo": "Data do",
+    "timeFrom": "Godzina od",
+    "timeTo": "Godzina do",
+    "clearDates": "Wyczyść daty",
+    "invalidRange": "Data początkowa musi być wcześniejsza lub równa dacie końcowej.",
+    "loadError": "Nie udało się pobrać zdarzeń systemowych",
+    "empty": "Nie znaleziono zdarzeń systemowych",
+    "emptyHint": "Zmień wyszukiwanie, akcję lub zakres dat, aby wyświetlić inne zdarzenia.",
+    "system": "System",
+    "actor": "Wykonawca",
+    "entity": "Obiekt",
+    "details": "Szczegóły",
+    "date": "Data",
+    "newest": "Najnowsze",
+    "oldest": "Najstarsze",
+    "action": "Akcja",
+    "actions": {
+      "RESERVATION_CREATED": "Utworzono rezerwację",
+      "MANUAL_RESERVATION_CREATED": "Utworzono rezerwację ręczną",
+      "UNIT_BLOCKED": "Zablokowano lokal",
+      "RESERVATION_STATUS_CHANGED": "Zmieniono status rezerwacji",
+      "EXPIRED_RESERVATION_CANCELLED": "Anulowano wygasłą rezerwację",
+      "OCR_READING_ATTEMPTED": "Podjęto próbę odczytu OCR",
+      "OCR_READING_SUCCEEDED": "Odczyt OCR zakończony powodzeniem",
+      "OCR_READING_FAILED": "Odczyt OCR nie powiódł się",
+      "METER_READING_MANUALLY_CORRECTED": "Ręcznie poprawiono odczyt licznika",
+      "MEDIA_SETTLEMENT_GENERATED": "Wygenerowano rozliczenie mediów",
+      "PAYMENT_FAILED": "Płatność nie powiodła się",
+      "PAYMENT_CANCELLED": "Płatność anulowana",
+      "BALANCE_CHANGED": "Zmieniono saldo"
+    }
+  },
+
   "about": {
     "badge": "O Kwatera",
     "title": "KWATERA: Zarządzanie wynajmem nowej generacji",
@@ -692,7 +932,13 @@
     "techTitle": "Stos technologiczny systemu",
     "creatorsBadge": "Twórcy projektu",
     "creatorsTitle": "Poznaj twórców",
-    "creatorsDesc": "KWATERA została opracowana w ramach akademickiego programu studiów z Informatyki Stosowanej na Wydziale Fizyki Technicznej, Informatyki i Matematyki Stosowanej (FTIMS) Politechniki Łódzkiej."
+    "creatorsDesc": "KWATERA została opracowana w ramach akademickiego programu studiów z Informatyki Stosowanej na Wydziale Fizyki Technicznej, Informatyki i Matematyki Stosowanej (FTIMS) Politechniki Łódzkiej.",
+    "reactClient": "Aplikacja kliencka React",
+    "apiGateway": "Brama API",
+    "securityRouting": "Bezpieczeństwo i routing",
+    "corePropertyService": "Usługa główna i nieruchomości",
+    "aiDynamicPricing": "Dynamiczne ceny AI",
+    "ocrUtilityBilling": "Rozliczanie mediów OCR"
   },
 
   "blogSection": {
@@ -755,6 +1001,7 @@
   },
 
   "newsletterSection": {
+    "badge": "NEWSLETTER",
     "title": "Otrzymuj specjalne oferty i więcej od Kwatery",
     "description": "Dołącz do naszej społeczności i jako pierwszy otrzymuj informacje o wyjątkowych zniżkach, spersonalizowanych rekomendacjach i inspirujących kierunkach podróży.",
     "emailPlaceholder": "Wpisz swój adres e-mail",

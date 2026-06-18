@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { IS_DEMO_MODE } from "../api/apiConfig";
 import { demoUsers, signInAsDemoRole, type DemoUser } from "../demo/demoUsers";
+import { useTranslation } from "react-i18next";
 
 function roleTarget(user: DemoUser) {
     if (user.role === "ROLE_GUEST") return "/my-reservations";
@@ -10,6 +11,7 @@ function roleTarget(user: DemoUser) {
 
 export default function DemoRoleSelector({ compact = false }: { compact?: boolean }) {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     if (!IS_DEMO_MODE) return null;
 
@@ -29,7 +31,7 @@ export default function DemoRoleSelector({ compact = false }: { compact?: boolea
                             : "w-full px-4 py-3 rounded-lg bg-[#42211D] text-white font-black shadow-sm hover:bg-[#2a1412] transition"
                     }
                 >
-                    {user.label}
+                    {t(`demo.roles.${user.roleKey}`, { defaultValue: user.label })}
                 </button>
             ))}
         </div>

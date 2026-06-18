@@ -314,7 +314,7 @@ export default function PropertiesPage() {
         filters.propertyTypes.forEach((type) =>
             result.push({
                 id: `type-${type}`,
-                label: type,
+                label: t(`propertyTypes.${type}`, { defaultValue: type }),
                 onRemove: () =>
                     setFilters((f) => ({
                         ...f,
@@ -326,42 +326,42 @@ export default function PropertiesPage() {
         if (filters.guests > 1)
             result.push({
                 id: "guests",
-                label: `${filters.guests}+ guests`,
+                label: t('filters.activeGuests', { count: filters.guests }),
                 onRemove: () => setFilters((f) => ({ ...f, guests: 1 })),
             });
 
         if (filters.bedrooms > 0)
             result.push({
                 id: "bedrooms",
-                label: `${filters.bedrooms}+ bedrooms`,
+                label: t('filters.activeBedrooms', { count: filters.bedrooms }),
                 onRemove: () => setFilters((f) => ({ ...f, bedrooms: 0 })),
             });
 
         if (filters.beds > 0)
             result.push({
                 id: "beds",
-                label: `${filters.beds}+ beds`,
+                label: t('filters.activeBeds', { count: filters.beds }),
                 onRemove: () => setFilters((f) => ({ ...f, beds: 0 })),
             });
 
         if (filters.minPrice !== "")
             result.push({
                 id: "minPrice",
-                label: `Min ${filters.minPrice} ${currency}`,
+                label: t('filters.activeMin', { value: filters.minPrice, currency }),
                 onRemove: () => setFilters((f) => ({ ...f, minPrice: "" })),
             });
 
         if (filters.maxPrice !== "")
             result.push({
                 id: "maxPrice",
-                label: `Max ${filters.maxPrice} ${currency}`,
+                label: t('filters.activeMax', { value: filters.maxPrice, currency }),
                 onRemove: () => setFilters((f) => ({ ...f, maxPrice: "" })),
             });
 
         filters.selectedAmenities.forEach((amenity) =>
             result.push({
                 id: `amenity-${amenity}`,
-                label: amenity,
+                label: t(`amenities.${amenity}`, { defaultValue: amenity }),
                 onRemove: () =>
                     setFilters((f) => ({
                         ...f,
@@ -371,7 +371,7 @@ export default function PropertiesPage() {
         );
 
         return result;
-    }, [filters, currency]);
+    }, [filters, currency, t]);
 
     const handleSearch = ({ city, checkIn, checkOut, guests }: PropertySearchValues) => {
         const params = new URLSearchParams();
@@ -416,7 +416,7 @@ export default function PropertiesPage() {
                             className="md:hidden relative flex items-center gap-2 bg-solid-white border border-gray-200 text-[#1A1A1A] px-4 py-2.5 rounded-xl shadow-sm font-semibold text-sm hover:border-[#42211D]/40 cursor-pointer transition-all"
                         >
                             <SlidersHorizontal className="w-4 h-4" strokeWidth={2.5} />
-                            Filters
+                            {t('filters.title')}
                             {activeFilterCount > 0 && (
                                 <span className="absolute -top-1.5 -right-1.5 bg-[#42211D] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
                                     {activeFilterCount}

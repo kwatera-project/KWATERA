@@ -17,7 +17,7 @@ export default function NewsletterSection() {
           
 
           <div className="w-full lg:w-7/12 p-8 md:p-12 lg:p-20 flex flex-col justify-center">
-            <span className="block text-xs md:text-sm font-bold uppercase tracking-widest mb-6" style={{ color: 'rgb(var(--color-burgundy))' }}>NEWSLETTER</span>
+            <span className="block text-xs md:text-sm font-bold uppercase tracking-widest mb-6" style={{ color: 'rgb(var(--color-burgundy))' }}>{t("newsletterSection.badge")}</span>
             <h2 className="text-3xl md:text-5xl font-bold text-title mb-6 leading-tight">
                 {t("newsletterSection.title")}
             </h2>

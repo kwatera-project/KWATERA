@@ -17,6 +17,7 @@ import SharedDatePicker from "../components/SharedDatePicker";
 import ManualReservationModal from "../components/ManualReservationModal";
 import BlockDatesModal from "../components/BlockDatesModal";
 import {useTranslation} from "react-i18next"
+import {getDateFnsLocale, getLocaleCode} from "../utils/locale";
 
 interface Occupancy {
     reservationId: string;
@@ -35,7 +36,7 @@ export default function OccupancyCalendarPage() {
         startOfMonth(startOfToday()),
         endOfMonth(startOfToday())
     ]);
-    const {t} = useTranslation();
+    const {t, i18n} = useTranslation();
     const [startDate] = dateRange;
     const [selectedOcc, setSelectedOcc] = useState<Occupancy | null>(null);
     const [quickAction, setQuickAction] = useState<{ date: Date } | null>(null);
@@ -290,7 +291,7 @@ export default function OccupancyCalendarPage() {
                     </svg>
                 </button>
                 <h2 className="text-xl font-black text-brand-main tracking-tight">
-                    {format(anchorDate, 'MMMM yyyy')}
+                    {format(anchorDate, 'MMMM yyyy', { locale: getDateFnsLocale(i18n.language) })}
                 </h2>
                 <button onClick={handleNextMonth}
                         className="p-2 border border-brand-accent rounded-lg hover:bg-gray-50 transition">
@@ -370,7 +371,7 @@ export default function OccupancyCalendarPage() {
                         className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] bg-[#FFFFFF] rounded-2xl shadow-2xl border border-brand-accent p-8 w-full max-w-sm space-y-6">
                         <div className="text-center space-y-1">
                             <h3 className="text-lg font-bold text-brand-main">{t('occupancy.quickAction')}</h3>
-                            <p className="text-sm text-brand-muted">{t('occupancy.date')} <span className="font-bold text-brand-main">{format(quickAction.date, 'EEEE, d MMMM yyyy')}</span></p>
+                            <p className="text-sm text-brand-muted">{t('occupancy.date')} <span className="font-bold text-brand-main">{format(quickAction.date, 'EEEE, d MMMM yyyy', { locale: getDateFnsLocale(i18n.language) })}</span></p>
                         </div>
                         <button onClick={() => { setIsManualReservationOpen(true); setQuickAction(null); }} className="w-full py-3 bg-brand-primary text-white font-bold rounded-lg hover:opacity-90 transition cursor-pointer">{t('occupancy.newBooking')}</button>
                         <button onClick={() => { setIsBlockDatesOpen(true); setQuickAction(null); }} className="w-full py-3 bg-[#FFFFFF] border border-brand-accent text-brand-main font-bold rounded-lg hover:bg-gray-50 transition cursor-pointer">{t('blockDates.title')}</button>
@@ -522,7 +523,7 @@ export default function OccupancyCalendarPage() {
                                         <span
                                             className="text-[10px] font-bold text-brand-muted uppercase tracking-wider block">{t('checkout.totalPrice')}</span>
                                         <p className="text-2xl text-brand-primary font-black mt-1 tracking-tight">
-                                            {selectedOcc.totalPrice.toLocaleString('pl-PL', {
+                                            {selectedOcc.totalPrice.toLocaleString(getLocaleCode(i18n.language), {
                                                 style: 'currency',
                                                 currency: 'PLN'
                                             })}

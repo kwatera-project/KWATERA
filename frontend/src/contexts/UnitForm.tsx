@@ -142,7 +142,7 @@ export default function UnitForm({
                         >
                             {UNIT_TYPES.map(type => (
                                 <option key={type} value={type}>
-                                    {type}
+                                    {t(`unitTypes.${type}`, { defaultValue: type })}
                                 </option>
                             ))}
                         </select>
@@ -171,13 +171,13 @@ export default function UnitForm({
 
                     <div className="space-y-1">
                         <label htmlFor="bedrooms" className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
-                            Bedrooms
+                            {t('unitForm.bedrooms')}
                         </label>
                         <input
                             id="bedrooms"
                             type="number"
                             name="bedrooms"
-                            placeholder="Bedrooms"
+                            placeholder={t('unitForm.bedrooms')}
                             value={form.bedrooms === 0 || isNaN(form.bedrooms) ? "" : form.bedrooms}
                             onChange={handleChange}
                             className={inputClasses}
@@ -188,13 +188,13 @@ export default function UnitForm({
 
                     <div className="space-y-1">
                         <label htmlFor="beds" className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
-                            Beds
+                            {t('unitForm.beds')}
                         </label>
                         <input
                             id="beds"
                             type="number"
                             name="beds"
-                            placeholder="Beds"
+                            placeholder={t('unitForm.beds')}
                             value={form.beds === 0 || isNaN(form.beds) ? "" : form.beds}
                             onChange={handleChange}
                             className={inputClasses}
@@ -205,7 +205,7 @@ export default function UnitForm({
 
                     <div className="space-y-1">
                         <label htmlFor="unitNumber" className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
-                            Unit Number
+                            {t('unitForm.unitNumberShort')}
                         </label>
                         <input
                             id="unitNumber"
@@ -238,7 +238,7 @@ export default function UnitForm({
 
             <div className="border-t border-[#DACDCA]/50 my-6 pt-4">
                 <TagInput
-                    label="Amenities & Tags"
+                    label={t('propertyForm.amenitiesTags')}
                     tags={form.amenities ?? []}
                     onChange={(tags) => setForm(prev => ({ ...prev, amenities: tags }))}
                 />

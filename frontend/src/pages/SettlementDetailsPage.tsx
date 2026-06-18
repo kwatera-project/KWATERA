@@ -6,14 +6,15 @@ import {GATEWAY_BASE_URL, IS_DEMO_MODE} from "../api/apiConfig.ts";
 import {getReservationDetails} from "../api/reservationApi.ts";
 import {getUserRoles} from "../utils/jwtUtils";
 import {useTranslation} from "react-i18next"
+import {getLocaleCode} from "../utils/locale";
 import {createCheckoutSession} from "../api/billingApi";
 
 export default function SettlementDetailsPage() {
     const {id} = useParams();
     const [settlement, setSettlement] = useState<SettlementDetails | null>(null);
-    const [loading, setLoading] = useState(Boolean(id));
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const {t} = useTranslation();
+    const {t, i18n} = useTranslation();
 
     const [settlementState, setSettlementState] = useState<
         Record<string, { loading: boolean; success?: boolean, error?: string }>
@@ -384,7 +385,7 @@ export default function SettlementDetailsPage() {
                             <p className="text-sm font-semibold text-[#7A7A7A]">{t('settlement.issuedAt')}</p>
                             <p className="font-bold text-base text-[#1A1A1A]">
                                 {settlement.issuedAt
-                                    ? new Date(settlement.issuedAt).toLocaleString()
+                                    ? new Date(settlement.issuedAt).toLocaleString(getLocaleCode(i18n.language))
                                     : t("common.notAvailable")}
                             </p>
                         </div>
@@ -392,7 +393,7 @@ export default function SettlementDetailsPage() {
                             <p className="text-sm font-semibold text-[#7A7A7A]">{t('settlement.paidAt')}</p>
                             <p className="font-bold text-base text-[#1A1A1A]">
                                 {settlement.paidAt
-                                    ? new Date(settlement.paidAt).toLocaleString()
+                                    ? new Date(settlement.paidAt).toLocaleString(getLocaleCode(i18n.language))
                                     : t("common.notAvailable")}
                             </p>
                         </div>
