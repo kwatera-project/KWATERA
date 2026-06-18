@@ -8,6 +8,7 @@ import com.stripe.model.PaymentIntent;
 import com.stripe.model.checkout.Session;
 import io.github.kwatera_project.kwatera.billing_service.client.StripeClient;
 import io.github.kwatera_project.kwatera.billing_service.client.SystemEventClient;
+import com.stripe.exception.ApiException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -112,6 +113,7 @@ class PaymentWebhookServiceTest {
 
     verify(settlementService)
         .registerPayment(any(), any(), any(), any(), any(), any(), eq("guest@example.com"));
+    verify(settlementService).generateInvoicePdfIfNeeded(any());
     verify(paymentTransactionService).markSuccessIfAllowed("evt_1");
   }
 
@@ -261,5 +263,53 @@ class PaymentWebhookServiceTest {
 
     verifyNoInteractions(settlementService);
     verifyNoInteractions(paymentTransactionService);
+  }
+
+  @Test
+  void shouldFallbackToEventSessionWhenRetrieveSessionThrows() throws Exception {
+    Event event = mockEvent("evt_fallback_1", "checkout.session.completed");
+    Session eventSession = mock(Session.class);
+    when(eventSession.getId()).thenReturn("sess_fallback_1");
+    when(eventSession.getMetadata()).thenReturn(validMetadata());
+
+    when(deserializer.getObject()).thenReturn(Optional.of(eventSession));
+    when(stripeClient.constructEvent(any(), any(), any())).thenReturn(event);
+    when(stripeClient.retrieveSession("sess_fallback_1"))
+        .thenThrow(new ApiException("Stripe error", null, null, 500, null));
+
+    when(paymentTransactionService.createProcessingIfNotExists(
+            any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(true);
+
+    paymentWebhookService.processWebhook("payload", "sig");
+
+    verify(settlementService).registerPayment(any(), any(), any(), any(), any(), any(), eq("guest@example.com"));
+    verify(settlementService).generateInvoicePdfIfNeeded(any());
+    verify(paymentTransactionService).markSuccessIfAllowed("evt_fallback_1");
+  }
+
+  @Test
+  void shouldFallbackToEventSessionWhenRetrievedSessionHasEmptyMetadata() throws Exception {
+    Event event = mockEvent("evt_fallback_2", "checkout.session.completed");
+    Session eventSession = mock(Session.class);
+    when(eventSession.getId()).thenReturn("sess_fallback_2");
+    when(eventSession.getMetadata()).thenReturn(validMetadata());
+
+    Session retrievedSession = mock(Session.class);
+    when(retrievedSession.getMetadata()).thenReturn(null);
+
+    when(deserializer.getObject()).thenReturn(Optional.of(eventSession));
+    when(stripeClient.constructEvent(any(), any(), any())).thenReturn(event);
+    when(stripeClient.retrieveSession("sess_fallback_2")).thenReturn(retrievedSession);
+
+    when(paymentTransactionService.createProcessingIfNotExists(
+            any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(true);
+
+    paymentWebhookService.processWebhook("payload", "sig");
+
+    verify(settlementService).registerPayment(any(), any(), any(), any(), any(), any(), eq("guest@example.com"));
+    verify(settlementService).generateInvoicePdfIfNeeded(any());
+    verify(paymentTransactionService).markSuccessIfAllowed("evt_fallback_2");
   }
 }
