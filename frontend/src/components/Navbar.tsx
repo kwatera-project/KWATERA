@@ -320,7 +320,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                                                 <Link to="/admin/users"
                                                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
                                                     <Users size={16}/>
-                                                    System Users
+                                                    {t("navbar.systemUsers")}
                                                 </Link>
                                                 <Link to="/admin/logs"
                                                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">

@@ -12,6 +12,7 @@
     "login": "ZALOGUJ",
     "signUp": "ZAREJESTRUJ",
     "systemLogs": "Dziennik systemowy",
+    "systemUsers": "Użytkownicy systemu",
     "demoLogin": "LOGOWANIE DEMO",
     "language": "Język",
     "currency": "Waluta"
@@ -81,6 +82,53 @@
     "CONFIRMED": "Potwierdzona",
     "CANCELLED": "Anulowana",
     "COMPLETED": "Zakończona"
+  },
+
+  "adminUsers": {
+    "title": "Przegląd użytkowników",
+    "subtitle": "Monitoruj konta systemowe, rozkład ról i zarządzane nieruchomości w czasie rzeczywistym.",
+    "refresh": "Odśwież",
+    "kpi": {
+      "totalUsers": "Wszyscy użytkownicy",
+      "totalUsersDesc": "Wszystkie zarejestrowane konta",
+      "guests": "Goście",
+      "guestsDesc": "Klienci składający rezerwacje",
+      "propertyOwners": "Właściciele nieruchomości",
+      "propertyOwnersDesc": "Zarządzający ofertami i wynajmem",
+      "properties": "Nieruchomości",
+      "propertiesDesc": "Nieruchomości wystawione w KWATERA"
+    },
+    "searchPlaceholder": "Szukaj po nazwie lub e-mailu...",
+    "roleLabel": "Rola:",
+    "roles": {
+      "ALL": "Wszystkie role",
+      "GUEST": "Gość",
+      "OWNER": "Właściciel",
+      "ADMIN": "Administrator"
+    },
+    "tableHeaders": {
+      "firstName": "Imię",
+      "lastName": "Nazwisko",
+      "email": "E-mail",
+      "role": "Rola",
+      "status": "Status",
+      "createdDate": "Data rejestracji",
+      "properties": "Nieruchomości"
+    },
+    "noUsersFound": "Nie znaleziono użytkowników",
+    "noUsersMatchSearch": "Żadne konta użytkowników nie pasują do kryteriów wyszukiwania.",
+    "propertiesManaged": "Zarządzane nieruchomości:",
+    "showing": "Wyświetlono",
+    "of": "z",
+    "users": "użytkowników",
+    "total": "Łącznie:",
+    "page": "Strona",
+    "of2": "z",
+    "statuses": {
+      "Active": "Aktywny",
+      "Inactive": "Nieaktywny"
+    },
+    "loadUsersFailed": "Nie udało się załadować listy użytkowników"
   },
 
   "adminReservations": {
