@@ -4,33 +4,42 @@ import { demoReservations } from "./demoReservations";
 type SettlementSeed = {
     reservationId: string;
     status: string;
+    waterM3: number | null;
     depositAmount: number;
-    amountPaid: number;
-    issuedAt: string | null;
-    paidAt: string | null;
-    waterQuantity?: number;
-    electricityQuantity?: number;
+    discountAmount: number;
 };
 
 const settlementSeeds: SettlementSeed[] = [
-    { reservationId: "demo-reservation-1001", status: "PAID", depositAmount: 400, amountPaid: 2182, issuedAt: "2026-05-09T12:00:00Z", paidAt: "2026-05-10T08:30:00Z", waterQuantity: 8.4, electricityQuantity: 42 },
-    { reservationId: "demo-reservation-1002", status: "PAID", depositAmount: 800, amountPaid: 5060, issuedAt: "2026-05-31T12:00:00Z", paidAt: "2026-06-02T08:30:00Z", waterQuantity: 16.2, electricityQuantity: 67 },
-    { reservationId: "demo-reservation-1003", status: "ISSUED", depositAmount: 500, amountPaid: 1620, issuedAt: "2026-05-21T11:00:00Z", paidAt: null, waterQuantity: 5.1, electricityQuantity: 28 },
-    { reservationId: "demo-reservation-1004", status: "CANCELLED", depositAmount: 0, amountPaid: 0, issuedAt: null, paidAt: null },
-    { reservationId: "demo-reservation-1005", status: "ISSUED", depositAmount: 250, amountPaid: 500, issuedAt: "2026-06-09T12:00:00Z", paidAt: null, waterQuantity: 4.2, electricityQuantity: 21 },
-    { reservationId: "demo-reservation-1006", status: "ISSUED", depositAmount: 500, amountPaid: 1680, issuedAt: "2026-06-22T12:00:00Z", paidAt: null, waterQuantity: 12.8, electricityQuantity: 46 },
-    { reservationId: "demo-reservation-1007", status: "DRAFT", depositAmount: 700, amountPaid: 0, issuedAt: "2026-06-03T14:20:00Z", paidAt: null },
-    { reservationId: "demo-reservation-1008", status: "ISSUED", depositAmount: 500, amountPaid: 1120, issuedAt: "2026-06-30T12:00:00Z", paidAt: null, waterQuantity: 14.6, electricityQuantity: 58 },
-    { reservationId: "demo-reservation-1009", status: "PAID", depositAmount: 300, amountPaid: 1812, issuedAt: "2026-06-05T12:00:00Z", paidAt: "2026-06-06T09:15:00Z", waterQuantity: 3.7, electricityQuantity: 31 },
-    { reservationId: "demo-reservation-1010", status: "DRAFT", depositAmount: 900, amountPaid: 0, issuedAt: "2026-06-28T15:00:00Z", paidAt: null },
-    { reservationId: "demo-reservation-1011", status: "ISSUED", depositAmount: 500, amountPaid: 1350, issuedAt: "2026-07-20T12:00:00Z", paidAt: null, waterQuantity: 18.1, electricityQuantity: 74 },
-    { reservationId: "demo-reservation-1012", status: "PAID", depositAmount: 250, amountPaid: 1354, issuedAt: "2026-07-29T12:00:00Z", paidAt: "2026-07-29T18:45:00Z", waterQuantity: 3.1, electricityQuantity: 19 },
-    { reservationId: "demo-reservation-1013", status: "CANCELLED", depositAmount: 0, amountPaid: 0, issuedAt: null, paidAt: null },
-    { reservationId: "demo-reservation-1014", status: "ISSUED", depositAmount: 400, amountPaid: 910, issuedAt: "2026-07-08T12:00:00Z", paidAt: null, waterQuantity: 9.7, electricityQuantity: 37 },
+    { reservationId: "demo-reservation-0001", waterM3: 2.4, depositAmount: 0, discountAmount: 0, status: "PAID" },
+    { reservationId: "demo-reservation-0002", waterM3: 5.6, depositAmount: 0, discountAmount: 0, status: "PAID" },
+    { reservationId: "demo-reservation-0003", waterM3: 2.4, depositAmount: 0, discountAmount: 0, status: "PAID" },
+    { reservationId: "demo-reservation-0004", waterM3: 0.4, depositAmount: 0, discountAmount: 0, status: "PAID" },
+    { reservationId: "demo-reservation-0005", waterM3: 3, depositAmount: 0, discountAmount: 0, status: "PAID" },
+    { reservationId: "demo-reservation-0006", waterM3: 1.6, depositAmount: 0, discountAmount: 0, status: "PAID" },
+    { reservationId: "demo-reservation-0007", waterM3: 1.2, depositAmount: 0, discountAmount: 0, status: "PAID" },
+    { reservationId: "demo-reservation-0008", waterM3: 0.6, depositAmount: 0, discountAmount: 0, status: "PAID" },
+    { reservationId: "demo-reservation-0009", waterM3: null, depositAmount: 0, discountAmount: 0, status: "CANCELLED" },
+    { reservationId: "demo-reservation-0010", waterM3: null, depositAmount: 0, discountAmount: 0, status: "CANCELLED" },
+    { reservationId: "demo-reservation-0011", waterM3: null, depositAmount: 0, discountAmount: 0, status: "CANCELLED" },
+    { reservationId: "demo-reservation-0012", waterM3: null, depositAmount: 0, discountAmount: 0, status: "CANCELLED" },
+    { reservationId: "demo-reservation-0013", waterM3: null, depositAmount: 0, discountAmount: 0, status: "PARTIALLY_PAID" },
+    { reservationId: "demo-reservation-0014", waterM3: null, depositAmount: 0, discountAmount: 0, status: "PARTIALLY_PAID" },
+    { reservationId: "demo-reservation-0015", waterM3: null, depositAmount: 0, discountAmount: 0, status: "DRAFT" },
+    { reservationId: "demo-reservation-0016", waterM3: null, depositAmount: 0, discountAmount: 0, status: "PARTIALLY_PAID" },
+    { reservationId: "demo-reservation-0017", waterM3: null, depositAmount: 0, discountAmount: 0, status: "DRAFT" },
+    { reservationId: "demo-reservation-0018", waterM3: null, depositAmount: 0, discountAmount: 0, status: "DRAFT" },
+    { reservationId: "demo-reservation-0019", waterM3: null, depositAmount: 0, discountAmount: 0, status: "PARTIALLY_PAID" },
+    { reservationId: "demo-reservation-0020", waterM3: null, depositAmount: 0, discountAmount: 0, status: "DRAFT" },
+    { reservationId: "demo-reservation-0021", waterM3: null, depositAmount: 0, discountAmount: 0, status: "PARTIALLY_PAID" },
+    { reservationId: "demo-reservation-0022", waterM3: null, depositAmount: 0, discountAmount: 0, status: "DRAFT" },
+    { reservationId: "demo-reservation-0023", waterM3: null, depositAmount: 0, discountAmount: 0, status: "DRAFT" },
+    { reservationId: "demo-reservation-0024", waterM3: null, depositAmount: 0, discountAmount: 0, status: "DRAFT" },
+    { reservationId: "demo-reservation-0025", waterM3: null, depositAmount: 0, discountAmount: 0, status: "CANCELLED" },
+    { reservationId: "demo-reservation-0026", waterM3: null, depositAmount: 0, discountAmount: 0, status: "CANCELLED" },
 ];
 
 function settlementIdFor(reservationId: string) {
-    return reservationId.replace("demo-reservation-10", "demo-settlement-50");
+    return reservationId.replace("demo-reservation-", "demo-settlement-");
 }
 
 function item(
@@ -62,59 +71,54 @@ function createSettlement(seed: SettlementSeed): SettlementDetails {
 
     const settlementId = settlementIdFor(seed.reservationId);
     const accommodationAmount = reservation.totalPrice ?? 0;
-    const createdAt = reservation.createdAt;
-    const issuedAt = seed.issuedAt;
+    const utilitiesAmount = Number(((seed.waterM3 ?? 0) * 18.5).toFixed(2));
+    const totalAmount = seed.status === "CANCELLED"
+        ? 0
+        : Number((accommodationAmount + utilitiesAmount + seed.depositAmount - seed.discountAmount).toFixed(2));
+    const amountPaid = seed.status === "PAID"
+        ? totalAmount
+        : seed.status === "PARTIALLY_PAID"
+            ? Number((totalAmount * 0.5).toFixed(2))
+            : 0;
+    const balanceDue = seed.status === "DRAFT" || seed.status === "PARTIALLY_PAID"
+        ? Number(Math.max(0, totalAmount - amountPaid).toFixed(2))
+        : 0;
+    const issuedAt = seed.status === "CANCELLED" ? null : reservation.createdAt;
+    const paidAt = seed.status === "PAID" || seed.status === "PARTIALLY_PAID" ? `${reservation.endDate}T11:00:00Z` : null;
     const items: SettlementItemDetails[] = [];
 
-    if (accommodationAmount > 0 && seed.status !== "CANCELLED") {
-        items.push(item(`${settlementId}-accommodation`, settlementId, "ACCOMMODATION", "Accommodation fee", 1, accommodationAmount, issuedAt ?? createdAt));
+    if (seed.status !== "CANCELLED") {
+        const nights = Math.round((Date.parse(reservation.endDate) - Date.parse(reservation.startDate)) / 86400000);
+        items.push(item(`${settlementId}-accommodation`, settlementId, "ACCOMMODATION", `Accommodation payment for ${nights} night(s)`, nights, reservation.pricePerNightSnapshot ?? 0, issuedAt ?? reservation.createdAt));
     }
 
-    if (seed.depositAmount > 0) {
-        items.push(item(`${settlementId}-deposit`, settlementId, "DEPOSIT", "Refundable security deposit", 1, seed.depositAmount, issuedAt ?? createdAt));
+    if (seed.waterM3 !== null && seed.status !== "CANCELLED") {
+        items.push(item(`${settlementId}-water`, settlementId, "WATER", "Water consumption settlement (rate PLN 18.50/m3)", seed.waterM3, 18.5, `${reservation.endDate}T11:00:00Z`));
     }
-
-    if (seed.waterQuantity) {
-        items.push(item(`${settlementId}-water`, settlementId, "WATER", "Water utility usage", seed.waterQuantity, 12, issuedAt ?? createdAt));
-    }
-
-    if (seed.electricityQuantity) {
-        items.push(item(`${settlementId}-electricity`, settlementId, "ELECTRICITY", "Electricity utility usage", seed.electricityQuantity, 2.1, issuedAt ?? createdAt));
-    }
-
-    const utilitiesAmount = Number(
-        items
-            .filter((entry) => entry.type === "WATER" || entry.type === "ELECTRICITY")
-            .reduce((sum, entry) => sum + entry.amount, 0)
-            .toFixed(2)
-    );
-    const totalAmount = Number((accommodationAmount + utilitiesAmount + seed.depositAmount).toFixed(2));
-    const amountPaid = seed.status === "PAID" ? totalAmount : Math.min(seed.amountPaid, totalAmount);
-    const balanceDue = Number(Math.max(0, totalAmount - amountPaid).toFixed(2));
 
     return {
         id: settlementId,
         reservationId: reservation.id,
         status: seed.status,
-        accommodationAmount,
-        utilitiesAmount,
+        accommodationAmount: seed.status === "CANCELLED" ? 0 : accommodationAmount,
+        utilitiesAmount: seed.status === "CANCELLED" ? 0 : utilitiesAmount,
         depositAmount: seed.depositAmount,
-        discountAmount: 0,
+        discountAmount: seed.discountAmount,
         totalAmount,
         amountPaid,
         balanceDue,
-        convertedTotalAmount: totalAmount,
-        convertedAmountPaid: amountPaid,
-        convertedBalanceDue: balanceDue,
-        convertedAccommodationAmount: accommodationAmount,
-        convertedUtilitiesAmount: utilitiesAmount,
-        convertedDepositAmount: seed.depositAmount,
+        convertedTotalAmount: Number((totalAmount / (reservation.currencyInfo?.exchangeRate ?? 1)).toFixed(2)),
+        convertedAmountPaid: Number((amountPaid / (reservation.currencyInfo?.exchangeRate ?? 1)).toFixed(2)),
+        convertedBalanceDue: Number((balanceDue / (reservation.currencyInfo?.exchangeRate ?? 1)).toFixed(2)),
+        convertedAccommodationAmount: Number(((seed.status === "CANCELLED" ? 0 : accommodationAmount) / (reservation.currencyInfo?.exchangeRate ?? 1)).toFixed(2)),
+        convertedUtilitiesAmount: Number(((seed.status === "CANCELLED" ? 0 : utilitiesAmount) / (reservation.currencyInfo?.exchangeRate ?? 1)).toFixed(2)),
+        convertedDepositAmount: Number((seed.depositAmount / (reservation.currencyInfo?.exchangeRate ?? 1)).toFixed(2)),
         currencyInfo: reservation.currencyInfo,
         issuedAt,
-        paidAt: seed.paidAt,
-        createdAt,
-        updatedAt: seed.paidAt ?? issuedAt ?? createdAt,
-        finalized: seed.status === "PAID" || seed.status === "ISSUED",
+        paidAt,
+        createdAt: reservation.createdAt,
+        updatedAt: paidAt ?? issuedAt ?? reservation.createdAt,
+        finalized: seed.status === "PAID" || seed.status === "PARTIALLY_PAID",
         items,
     };
 }

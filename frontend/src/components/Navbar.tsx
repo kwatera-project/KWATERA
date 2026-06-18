@@ -19,8 +19,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
     const payload = token ? decodeJwt(token) : null;
     const sub = payload?.sub as string | undefined;
     const firstName = payload?.firstName as string | undefined;
-    const lastName = payload?.lastName as string | undefined;
-    const displayName = (firstName && lastName) ? `${firstName} ${lastName}` : (sub ? sub.split('@')[0] : 'Profile');
+    const displayName = firstName || (sub ? sub.split('@')[0] : 'Profile');
 
     const logout = useLogout()
     const {currency, setCurrency} = useCurrency();

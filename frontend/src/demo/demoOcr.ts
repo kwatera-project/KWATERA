@@ -3,53 +3,46 @@ import type { MediaReadingStatus, MediaReadingUploadAttempt, MeterReadingRespons
 const reading = (
     id: string,
     settlementId: string,
-    utilityType: "WATER" | "ELECTRICITY",
-    initialReading: number,
-    finalReading: number | null,
-    initialConfidenceScore: number,
-    finalConfidenceScore: number | null,
-    finalStatus: MediaReadingStatus["finalReadingStatus"] = "AUTO_APPROVED"
+    finalReading: number,
+    finalConfidenceScore: number
 ): MediaReadingStatus => ({
     id,
     settlementId,
-    utilityType,
-    initialReading,
+    utilityType: "WATER",
+    initialReading: 89.983,
     finalReading,
-    initialConfidenceScore,
+    initialConfidenceScore: 0.784642,
     finalConfidenceScore,
     initialReadingStatus: "AUTO_APPROVED",
-    finalReadingStatus: finalStatus,
+    finalReadingStatus: "AUTO_APPROVED",
     initialReadingSource: "OCR",
-    finalReadingSource: finalReading === null ? null : "OCR",
+    finalReadingSource: "OCR",
 });
 
 export const demoMediaReadingsBySettlementId: Record<string, MediaReadingStatus[]> = {
-    "demo-settlement-5001": [
-        reading("demo-reading-water-5001", "demo-settlement-5001", "WATER", 118.4, 126.8, 0.982, 0.961),
-        reading("demo-reading-electricity-5001", "demo-settlement-5001", "ELECTRICITY", 2201.0, 2243.0, 0.974, 0.952),
+    "demo-settlement-0001": [
+        reading("demo-reading-water-0001", "demo-settlement-0001", 92.383, 0.778662),
     ],
-    "demo-settlement-5002": [
-        reading("demo-reading-water-5002", "demo-settlement-5002", "WATER", 54.1, 70.3, 0.961, 0.973),
-        reading("demo-reading-electricity-5002", "demo-settlement-5002", "ELECTRICITY", 811.5, 878.5, 0.943, 0.936),
+    "demo-settlement-0002": [
+        reading("demo-reading-water-0002", "demo-settlement-0002", 95.583, 0.798311),
     ],
-    "demo-settlement-5005": [
-        reading("demo-reading-water-5005", "demo-settlement-5005", "WATER", 302.8, 307.0, 0.956, 0.941),
+    "demo-settlement-0003": [
+        reading("demo-reading-water-0003", "demo-settlement-0003", 92.383, 0.78607),
     ],
-    "demo-settlement-5006": [
-        reading("demo-reading-water-5006", "demo-settlement-5006", "WATER", 128.4, 141.2, 0.982, 0.947, "REQUEST_MANUAL_REVIEW"),
-        reading("demo-reading-electricity-5006", "demo-settlement-5006", "ELECTRICITY", 3410.0, 3456.0, 0.966, 0.958),
+    "demo-settlement-0004": [
+        reading("demo-reading-water-0004", "demo-settlement-0004", 90.383, 0.77504),
     ],
-    "demo-settlement-5008": [
-        reading("demo-reading-water-5008", "demo-settlement-5008", "WATER", 76.2, 90.8, 0.934, 0.925),
-        reading("demo-reading-electricity-5008", "demo-settlement-5008", "ELECTRICITY", 1433.0, 1491.0, 0.971, 0.964),
+    "demo-settlement-0005": [
+        reading("demo-reading-water-0005", "demo-settlement-0005", 92.983, 0.751107),
     ],
-    "demo-settlement-5011": [
-        reading("demo-reading-water-5011", "demo-settlement-5011", "WATER", 91.7, null, 0.964, null, "PENDING"),
-        reading("demo-reading-electricity-5011", "demo-settlement-5011", "ELECTRICITY", 1764.0, null, 0.951, null, "PENDING"),
+    "demo-settlement-0006": [
+        reading("demo-reading-water-0006", "demo-settlement-0006", 91.583, 0.761524),
     ],
-    "demo-settlement-5014": [
-        reading("demo-reading-water-5014", "demo-settlement-5014", "WATER", 142.0, 151.7, 0.972, 0.938),
-        reading("demo-reading-electricity-5014", "demo-settlement-5014", "ELECTRICITY", 3650.0, 3687.0, 0.953, 0.944),
+    "demo-settlement-0007": [
+        reading("demo-reading-water-0007", "demo-settlement-0007", 91.183, 0.777656),
+    ],
+    "demo-settlement-0008": [
+        reading("demo-reading-water-0008", "demo-settlement-0008", 90.583, 0.742221),
     ],
 };
 
@@ -59,7 +52,6 @@ const attempt = (
     readingType: "INITIAL" | "FINAL",
     ocrValue: string,
     confidenceScore: number,
-    status: MediaReadingUploadAttempt["status"],
     attemptedAt: string
 ): MediaReadingUploadAttempt => ({
     id,
@@ -67,30 +59,47 @@ const attempt = (
     imageBase64: null,
     ocrValue,
     confidenceScore,
-    status,
+    status: "AUTO_APPROVED",
     attemptedAt,
     readingType,
 });
 
 export const demoMediaReadingAttemptsBySettlementId: Record<string, MediaReadingUploadAttempt[]> = {
-    "demo-settlement-5001": [
-        attempt("demo-attempt-5001-water-initial", "demo-reading-water-5001", "INITIAL", "118.4", 0.982, "AUTO_APPROVED", "2026-05-05T15:10:00Z"),
-        attempt("demo-attempt-5001-water-final", "demo-reading-water-5001", "FINAL", "126.8", 0.961, "AUTO_APPROVED", "2026-05-09T10:30:00Z"),
+    "demo-settlement-0001": [
+        attempt("demo-attempt-0001-water-initial", "demo-reading-water-0001", "INITIAL", "89.983000", 0.784642, "2026-01-18T12:00:00Z"),
+        attempt("demo-attempt-0001-water-final", "demo-reading-water-0001", "FINAL", "92.383000", 0.778662, "2026-01-22T11:00:00Z"),
     ],
-    "demo-settlement-5006": [
-        attempt("demo-attempt-5006-water-initial", "demo-reading-water-5006", "INITIAL", "128.4", 0.982, "AUTO_APPROVED", "2026-06-18T13:10:00Z"),
-        attempt("demo-attempt-5006-water-final", "demo-reading-water-5006", "FINAL", "141.2", 0.947, "REQUEST_MANUAL_REVIEW", "2026-06-22T10:40:00Z"),
+    "demo-settlement-0002": [
+        attempt("demo-attempt-0002-water-initial", "demo-reading-water-0002", "INITIAL", "89.983000", 0.784642, "2026-02-17T12:00:00Z"),
+        attempt("demo-attempt-0002-water-final", "demo-reading-water-0002", "FINAL", "95.583000", 0.798311, "2026-02-24T11:00:00Z"),
     ],
-    "demo-settlement-5011": [
-        attempt("demo-attempt-5011-water-initial", "demo-reading-water-5011", "INITIAL", "91.7", 0.964, "AUTO_APPROVED", "2026-07-15T14:05:00Z"),
+    "demo-settlement-0003": [
+        attempt("demo-attempt-0003-water-initial", "demo-reading-water-0003", "INITIAL", "89.983000", 0.784642, "2026-03-19T12:00:00Z"),
+        attempt("demo-attempt-0003-water-final", "demo-reading-water-0003", "FINAL", "92.383000", 0.78607, "2026-03-22T11:00:00Z"),
     ],
-    "demo-settlement-5014": [
-        attempt("demo-attempt-5014-water-initial", "demo-reading-water-5014", "INITIAL", "142.0", 0.972, "AUTO_APPROVED", "2026-07-04T16:20:00Z"),
-        attempt("demo-attempt-5014-water-final", "demo-reading-water-5014", "FINAL", "151.7", 0.938, "AUTO_APPROVED", "2026-07-08T11:10:00Z"),
+    "demo-settlement-0004": [
+        attempt("demo-attempt-0004-water-initial", "demo-reading-water-0004", "INITIAL", "89.983000", 0.784642, "2026-04-18T12:00:00Z"),
+        attempt("demo-attempt-0004-water-final", "demo-reading-water-0004", "FINAL", "90.383000", 0.77504, "2026-04-20T11:00:00Z"),
+    ],
+    "demo-settlement-0005": [
+        attempt("demo-attempt-0005-water-initial", "demo-reading-water-0005", "INITIAL", "89.983000", 0.784642, "2026-05-03T12:00:00Z"),
+        attempt("demo-attempt-0005-water-final", "demo-reading-water-0005", "FINAL", "92.983000", 0.751107, "2026-05-08T11:00:00Z"),
+    ],
+    "demo-settlement-0006": [
+        attempt("demo-attempt-0006-water-initial", "demo-reading-water-0006", "INITIAL", "89.983000", 0.784642, "2026-05-18T12:00:00Z"),
+        attempt("demo-attempt-0006-water-final", "demo-reading-water-0006", "FINAL", "91.583000", 0.761524, "2026-05-22T11:00:00Z"),
+    ],
+    "demo-settlement-0007": [
+        attempt("demo-attempt-0007-water-initial", "demo-reading-water-0007", "INITIAL", "89.983000", 0.784642, "2026-05-28T12:00:00Z"),
+        attempt("demo-attempt-0007-water-final", "demo-reading-water-0007", "FINAL", "91.183000", 0.777656, "2026-05-31T11:00:00Z"),
+    ],
+    "demo-settlement-0008": [
+        attempt("demo-attempt-0008-water-initial", "demo-reading-water-0008", "INITIAL", "89.983000", 0.784642, "2026-06-07T12:00:00Z"),
+        attempt("demo-attempt-0008-water-final", "demo-reading-water-0008", "FINAL", "90.583000", 0.742221, "2026-06-09T11:00:00Z"),
     ],
 };
 
 export const demoOcrSuccess: MeterReadingResponse = {
     status: "AUTO_APPROVED",
-    message: "Demo OCR recognized a meter reading of 141.2 with 94.7% confidence.",
+    message: "Demo OCR recognized a water meter reading with confidence aligned to the rich presentation seed.",
 };
