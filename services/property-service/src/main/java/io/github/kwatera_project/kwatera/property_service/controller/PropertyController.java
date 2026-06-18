@@ -4,14 +4,13 @@ import io.github.kwatera_project.kwatera.property_service.dto.*;
 import io.github.kwatera_project.kwatera.property_service.service.PropertyService;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"})
 @RestController
@@ -20,6 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class PropertyController {
 
   private final PropertyService propertyService;
+
+  @Value("${kwatera.security.internal-token:kwatera-internal-secret-token}")
+  private String expectedInternalToken;
 
   @GetMapping
   public List<PropertyDto> getAllProperties(
@@ -81,5 +83,27 @@ public class PropertyController {
   @GetMapping("/units/{id}/settlement-items")
   public List<UnitSettlementItemDto> getUnitSettlementItems(@PathVariable("id") UUID id) {
     return propertyService.getUnitSettlementItems(id);
+  }
+
+  @GetMapping("/internal/count")
+  public long getPropertiesCount(
+      @RequestHeader(value = "X-Internal-Token", required = false) String internalToken) {
+    validateInternalToken(internalToken);
+    return propertyService.countAllProperties();
+  }
+
+  @GetMapping("/internal/owner-counts")
+  public Map<UUID, Long> getOwnerPropertyCounts(
+      @RequestParam(name = "ownerIds", required = false) List<UUID> ownerIds,
+      @RequestHeader(value = "X-Internal-Token", required = false) String internalToken) {
+    validateInternalToken(internalToken);
+    return propertyService.getOwnerPropertyCounts(ownerIds);
+  }
+
+  private void validateInternalToken(String internalToken) {
+    if (internalToken == null || !internalToken.equals(expectedInternalToken)) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Access denied: Invalid internal token");
+    }
   }
 }

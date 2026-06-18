@@ -39,3 +39,7 @@ kwatera:
     test-recipient: ${KWATERA_MAIL_TEST_RECIPIENT:guest@kwatera.local}
   security:
     internal-token: ${KWATERA_INTERNAL_TOKEN:kwatera-internal-secret-token}
+
+services:
+  property:
+    url: http://property-service/api/properties

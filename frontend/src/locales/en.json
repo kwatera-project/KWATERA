@@ -12,6 +12,7 @@
     "login": "LOG IN",
     "signUp": "SIGN UP",
     "systemLogs": "System Logs",
+    "systemUsers": "System Users",
     "demoLogin": "DEMO LOGIN",
     "language": "Language",
     "currency": "Currency"
@@ -82,6 +83,53 @@
     "CANCELLED": "Cancelled",
     "COMPLETED": "Completed"
   },
+  "adminUsers": {
+    "title": "Users Overview",
+    "subtitle": "Monitor system accounts, role distributions, and managed properties in real-time.",
+    "refresh": "Refresh",
+    "kpi": {
+      "totalUsers": "Total Users",
+      "totalUsersDesc": "All registered accounts",
+      "guests": "Guests",
+      "guestsDesc": "Clients placing reservations",
+      "propertyOwners": "Property Owners",
+      "propertyOwnersDesc": "Managing listings & rentals",
+      "properties": "Properties",
+      "propertiesDesc": "Properties listed on KWATERA"
+    },
+    "searchPlaceholder": "Search by name or email...",
+    "roleLabel": "Role:",
+    "roles": {
+      "ALL": "All Roles",
+      "GUEST": "Guest",
+      "OWNER": "Owner",
+      "ADMIN": "Admin"
+    },
+    "tableHeaders": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "createdDate": "Created Date",
+      "properties": "Properties"
+    },
+    "noUsersFound": "No Users Found",
+    "noUsersMatchSearch": "No user accounts match your search parameters.",
+    "propertiesManaged": "Properties managed:",
+    "showing": "Showing",
+    "of": "of",
+    "users": "users",
+    "total": "Total:",
+    "page": "Page",
+    "of2": "of",
+    "statuses": {
+      "Active": "Active",
+      "Inactive": "Inactive"
+    },
+    "loadUsersFailed": "Failed to load users list"
+  },
+
   "adminReservations": {
     "title": "Reservation Overview",
     "subtitle": "Manage guest reservations, occupancy status, and utility readings.",

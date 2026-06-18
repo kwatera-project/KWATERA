@@ -11,6 +11,7 @@ import io.github.kwatera_project.kwatera.property_service.model.UnitType;
 import io.github.kwatera_project.kwatera.property_service.service.PropertyService;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -260,5 +261,53 @@ class PropertyControllerTest {
     assertTrue(result.getFirst().getIsMain());
 
     verify(service, times(1)).getUnitImages(propertyId, unitId);
+  }
+
+  @Test
+  void getPropertiesCount_shouldReturnCount_whenTokenIsValid() {
+    org.springframework.test.util.ReflectionTestUtils.setField(
+        controller, "expectedInternalToken", "test-token");
+    when(service.countAllProperties()).thenReturn(10L);
+
+    long result = controller.getPropertiesCount("test-token");
+
+    assertEquals(10L, result);
+  }
+
+  @Test
+  void getPropertiesCount_shouldThrowForbidden_whenTokenIsInvalid() {
+    org.springframework.test.util.ReflectionTestUtils.setField(
+        controller, "expectedInternalToken", "test-token");
+
+    assertThrows(
+        org.springframework.web.server.ResponseStatusException.class,
+        () -> {
+          controller.getPropertiesCount("invalid-token");
+        });
+  }
+
+  @Test
+  void getOwnerPropertyCounts_shouldReturnCounts_whenTokenIsValid() {
+    org.springframework.test.util.ReflectionTestUtils.setField(
+        controller, "expectedInternalToken", "test-token");
+    UUID ownerId = UUID.randomUUID();
+    Map<UUID, Long> expected = Map.of(ownerId, 2L);
+    when(service.getOwnerPropertyCounts(List.of(ownerId))).thenReturn(expected);
+
+    Map<UUID, Long> result = controller.getOwnerPropertyCounts(List.of(ownerId), "test-token");
+
+    assertEquals(expected, result);
+  }
+
+  @Test
+  void getOwnerPropertyCounts_shouldThrowForbidden_whenTokenIsInvalid() {
+    org.springframework.test.util.ReflectionTestUtils.setField(
+        controller, "expectedInternalToken", "test-token");
+
+    assertThrows(
+        org.springframework.web.server.ResponseStatusException.class,
+        () -> {
+          controller.getOwnerPropertyCounts(List.of(UUID.randomUUID()), "invalid-token");
+        });
   }
 }

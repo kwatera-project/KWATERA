@@ -4,7 +4,7 @@ import {useLogout} from "./Logout.tsx"
 import {getUserRoles, decodeJwt} from "../utils/jwtUtils.ts"
 import {useState, useEffect, useRef} from "react"
 import {useCurrency} from "../contexts/CurrencyContext"
-import {User, LogOut, LayoutDashboard, Calendar, Settings, Home, FileClock, Globe2, Menu, X} from 'lucide-react'
+import {User, LogOut, LayoutDashboard, Calendar, Settings, Home, FileClock, Users, Globe2, Menu, X} from 'lucide-react'
 import {useTranslation} from "react-i18next"
 import i18n from "../i18n"
 import {IS_DEMO_MODE} from "../api/apiConfig.ts"
@@ -316,11 +316,18 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                                             {t('navbar.dashboard')}
                                         </Link>
                                         {userRoles.includes("ROLE_ADMIN") && (
-                                            <Link to="/admin/logs"
-                                                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
-                                                <FileClock size={16}/>
-                                                {t('navbar.systemLogs')}
-                                            </Link>
+                                            <>
+                                                <Link to="/admin/users"
+                                                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
+                                                    <Users size={16}/>
+                                                    {t("navbar.systemUsers")}
+                                                </Link>
+                                                <Link to="/admin/logs"
+                                                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
+                                                    <FileClock size={16}/>
+                                                    {t('navbar.systemLogs')}
+                                                </Link>
+                                            </>
                                         )}
                                         {userRoles.includes("ROLE_OWNER") && (
                                             <Link to="/owner/properties"
