@@ -7,6 +7,7 @@ import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.checkout.Session;
 import io.github.kwatera_project.kwatera.billing_service.client.StripeClient;
+import io.github.kwatera_project.kwatera.billing_service.client.SystemEventClient;
 import io.github.kwatera_project.kwatera.billing_service.dto.FailedTransactionCommand;
 import io.github.kwatera_project.kwatera.billing_service.dto.PaymentMetadataDto;
 import io.github.kwatera_project.kwatera.billing_service.exception.WebhookProcessingException;
@@ -24,6 +25,8 @@ public class PaymentWebhookService {
   private final StripeClient stripeClient;
 
   private final PaymentTransactionService paymentTransactionService;
+
+  private final SystemEventClient systemEventClient;
 
   @Value("${stripe.webhook.secret}")
   private String stripeWebhookSecret;
@@ -127,7 +130,8 @@ public class PaymentWebhookService {
               metadata.quantity(),
               metadata.unitPrice(),
               session.getId(),
-              e.getMessage()));
+              sanitizedReason(e.getMessage())));
+      logPaymentFailed(metadata, eventId, session.getId(), sanitizedReason(e.getMessage()));
 
       throw e;
     }
@@ -153,6 +157,12 @@ public class PaymentWebhookService {
             metadata.unitPrice(),
             session.getId(),
             "Checkout session expired"));
+    systemEventClient.logSafely(
+        "PAYMENT_CANCELLED",
+        null,
+        "SETTLEMENT",
+        metadata.settlementId(),
+        paymentDetails(metadata, eventId, session.getId()) + ", reason=Checkout session expired");
   }
 
   private void handleCheckoutFailed(Event event, String eventId) {
@@ -172,6 +182,7 @@ public class PaymentWebhookService {
             metadata.unitPrice(),
             session.getId(),
             "Checkout payment failed"));
+    logPaymentFailed(metadata, eventId, session.getId(), "Checkout payment failed");
   }
 
   private void handlePaymentFailed(Event event, String eventId) {
@@ -199,6 +210,39 @@ public class PaymentWebhookService {
             metadata.quantity(),
             metadata.unitPrice(),
             sessionId,
-            reason));
+            sanitizedReason(reason)));
+    logPaymentFailed(metadata, eventId, sessionId, sanitizedReason(reason));
+  }
+
+  private void logPaymentFailed(
+      PaymentMetadataDto metadata, String stripeEventId, String paymentReference, String reason) {
+    systemEventClient.logSafely(
+        "PAYMENT_FAILED",
+        null,
+        "SETTLEMENT",
+        metadata.settlementId(),
+        paymentDetails(metadata, stripeEventId, paymentReference) + ", reason=" + reason);
+  }
+
+  private String paymentDetails(
+      PaymentMetadataDto metadata, String stripeEventId, String paymentReference) {
+    return "settlementId="
+        + metadata.settlementId()
+        + ", unitId="
+        + metadata.unitId()
+        + ", type="
+        + metadata.type()
+        + ", stripeEventId="
+        + stripeEventId
+        + ", stripeSessionId="
+        + paymentReference;
+  }
+
+  private String sanitizedReason(String reason) {
+    if (reason == null || reason.isBlank()) {
+      return "UNKNOWN_ERROR";
+    }
+    String normalized = reason.replaceAll("[\\r\\n\\t]+", " ").trim();
+    return normalized.length() <= 180 ? normalized : normalized.substring(0, 180);
   }
 }

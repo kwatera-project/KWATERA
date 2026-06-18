@@ -80,9 +80,10 @@ class PropertyServiceTest {
     property.setCity("Warsaw");
     property.setDescription("Desc");
 
-    when(propertyRepository.findAll()).thenReturn(List.of(property));
+    when(propertyRepository.findByBoundingBoxAndAmenities(any(), any(), any(), any(), any(), any()))
+        .thenReturn(List.of(property));
 
-    var result = propertyService.getAll();
+    var result = propertyService.getAll(null);
 
     assertEquals(1, result.size());
     assertEquals("Test", result.get(0).getTitle());
@@ -101,11 +102,11 @@ class PropertyServiceTest {
     BigDecimal minLng = BigDecimal.valueOf(19);
     BigDecimal maxLng = BigDecimal.valueOf(22);
 
-    when(propertyRepository.findByLatitudeBetweenAndLongitudeBetween(
-            minLat, maxLat, minLng, maxLng))
+    when(propertyRepository.findByBoundingBoxAndAmenities(
+            eq(minLat), eq(maxLat), eq(minLng), eq(maxLng), any(), any()))
         .thenReturn(List.of(property));
 
-    var result = propertyService.getByBoundingBox(minLat, maxLat, minLng, maxLng);
+    var result = propertyService.getByBoundingBox(minLat, maxLat, minLng, maxLng, null);
 
     assertEquals(1, result.size());
     assertEquals("Test", result.get(0).getTitle());
@@ -1106,5 +1107,204 @@ class PropertyServiceTest {
 
     assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     assertEquals("Image not found", ex.getReason());
+  }
+
+  @Test
+  void createProperty_shouldSetPropertyType_whenProvided() {
+    UUID ownerId = UUID.randomUUID();
+
+    PropertyCreateRequest request = mock(PropertyCreateRequest.class);
+    when(request.street()).thenReturn("Main");
+    when(request.streetNumber()).thenReturn("1");
+    when(request.postalCode()).thenReturn("00-001");
+    when(request.city()).thenReturn("Warsaw");
+    when(request.country()).thenReturn("PL");
+    when(request.title()).thenReturn("Villa Test");
+    when(request.propertyType()).thenReturn(PropertyType.VILLA);
+
+    when(geocodingService.getCoordinates(any(), any(), any(), any(), any()))
+        .thenReturn(new Coordinates(new BigDecimal("10.0"), new BigDecimal("20.0")));
+    when(propertyRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    PropertyDto result = propertyService.createProperty(ownerId, request);
+
+    assertNotNull(result);
+    assertEquals(PropertyType.VILLA, result.getPropertyType());
+  }
+
+  @Test
+  void createProperty_shouldLeavePropertyTypeNull_whenNotProvided() {
+    UUID ownerId = UUID.randomUUID();
+
+    PropertyCreateRequest request = mock(PropertyCreateRequest.class);
+    when(request.street()).thenReturn("Main");
+    when(request.streetNumber()).thenReturn("1");
+    when(request.postalCode()).thenReturn("00-001");
+    when(request.city()).thenReturn("Warsaw");
+    when(request.country()).thenReturn("PL");
+    when(request.title()).thenReturn("Test");
+    when(request.propertyType()).thenReturn(null);
+
+    when(geocodingService.getCoordinates(any(), any(), any(), any(), any()))
+        .thenReturn(new Coordinates(new BigDecimal("10.0"), new BigDecimal("20.0")));
+    when(propertyRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    PropertyDto result = propertyService.createProperty(ownerId, request);
+
+    assertNotNull(result);
+    assertNull(result.getPropertyType());
+  }
+
+  @Test
+  void createUnit_shouldSetBedroomsAndBeds_whenProvided() {
+    UUID ownerId = UUID.randomUUID();
+    UUID propertyId = UUID.randomUUID();
+
+    Property property = new Property();
+    property.setOwnerId(ownerId);
+
+    UnitCreateRequest request = mock(UnitCreateRequest.class);
+    when(request.name()).thenReturn("Suite");
+    when(request.pricePerNight()).thenReturn(BigDecimal.TEN);
+    when(request.bedrooms()).thenReturn(2);
+    when(request.beds()).thenReturn(3);
+
+    when(propertyRepository.findById(propertyId)).thenReturn(Optional.of(property));
+    when(unitRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    UnitDto result = propertyService.createUnit(ownerId, propertyId, request);
+
+    assertNotNull(result);
+    assertEquals(2, result.getBedrooms());
+    assertEquals(3, result.getBeds());
+  }
+
+  @Test
+  void createUnit_shouldDefaultBedroomsAndBedsToZero_whenNull() {
+    UUID ownerId = UUID.randomUUID();
+    UUID propertyId = UUID.randomUUID();
+
+    Property property = new Property();
+    property.setOwnerId(ownerId);
+
+    UnitCreateRequest request = mock(UnitCreateRequest.class);
+    when(request.name()).thenReturn("Room");
+    when(request.pricePerNight()).thenReturn(BigDecimal.TEN);
+    when(request.bedrooms()).thenReturn(null);
+    when(request.beds()).thenReturn(null);
+
+    when(propertyRepository.findById(propertyId)).thenReturn(Optional.of(property));
+    when(unitRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    UnitDto result = propertyService.createUnit(ownerId, propertyId, request);
+
+    assertNotNull(result);
+    assertEquals(0, result.getBedrooms());
+    assertEquals(0, result.getBeds());
+  }
+
+  @Test
+  void updateUnit_shouldApplyBedroomsAndBeds_whenPresent() {
+    UUID ownerId = UUID.randomUUID();
+    UUID propertyId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+
+    Property property = new Property();
+    property.setOwnerId(ownerId);
+
+    Unit unit = new Unit();
+    unit.setId(unitId);
+    unit.setBedrooms(0);
+    unit.setBeds(0);
+
+    UnitUpdateRequest request = mock(UnitUpdateRequest.class);
+    when(request.name()).thenReturn(Optional.empty());
+    when(request.description()).thenReturn(Optional.empty());
+    when(request.pricePerNight()).thenReturn(Optional.empty());
+    when(request.capacity()).thenReturn(Optional.empty());
+    when(request.unitType()).thenReturn(Optional.empty());
+    when(request.unitNumber()).thenReturn(Optional.empty());
+    when(request.floor()).thenReturn(Optional.empty());
+    when(request.amenities()).thenReturn(Optional.empty());
+    when(request.bedrooms()).thenReturn(Optional.of(2));
+    when(request.beds()).thenReturn(Optional.of(4));
+
+    when(propertyRepository.findById(propertyId)).thenReturn(Optional.of(property));
+    when(unitRepository.findByIdAndPropertyId(unitId, propertyId)).thenReturn(Optional.of(unit));
+    when(unitRepository.save(any())).thenReturn(unit);
+
+    UnitDto result = propertyService.updateUnit(ownerId, propertyId, unitId, "PLN", request);
+
+    assertNotNull(result);
+    assertEquals(2, unit.getBedrooms());
+    assertEquals(4, unit.getBeds());
+    verify(unitRepository).save(unit);
+  }
+
+  @Test
+  void updateProperty_shouldApplyPropertyType_whenPresent() {
+    UUID ownerId = UUID.randomUUID();
+    UUID propertyId = UUID.randomUUID();
+
+    Property property = new Property();
+    property.setOwnerId(ownerId);
+
+    PropertyUpdateRequest request = mock(PropertyUpdateRequest.class);
+    when(request.title()).thenReturn(Optional.empty());
+    when(request.description()).thenReturn(Optional.empty());
+    when(request.city()).thenReturn(Optional.empty());
+    when(request.country()).thenReturn(Optional.empty());
+    when(request.postalCode()).thenReturn(Optional.empty());
+    when(request.street()).thenReturn(Optional.empty());
+    when(request.streetNumber()).thenReturn(Optional.empty());
+    when(request.amenities()).thenReturn(Optional.empty());
+    when(request.propertyType()).thenReturn(Optional.of(PropertyType.APARTMENT));
+
+    when(propertyRepository.findById(propertyId)).thenReturn(Optional.of(property));
+    when(propertyRepository.save(any())).thenReturn(property);
+
+    PropertyDto result = propertyService.updateProperty(ownerId, propertyId, request);
+
+    assertNotNull(result);
+    assertEquals(PropertyType.APARTMENT, property.getPropertyType());
+    assertEquals(PropertyType.APARTMENT, result.getPropertyType());
+  }
+
+  @Test
+  void getAll_shouldIncludePropertyType_inMappedDto() {
+    Property property = new Property();
+    property.setId(UUID.randomUUID());
+    property.setTitle("Apartment 1");
+    property.setPropertyType(PropertyType.APARTMENT);
+
+    when(propertyRepository.findByBoundingBoxAndAmenities(any(), any(), any(), any(), any(), any()))
+        .thenReturn(List.of(property));
+
+    var result = propertyService.getAll(null);
+
+    assertEquals(1, result.size());
+    assertEquals(PropertyType.APARTMENT, result.get(0).getPropertyType());
+  }
+
+  @Test
+  void getUnits_shouldIncludeBedroomsAndBeds_inMappedDto() {
+    UUID propertyId = UUID.randomUUID();
+
+    when(propertyRepository.existsById(propertyId)).thenReturn(true);
+
+    Unit unit = new Unit();
+    unit.setId(UUID.randomUUID());
+    unit.setName("Suite");
+    unit.setPricePerNight(BigDecimal.valueOf(300));
+    unit.setBedrooms(2);
+    unit.setBeds(4);
+
+    when(unitRepository.findByPropertyId(propertyId)).thenReturn(List.of(unit));
+
+    var result = propertyService.getUnits(propertyId, "PLN");
+
+    assertEquals(1, result.size());
+    assertEquals(2, result.get(0).getBedrooms());
+    assertEquals(4, result.get(0).getBeds());
   }
 }

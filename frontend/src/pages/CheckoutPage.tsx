@@ -3,9 +3,21 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { createReservation } from "../api/reservationApi";
 import { createCheckoutSession } from "../api/billingApi";
 import { getUserProfile } from "../api/userApi";
-import type { Property, Unit } from "../types/property";
+import { getUnitSettlementItems } from "../api/propertyApi";
+import WaterRateTooltip from "../components/WaterRateTooltip";
+import type { Property, Unit, UnitSettlementItem } from "../types/property";
 import { format, parseISO } from "date-fns";
-import {useTranslation} from "react-i18next"
+import { useTranslation } from "react-i18next";
+import { IS_DEMO_MODE } from "../api/apiConfig";
+import {
+    calculateStayNights,
+    calculateWaterUsageRange,
+    findWaterUsageTariff,
+    formatMoneyRange,
+    formatUsageRange,
+    formatWaterRate,
+    getRatePerLiterTooltip,
+} from "../utils/waterBilling";
 
 interface CheckoutState {
     property: Property;
@@ -32,6 +44,7 @@ interface GuestForm {
     companyAddress: string;
     acceptRules: boolean;
     acceptPrivacy: boolean;
+    acceptWaterBilling: boolean;
 }
 
 interface FormErrors {
@@ -64,11 +77,15 @@ export default function CheckoutPage() {
         taxId: "",
         companyAddress: "",
         acceptRules: false,
-        acceptPrivacy: false
+        acceptPrivacy: false,
+        acceptWaterBilling: false
     });
     const [errors, setErrors] = useState<FormErrors>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
+    const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
+    const [settlementItems, setSettlementItems] = useState<UnitSettlementItem[]>([]);
+    const [waterTariffLoaded, setWaterTariffLoaded] = useState(false);
     const {t} = useTranslation();
 
     useEffect(() => {
@@ -84,6 +101,27 @@ export default function CheckoutPage() {
             .catch(() => {
             });
     }, []);
+
+    useEffect(() => {
+        if (!state?.unit.id) return;
+
+        let isActive = true;
+
+        getUnitSettlementItems(state.unit.id)
+            .then((items) => {
+                if (isActive) setSettlementItems(items);
+            })
+            .catch(() => {
+                if (isActive) setSettlementItems([]);
+            })
+            .finally(() => {
+                if (isActive) setWaterTariffLoaded(true);
+            });
+
+        return () => {
+            isActive = false;
+        };
+    }, [state?.unit.id]);
 
     if (!state) {
         return (
@@ -195,10 +233,11 @@ export default function CheckoutPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!validate()) return;
-        if (!form.acceptRules || !form.acceptPrivacy) return;
+        if (!form.acceptRules || !form.acceptPrivacy || !form.acceptWaterBilling) return;
 
         setIsSubmitting(true);
         setSubmitError(null);
+        setSubmitSuccess(null);
 
         const adultsVal = form.adults === "" ? 0 : Number(form.adults);
         const childrenVal = form.children === "" ? 0 : Number(form.children);
@@ -234,6 +273,13 @@ export default function CheckoutPage() {
                 unitPrice: reservation.totalPrice
             });
 
+            if (IS_DEMO_MODE) {
+                void checkoutUrl;
+                setSubmitSuccess("Demo booking confirmed. Payment status: simulated success.");
+                setIsSubmitting(false);
+                return;
+            }
+
             window.location.assign(checkoutUrl);
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : t('checkout.unexpectedError');
@@ -249,6 +295,24 @@ export default function CheckoutPage() {
             return dateStr;
         }
     };
+
+    const waterTariff = findWaterUsageTariff(settlementItems);
+    const calculationNights = calculateStayNights(checkIn, checkOut);
+    const waterUsageRange = calculateWaterUsageRange(unit.capacity, calculationNights);
+    const waterCurrencyInfo = unit.currencyInfo && unit.currencyInfo.displayCurrency !== "PLN"
+        ? unit.currencyInfo
+        : undefined;
+    const waterEstimate = waterTariff
+        ? {
+            rate: formatWaterRate(waterTariff.pricePerUnit, waterCurrencyInfo),
+            usage: formatUsageRange(waterUsageRange),
+            cost: formatMoneyRange(waterUsageRange, waterTariff.pricePerUnit, waterCurrencyInfo),
+            tooltip: getRatePerLiterTooltip(waterTariff.pricePerUnit, waterCurrencyInfo),
+        }
+        : null;
+    const waterBillingAcknowledgementCopy = waterTariffLoaded && !waterTariff
+        ? "I understand water may be billed separately after check-out."
+        : "I accept separate water billing after check-out.";
 
     const displayNightPrice = unit.convertedPricePerNight && unit.currencyInfo && unit.currencyInfo.displayCurrency !== "PLN"
         ? `${unit.convertedPricePerNight.toFixed(2)} ${unit.currencyInfo.displayCurrency}`
@@ -271,7 +335,7 @@ export default function CheckoutPage() {
         "Not sure yet"
     ];
 
-    const isLegalUnchecked = !form.acceptRules || !form.acceptPrivacy;
+    const isRequiredAcknowledgementUnchecked = !form.acceptRules || !form.acceptPrivacy || !form.acceptWaterBilling;
 
     return (
         <div className="max-w-7xl mx-auto p-4 sm:p-8 min-h-screen text-brand-main space-y-8">
@@ -553,6 +617,20 @@ export default function CheckoutPage() {
                                     {t('checkout.acceptPrivacy')}{" "}<a href="#" className="text-brand-primary font-bold hover:underline" onClick={(e) => e.preventDefault()}>{t('checkout.privacy')}</a> {t('checkout.acceptPrivacyEnd')}<span className="text-red-500">*</span>
                                 </label>
                             </div>
+
+                            <div className="flex items-start gap-3">
+                                <input
+                                    type="checkbox"
+                                    id="acceptWaterBilling"
+                                    name="acceptWaterBilling"
+                                    checked={form.acceptWaterBilling}
+                                    onChange={handleChange}
+                                    className="w-5 h-5 accent-brand-primary rounded border-brand-accent focus:ring-brand-primary text-brand-primary mt-0.5 cursor-pointer flex-shrink-0"
+                                />
+                                <label htmlFor="acceptWaterBilling" className="text-sm text-brand-muted font-medium select-none cursor-pointer leading-tight">
+                                    {waterBillingAcknowledgementCopy} <span className="text-red-500">*</span>
+                                </label>
+                            </div>
                         </div>
 
                         {submitError && (
@@ -564,14 +642,23 @@ export default function CheckoutPage() {
                             </div>
                         )}
 
+                        {submitSuccess && (
+                            <div className="flex items-center gap-3 p-4 bg-emerald-50 border-l-4 border-emerald-500 rounded-r-xl text-emerald-700 animate-fade-in shadow-sm">
+                                <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                                </svg>
+                                <span className="text-sm font-semibold leading-relaxed">{submitSuccess}</span>
+                            </div>
+                        )}
+
                         <div className="pt-4 border-t border-brand-accent hidden lg:block">
                             <button
                                 type="submit"
-                                disabled={isSubmitting || isLegalUnchecked}
+                                disabled={isSubmitting || isRequiredAcknowledgementUnchecked}
                                 className={`w-full py-3.5 px-6 font-bold rounded-lg shadow-sm transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
                                     isSubmitting
                                         ? "bg-brand-muted text-white cursor-wait"
-                                        : isLegalUnchecked
+                                        : isRequiredAcknowledgementUnchecked
                                             ? "bg-brand-accent text-brand-muted opacity-60 cursor-not-allowed"
                                             : "bg-brand-primary text-white hover:bg-brand-primary-hover active:scale-[0.99]"
                                 }`}
@@ -593,8 +680,8 @@ export default function CheckoutPage() {
                                     </>
                                 )}
                             </button>
-                            {isLegalUnchecked && (
-                                <p className="text-center text-xs text-brand-muted mt-2 font-medium">{t('checkout.acceptLegalHint')}</p>
+                            {isRequiredAcknowledgementUnchecked && (
+                                <p className="text-center text-xs text-brand-muted mt-2 font-medium">Please accept all required acknowledgements to proceed to payment.</p>
                             )}
                         </div>
                     </form>
@@ -656,19 +743,45 @@ export default function CheckoutPage() {
                                 </div>
 
                                 <div className="flex justify-between items-center border-t border-brand-accent pt-4 text-base font-bold text-brand-primary">
-                                    <span>{t('checkout.totalPrice')}</span>
+                                    <span>Accommodation total</span>
                                     <span className="text-lg">{displayTotalPrice}</span>
+                                </div>
+
+                                <div className="border-t border-dashed border-brand-accent pt-4 space-y-2 overflow-visible">
+                                    <div>
+                                        <h5 className="font-bold text-xs uppercase tracking-wider text-brand-muted">Water billing</h5>
+                                        <p className="text-xs text-brand-muted mt-1">Water is billed separately after your stay.</p>
+                                    </div>
+
+                                    {!waterTariffLoaded ? (
+                                        <p className="text-xs text-brand-muted font-medium">Checking water tariff...</p>
+                                    ) : waterEstimate ? (
+                                        <div className="space-y-1.5">
+                                            <WaterRateTooltip text={waterEstimate.tooltip} value={waterEstimate.rate} />
+                                            <div className="flex justify-between items-start gap-4">
+                                                <span className="text-brand-muted font-medium">Estimated usage</span>
+                                                <span className="font-semibold text-right">{waterEstimate.usage}</span>
+                                            </div>
+                                            <div className="flex justify-between items-start gap-4">
+                                                <span className="text-brand-muted font-medium">Estimated cost</span>
+                                                <span className="font-semibold text-right">{waterEstimate.cost}</span>
+                                            </div>
+                                            <p className="text-xs text-brand-muted">Final cost may be lower or higher based on meter readings.</p>
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs text-brand-muted font-medium">Water may be billed separately after your stay if configured for this unit.</p>
+                                    )}
                                 </div>
                             </div>
 
                             <div className="pt-2 block lg:hidden">
                                 <button
                                     onClick={handleSubmit}
-                                    disabled={isSubmitting || isLegalUnchecked}
+                                    disabled={isSubmitting || isRequiredAcknowledgementUnchecked}
                                     className={`w-full py-3.5 px-6 font-bold rounded-lg shadow-sm transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
                                         isSubmitting
                                             ? "bg-brand-muted text-white cursor-wait"
-                                            : isLegalUnchecked
+                                            : isRequiredAcknowledgementUnchecked
                                                 ? "bg-brand-accent text-brand-muted opacity-60 cursor-not-allowed"
                                                 : "bg-brand-primary text-white hover:bg-brand-primary-hover active:scale-[0.99]"
                                     }`}
@@ -690,8 +803,8 @@ export default function CheckoutPage() {
                                         </>
                                     )}
                                 </button>
-                                {isLegalUnchecked && (
-                                    <p className="text-center text-xs text-brand-muted mt-2 font-medium">{t('checkout.acceptLegalHintMobile')}</p>
+                                {isRequiredAcknowledgementUnchecked && (
+                                    <p className="text-center text-xs text-brand-muted mt-2 font-medium">Please accept all required acknowledgements in the form above to proceed.</p>
                                 )}
                             </div>
                         </div>

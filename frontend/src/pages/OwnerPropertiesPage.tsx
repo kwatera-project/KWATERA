@@ -48,15 +48,15 @@ export default function OwnerPropertiesPage() {
     };
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
-            <div className="flex justify-between items-center border-b border-[#DACDCA] pb-4 mb-6">
+        <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[#DACDCA] pb-4 mb-6 gap-4">
                 <div>
                     <h1 className="text-3xl font-black text-[#1A1A1A] tracking-tight">{t('ownerProperties.title')}</h1>
                     <p className="text-sm font-semibold text-[#7A7A7A] mt-1">{t('ownerProperties.subtitle')}</p>
                 </div>
                 <Link
                     to="/owner/properties/new"
-                    className="px-5 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm"
+                    className="px-5 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm shrink-0"
                 >
                     {t('ownerProperties.addProperty')}
                 </Link>
@@ -121,28 +121,28 @@ function PropertyCard({ property, onDelete }: { property: Property, onDelete: (i
                 </div>
             </div>
 
-            <div className="flex gap-3 w-full md:w-auto justify-end border-t border-gray-100 md:border-none pt-4 md:pt-0 shrink-0">
+            <div className="flex flex-wrap gap-2.5 w-full md:w-auto justify-start sm:justify-end border-t border-gray-100 md:border-none pt-4 md:pt-0 shrink-0">
                 <Link
                     to={`/owner/properties/${property.id}/units`}
-                    className="px-4 py-2 border border-[#42211D] bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg shadow-sm transition-all inline-flex items-center"
+                    className="px-4 py-2 border border-[#42211D] bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg shadow-sm transition-all inline-flex items-center justify-center flex-grow sm:flex-grow-0"
                 >
                     {t('ownerProperties.manageUnits')}
                 </Link>
                 <Link
                     to={`/owner/properties/${property.id}/images`}
-                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all inline-flex items-center"
+                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all inline-flex items-center justify-center flex-grow sm:flex-grow-0"
                 >
                     {t('ownerProperties.manageImages')}
                 </Link>
                 <Link
                     to={`/owner/properties/${property.id}/edit`}
-                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all"
+                    className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 text-sm rounded-lg shadow-sm transition-all text-center flex-grow sm:flex-grow-0"
                 >
                     {t('ownerProperties.edit')}
                 </Link>
                 <button
                     onClick={() => onDelete(property.id)}
-                    className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 text-sm rounded-lg shadow-sm transition-all"
+                    className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 text-sm rounded-lg shadow-sm transition-all text-center flex-grow sm:flex-grow-0"
                 >
                     {t('editPropertyImages.delete')}
                 </button>

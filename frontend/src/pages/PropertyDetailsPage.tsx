@@ -9,8 +9,7 @@ import { format } from "date-fns";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { CustomCalendarHeader } from "../components/SharedDatePicker";
 import { formatSearchDate, parseGuests, parseSearchDate } from "../utils/searchDates";
-import {useTranslation} from "react-i18next"
-
+import { useTranslation } from "react-i18next"
 
 interface AvailabilityResponse {
     available: boolean;
@@ -338,7 +337,7 @@ export default function PropertyDetailsPage() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto p-8 min-h-screen text-brand-main space-y-8">
+        <div className="max-w-7xl mx-auto p-4 md:p-8 min-h-screen text-brand-main space-y-8">
             <div>
                 <img
                     src={mainImage || property.imageUrl}
@@ -365,6 +364,22 @@ export default function PropertyDetailsPage() {
                 <p className="text-sm text-brand-muted mt-1 font-medium">{property.city}</p>
             </div>
 
+            {property.amenities && property.amenities.length > 0 && (
+                <div className="bg-white border border-brand-accent rounded-xl shadow-sm p-6">
+                    <h2 className="text-xl font-bold text-brand-main tracking-tight mb-4">Amenities</h2>
+                    <div className="flex flex-wrap gap-2">
+                        {property.amenities.map((amenity, idx) => (
+                            <span
+                                key={idx}
+                                className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-brand-bg border border-brand-accent text-brand-muted"
+                            >
+                                {amenity}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             <div className="bg-white border border-brand-accent rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="max-w-md text-center md:text-left space-y-1">
                     <h3 className="font-bold text-xl text-brand-main tracking-tight">{t('propertyDetails.selectDates')}</h3>
@@ -379,7 +394,7 @@ export default function PropertyDetailsPage() {
                         selectsRange
                         inline
                         minDate={new Date()}
-                        calendarClassName="custom-datepicker-has-header"
+                        calendarClassName="custom-datepicker-has-header occupancy-calendar"
                         renderCustomHeader={(props) => <CustomCalendarHeader {...props} />}
                     />
                 </div>
@@ -397,7 +412,7 @@ export default function PropertyDetailsPage() {
                         const lacksRequestedCapacity = !!initialSearch.guests && u.capacity < initialSearch.guests;
 
                         return (
-                            <div key={u.id} className="bg-white border border-brand-accent rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 flex flex-col lg:flex-row gap-8">
+                            <div key={u.id} className="bg-white border border-brand-accent rounded-xl shadow-sm p-4 md:p-6 hover:shadow-md transition-all duration-300 flex flex-col lg:flex-row gap-8">
                                 <div className="flex-1 space-y-4">
                                     {u.imageUrl && (
                                         <img src={u.imageUrl} className="w-full h-64 object-cover rounded-lg border border-brand-accent" alt={u.name} />
@@ -411,13 +426,34 @@ export default function PropertyDetailsPage() {
                                                     ? `${u.convertedPricePerNight.toFixed(2)} ${u.currencyInfo.displayCurrency} ${t("propertyMap.perNight")}`
                                                     : `${u.pricePerNight} PLN ${t("propertyMap.perNight")}`}
                                             </p>
-                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-brand-bg border border-brand-accent text-brand-muted">
-                                                {t("propertyDetails.capacity")}: {u.capacity}{" "}
-                                                {u.capacity === 1
-                                                    ? t("propertyDetails.personSingle")
-                                                    : t("propertyDetails.personPlural")}
-                                            </span>
+                                            <div className="flex flex-wrap gap-2">
+                                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-brand-bg border border-brand-accent text-brand-muted">
+                                                    {t("propertyDetails.capacity")}: {u.capacity}{" "}
+                                                    {u.capacity === 1
+                                                        ? t("propertyDetails.personSingle")
+                                                        : t("propertyDetails.personPlural")}
+                                                </span>
+                                                {u.bedrooms !== undefined && (
+                                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-brand-bg border border-brand-accent text-brand-muted">
+                                                        Bedrooms: {u.bedrooms}
+                                                    </span>
+                                                )}
+                                                {u.beds !== undefined && (
+                                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-brand-bg border border-brand-accent text-brand-muted">
+                                                        Beds: {u.beds}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
+                                        {u.amenities && u.amenities.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 mt-3">
+                                                {u.amenities.map((amenity, idx) => (
+                                                    <span key={idx} className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                                                        {amenity}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -443,7 +479,7 @@ export default function PropertyDetailsPage() {
                                                     minDate={new Date()}
                                                     filterDate={(date) => !isDateBlocked(date, u.id)}
                                                     dayClassName={(date) => getDayClass(date, u.id)}
-                                                    calendarClassName="custom-datepicker-has-header"
+                                                    calendarClassName="custom-datepicker-has-header occupancy-calendar"
                                                     renderCustomHeader={(props) => <CustomCalendarHeader {...props} />}
                                                     renderDayContents={(dayOfMonth, date) => {
                                                         const cls = getDayClass(date, u.id);

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 export default function Footer() {
@@ -20,7 +21,7 @@ export default function Footer() {
           <div className="text-left">
             <h3 className="font-bold text-xl mb-6 tracking-wide text-white text-left">{t("footer.company")}</h3>
             <ul className="space-y-4 text-white/80 text-lg text-left">
-              <li className="text-left"><a href="#" className="hover:text-white transition-colors block text-left">{t("footer.aboutUs")}</a></li>
+              <li className="text-left"><Link to="/about" className="hover:text-white transition-colors block text-left">{t("footer.aboutUs")}</Link></li>
               <li className="text-left"><a href="#" className="hover:text-white transition-colors block text-left">{t("footer.pressRoom")}</a></li>
             </ul>
           </div>

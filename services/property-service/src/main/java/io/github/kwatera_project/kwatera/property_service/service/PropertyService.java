@@ -1,5 +1,6 @@
 package io.github.kwatera_project.kwatera.property_service.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.kwatera_project.kwatera.property_service.client.ReservationClient;
 import io.github.kwatera_project.kwatera.property_service.dto.*;
 import io.github.kwatera_project.kwatera.property_service.model.*;
@@ -36,6 +37,8 @@ public class PropertyService {
   private final ReservationClient reservationClient;
   private final GeocodingService geocodingService;
 
+  private ObjectMapper objectMapper = new ObjectMapper();
+
   @Value("${app.file-server-url}")
   private String fileServerUrl;
 
@@ -49,15 +52,39 @@ public class PropertyService {
         .toList();
   }
 
-  public List<PropertyDto> getAll() {
-    return propertyRepository.findAll().stream().map(this::mapToDto).toList();
+  private List<Property> searchProperties(
+      BigDecimal minLat,
+      BigDecimal maxLat,
+      BigDecimal minLng,
+      BigDecimal maxLng,
+      List<String> amenities) {
+    String amenitiesJson = null;
+    int amenitiesLength = 0;
+    if (amenities != null && !amenities.isEmpty()) {
+      try {
+        amenitiesJson = objectMapper.writeValueAsString(amenities);
+        amenitiesLength = amenities.size();
+      } catch (Exception e) {
+        // Ignore
+      }
+    }
+    return propertyRepository.findByBoundingBoxAndAmenities(
+        minLat, maxLat, minLng, maxLng, amenitiesLength, amenitiesJson);
+  }
+
+  public List<PropertyDto> getAll(List<String> amenities) {
+    return searchProperties(null, null, null, null, amenities).stream()
+        .map(this::mapToDto)
+        .toList();
   }
 
   public List<PropertyDto> getByBoundingBox(
-      BigDecimal minLat, BigDecimal maxLat, BigDecimal minLng, BigDecimal maxLng) {
-    return propertyRepository
-        .findByLatitudeBetweenAndLongitudeBetween(minLat, maxLat, minLng, maxLng)
-        .stream()
+      BigDecimal minLat,
+      BigDecimal maxLat,
+      BigDecimal minLng,
+      BigDecimal maxLng,
+      List<String> amenities) {
+    return searchProperties(minLat, maxLat, minLng, maxLng, amenities).stream()
         .map(this::mapToDto)
         .toList();
   }
@@ -163,7 +190,9 @@ public class PropertyService {
         property.getCountry(),
         property.getPostalCode(),
         property.getStreet(),
-        property.getStreetNumber());
+        property.getStreetNumber(),
+        property.getAmenities(),
+        property.getPropertyType());
   }
 
   private UnitDto mapToDto(Unit unit, String currency) {
@@ -219,7 +248,10 @@ public class PropertyService {
         unit.getUnitNumber(),
         unit.getFloor(),
         convertedPricePerNight,
-        currencyInfo);
+        currencyInfo,
+        unit.getAmenities(),
+        unit.getBedrooms(),
+        unit.getBeds());
   }
 
   private UnitSettlementItemDto mapToDto(UnitSettlementItem item) {
@@ -262,6 +294,9 @@ public class PropertyService {
     applyIfPresent(request.unitType(), unit::setUnitType);
     applyIfPresent(request.unitNumber(), unit::setUnitNumber);
     applyIfPresent(request.floor(), unit::setFloor);
+    applyIfPresent(request.amenities(), unit::setAmenities);
+    applyIfPresent(request.bedrooms(), unit::setBedrooms);
+    applyIfPresent(request.beds(), unit::setBeds);
 
     unitRepository.save(unit);
 
@@ -294,6 +329,8 @@ public class PropertyService {
     applyIfPresent(request.postalCode(), property::setPostalCode);
     applyIfPresent(request.street(), property::setStreet);
     applyIfPresent(request.streetNumber(), property::setStreetNumber);
+    applyIfPresent(request.amenities(), property::setAmenities);
+    applyIfPresent(request.propertyType(), property::setPropertyType);
 
     if (addressChanged) {
       Coordinates coordinates =
@@ -376,6 +413,12 @@ public class PropertyService {
     newProperty.setPostalCode(request.postalCode());
     newProperty.setStreet(request.street());
     newProperty.setStreetNumber(request.streetNumber());
+    if (request.amenities() != null) {
+      newProperty.setAmenities(request.amenities());
+    }
+    if (request.propertyType() != null) {
+      newProperty.setPropertyType(request.propertyType());
+    }
 
     Coordinates coordinates =
         geocodingService.getCoordinates(
@@ -414,6 +457,11 @@ public class PropertyService {
     newUnit.setUnitType(request.unitType());
     newUnit.setUnitNumber(request.unitNumber());
     newUnit.setFloor(request.floor());
+    if (request.amenities() != null) {
+      newUnit.setAmenities(request.amenities());
+    }
+    newUnit.setBedrooms(request.bedrooms() != null ? request.bedrooms() : 0);
+    newUnit.setBeds(request.beds() != null ? request.beds() : 0);
 
     Unit saved = unitRepository.save(newUnit);
 

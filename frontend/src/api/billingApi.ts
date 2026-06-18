@@ -1,7 +1,7 @@
-import { GATEWAY_BASE_URL } from "./apiConfig";
+import { GATEWAY_BASE_URL, IS_DEMO_MODE } from "./apiConfig";
 
 export interface CheckoutPayload {
-    type: "ACCOMMODATION";
+    type: "ACCOMMODATION" | "DEPOSIT" | "ELECTRICITY" | "WATER" | "CLEANING_FEE";
     description: string;
     quantity: number;
     unitPrice: number;
@@ -12,6 +12,10 @@ export async function createCheckoutSession(reservationId: string, payload: Chec
 
     if (!token) {
         throw new Error("Log in to proceed with payment");
+    }
+
+    if (IS_DEMO_MODE) {
+        return `${window.location.origin}${window.location.pathname}#/demo-payment-success?reservationId=${reservationId}&amount=${payload.unitPrice}`;
     }
 
     const res = await fetch(`${GATEWAY_BASE_URL}/api/billing/checkout/${reservationId}`, {

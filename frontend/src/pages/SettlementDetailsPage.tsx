@@ -2,10 +2,11 @@ import {useEffect, useState, useCallback} from "react";
 import {useParams, Link} from "react-router-dom";
 import {getSettlementDetails} from "../api/settlementApi";
 import type {SettlementDetails, SettlementItemDetails} from "../types/settlement";
-import {GATEWAY_BASE_URL} from "../api/apiConfig.ts";
+import {GATEWAY_BASE_URL, IS_DEMO_MODE} from "../api/apiConfig.ts";
 import {getReservationDetails} from "../api/reservationApi.ts";
 import {getUserRoles} from "../utils/jwtUtils";
 import {useTranslation} from "react-i18next"
+import {createCheckoutSession} from "../api/billingApi";
 
 export default function SettlementDetailsPage() {
     const {id} = useParams();
@@ -94,6 +95,11 @@ export default function SettlementDetailsPage() {
             const res = await getReservationDetails(reservationId);
             const unitId = res.unitId;
 
+            if (IS_DEMO_MODE) {
+                void unitId;
+                return ["DEPOSIT", "ACCOMMODATION", "WATER"];
+            }
+
             const unitSettlementItemsRes = await fetch(
                 `${GATEWAY_BASE_URL}/api/properties/units/${unitId}/settlement-items`,
                 { method: "GET" }
@@ -134,46 +140,24 @@ export default function SettlementDetailsPage() {
         setSettlementState(prev => ({ ...prev, [stateKey]: {loading: true} }));
 
         try {
-            const token = localStorage.getItem("token");
             const name = settlementType[0] + settlementType.slice(1).toLowerCase();
-
-            const checkoutRes = await fetch(
-                `${GATEWAY_BASE_URL}/api/billing/checkout/${reservationId}`,
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        type: `${settlementType}`,
-                        description: `${name} fee`,
-                        quantity: quantity,
-                        unitPrice: unitPrice
-                    })
-                }
-            );
-
-            if (!checkoutRes.ok) {
-                throw new Error(`Checkout failed: ${checkoutRes.status}`);
-            }
-
-            const checkoutUrl = await checkoutRes.text();
-
-            try {
-                new URL(checkoutUrl);
-            } catch {
-                throw new Error("Invalid checkout URL received");
-            }
+            const checkoutUrl = await createCheckoutSession(reservationId, {
+                type: settlementType as "ACCOMMODATION" | "DEPOSIT" | "ELECTRICITY" | "WATER" | "CLEANING_FEE",
+                description: `${name} fee`,
+                quantity,
+                unitPrice,
+            });
 
             setSettlementState(prev => ({
                 ...prev,
                 [stateKey]: { loading: false, success: true }
             }));
 
-            setTimeout(() => {
-                window.location.assign(checkoutUrl);
-            }, 800);
+            if (!IS_DEMO_MODE) {
+                setTimeout(() => {
+                    window.location.assign(checkoutUrl);
+                }, 800);
+            }
 
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "An error occurred";
@@ -271,7 +255,7 @@ export default function SettlementDetailsPage() {
     const isPaidOrZero = settlement.status === "PAID" || settlement.balanceDue === 0;
 
     return (
-        <div className="max-w-3xl mx-auto p-8 min-h-screen text-[#1A1A1A] space-y-6 flex flex-col">
+        <div className="max-w-3xl mx-auto p-4 md:p-8 min-h-screen text-[#1A1A1A] space-y-6 flex flex-col">
             <Link
                 to={returnPath}
                 className="px-4 py-2 text-xs font-bold text-[#42211D] bg-[#F7F7F7] border border-[#DACDCA] hover:bg-gray-100 rounded-lg transition-colors shadow-sm inline-flex items-center gap-1.5 w-fit"
@@ -279,7 +263,7 @@ export default function SettlementDetailsPage() {
                 &larr; {returnLabel}
             </Link>
 
-            <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-8 hover:shadow-md transition-all duration-300">
+            <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 md:p-8 hover:shadow-md transition-all duration-300">
                 <div className="border-b border-[#DACDCA] pb-4 mb-6">
                     <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">{t('settlement.title')}</h1>
                     <p className="text-sm text-[#7A7A7A] mt-1">{t('settlement.subtitle')}</p>
@@ -321,7 +305,7 @@ export default function SettlementDetailsPage() {
                     {isAdminOrOwner && displayCurrency !== 'PLN' && settlement.currencyInfo && (
                         <div className="space-y-1 md:col-span-2 bg-[#F7F7F7] border border-[#DACDCA] rounded-xl p-4 mt-2">
                             <p className="text-xs font-bold text-[#42211D] uppercase tracking-wider">{t('settlement.currencySnapshot')}</p>
-                            <div className="grid grid-cols-2 gap-4 mt-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
                                 <div>
                                     <span className="block text-[10px] font-bold text-[#7A7A7A] uppercase tracking-wider">{t('settlement.guestCurrency')}</span>
                                     <p className="text-sm font-bold text-[#1A1A1A] mt-0.5">{displayCurrency}</p>
@@ -405,14 +389,16 @@ export default function SettlementDetailsPage() {
                                 {settlement.issuedAt
                                     ? new Date(settlement.issuedAt).toLocaleString()
                                     : t("common.notAvailable")}
-                            </p>                        </div>
+                            </p>
+                        </div>
                         <div className="space-y-1">
                             <p className="text-sm font-semibold text-[#7A7A7A]">{t('settlement.paidAt')}</p>
                             <p className="font-bold text-base text-[#1A1A1A]">
                                 {settlement.paidAt
                                     ? new Date(settlement.paidAt).toLocaleString()
                                     : t("common.notAvailable")}
-                            </p>                        </div>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

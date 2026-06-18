@@ -104,7 +104,7 @@ export default function AboutPage() {
                                 className="flex items-center justify-center p-2 hover:scale-102 transition-transform duration-300"
                             >
                                 <img 
-                                    src="/commerzbank_logo.png" 
+                                    src={`${import.meta.env.BASE_URL}commerzbank_logo.png`} 
                                     alt="Commerzbank Logo" 
                                     className="h-16 md:h-20 object-contain mix-blend-multiply" 
                                 />
@@ -148,8 +148,8 @@ export default function AboutPage() {
                                 </p>
                             </div>
 
-                            <div className="w-full bg-brand-bg/80 border border-brand-accent/50 rounded-2xl p-6 md:p-10 flex flex-col items-center overflow-x-auto">
-                                <div className="min-w-[700px] w-full max-w-4xl flex flex-col items-center py-4 relative">
+                            <div className="w-full bg-brand-bg/80 border border-brand-accent/50 rounded-2xl p-4 md:p-10 flex flex-col items-center">
+                                <div className="w-full max-w-4xl flex flex-col items-center py-4 relative">
 
                                     <div className="z-10 bg-white border border-brand-accent rounded-xl px-5 py-3 shadow-sm flex items-center gap-2.5 hover:border-brand-primary/40 transition-colors">
                                         <Code className="w-5 h-5 text-brand-primary" />
@@ -171,42 +171,42 @@ export default function AboutPage() {
 
                                     <div className="h-6 w-px border-l-2 border-dashed border-brand-accent my-1"></div>
 
-                                    <div className="w-full flex justify-between relative px-12 md:px-24">
-                                        <div className="absolute top-0 left-12 md:left-24 right-12 md:right-24 h-4 border-t-2 border-dashed border-brand-accent"></div>
+                                    <div className="w-full flex justify-between relative px-[16.6%]">
+                                        <div className="absolute top-0 left-[16.6%] right-[16.6%] h-4 border-t-2 border-dashed border-brand-accent"></div>
                                         <div className="h-8 w-px border-l-2 border-dashed border-brand-accent"></div>
                                         <div className="h-8 w-px border-l-2 border-dashed border-brand-accent"></div>
                                         <div className="h-8 w-px border-l-2 border-dashed border-brand-accent"></div>
                                     </div>
 
-                                    <div className="w-full flex justify-between gap-4 px-2">
+                                    <div className="w-full flex flex-row justify-between gap-2 md:gap-4 px-1 md:px-2">
 
-                                        <div className="flex-1 bg-white border border-brand-accent rounded-xl p-4 shadow-sm flex flex-col items-center text-center space-y-2 hover:border-brand-primary/30 transition-colors">
-                                            <div className="p-1.5 rounded-lg bg-brand-bg">
-                                                <Database className="w-4 h-4 text-brand-primary" />
+                                        <div className="flex-1 bg-white border border-brand-accent rounded-xl p-2 md:p-4 shadow-sm flex flex-col items-center text-center space-y-1.5 md:space-y-2 hover:border-brand-primary/30 transition-colors min-w-0">
+                                            <div className="p-1 md:p-1.5 rounded-lg bg-brand-bg">
+                                                <Database className="w-3.5 h-3.5 md:w-4 h-4 text-brand-primary animate-pulse" />
                                             </div>
                                             <div>
-                                                <h5 className="text-xs font-bold text-brand-main leading-tight">Core & Property Service</h5>
-                                                <p className="text-[9px] text-brand-muted">Java / Spring Boot</p>
+                                                <h5 className="text-[9px] md:text-xs font-bold text-brand-main leading-tight break-words">Core & Property Service</h5>
+                                                <p className="text-[7px] md:text-[9px] text-brand-muted leading-tight mt-0.5">Java / Spring Boot</p>
                                             </div>
                                         </div>
 
-                                        <div className="flex-1 bg-white border border-brand-accent rounded-xl p-4 shadow-sm flex flex-col items-center text-center space-y-2 hover:border-brand-primary/30 transition-colors">
-                                            <div className="p-1.5 rounded-lg bg-brand-bg">
-                                                <Brain className="w-4 h-4 text-brand-primary" />
+                                        <div className="flex-1 bg-white border border-brand-accent rounded-xl p-2 md:p-4 shadow-sm flex flex-col items-center text-center space-y-1.5 md:space-y-2 hover:border-brand-primary/30 transition-colors min-w-0">
+                                            <div className="p-1 md:p-1.5 rounded-lg bg-brand-bg">
+                                                <Brain className="w-3.5 h-3.5 md:w-4 h-4 text-brand-primary animate-pulse" />
                                             </div>
                                             <div>
-                                                <h5 className="text-xs font-bold text-brand-main leading-tight">AI Dynamic Pricing</h5>
-                                                <p className="text-[9px] text-brand-muted">Python / ML Engine</p>
+                                                <h5 className="text-[9px] md:text-xs font-bold text-brand-main leading-tight break-words">AI Dynamic Pricing</h5>
+                                                <p className="text-[7px] md:text-[9px] text-brand-muted leading-tight mt-0.5">Python / ML Engine</p>
                                             </div>
                                         </div>
 
-                                        <div className="flex-1 bg-white border border-brand-accent rounded-xl p-4 shadow-sm flex flex-col items-center text-center space-y-2 hover:border-brand-primary/30 transition-colors">
-                                            <div className="p-1.5 rounded-lg bg-brand-bg">
-                                                <Scan className="w-4 h-4 text-brand-primary" />
+                                        <div className="flex-1 bg-white border border-brand-accent rounded-xl p-2 md:p-4 shadow-sm flex flex-col items-center text-center space-y-1.5 md:space-y-2 hover:border-brand-primary/30 transition-colors min-w-0">
+                                            <div className="p-1 md:p-1.5 rounded-lg bg-brand-bg">
+                                                <Scan className="w-3.5 h-3.5 md:w-4 h-4 text-brand-primary animate-pulse" />
                                             </div>
                                             <div>
-                                                <h5 className="text-xs font-bold text-brand-main leading-tight">OCR Utility Billing</h5>
-                                                <p className="text-[9px] text-brand-muted">Python / YOLOv8</p>
+                                                <h5 className="text-[9px] md:text-xs font-bold text-brand-main leading-tight break-words">OCR Utility Billing</h5>
+                                                <p className="text-[7px] md:text-[9px] text-brand-muted leading-tight mt-0.5">Python / YOLOv8</p>
                                             </div>
                                         </div>
 
@@ -387,7 +387,6 @@ export default function AboutPage() {
                 </div>
 
             </div>
-            <Footer />
         </div>
     );
 }

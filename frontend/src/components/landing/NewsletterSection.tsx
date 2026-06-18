@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+
 export default function NewsletterSection() {
     const {t} = useTranslation();
   return (
@@ -24,16 +25,16 @@ export default function NewsletterSection() {
                 {t("newsletterSection.description")}
             </p>
             
-            <form className="relative max-w-lg w-full" onSubmit={(e) => e.preventDefault()}>
+            <form className="relative max-w-lg w-full flex flex-col sm:block gap-3" onSubmit={(e) => e.preventDefault()}>
               <input 
-                type="email"
+                type="email" 
                 placeholder={t("newsletterSection.emailPlaceholder")}
-                className="w-full bg-card border border-[#DACDCA] text-title rounded-full py-5 pl-8 pr-40 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-burgundy))] focus:border-transparent transition-all shadow-sm font-medium"
+                className="w-full bg-card border border-[#DACDCA] text-title rounded-full py-4 sm:py-5 pl-6 sm:pl-8 pr-6 sm:pr-40 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-burgundy))] focus:border-transparent transition-all shadow-sm font-medium"
                 required
               />
               <button 
                 type="submit" 
-                className="absolute right-2 top-2 bottom-2 bg-[rgb(var(--color-burgundy))] text-white font-bold text-lg rounded-full px-8 hover:bg-[rgb(var(--color-burgundy-hover))] transition-colors shadow-md"
+                className="w-full sm:w-auto mt-2 sm:mt-0 sm:absolute sm:right-2 sm:top-2 sm:bottom-2 bg-[rgb(var(--color-burgundy))] text-white font-bold text-base sm:text-lg rounded-full py-3 sm:py-0 px-8 hover:bg-[rgb(var(--color-burgundy-hover))] transition-colors shadow-md cursor-pointer"
               >
                   {t("newsletterSection.subscribe")}
               </button>

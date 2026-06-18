@@ -1,24 +1,27 @@
 package io.github.kwatera_project.kwatera.reservation_service.service;
 
+import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventService;
+import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventType;
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationOverviewDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatusHistory;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationStatusHistoryRepository;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
+import java.util.function.Supplier;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestOperations;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
-@RequiredArgsConstructor
 public class AdminReservationService {
 
   private static final org.slf4j.Logger log =
@@ -30,26 +33,45 @@ public class AdminReservationService {
 
   private final ReservationStatusValidator statusValidator;
 
-  private final RestTemplate restTemplate;
+  private final Supplier<RestOperations> restOperationsProvider;
 
   private final EmailNotificationService emailNotificationService;
 
+  private final SystemEventService systemEventService;
+
+  @Autowired
+  public AdminReservationService(
+      ReservationRepository reservationRepository,
+      ReservationStatusHistoryRepository statusHistoryRepository,
+      ReservationStatusValidator statusValidator,
+      RestOperations restOperations,
+      EmailNotificationService emailNotificationService,
+      SystemEventService systemEventService) {
+    this.reservationRepository = reservationRepository;
+    this.statusHistoryRepository = statusHistoryRepository;
+    this.statusValidator = statusValidator;
+    this.restOperationsProvider = () -> restOperations;
+    this.emailNotificationService = emailNotificationService;
+    this.systemEventService = systemEventService;
+  }
+
   public List<ReservationOverviewDto> getReservationsOverview(
-      UUID ownerId, ReservationStatus status, boolean isAdmin) {
+      UUID ownerId,
+      ReservationStatus status,
+      boolean isAdmin,
+      LocalDate startDate,
+      LocalDate endDate) {
 
     if (isAdmin) {
       List<Reservation> reservations =
-          (status != null)
-              ? reservationRepository.findByStatus(status)
-              : reservationRepository.findAll();
-
+          getAdminReservationsFromRepository(status, startDate, endDate);
       return reservations.stream().map(this::mapToOverviewDto).toList();
     }
 
     String propertyServiceUrl = "http://property-service/api/properties/units/ids/" + ownerId;
 
     try {
-      UUID[] unitIdsArray = restTemplate.getForObject(propertyServiceUrl, UUID[].class);
+      UUID[] unitIdsArray = restOperations().getForObject(propertyServiceUrl, UUID[].class);
       List<UUID> ownerUnitIds =
           unitIdsArray != null ? Arrays.asList(unitIdsArray) : Collections.emptyList();
 
@@ -58,16 +80,39 @@ public class AdminReservationService {
       }
 
       List<Reservation> reservations =
-          (status != null)
-              ? reservationRepository.findByUnitIdInAndStatus(ownerUnitIds, status)
-              : reservationRepository.findByUnitIdIn(ownerUnitIds);
-
+          getOwnerReservationsFromRepository(ownerUnitIds, status, startDate, endDate);
       return reservations.stream().map(this::mapToOverviewDto).toList();
 
     } catch (Exception e) {
       log.error("Error connection with property-service", e);
       return Collections.emptyList();
     }
+  }
+
+  private List<Reservation> getAdminReservationsFromRepository(
+      ReservationStatus status, LocalDate startDate, LocalDate endDate) {
+    if (startDate != null && endDate != null) {
+      return (status != null)
+          ? reservationRepository.findReservationsOverlappingWithStatus(status, startDate, endDate)
+          : reservationRepository.findReservationsOverlapping(startDate, endDate);
+    }
+    return (status != null)
+        ? reservationRepository.findByStatus(status)
+        : reservationRepository.findAll();
+  }
+
+  private List<Reservation> getOwnerReservationsFromRepository(
+      List<UUID> ownerUnitIds, ReservationStatus status, LocalDate startDate, LocalDate endDate) {
+    if (startDate != null && endDate != null) {
+      return (status != null)
+          ? reservationRepository.findReservationsOverlappingForUnitsWithStatus(
+              ownerUnitIds, status, startDate, endDate)
+          : reservationRepository.findReservationsOverlappingForUnits(
+              ownerUnitIds, startDate, endDate);
+    }
+    return (status != null)
+        ? reservationRepository.findByUnitIdInAndStatus(ownerUnitIds, status)
+        : reservationRepository.findByUnitIdIn(ownerUnitIds);
   }
 
   public ReservationOverviewDto updateReservationStatus(
@@ -106,6 +151,8 @@ public class AdminReservationService {
     history.setChangedAt(LocalDateTime.now());
     statusHistoryRepository.save(history);
 
+    logStatusChange(userId, reservation, oldStatus, newStatus);
+
     emailNotificationService.sendReservationStatusChanged(
         reservation, oldStatus, newStatus, reservation.getGuestEmail());
 
@@ -126,7 +173,7 @@ public class AdminReservationService {
   private void verifyOwnerAccess(UUID ownerId, UUID unitId) {
     String propertyServiceUrl = "http://property-service/api/properties/units/ids/" + ownerId;
     try {
-      UUID[] unitIdsArray = restTemplate.getForObject(propertyServiceUrl, UUID[].class);
+      UUID[] unitIdsArray = restOperations().getForObject(propertyServiceUrl, UUID[].class);
       List<UUID> ownerUnitIds =
           unitIdsArray != null ? Arrays.asList(unitIdsArray) : Collections.emptyList();
 
@@ -148,7 +195,7 @@ public class AdminReservationService {
 
     try {
       String unitUrl = "http://property-service/api/properties/units/" + reservation.getUnitId();
-      UnitNameDto unitDto = restTemplate.getForObject(unitUrl, UnitNameDto.class);
+      UnitNameDto unitDto = restOperations().getForObject(unitUrl, UnitNameDto.class);
       if (unitDto != null && unitDto.name() != null) {
         unitName = unitDto.name();
       } else {
@@ -175,8 +222,36 @@ public class AdminReservationService {
 
   private record UnitNameDto(String name) {}
 
+  private RestOperations restOperations() {
+    return restOperationsProvider.get();
+  }
+
   public boolean hasReservationsForUnit(UUID unitId) {
     return reservationRepository.existsByUnitIdAndStatusIn(
         unitId, List.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED));
+  }
+
+  private void logStatusChange(
+      UUID actorId,
+      Reservation reservation,
+      ReservationStatus oldStatus,
+      ReservationStatus newStatus) {
+    systemEventService.logSafely(
+        SystemEventType.RESERVATION_STATUS_CHANGED,
+        actorId,
+        SystemEventService.ENTITY_TYPE_RESERVATION,
+        reservation.getId(),
+        "reservationId="
+            + reservation.getId()
+            + ", unitId="
+            + reservation.getUnitId()
+            + ", startDate="
+            + reservation.getStartDate()
+            + ", endDate="
+            + reservation.getEndDate()
+            + ", oldStatus="
+            + oldStatus
+            + ", newStatus="
+            + newStatus);
   }
 }

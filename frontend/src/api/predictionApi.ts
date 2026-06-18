@@ -1,4 +1,5 @@
-import { GATEWAY_BASE_URL } from "./apiConfig";
+import { GATEWAY_BASE_URL, IS_DEMO_MODE } from "./apiConfig";
+import { getDemoUnits } from "../demo/demoProperties";
 
 const API_URL = `${GATEWAY_BASE_URL}/api/predict`;
 
@@ -7,6 +8,12 @@ export async function getPredictedPrice(
     unitId: string,
     date?: string
 ) {
+    if (IS_DEMO_MODE) {
+        void date;
+        const unit = getDemoUnits(propertyId).find((item) => item.id === unitId);
+        return Number(((unit?.pricePerNight ?? 420) * 1.08).toFixed(2));
+    }
+
     const token = localStorage.getItem("token");
 
     let finalUrl = `${API_URL}/price/property/${propertyId}/unit/${unitId}`;

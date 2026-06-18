@@ -7,6 +7,8 @@ import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventService;
+import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventType;
 import io.github.kwatera_project.kwatera.reservation_service.client.NbpExchangeRateClient;
 import io.github.kwatera_project.kwatera.reservation_service.dto.AvailabilityDto;
 import io.github.kwatera_project.kwatera.reservation_service.dto.CreateReservationRequest;
@@ -45,7 +47,8 @@ class ReservationServiceTest {
         restTemplate,
         nbpExchangeRateClient,
         mock(EmailNotificationService.class),
-        new BusinessDateProvider("Europe/Warsaw"));
+        new BusinessDateProvider("Europe/Warsaw"),
+        mock(SystemEventService.class));
   }
 
   private ReservationService reservationService(
@@ -58,7 +61,8 @@ class ReservationServiceTest {
         restTemplate,
         nbpExchangeRateClient,
         mock(EmailNotificationService.class),
-        businessDateProvider);
+        businessDateProvider,
+        mock(SystemEventService.class));
   }
 
   @Test
@@ -917,7 +921,8 @@ class ReservationServiceTest {
             mock(RestTemplate.class),
             mock(NbpExchangeRateClient.class),
             emailNotificationService,
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID reservationId = UUID.randomUUID();
 
@@ -1291,7 +1296,8 @@ class ReservationServiceTest {
             restTemplate,
             mock(NbpExchangeRateClient.class),
             emailService,
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID userId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
@@ -1772,7 +1778,8 @@ class ReservationServiceTest {
             mock(RestTemplate.class),
             mock(NbpExchangeRateClient.class),
             emailService,
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID resId = UUID.randomUUID();
     Reservation reservation = new Reservation();
@@ -1807,7 +1814,8 @@ class ReservationServiceTest {
             mock(RestTemplate.class),
             mock(NbpExchangeRateClient.class),
             emailService,
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID resId = UUID.randomUUID();
     Reservation reservation = new Reservation();
@@ -1840,7 +1848,8 @@ class ReservationServiceTest {
             restTemplate,
             mock(NbpExchangeRateClient.class),
             emailService,
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID reservationId = UUID.randomUUID();
     UUID userId = UUID.randomUUID();
@@ -1894,7 +1903,8 @@ class ReservationServiceTest {
             mock(RestTemplate.class),
             mock(NbpExchangeRateClient.class),
             emailService,
-            businessDateProvider);
+            businessDateProvider,
+            mock(SystemEventService.class));
 
     LocalDate today = LocalDate.of(2026, java.time.Month.JUNE, 6);
     when(businessDateProvider.today()).thenReturn(today);
@@ -1922,7 +1932,8 @@ class ReservationServiceTest {
             mock(RestTemplate.class),
             mock(NbpExchangeRateClient.class),
             emailService,
-            businessDateProvider);
+            businessDateProvider,
+            mock(SystemEventService.class));
 
     LocalDate today = LocalDate.of(2026, java.time.Month.JUNE, 6);
     when(businessDateProvider.today()).thenReturn(today);
@@ -1951,7 +1962,8 @@ class ReservationServiceTest {
             restTemplate,
             mock(NbpExchangeRateClient.class),
             emailService,
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID actorId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
@@ -2006,7 +2018,8 @@ class ReservationServiceTest {
             restTemplate,
             mock(NbpExchangeRateClient.class),
             emailService,
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID ownerId = UUID.randomUUID();
     UUID guestId = UUID.randomUUID();
@@ -2074,7 +2087,8 @@ class ReservationServiceTest {
             restTemplate,
             mock(NbpExchangeRateClient.class),
             mock(EmailNotificationService.class),
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID ownerId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
@@ -2123,7 +2137,8 @@ class ReservationServiceTest {
             restTemplate,
             mock(NbpExchangeRateClient.class),
             mock(EmailNotificationService.class),
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID ownerId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
@@ -2163,7 +2178,8 @@ class ReservationServiceTest {
             restTemplate,
             mock(NbpExchangeRateClient.class),
             emailService,
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID actorId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
@@ -2219,7 +2235,8 @@ class ReservationServiceTest {
             restTemplate,
             mock(NbpExchangeRateClient.class),
             mock(EmailNotificationService.class),
-            new BusinessDateProvider("Europe/Warsaw"));
+            new BusinessDateProvider("Europe/Warsaw"),
+            mock(SystemEventService.class));
 
     UUID userId = UUID.randomUUID();
     UUID unitId = UUID.randomUUID();
@@ -2242,5 +2259,139 @@ class ReservationServiceTest {
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
     assertTrue(
         exception.getReason().contains("Reservation must include at least one billable night"));
+  }
+
+  @Test
+  void shouldLogReservationCreatedEvent_whenGuestCreatesReservation() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    SystemEventService systemEventService = mock(SystemEventService.class);
+    ReservationService service =
+        new ReservationService(
+            repository,
+            restTemplate,
+            mock(NbpExchangeRateClient.class),
+            mock(EmailNotificationService.class),
+            new BusinessDateProvider("Europe/Warsaw"),
+            systemEventService);
+
+    UUID userId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    CreateReservationRequest request = new CreateReservationRequest();
+    request.setUnitId(unitId);
+    request.setStartDate(LocalDate.now().plusDays(10));
+    request.setEndDate(LocalDate.now().plusDays(12));
+
+    UnitDto mockUnit = new UnitDto();
+    mockUnit.setPricePerNight(new BigDecimal("200.00"));
+    when(restTemplate.exchange(
+            anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(UnitDto.class), eq(unitId)))
+        .thenReturn(ResponseEntity.ok(mockUnit));
+    when(repository.findByUnitId(unitId)).thenReturn(List.of());
+    when(repository.save(any(Reservation.class)))
+        .thenAnswer(
+            invocation -> {
+              Reservation reservation = invocation.getArgument(0);
+              reservation.setId(UUID.randomUUID());
+              return reservation;
+            });
+
+    Reservation created = service.createReservation(userId, request, "Bearer token");
+
+    verify(systemEventService)
+        .logSafely(
+            eq(SystemEventType.RESERVATION_CREATED),
+            eq(userId),
+            eq(SystemEventService.ENTITY_TYPE_RESERVATION),
+            eq(created.getId()),
+            contains("unitId=" + unitId));
+  }
+
+  @Test
+  void shouldLogUnitBlockedEvent_whenOwnerBlocksDates() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    SystemEventService systemEventService = mock(SystemEventService.class);
+    ReservationService service =
+        new ReservationService(
+            repository,
+            restTemplate,
+            mock(NbpExchangeRateClient.class),
+            mock(EmailNotificationService.class),
+            new BusinessDateProvider("Europe/Warsaw"),
+            systemEventService);
+
+    UUID ownerId = UUID.randomUUID();
+    UUID unitId = UUID.randomUUID();
+    CreateReservationRequest request = new CreateReservationRequest();
+    request.setUnitId(unitId);
+    request.setStartDate(LocalDate.now().plusDays(10));
+    request.setEndDate(LocalDate.now().plusDays(10));
+
+    UnitDto mockUnit = new UnitDto();
+    mockUnit.setPricePerNight(new BigDecimal("200.00"));
+    when(restTemplate.getForObject(
+            eq("http://property-service/api/properties/units/ids/{ownerId}"),
+            eq(UUID[].class),
+            eq(ownerId)))
+        .thenReturn(new UUID[] {unitId});
+    when(restTemplate.exchange(
+            anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(UnitDto.class), eq(unitId)))
+        .thenReturn(ResponseEntity.ok(mockUnit));
+    when(repository.findByUnitId(unitId)).thenReturn(List.of());
+    when(repository.save(any(Reservation.class)))
+        .thenAnswer(
+            invocation -> {
+              Reservation reservation = invocation.getArgument(0);
+              reservation.setId(UUID.randomUUID());
+              return reservation;
+            });
+
+    Reservation created = service.createReservation(ownerId, false, true, request, "Bearer token");
+
+    verify(systemEventService)
+        .logSafely(
+            eq(SystemEventType.UNIT_BLOCKED),
+            eq(ownerId),
+            eq(SystemEventService.ENTITY_TYPE_RESERVATION),
+            eq(created.getId()),
+            contains("status=BLOCKED"));
+  }
+
+  @Test
+  void shouldLogExpiredReservationCancelledEvent_whenCleanupCancelsPendingReservation() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    SystemEventService systemEventService = mock(SystemEventService.class);
+    ReservationService service =
+        new ReservationService(
+            repository,
+            mock(RestTemplate.class),
+            mock(NbpExchangeRateClient.class),
+            mock(EmailNotificationService.class),
+            new BusinessDateProvider("Europe/Warsaw"),
+            systemEventService);
+
+    UUID reservationId = UUID.randomUUID();
+    Reservation reservation = new Reservation();
+    reservation.setId(reservationId);
+    reservation.setUnitId(UUID.randomUUID());
+    reservation.setStartDate(LocalDate.now().plusDays(1));
+    reservation.setEndDate(LocalDate.now().plusDays(2));
+    reservation.setStatus(ReservationStatus.PENDING);
+    reservation.setGuestEmail("guest@test.com");
+    Instant threshold = Instant.now().minusSeconds(60);
+
+    when(repository.findByStatusAndCreatedAtBefore(ReservationStatus.PENDING, threshold))
+        .thenReturn(List.of(reservation));
+
+    service.cancelExpiredPendingReservations(threshold);
+
+    verify(systemEventService)
+        .logSafely(
+            eq(SystemEventType.EXPIRED_RESERVATION_CANCELLED),
+            isNull(),
+            eq(SystemEventService.ENTITY_TYPE_RESERVATION),
+            eq(reservationId),
+            contains("newStatus=CANCELLED"));
   }
 }

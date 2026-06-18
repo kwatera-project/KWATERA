@@ -34,11 +34,13 @@ class PropertyControllerTest {
             "Poland",
             "",
             "",
-            "");
+            "",
+            List.of(),
+            null);
 
-    when(service.getAll()).thenReturn(List.of(dto));
+    when(service.getAll(any())).thenReturn(List.of(dto));
 
-    var result = controller.getAllProperties(null, null, null, null);
+    var result = controller.getAllProperties(null, null, null, null, null);
 
     assertEquals(1, result.size());
     assertEquals("Test", result.get(0).getTitle());
@@ -59,20 +61,24 @@ class PropertyControllerTest {
             "Poland",
             "",
             "",
-            "");
+            "",
+            List.of(),
+            null);
 
     BigDecimal minLat = BigDecimal.valueOf(50);
     BigDecimal maxLat = BigDecimal.valueOf(53);
     BigDecimal minLng = BigDecimal.valueOf(19);
     BigDecimal maxLng = BigDecimal.valueOf(22);
 
-    when(service.getByBoundingBox(minLat, maxLat, minLng, maxLng)).thenReturn(List.of(dto));
+    when(service.getByBoundingBox(eq(minLat), eq(maxLat), eq(minLng), eq(maxLng), any()))
+        .thenReturn(List.of(dto));
 
-    var result = controller.getAllProperties(minLat, maxLat, minLng, maxLng);
+    var result = controller.getAllProperties(minLat, maxLat, minLng, maxLng, null);
 
     assertEquals(1, result.size());
     assertEquals("Test", result.get(0).getTitle());
-    verify(service, times(1)).getByBoundingBox(minLat, maxLat, minLng, maxLng);
+    verify(service, times(1))
+        .getByBoundingBox(eq(minLat), eq(maxLat), eq(minLng), eq(maxLng), any());
   }
 
   @Test
@@ -92,7 +98,9 @@ class PropertyControllerTest {
             "Poland",
             "",
             "",
-            "");
+            "",
+            List.of(),
+            null);
 
     when(service.getById(id)).thenReturn(dto);
 
@@ -119,7 +127,10 @@ class PropertyControllerTest {
             4,
             BigDecimal.valueOf(200),
             new io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto(
-                "PLN", "PLN", BigDecimal.ONE, java.time.LocalDate.now()));
+                "PLN", "PLN", BigDecimal.ONE, java.time.LocalDate.now()),
+            List.of(),
+            null,
+            null);
 
     when(service.getUnits(propertyId, "PLN")).thenReturn(List.of(unit));
 
@@ -148,7 +159,10 @@ class PropertyControllerTest {
             4,
             BigDecimal.valueOf(200),
             new io.github.kwatera_project.kwatera.property_service.dto.CurrencyMetadataDto(
-                "PLN", "PLN", BigDecimal.ONE, java.time.LocalDate.now()));
+                "PLN", "PLN", BigDecimal.ONE, java.time.LocalDate.now()),
+            List.of(),
+            null,
+            null);
 
     when(service.getUnitById(id, "PLN")).thenReturn(unit);
 

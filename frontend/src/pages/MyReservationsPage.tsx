@@ -5,6 +5,7 @@ import { getSettlementDetails } from '../api/settlementApi';
 import type {GuestReservation} from '../types/reservation';
 import { Home, Calendar, CreditCard, Info, Receipt, Droplet } from 'lucide-react';
 import {useTranslation} from "react-i18next"
+
 export default function MyReservationsPage() {
     const [reservations, setReservations] = useState<GuestReservation[]>([]);
     const [loading, setLoading] = useState(true);
@@ -43,14 +44,14 @@ export default function MyReservationsPage() {
     if (error) return <div className="p-8 text-center text-red-600 font-semibold">{t('myReservations.error', {error})}</div>;
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
+        <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
             <div>
                 <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">{t('myReservations.title')}</h1>
                 <p className="text-sm text-[#7A7A7A] mt-1">{t('myReservations.subtitle')}</p>
             </div>
 
             {reservations.length === 0 ? (
-                <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-8 text-center space-y-4">
+                <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 sm:p-8 text-center space-y-4">
                     <p className="text-[#7A7A7A] font-medium">{t('myReservations.noReservations')}</p>
                     <Link to="/properties" className="inline-block px-6 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#2a1412] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm">
                         {t('myReservations.browseCatalog')}

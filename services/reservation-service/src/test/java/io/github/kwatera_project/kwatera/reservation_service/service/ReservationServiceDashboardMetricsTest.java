@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventService;
 import io.github.kwatera_project.kwatera.reservation_service.client.NbpExchangeRateClient;
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationMetricsDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
@@ -31,6 +32,7 @@ class ReservationServiceDashboardMetricsTest {
   @Mock private RestTemplate restTemplate;
   @Mock private NbpExchangeRateClient nbpExchangeRateClient;
   @Mock private BusinessDateProvider businessDateProvider;
+  @Mock private SystemEventService systemEventService;
 
   @InjectMocks private ReservationService reservationService;
 

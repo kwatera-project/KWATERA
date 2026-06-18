@@ -26,11 +26,12 @@ public class PropertyController {
       @RequestParam(name = "minLat", required = false) BigDecimal minLat,
       @RequestParam(name = "maxLat", required = false) BigDecimal maxLat,
       @RequestParam(name = "minLng", required = false) BigDecimal minLng,
-      @RequestParam(name = "maxLng", required = false) BigDecimal maxLng) {
+      @RequestParam(name = "maxLng", required = false) BigDecimal maxLng,
+      @RequestParam(name = "amenities", required = false) List<String> amenities) {
     if (minLat != null && maxLat != null && minLng != null && maxLng != null) {
-      return propertyService.getByBoundingBox(minLat, maxLat, minLng, maxLng);
+      return propertyService.getByBoundingBox(minLat, maxLat, minLng, maxLng, amenities);
     }
-    return propertyService.getAll();
+    return propertyService.getAll(amenities);
   }
 
   @GetMapping("/{id}")

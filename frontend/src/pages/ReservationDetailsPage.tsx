@@ -1,10 +1,22 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getReservationDetails } from "../api/reservationApi";
+import { getUnit, getUnitSettlementItems } from "../api/propertyApi";
+import WaterRateTooltip from "../components/WaterRateTooltip";
 import type { ReservationDetails } from "../types/reservation";
+import type { UnitSettlementItem } from "../types/property";
 import { getUserRoles } from "../utils/jwtUtils";
 import { Home, Calendar, User, CreditCard, Clock } from "lucide-react";
-import {useTranslation} from "react-i18next"
+import { useTranslation } from "react-i18next"
+import {
+    calculateStayNights,
+    calculateWaterUsageRange,
+    findWaterUsageTariff,
+    formatMoneyRange,
+    formatUsageRange,
+    formatWaterRate,
+    getRatePerLiterTooltip,
+} from "../utils/waterBilling";
 
 export default function ReservationDetailsPage() {
     const { id } = useParams();
@@ -12,6 +24,12 @@ export default function ReservationDetailsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const {t} = useTranslation();
+    const [waterContext, setWaterContext] = useState<{
+        unitId?: string;
+        items: UnitSettlementItem[];
+        capacity?: number;
+        loaded: boolean;
+    }>({ items: [], loaded: false });
 
     useEffect(() => {
         if (!id) return;
@@ -25,6 +43,35 @@ export default function ReservationDetailsPage() {
             .finally(() => setLoading(false));
     }, [id, t]);
 
+    useEffect(() => {
+        if (!reservation?.unitId) return;
+
+        let isActive = true;
+        const displayCurrency = reservation.currencyInfo?.displayCurrency || "PLN";
+
+        Promise.all([
+            getUnit(reservation.unitId, displayCurrency),
+            getUnitSettlementItems(reservation.unitId),
+        ])
+            .then(([unit, items]) => {
+                if (!isActive) return;
+
+                setWaterContext({
+                    unitId: reservation.unitId,
+                    items,
+                    capacity: typeof unit?.capacity === "number" ? unit.capacity : undefined,
+                    loaded: true,
+                });
+            })
+            .catch(() => {
+                if (isActive) setWaterContext({ unitId: reservation.unitId, items: [], loaded: true });
+            });
+
+        return () => {
+            isActive = false;
+        };
+    }, [reservation?.unitId, reservation?.currencyInfo?.displayCurrency]);
+
     if (loading) return <div className="p-8 text-center text-gray-500 font-medium">{t('reservationDetails.loading')}</div>;
     if (error) return <div className="p-8 text-center text-red-600 font-semibold">{error}</div>;
     if (!reservation) return <div className="p-8 text-center text-gray-500 font-semibold">{t('reservationDetails.notFound')}</div>;
@@ -35,6 +82,19 @@ export default function ReservationDetailsPage() {
     const displayCurrency = reservation.currencyInfo?.displayCurrency || 'PLN';
     const returnPath = isAdminOrOwner ? "/admin/reservations" : "/my-reservations";
     const returnLabel = isAdminOrOwner ? t('adminMeterReadings.backToReservations') : t('meterReadings.backToReservations');
+    const currentWaterContext = waterContext.unitId === reservation.unitId ? waterContext : { items: [], capacity: undefined, loaded: false };
+    const waterTariff = findWaterUsageTariff(currentWaterContext.items);
+    const waterUsageRange = currentWaterContext.capacity
+        ? calculateWaterUsageRange(currentWaterContext.capacity, calculateStayNights(reservation.startDate, reservation.endDate))
+        : null;
+    const waterEstimate = waterTariff && waterUsageRange
+        ? {
+            rate: formatWaterRate(waterTariff.pricePerUnit, reservation.currencyInfo),
+            usage: formatUsageRange(waterUsageRange),
+            cost: formatMoneyRange(waterUsageRange, waterTariff.pricePerUnit, reservation.currencyInfo),
+            tooltip: getRatePerLiterTooltip(waterTariff.pricePerUnit, reservation.currencyInfo),
+        }
+        : null;
 
     const formatGuestName = (name: string) => {
         if (!name) return "";
@@ -53,7 +113,7 @@ export default function ReservationDetailsPage() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto p-8 min-h-screen text-[#1A1A1A] space-y-6 flex flex-col">
+        <div className="max-w-7xl mx-auto p-4 md:p-8 min-h-screen text-[#1A1A1A] space-y-6 flex flex-col">
             {/* Top Navigation */}
             <Link
                 to={returnPath}
@@ -94,7 +154,7 @@ export default function ReservationDetailsPage() {
                 {/* Column 1 & 2: Content Cards */}
                 <div className="lg:col-span-2 space-y-6">
                     {/* Stay & Property Details Card */}
-                    <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 space-y-5">
+                    <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 md:p-6 hover:shadow-md transition-all duration-300 space-y-5">
                         <div className="flex items-center gap-2 border-b border-[#DACDCA] pb-3">
                             <Home size={18} className="text-[#42211D]" />
                             <h2 className="text-lg font-bold text-[#1A1A1A] tracking-tight">{t('reservationDetails.stayInfo')}</h2>
@@ -154,7 +214,7 @@ export default function ReservationDetailsPage() {
                     </div>
 
                     {/* Guest Information Card */}
-                    <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 space-y-4">
+                    <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 md:p-6 hover:shadow-md transition-all duration-300 space-y-4">
                         <div className="flex items-center gap-2 border-b border-[#DACDCA] pb-3">
                             <User size={18} className="text-[#42211D]" />
                             <h2 className="text-lg font-bold text-[#1A1A1A] tracking-tight">{t('reservationDetails.guestInfo')}</h2>
@@ -186,7 +246,7 @@ export default function ReservationDetailsPage() {
 
 
                     {reservation.guestMessage && (
-                        <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 space-y-4">
+                        <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 md:p-6 hover:shadow-md transition-all duration-300 space-y-4">
                             <div className="flex items-center gap-2 border-b border-[#DACDCA] pb-3">
                                 <svg className="w-[18px] h-[18px] text-[#42211D]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -201,7 +261,7 @@ export default function ReservationDetailsPage() {
 
                     {/* Owner Information Card */}
                     {reservation.ownerName && (
-                        <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 space-y-4">
+                        <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 md:p-6 hover:shadow-md transition-all duration-300 space-y-4">
                             <div className="flex items-center gap-2 border-b border-[#DACDCA] pb-3">
                                 <User size={18} className="text-[#42211D]" />
                                 <h2 className="text-lg font-bold text-[#1A1A1A] tracking-tight">{t('reservationDetails.ownerInfo')}</h2>
@@ -227,7 +287,7 @@ export default function ReservationDetailsPage() {
 
                 {/* Column 3: Financial Summary Card */}
                 <div className="lg:col-span-1">
-                    <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 space-y-4 h-full flex flex-col justify-between">
+                    <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 md:p-6 hover:shadow-md transition-all duration-300 space-y-4 h-full flex flex-col justify-between">
                         <div className="space-y-4 w-full">
                             <div className="flex items-center gap-2 border-b border-[#DACDCA] pb-3">
                                 <CreditCard size={18} className="text-[#42211D]" />
@@ -261,6 +321,37 @@ export default function ReservationDetailsPage() {
                                         </span>
                                     </div>
                                 )}
+
+                                <div className="py-3 border-b border-[#DACDCA]/40 space-y-2 overflow-visible">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Water billing</span>
+                                    </div>
+                                    <p className="text-xs text-[#7A7A7A] font-medium">
+                                        Water is billed separately after your stay.
+                                    </p>
+                                    {waterEstimate ? (
+                                        <div className="space-y-1 text-xs">
+                                            <WaterRateTooltip
+                                                text={waterEstimate.tooltip}
+                                                value={waterEstimate.rate}
+                                                iconClassName="border-[#DACDCA] text-[#7A7A7A] bg-white"
+                                                panelClassName="bg-white border-[#DACDCA] text-[#1A1A1A] shadow-sm"
+                                                labelClassName="text-[#7A7A7A]"
+                                                valueClassName="font-bold text-[#1A1A1A]"
+                                            />
+                                            <div className="flex justify-between gap-3">
+                                                <span className="text-[#7A7A7A]">Estimated usage</span>
+                                                <span className="font-bold text-[#1A1A1A]">{waterEstimate.usage}</span>
+                                            </div>
+                                            <div className="flex justify-between gap-3">
+                                                <span className="text-[#7A7A7A]">Estimated cost</span>
+                                                <span className="font-bold text-[#1A1A1A]">{waterEstimate.cost}</span>
+                                            </div>
+                                        </div>
+                                    ) : currentWaterContext.loaded ? (
+                                        <p className="text-xs text-[#7A7A7A]">Final water cost is based on meter readings when configured.</p>
+                                    ) : null}
+                                </div>
                             </div>
                         </div>
 

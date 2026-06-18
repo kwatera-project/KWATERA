@@ -1,192 +1,234 @@
+import { lazy, Suspense } from "react";
 import './App.css'
-import {Routes, Route} from "react-router-dom"
+import {Routes, Route, useLocation} from "react-router-dom"
 import Navbar from "./components/Navbar"
-import RegisterForm from "./components/RegisterForm"
-import LoginForm from "./components/LoginForm.tsx";
-import PropertyDetailsPage from "./pages/PropertyDetailsPage";
-import PropertiesPage from "./pages/PropertiesPage.tsx";
-import CheckoutPage from "./pages/CheckoutPage";
-import AdminReservationList from "./components/AdminReservationList"
 import ProtectedRoute from "./components/ProtectedRoute"
-import HomePage from "./pages/HomePage";
-import ReservationDetailsPage from "./pages/ReservationDetailsPage";
-import MyReservationsPage from "./pages/MyReservationsPage";
-import PaymentCancelPage from "./pages/PaymentCancelPage";
-import SettlementDetailsPage from "./pages/SettlementDetailsPage";
-import OccupancyCalendarPage from "./pages/OccupancyCalendarPage";
-import ProfilePage from "./pages/ProfilePage";
-import DashboardPage from "./pages/DashboardPage";
 import {CurrencyProvider} from "./contexts/CurrencyContext";
-import MeterReadingsPage from "./pages/MeterReadingsPage";
-import AdminMeterReadingsPage from "./pages/AdminMeterReadingsPage";
-import OwnerPropertiesPage from "./pages/OwnerPropertiesPage.tsx";
-import OwnerPropertyUnitsPage from "./pages/OwnerPropertyUnitsPage.tsx";
-import EditPropertyPage from "./pages/EditPropertyPage.tsx";
-import CreatePropertyPage from "./pages/CreatePropertyPage.tsx";
-import CreateUnitPage from "./pages/CreateUnitPage.tsx";
-import EditUnitPage from "./pages/EditUnitPage.tsx";
-import EditPropertyImages from "./pages/EditPropertyImages.tsx";
-import EditUnitImages from "./pages/EditUnitImages.tsx";
-import AboutPage from "./pages/AboutPage";
+import DemoModeBanner from "./components/DemoModeBanner";
+import Footer from "./components/landing/Footer";
+
+const FULL_SCREEN_ROUTES = ["/login", "/register", "/payment-cancel"];
+
+const HomePage = lazy(() => import("./pages/HomePage"));
+const AboutPage = lazy(() => import("./pages/AboutPage"));
+const RegisterForm = lazy(() => import("./components/RegisterForm"));
+const LoginForm = lazy(() => import("./components/LoginForm.tsx"));
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const AdminSystemEventsPage = lazy(() => import("./pages/AdminSystemEventsPage"));
+const AdminReservationList = lazy(() => import("./components/AdminReservationList"));
+const OccupancyCalendarPage = lazy(() => import("./pages/OccupancyCalendarPage"));
+const MyReservationsPage = lazy(() => import("./pages/MyReservationsPage"));
+const ReservationDetailsPage = lazy(() => import("./pages/ReservationDetailsPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const PropertiesPage = lazy(() => import("./pages/PropertiesPage.tsx"));
+const PropertyDetailsPage = lazy(() => import("./pages/PropertyDetailsPage"));
+const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
+const PaymentCancelPage = lazy(() => import("./pages/PaymentCancelPage"));
+const SettlementDetailsPage = lazy(() => import("./pages/SettlementDetailsPage"));
+const MeterReadingsPage = lazy(() => import("./pages/MeterReadingsPage"));
+const AdminMeterReadingsPage = lazy(() => import("./pages/AdminMeterReadingsPage"));
+const OwnerPropertiesPage = lazy(() => import("./pages/OwnerPropertiesPage.tsx"));
+const OwnerPropertyUnitsPage = lazy(() => import("./pages/OwnerPropertyUnitsPage.tsx"));
+const EditPropertyPage = lazy(() => import("./pages/EditPropertyPage.tsx"));
+const CreatePropertyPage = lazy(() => import("./pages/CreatePropertyPage.tsx"));
+const CreateUnitPage = lazy(() => import("./pages/CreateUnitPage.tsx"));
+const EditUnitPage = lazy(() => import("./pages/EditUnitPage.tsx"));
+const EditPropertyImages = lazy(() => import("./pages/EditPropertyImages.tsx"));
+const EditUnitImages = lazy(() => import("./pages/EditUnitImages.tsx"));
+
+function LoadingFallback() {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] w-full text-[#1A1A1A]">
+            <div className="relative flex items-center justify-center">
+                <div className="absolute w-14 h-14 rounded-full border-4 border-[#DACDCA]/40 animate-pulse"></div>
+                <div className="w-10 h-10 rounded-full border-4 border-t-[#42211D] border-r-transparent border-b-transparent border-l-transparent animate-spin"></div>
+            </div>
+            <p className="mt-4 text-xs font-bold uppercase tracking-widest text-[#7A7A7A] animate-pulse">
+                Loading Kwatera...
+            </p>
+        </div>
+    );
+}
 
 function App() {
+    const location = useLocation();
+    const showFooter = !FULL_SCREEN_ROUTES.some((path) => location.pathname.includes(path));
+
     return (
         <CurrencyProvider>
-            <Navbar/>
-            <Routes>
-                <Route path="/" element={<HomePage/>}/>
-                <Route path="/about" element={<AboutPage/>}/>
-                <Route path="/register" element={<RegisterForm/>}/>
-                <Route path="/login" element={<LoginForm/>}/>
-                <Route
-                    path="/admin/dashboard"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
-                            <DashboardPage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/admin/reservations"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
-                            <AdminReservationList/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/admin/occupancy"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
-                            <OccupancyCalendarPage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/my-reservations"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_GUEST']}>
-                            <MyReservationsPage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/reservations/:id"
-                    element={
-                        <ProtectedRoute allowedRoles={[]}>
-                            <ReservationDetailsPage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/profile"
-                    element={
-                        <ProtectedRoute>
-                            <ProfilePage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route path="/properties" element={<PropertiesPage/>}/>
-                <Route path="/catalog" element={<PropertiesPage/>}/>
-                <Route path="/property/:id" element={<PropertyDetailsPage/>}/>
-                <Route
-                    path="/checkout"
-                    element={
-                        <ProtectedRoute>
-                            <CheckoutPage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route path="/payment-cancel" element={<PaymentCancelPage/>}/>
-                <Route
-                    path="/settlements/:id"
-                    element={
-                        <ProtectedRoute allowedRoles={[]}>
-                            <SettlementDetailsPage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/settlements/:settlementId/meter-readings"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_GUEST']}>
-                            <MeterReadingsPage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/admin/settlements/:settlementId/meter-readings"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
-                            <AdminMeterReadingsPage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/owner/properties"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
-                            <OwnerPropertiesPage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/owner/properties/:propertyId/units"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
-                            <OwnerPropertyUnitsPage/>
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/owner/properties/new"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
-                            <CreatePropertyPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/owner/properties/:propertyId/edit"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
-                            <EditPropertyPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/owner/properties/:propertyId/units/new"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
-                            <CreateUnitPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/owner/properties/:propertyId/units/:unitId/edit"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
-                            <EditUnitPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/owner/properties/:propertyId/images"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
-                            <EditPropertyImages />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/owner/properties/:propertyId/units/:unitId/images"
-                    element={
-                        <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
-                            <EditUnitImages />
-                        </ProtectedRoute>
-                    }
-                />
-            </Routes>
+            <div className="min-h-screen flex flex-col bg-card">
+                <DemoModeBanner/>
+                <Navbar/>
+                <main className="flex-1">
+                    <Suspense fallback={<LoadingFallback />}>
+                        <Routes>
+                            <Route path="/" element={<HomePage/>}/>
+                            <Route path="/about" element={<AboutPage/>}/>
+                            <Route path="/register" element={<RegisterForm/>}/>
+                            <Route path="/login" element={<LoginForm/>}/>
+                            <Route
+                                path="/admin/dashboard"
+                                element={
+                                    <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
+                                        <DashboardPage/>
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/admin/logs"
+                                element={
+                                    <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
+                                        <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A]">
+                                            <AdminSystemEventsPage/>
+                                        </div>
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/admin/reservations"
+                                element={
+                                    <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
+                                        <AdminReservationList/>
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/admin/occupancy"
+                                element={
+                                    <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
+                                        <OccupancyCalendarPage/>
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/my-reservations"
+                                element={
+                                    <ProtectedRoute allowedRoles={['ROLE_GUEST']}>
+                                        <MyReservationsPage/>
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/reservations/:id"
+                                element={
+                                    <ProtectedRoute allowedRoles={[]}>
+                                        <ReservationDetailsPage/>
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/profile"
+                                element={
+                                    <ProtectedRoute>
+                                        <ProfilePage/>
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route path="/properties" element={<PropertiesPage/>}/>
+                            <Route path="/catalog" element={<PropertiesPage/>}/>
+                            <Route path="/property/:id" element={<PropertyDetailsPage/>}/>
+                            <Route
+                                path="/checkout"
+                                element={
+                                    <ProtectedRoute>
+                                        <CheckoutPage/>
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route path="/payment-cancel" element={<PaymentCancelPage/>}/>
+                            <Route
+                                path="/settlements/:id"
+                                element={
+                                    <ProtectedRoute allowedRoles={[]}>
+                                        <SettlementDetailsPage/>
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/settlements/:settlementId/meter-readings"
+                                element={
+                                    <ProtectedRoute allowedRoles={['ROLE_GUEST']}>
+                                        <MeterReadingsPage/>
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/admin/settlements/:settlementId/meter-readings"
+                                element={
+                                    <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_OWNER']}>
+                                        <AdminMeterReadingsPage/>
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/owner/properties"
+                                element={
+                                    <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                                        <OwnerPropertiesPage/>
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/owner/properties/:propertyId/units"
+                                element={
+                                    <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                                        <OwnerPropertyUnitsPage/>
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/owner/properties/new"
+                                element={
+                                    <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                                        <CreatePropertyPage />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/owner/properties/:propertyId/edit"
+                                element={
+                                    <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                                        <EditPropertyPage />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/owner/properties/:propertyId/units/new"
+                                element={
+                                    <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                                        <CreateUnitPage />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/owner/properties/:propertyId/units/:unitId/edit"
+                                element={
+                                    <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                                        <EditUnitPage />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/owner/properties/:propertyId/images"
+                                element={
+                                    <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                                        <EditPropertyImages />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/owner/properties/:propertyId/units/:unitId/images"
+                                element={
+                                    <ProtectedRoute allowedRoles={['ROLE_OWNER']}>
+                                        <EditUnitImages />
+                                    </ProtectedRoute>
+                                }
+                            />
+                        </Routes>
+                    </Suspense>
+                </main>
+                {showFooter && <Footer/>}
+            </div>
         </CurrencyProvider>
     )
 }

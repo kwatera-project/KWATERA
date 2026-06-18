@@ -1,4 +1,5 @@
-import { GATEWAY_BASE_URL } from "./apiConfig";
+import { GATEWAY_BASE_URL, IS_DEMO_MODE } from "./apiConfig";
+import { demoMediaReadingAttemptsBySettlementId, demoMediaReadingsBySettlementId, demoOcrSuccess } from "../demo/demoOcr";
 
 const BILLING_URL = `${GATEWAY_BASE_URL}/api/billing/media-readings`;
 
@@ -11,7 +12,7 @@ export type ReadingStatus =
 
 export type ReadingType = "INITIAL" | "FINAL";
 
-export type UtilityType = "WATER";
+export type UtilityType = "WATER" | "ELECTRICITY";
 
 export type MeterReadingResponse = {
     status: ReadingStatus;
@@ -78,6 +79,13 @@ export async function uploadInitialMeterReading(
     utilityType: UtilityType,
     file: File
 ): Promise<MeterReadingResponse> {
+    if (IS_DEMO_MODE) {
+        void unitId;
+        void utilityType;
+        void file;
+        return demoOcrSuccess;
+    }
+
     const formData = new FormData();
 
     formData.append("file", file);
@@ -103,6 +111,13 @@ export async function uploadFinalMeterReading(
     utilityType: UtilityType,
     file: File
 ): Promise<MeterReadingResponse> {
+    if (IS_DEMO_MODE) {
+        void unitId;
+        void utilityType;
+        void file;
+        return demoOcrSuccess;
+    }
+
     const formData = new FormData();
 
     formData.append("file", file);
@@ -129,6 +144,15 @@ export async function approveMediaReading(
     correctedReading: number,
     readingType: ReadingType
 ): Promise<void> {
+    if (IS_DEMO_MODE) {
+        void settlementId;
+        void unitId;
+        void utilityType;
+        void correctedReading;
+        void readingType;
+        return;
+    }
+
     const params = new URLSearchParams({
         unitId,
         utilityType,
@@ -149,6 +173,8 @@ export async function approveMediaReading(
 export async function getMediaReadings(
     settlementId: string
 ): Promise<MediaReadingStatus[]> {
+    if (IS_DEMO_MODE) return demoMediaReadingsBySettlementId[settlementId] ?? [];
+
     const response = await fetch(`${BILLING_URL}/${settlementId}`, {
         method: "GET",
         headers: getAuthHeaders(),
@@ -165,6 +191,11 @@ export async function getMediaReadingAttempts(
     settlementId: string,
     utilityType: UtilityType
 ): Promise<MediaReadingUploadAttempt[]> {
+    if (IS_DEMO_MODE) {
+        void utilityType;
+        return demoMediaReadingAttemptsBySettlementId[settlementId] ?? [];
+    }
+
     const params = new URLSearchParams({
         utilityType,
     });

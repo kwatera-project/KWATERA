@@ -2,6 +2,7 @@ package io.github.kwatera_project.kwatera.property_service.dto;
 
 import io.github.kwatera_project.kwatera.property_service.model.UnitType;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 public record UnitUpdateRequest(
@@ -11,4 +12,7 @@ public record UnitUpdateRequest(
     Optional<Integer> capacity,
     Optional<UnitType> unitType,
     Optional<String> unitNumber,
-    Optional<Integer> floor) {}
+    Optional<Integer> floor,
+    Optional<List<String>> amenities,
+    Optional<Integer> bedrooms,
+    Optional<Integer> beds) {}

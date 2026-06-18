@@ -69,7 +69,7 @@ export default function PropertySearchBar({
     return (
         <form
             onSubmit={handleSubmit}
-            className={`relative z-[9999] w-full max-w-5xl bg-white rounded-3xl md:rounded-full shadow-xl border border-[#DACDCA] p-3 flex flex-col md:flex-row items-center divide-y md:divide-y-0 md:divide-x divide-gray-200 gap-y-2 md:gap-y-0 ${className}`}
+            className={`relative z-[9999] w-full max-w-5xl bg-solid-white rounded-3xl md:rounded-full shadow-xl border border-[#DACDCA] p-3 flex flex-col md:flex-row items-center divide-y md:divide-y-0 md:divide-x divide-gray-200 gap-y-2 md:gap-y-0 ${className}`}
         >
             <div ref={cityWrapperRef} className="flex-1 w-full px-6 py-3 flex flex-col items-start hover:bg-gray-50 rounded-full transition-colors relative group z-[100]">
                 <label htmlFor="property-search-city" className="text-xs font-bold text-title uppercase tracking-wider mb-1 cursor-pointer flex items-center gap-1.5">
@@ -94,7 +94,14 @@ export default function PropertySearchBar({
                     autoComplete="off"
                 />
                 {isCitySuggestionsOpen && filteredCitySuggestions.length > 0 && (
-                    <div className="absolute left-3 right-3 top-full mt-2 bg-white border border-[#DACDCA] rounded-2xl shadow-xl overflow-hidden z-[10000] py-1">
+                    <div
+                        className="absolute left-3 right-3 top-full mt-2 border border-[#DACDCA] rounded-2xl shadow-2xl overflow-hidden z-[10000] py-1 isolate"
+                        style={{
+                            backgroundColor: "#FFFFFF",
+                            opacity: 1,
+                            backgroundClip: "padding-box",
+                        }}
+                    >
                         {filteredCitySuggestions.map((suggestion) => (
                             <button
                                 key={suggestion}
@@ -104,7 +111,10 @@ export default function PropertySearchBar({
                                     setCity(suggestion);
                                     setIsCitySuggestionsOpen(false);
                                 }}
-                                className="w-full text-left px-4 py-2.5 text-sm font-semibold text-title hover:bg-gray-50 transition-colors"
+                                className="block w-full text-left px-4 py-2.5 text-sm font-semibold text-title hover:bg-[#F7F7F7] transition-colors border-b border-[#EFE7E5] last:border-b-0"
+                                style={{
+                                    backgroundColor: "#FFFFFF",
+                                }}
                             >
                                 {suggestion}
                             </button>

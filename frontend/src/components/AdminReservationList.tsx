@@ -1,10 +1,22 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from "react-router-dom";
-import { GATEWAY_BASE_URL } from '../api/apiConfig';
+import { getAdminReservations, updateAdminReservationStatus } from "../api/adminApi";
 import { getSettlementDetails } from '../api/settlementApi';
+import { getReservationDetails } from "../api/reservationApi";
 import { ChevronDown } from 'lucide-react';
-import {useTranslation} from "react-i18next"
+import { useTranslation } from "react-i18next";
+import SharedDatePicker from "./SharedDatePicker";
+import { format } from "date-fns";
 
+const parseDateString = (str: string): Date | null => {
+    if (!str) return null;
+    const parts = str.split("-");
+    if (parts.length !== 3) return null;
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    return new Date(year, month, day);
+};
 
 interface ReservationOverview {
     id: string;
@@ -18,32 +30,15 @@ interface ReservationOverview {
 export default function AdminReservationList() {
     const [reservations, setReservations] = useState<ReservationOverview[]>([]);
     const [statusFilter, setStatusFilter] = useState<string>("");
+    const [startDate, setStartDate] = useState<string>("");
+    const [endDate, setEndDate] = useState<string>("");
     const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
-    const API_BASE_URL = GATEWAY_BASE_URL;
     const [settlementIds, setSettlementIds] = useState<Record<string, string>>({});
     const [unitIds, setUnitIds] = useState<Record<string, string>>({});
-    const {t} = useTranslation();
-
+    const { t } = useTranslation();
 
     const fetchReservations = useCallback(() => {
-        const url = statusFilter
-            ? `${API_BASE_URL}/api/v1/admin/reservations?status=${statusFilter}`
-            : `${API_BASE_URL}/api/v1/admin/reservations`;
-
-        const token = localStorage.getItem("token");
-
-        fetch(url, {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json"
-            }
-        })
-            .then((res) => {
-                if (res.status === 401) console.error("Token is incorrect!");
-                if (!res.ok) throw new Error("Get data error");
-                return res.json();
-            })
+        getAdminReservations(statusFilter || undefined, startDate || undefined, endDate || undefined)
             .then((data) => {
                 setReservations(data);
                 data.forEach(async (res: ReservationOverview) => {
@@ -54,12 +49,7 @@ export default function AdminReservationList() {
                         console.error("Failed to load settlement details", err);
                     }
                     try {
-                        const t = localStorage.getItem("token");
-                        const resDetails = await fetch(
-                            `${API_BASE_URL}/api/v1/reservations/${res.id}`,
-                            { headers: { Authorization: `Bearer ${t}` } }
-                        );
-                        const resData = await resDetails.json();
+                        const resData = await getReservationDetails(res.id);
                         setUnitIds(prev => ({ ...prev, [res.id]: resData.unitId }));
                     } catch (err) {
                         console.error("Failed to load reservation details", err);
@@ -67,41 +57,24 @@ export default function AdminReservationList() {
                 });
             })
             .catch((err) => console.error(err));
-    }, [statusFilter, API_BASE_URL]);
+    }, [statusFilter, startDate, endDate]);
 
     useEffect(() => {
         fetchReservations();
     }, [fetchReservations]);
 
     const handleStatusChange = (id: string, newStatus: string) => {
-        const token = localStorage.getItem("token");
-        fetch(`${API_BASE_URL}/api/v1/admin/reservations/${id}/status`, {
-            method: "PATCH",
-            headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ newStatus })
-        })
-            .then(async (res) => {
-                if (res.ok) {
-                    setMessage({ text: t('adminReservations.statusUpdated'), type: 'success' });
-                    setReservations(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
-                } else {
-                    const errorData = await res.json().catch(() => ({ message:  t('adminReservations.errorOccurred') }));
-                    let errorMsg = errorData.message ||  t('adminReservations.errorOccurred');
-
-                    if (res.status === 400) errorMsg = t('adminReservations.statusNotAllowed');
-                    if (res.status === 401) errorMsg = t('adminReservations.sessionExpired');
-                    if (res.status === 403) errorMsg = t('adminReservations.notAllowed');
-                    if (res.status === 404) errorMsg = t('adminReservations.notFound')
-
-                    setMessage({ text: errorMsg, type: 'error' });
-                }
+        updateAdminReservationStatus(id, newStatus)
+            .then(() => {
+                setMessage({ text: t('adminReservations.statusUpdated'), type: 'success' });
+                setReservations(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
             })
             .catch((err) => {
                 console.error(err);
-                setMessage({ text: t('adminReservations.networkError'), type: 'error' });
+                setMessage({
+                    text: err instanceof Error ? err.message : t('adminReservations.networkError'),
+                    type: 'error'
+                });
             });
     };
 
@@ -121,7 +94,7 @@ export default function AdminReservationList() {
     };
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
+        <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
             <div className="border-b border-[#DACDCA] pb-6 mb-6 space-y-2">
                 <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                     <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">{t('adminReservations.title')}</h1>
@@ -146,7 +119,7 @@ export default function AdminReservationList() {
                 }`}>
                     <div className="flex items-center gap-3">
                         <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                         </svg>
                         <span className="text-sm font-semibold">{message.text}</span>
                     </div>
@@ -154,43 +127,99 @@ export default function AdminReservationList() {
                 </div>
             )}
 
-            {/* Compact, Inline Toolbar Section */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#F7F7F7] border border-gray-100 rounded-xl p-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#F7F7F7] border border-[#DACDCA] rounded-xl p-4 shadow-sm">
                 <div className="text-sm font-medium text-[#7A7A7A]">
-                    {t('adminReservations.showing')} <span className="font-bold text-[#1A1A1A]">{filteredReservations.length}</span> {t('adminReservations.reservation', {count: filteredReservations.length})}
+                    {t('adminReservations.showing')} <span className="font-bold text-[#1A1A1A]">{filteredReservations.length}</span> {t('adminReservations.reservation', { count: filteredReservations.length })}
                 </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <span className="text-sm font-medium text-gray-500 mr-2 shrink-0">{t('adminReservations.filterByStatus')}</span>
-                    <div className="relative w-full sm:w-44">
-                        <select
-                            className="appearance-none block w-full bg-white border border-gray-300 rounded-md py-2 pl-3 pr-10 text-sm text-[#1A1A1A] font-semibold focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-all shadow-sm cursor-pointer"
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                        >
-                            <option value="">{t('adminReservations.allStatuses')}</option>
-                            <option value="PENDING">{t('common.pending')}</option>
-                            <option value="CONFIRMED">{t('common.confirmed')}</option>
-                            <option value="CANCELLED">{t('common.cancelled')}</option>
-                            <option value="COMPLETED">{t('common.completed')}</option>
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                            <ChevronDown className="h-4 w-4 text-[#7A7A7A]" />
+
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full md:w-auto">
+                    <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
+                        <span className="text-sm font-medium text-gray-500 shrink-0">{t('common.status')}:</span>
+                        <div className="relative flex-1 sm:flex-initial sm:w-36">
+                            <select
+                                className="appearance-none block w-full bg-solid-white border border-[#DACDCA] rounded-lg py-2 pl-3 pr-10 text-sm text-[#1A1A1A] font-semibold focus:outline-none focus:ring-2 focus:ring-[#42211D]/20 focus:border-[#42211D] transition-all shadow-sm cursor-pointer"
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                            >
+                                <option value="">{t('adminReservations.allStatuses')}</option>
+                                <option value="PENDING">{t('common.pending')}</option>
+                                <option value="CONFIRMED">{t('common.confirmed')}</option>
+                                <option value="CANCELLED">{t('common.cancelled')}</option>
+                                <option value="COMPLETED">{t('common.completed')}</option>
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                <ChevronDown className="h-4 w-4 text-[#7A7A7A]" />
+                            </div>
                         </div>
+                        {statusFilter && (
+                            <button
+                                onClick={() => setStatusFilter("")}
+                                className="text-sm font-medium text-gray-500 hover:text-[#42211D] transition-colors shrink-0 cursor-pointer"
+                            >
+                                {t('common.clear')}
+                            </button>
+                        )}
                     </div>
-                    {statusFilter && (
-                        <button
-                            onClick={() => setStatusFilter("")}
-                            className="text-sm font-medium text-gray-500 hover:text-brand-main transition-colors shrink-0 cursor-pointer"
-                        >
-                            {t('common.clear')}
-                        </button>
-                    )}
+
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                        <div className="flex items-center justify-between w-full sm:w-auto">
+                            <span className="text-sm font-medium text-gray-500">{t('adminReservations.stayDates')}:</span>
+                            {(startDate || endDate) && (
+                                <button
+                                    onClick={() => {
+                                        setStartDate("");
+                                        setEndDate("");
+                                    }}
+                                    className="text-sm font-medium text-gray-500 hover:text-[#42211D] transition-colors shrink-0 cursor-pointer sm:hidden"
+                                >
+                                    {t('common.clear')}
+                                </button>
+                            )}
+                        </div>
+                        <div className="flex items-center justify-center gap-2 bg-solid-white border border-[#DACDCA] rounded-lg p-1.5 shadow-sm w-full sm:w-auto">
+                            <SharedDatePicker
+                                selected={parseDateString(startDate)}
+                                onChange={(date) => setStartDate(date ? format(date, "yyyy-MM-dd") : "")}
+                                selectsStart
+                                startDate={parseDateString(startDate)}
+                                endDate={parseDateString(endDate)}
+                                allowPastDates={true}
+                                placeholderText={t('search.checkIn')}
+                                className="bg-transparent text-sm font-semibold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center"
+                                wrapperClassName="w-auto"
+                            />
+                            <span className="text-gray-400 font-medium text-xs">→</span>
+                            <SharedDatePicker
+                                selected={parseDateString(endDate)}
+                                onChange={(date) => setEndDate(date ? format(date, "yyyy-MM-dd") : "")}
+                                selectsEnd
+                                startDate={parseDateString(startDate)}
+                                endDate={parseDateString(endDate)}
+                                minDate={parseDateString(startDate)}
+                                allowPastDates={true}
+                                placeholderText={t('search.checkOut')}
+                                className="bg-transparent text-sm font-semibold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center"
+                                wrapperClassName="w-auto"
+                            />
+                        </div>
+                        {(startDate || endDate) && (
+                            <button
+                                onClick={() => {
+                                    setStartDate("");
+                                    setEndDate("");
+                                }}
+                                className="text-sm font-medium text-gray-500 hover:text-[#42211D] transition-colors shrink-0 cursor-pointer hidden sm:block"
+                            >
+                                {t('common.clear')}
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            <div className="overflow-x-auto bg-white border border-[#DACDCA] rounded-xl shadow-sm">
-                <table className="min-w-full table-auto">
-                    <thead className="bg-[#F7F7F7] border-b border-[#DACDCA]">
+            <div className="bg-transparent md:bg-white md:border md:border-[#DACDCA] md:rounded-xl md:shadow-sm overflow-hidden">
+                <table className="min-w-full block md:table">
+                    <thead className="hidden md:table-header-group bg-[#F7F7F7] border-b border-[#DACDCA]">
                         <tr>
                             <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-left">{t('adminReservations.guest')}</th>
                             <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-left">{t('adminReservations.unitProperty')}</th>
@@ -199,7 +228,7 @@ export default function AdminReservationList() {
                             <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-center">{t('common.actions')}</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#DACDCA]/60 bg-white">
+                    <tbody className="block md:table-row-group divide-y-0 md:divide-y divide-[#DACDCA]/60 bg-transparent md:bg-white">
                         {filteredReservations.map((res) => {
                             const isMeterReadingsEnabled = !!settlementIds[res.id] && !!unitIds[res.id] && (res.status === "CONFIRMED" || res.status === "COMPLETED");
                             const isConfirmEnabled = res.status === "PENDING";
@@ -207,34 +236,46 @@ export default function AdminReservationList() {
                             const isCancelEnabled = res.status === "PENDING" || res.status === "CONFIRMED";
 
                             return (
-                                <tr key={res.id} className="hover:bg-[#F7F7F7] transition-colors">
-                                    <td className="px-6 py-4 text-sm font-semibold text-[#1A1A1A]">
-                                        {formatGuestName(res.guestName)}
+                                <tr key={res.id} className="block md:table-row bg-white md:bg-transparent rounded-xl border border-[#DACDCA] md:border-0 shadow-sm md:shadow-none mb-4 md:mb-0 p-5 md:p-0 space-y-3 md:space-y-0 hover:bg-transparent md:hover:bg-[#F7F7F7] transition-colors">
+                                    <td className="block md:table-cell px-0 md:px-6 py-2 md:py-4 text-sm font-semibold text-[#1A1A1A] border-b border-gray-100 md:border-0">
+                                        <div className="flex justify-between items-center md:block">
+                                            <span className="font-medium text-[#7A7A7A] md:hidden">{t('adminReservations.guest')}:</span>
+                                            <span>{formatGuestName(res.guestName)}</span>
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-[#1A1A1A]">
-                                        {res.unitName}
+                                    <td className="block md:table-cell px-0 md:px-6 py-2 md:py-4 text-sm text-[#1A1A1A] border-b border-gray-100 md:border-0">
+                                        <div className="flex justify-between items-center md:block">
+                                            <span className="font-medium text-[#7A7A7A] md:hidden">{t('adminReservations.unitProperty')}:</span>
+                                            <span className="font-bold md:font-normal">{res.unitName}</span>
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-[#1A1A1A] font-medium">
-                                        <span className="whitespace-nowrap">
-                                            {res.startDate} &rarr; {res.endDate}
-                                        </span>
+                                    <td className="block md:table-cell px-0 md:px-6 py-2 md:py-4 text-sm text-[#1A1A1A] font-medium border-b border-gray-100 md:border-0">
+                                        <div className="flex justify-between items-center md:block">
+                                            <span className="font-medium text-[#7A7A7A] md:hidden">{t('adminReservations.stayDates')}:</span>
+                                            <span className="whitespace-nowrap font-bold md:font-medium">
+                                                {res.startDate} &rarr; {res.endDate}
+                                            </span>
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm">
-                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border uppercase tracking-wider ${
-                                            res.status === 'CONFIRMED' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
-                                            res.status === 'PENDING' ? 'bg-amber-50 border-amber-200 text-amber-800' :
-                                            res.status === 'COMPLETED' ? 'bg-blue-50 border-blue-200 text-blue-800' :
-                                            res.status === 'CANCELLED' ? 'bg-red-50 border-red-200 text-red-800' :
-                                            'bg-gray-50 border-gray-200 text-gray-800'
-                                        }`}>
-                                            {t(`statuses.${res.status}`)}
-                                        </span>
+                                    <td className="block md:table-cell px-0 md:px-6 py-2 md:py-4 text-sm border-b border-gray-100 md:border-0">
+                                        <div className="flex justify-between items-center md:block">
+                                            <span className="font-medium text-[#7A7A7A] md:hidden">{t('common.status')}:</span>
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border uppercase tracking-wider ${
+                                                res.status === 'CONFIRMED' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
+                                                res.status === 'PENDING' ? 'bg-amber-50 border-amber-200 text-amber-800' :
+                                                res.status === 'COMPLETED' ? 'bg-blue-50 border-blue-200 text-blue-800' :
+                                                res.status === 'CANCELLED' ? 'bg-red-50 border-red-200 text-red-800' :
+                                                'bg-gray-50 border-gray-200 text-gray-800'
+                                            }`}>
+                                                {t(`statuses.${res.status}`)}
+                                            </span>
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-center">
-                                        <div className="flex flex-wrap justify-center items-center gap-2">
+                                    <td className="block md:table-cell px-0 md:px-6 py-3 md:py-4 text-sm text-center">
+                                        <div className="flex flex-col sm:flex-row sm:flex-wrap md:justify-center items-stretch sm:items-center gap-2">
                                             <Link
                                                 to={`/reservations/${res.id}`}
-                                                className="px-3 py-1.5 text-xs font-semibold text-white bg-[#42211D] hover:bg-[#321815] rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1 shrink-0 cursor-pointer"
+                                                className="px-4 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-bold md:font-semibold text-white bg-[#42211D] hover:bg-[#321815] rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1 shrink-0 cursor-pointer text-center"
                                             >
                                                 {t('common.viewDetails')}
                                             </Link>
@@ -242,14 +283,14 @@ export default function AdminReservationList() {
                                             {isMeterReadingsEnabled ? (
                                                 <Link
                                                     to={`/admin/settlements/${settlementIds[res.id]}/meter-readings?unitId=${unitIds[res.id]}`}
-                                                    className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1 shrink-0 cursor-pointer"
+                                                    className="px-4 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-bold md:font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1 shrink-0 cursor-pointer text-center"
                                                 >
                                                     {t('common.meterReadings')}
                                                 </Link>
                                             ) : (
                                                 <button
                                                     disabled
-                                                    className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
+                                                    className="px-4 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-bold md:font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
                                                 >
                                                     {t('common.meterReadings')}
                                                 </button>
@@ -258,7 +299,7 @@ export default function AdminReservationList() {
                                             <button
                                                 disabled={!isConfirmEnabled}
                                                 onClick={() => handleStatusChange(res.id, 'CONFIRMED')}
-                                                className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
+                                                className="px-4 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-bold md:font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
                                             >
                                                 {t('common.confirm')}
                                             </button>
@@ -266,7 +307,7 @@ export default function AdminReservationList() {
                                             <button
                                                 disabled={!isCompleteEnabled}
                                                 onClick={() => handleStatusChange(res.id, 'COMPLETED')}
-                                                className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
+                                                className="px-4 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-bold md:font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
                                             >
                                                 {t('common.complete')}
                                             </button>
@@ -274,7 +315,7 @@ export default function AdminReservationList() {
                                             <button
                                                 disabled={!isCancelEnabled}
                                                 onClick={() => handleStatusChange(res.id, 'CANCELLED')}
-                                                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-transparent transition-all inline-flex items-center justify-center gap-1 shrink-0 text-red-600 bg-red-50 hover:bg-red-100 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
+                                                className="px-4 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-bold md:font-semibold rounded-lg border border-transparent transition-all inline-flex items-center justify-center gap-1 shrink-0 text-red-600 bg-red-50 hover:bg-red-100 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
                                             >
                                                 {t('common.cancel')}
                                             </button>
@@ -284,8 +325,8 @@ export default function AdminReservationList() {
                             );
                         })}
                         {filteredReservations.length === 0 && (
-                            <tr>
-                                <td colSpan={5} className="px-6 py-8 text-center text-[#7A7A7A] font-medium bg-white">
+                            <tr className="block md:table-row bg-white rounded-xl border border-[#DACDCA] md:border-0 shadow-sm md:shadow-none p-6 md:p-0">
+                                <td colSpan={5} className="block md:table-cell px-6 py-8 text-center text-[#7A7A7A] font-medium bg-white">
                                     {t('adminReservations.noReservations')}
                                 </td>
                             </tr>
@@ -296,4 +337,3 @@ export default function AdminReservationList() {
         </div>
     );
 }
-

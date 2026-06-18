@@ -84,7 +84,7 @@ export default function MeterReadingsPage() {
     };
 
     return (
-        <div className="max-w-3xl mx-auto p-8 min-h-screen text-[#1A1A1A] space-y-6 flex flex-col">
+        <div className="max-w-3xl mx-auto p-4 md:p-8 min-h-screen text-[#1A1A1A] space-y-6 flex flex-col">
             <Link
                 to="/my-reservations"
                 className="px-4 py-2 text-xs font-bold text-brand-primary bg-[#F7F7F7] border border-[#DACDCA] hover:bg-gray-100 rounded-lg transition-colors shadow-sm inline-flex items-center gap-1.5 w-fit self-start mb-6"

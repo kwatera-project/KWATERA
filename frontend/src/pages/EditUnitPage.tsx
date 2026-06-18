@@ -25,6 +25,9 @@ export default function EditUnitPage() {
                     unitType: data.unitType,
                     unitNumber: data.unitNumber,
                     floor: data.floor,
+                    amenities: data.amenities || [],
+                    bedrooms: data.bedrooms,
+                    beds: data.beds,
                 });
             })
             .finally(() => setLoading(false));
@@ -59,7 +62,7 @@ export default function EditUnitPage() {
     }
 
     return (
-        <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
+        <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
             <div>
                 <Link
                     to={`/owner/properties/${propertyId}/units`}
@@ -78,7 +81,7 @@ export default function EditUnitPage() {
                 </p>
             </div>
 
-            <div className="max-w-4xl mx-auto bg-white border border-[#DACDCA] rounded-xl shadow-sm p-8 mt-6">
+            <div className="max-w-4xl mx-auto bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 sm:p-8 mt-6">
                 <UnitForm
                     initialValues={unit}
                     submitLabel={t('editProperty.submit')}

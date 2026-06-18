@@ -1,9 +1,9 @@
 import '../App.css'
-import { GATEWAY_BASE_URL } from '../api/apiConfig'
+import { GATEWAY_BASE_URL, IS_DEMO_MODE } from '../api/apiConfig'
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
-import {useTranslation} from "react-i18next"
-
+import { useTranslation } from "react-i18next"
+import DemoRoleSelector from "./DemoRoleSelector"
 
 export default function RegisterForm() {
     const [formData, setFormData] = useState({
@@ -17,8 +17,24 @@ export default function RegisterForm() {
 
     const navigate = useNavigate()
     const [message, setMessage] = useState('')
-    const {t} = useTranslation();
+    const { t } = useTranslation();
 
+    if (IS_DEMO_MODE) {
+        return (
+            <div className="min-h-screen w-full flex items-center justify-center bg-white p-6">
+                <div className="w-full max-w-md bg-white border border-gray-100 rounded-2xl shadow-xl p-8 sm:p-10 space-y-6">
+                    <div className="text-center space-y-2">
+                        <h1 className="text-2xl font-bold text-gray-900">Demo login</h1>
+                        <p className="text-sm text-gray-500">Choose a role without creating an account.</p>
+                    </div>
+                    <DemoRoleSelector />
+                    <Link to="/" className="block text-center text-sm text-[#42211D] font-bold hover:underline">
+                        Back to landing page
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -74,12 +90,12 @@ export default function RegisterForm() {
                                 </div>
                             </div>
 
-                            <div className="flex gap-4">
-                                <div className="w-1/2 space-y-1.5">
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <div className="w-full sm:w-1/2 space-y-1.5">
                                     <label className="block text-sm font-medium text-gray-700">{t('register.firstName')}</label>
                                     <input type="text" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42211D] outline-none" onChange={e => setFormData({...formData, firstName: e.target.value})} required />
                                 </div>
-                                <div className="w-1/2 space-y-1.5">
+                                <div className="w-full sm:w-1/2 space-y-1.5">
                                     <label className="block text-sm font-medium text-gray-700">{t('register.lastName')}</label>
                                     <input type="text" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42211D] outline-none" onChange={e => setFormData({...formData, lastName: e.target.value})} required />
                                 </div>

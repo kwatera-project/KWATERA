@@ -4,6 +4,7 @@ import static io.github.kwatera_project.kwatera.billing_service.model.Settlement
 import static io.github.kwatera_project.kwatera.billing_service.model.SettlementStatus.*;
 
 import io.github.kwatera_project.kwatera.billing_service.client.PropertyClient;
+import io.github.kwatera_project.kwatera.billing_service.client.SystemEventClient;
 import io.github.kwatera_project.kwatera.billing_service.dto.*;
 import io.github.kwatera_project.kwatera.billing_service.event.SettlementEventPublisher;
 import io.github.kwatera_project.kwatera.billing_service.model.Settlement;
@@ -38,6 +39,7 @@ public class SettlementService {
   private final SettlementEventPublisher settlementEventPublisher;
   private final PropertyClient propertyClient;
   private final EmailNotificationService emailNotificationService;
+  private final SystemEventClient systemEventClient;
 
   private static final String SETTLEMENT_NOT_FOUND = "Settlement not found";
 
@@ -65,6 +67,7 @@ public class SettlementService {
         settlementRepository
             .findById(settlementId)
             .orElseThrow(() -> new RuntimeException(SETTLEMENT_NOT_FOUND));
+    BigDecimal previousBalance = zeroIfNull(settlement.getBalanceDue());
 
     SettlementItem item =
         createSettlementItem(settlementId, type, description, quantity, unitPrice);
@@ -83,6 +86,17 @@ public class SettlementService {
     }
 
     settlementRepository.save(settlement);
+    logBalanceChangedIfNeeded(
+        settlement,
+        previousBalance,
+        "amountPaid="
+            + settlement.getAmountPaid()
+            + ", totalAmount="
+            + settlement.getTotalAmount()
+            + ", type="
+            + type
+            + ", itemAmount="
+            + item.getAmount());
   }
 
   @Transactional
@@ -107,6 +121,7 @@ public class SettlementService {
         settlementRepository
             .findById(settlementId)
             .orElseThrow(() -> new RuntimeException(SETTLEMENT_NOT_FOUND));
+    BigDecimal previousBalance = zeroIfNull(settlement.getBalanceDue());
 
     SettlementItem item =
         createSettlementItem(settlementId, type, description, quantity, unitPrice);
@@ -116,6 +131,20 @@ public class SettlementService {
     recalculateSettlementStatus(settlement, unitId, null);
 
     settlementRepository.save(settlement);
+    logMediaSettlementGenerated(settlement, item, unitId, previousBalance);
+    logBalanceChangedIfNeeded(
+        settlement,
+        previousBalance,
+        "unitId="
+            + unitId
+            + ", type="
+            + type
+            + ", quantity="
+            + quantity
+            + ", unitPrice="
+            + unitPrice
+            + ", itemAmount="
+            + item.getAmount());
 
     try {
       emailNotificationService.sendUtilityChargesAdded(settlement, item);
@@ -250,6 +279,21 @@ public class SettlementService {
 
     Settlement saved = settlementRepository.save(settlement);
     emailNotificationService.sendSettlementCreated(saved, recipientEmail);
+    systemEventClient.logSafely(
+        "BALANCE_CHANGED",
+        null,
+        "SETTLEMENT",
+        saved.getId(),
+        "settlementId="
+            + saved.getId()
+            + ", reservationId="
+            + saved.getReservationId()
+            + ", previousBalance=0, newBalance="
+            + saved.getBalanceDue()
+            + ", totalAmount="
+            + saved.getTotalAmount()
+            + ", amountPaid="
+            + saved.getAmountPaid());
     return saved;
   }
 
@@ -277,6 +321,7 @@ public class SettlementService {
         settlementRepository
             .findById(settlementId)
             .orElseThrow(() -> new RuntimeException(SETTLEMENT_NOT_FOUND));
+    BigDecimal previousBalance = zeroIfNull(settlement.getBalanceDue());
 
     settlement.setDiscountAmount(discountAmount);
 
@@ -284,6 +329,61 @@ public class SettlementService {
     recalculateSettlementStatus(settlement, unitId, null);
 
     settlementRepository.save(settlement);
+    logBalanceChangedIfNeeded(settlement, previousBalance, "discountAmount=" + discountAmount);
+  }
+
+  private void logMediaSettlementGenerated(
+      Settlement settlement, SettlementItem item, UUID unitId, BigDecimal previousBalance) {
+    UUID entityId = item.getId() != null ? item.getId() : settlement.getId();
+    String entityType = item.getId() != null ? "SETTLEMENT_ITEM" : "SETTLEMENT";
+    systemEventClient.logSafely(
+        "MEDIA_SETTLEMENT_GENERATED",
+        null,
+        entityType,
+        entityId,
+        "settlementId="
+            + settlement.getId()
+            + ", unitId="
+            + unitId
+            + ", type="
+            + item.getType()
+            + ", quantity="
+            + item.getQuantity()
+            + ", unitPrice="
+            + item.getUnitPrice()
+            + ", itemAmount="
+            + item.getAmount()
+            + ", previousBalance="
+            + previousBalance
+            + ", newBalance="
+            + settlement.getBalanceDue());
+  }
+
+  private void logBalanceChangedIfNeeded(
+      Settlement settlement, BigDecimal previousBalance, String detailsSuffix) {
+    BigDecimal newBalance = zeroIfNull(settlement.getBalanceDue());
+    if (previousBalance.compareTo(newBalance) == 0) {
+      return;
+    }
+    systemEventClient.logSafely(
+        "BALANCE_CHANGED",
+        null,
+        "SETTLEMENT",
+        settlement.getId(),
+        "settlementId="
+            + settlement.getId()
+            + ", reservationId="
+            + settlement.getReservationId()
+            + ", previousBalance="
+            + previousBalance
+            + ", newBalance="
+            + newBalance
+            + ", "
+            + detailsSuffix);
+  }
+
+  private BigDecimal zeroIfNull(BigDecimal value) {
+    return value == null ? BigDecimal.ZERO : value;
   }
 
   public SettlementResponseDto getSettlementWithItems(ReservationDto reservation) {

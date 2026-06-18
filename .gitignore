@@ -58,3 +58,5 @@ runs/
 !services/ocr-service/models/
 !services/ocr-service/models/.gitkeep
 *.jpg
+
+frontend/.env
