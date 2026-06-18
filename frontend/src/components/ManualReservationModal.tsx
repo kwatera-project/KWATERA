@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { createManualReservation } from "../api/reservationApi";
 import { format, isAfter, addDays } from "date-fns";
 import SharedDatePicker from "./SharedDatePicker";
+import {useTranslation} from "react-i18next"
 
 const parseDateString = (str: string): Date | null => {
     if (!str) return null;
@@ -104,47 +105,48 @@ export default function ManualReservationModal({
     const [errors, setErrors] = useState<FormErrors>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
+    const {t} = useTranslation();
 
     if (!isOpen) return null;
 
     const validate = (): boolean => {
         const tempErrors: FormErrors = {};
-        if (!form.unitId) tempErrors.unitId = "Please select a unit";
+        if (!form.unitId) tempErrors.unitId = t('blockDates.selectUnit');
         
         if (!form.firstName.trim()) {
-            tempErrors.firstName = "First name is required";
+            tempErrors.firstName = t('manualReservation.firstNameRequired');
         } else if (form.firstName.trim().length < 2) {
-            tempErrors.firstName = "Must be at least 2 characters";
+            tempErrors.firstName = t('manualReservation.minTwoChars');
         }
 
         if (!form.lastName.trim()) {
-            tempErrors.lastName = "Last name is required";
+            tempErrors.lastName = t('manualReservation.lastNameRequired');
         } else if (form.lastName.trim().length < 2) {
-            tempErrors.lastName = "Must be at least 2 characters";
+            tempErrors.lastName = t('manualReservation.minTwoChars');
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!form.email.trim()) {
-            tempErrors.email = "Email is required";
+            tempErrors.email = t('manualReservation.emailRequired');
         } else if (!emailRegex.test(form.email)) {
-            tempErrors.email = "Enter a valid email address";
+            tempErrors.email = t('manualReservation.emailInvalid');
         }
 
         const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
         if (!form.phone.trim()) {
-            tempErrors.phone = "Phone number is required";
+            tempErrors.phone = t('manualReservation.phoneRequired');
         } else if (!phoneRegex.test(form.phone)) {
-            tempErrors.phone = "Enter a valid phone number";
+            tempErrors.phone = t('manualReservation.phoneInvalid');
         }
 
         if (!form.checkIn) {
-            tempErrors.checkIn = "Check-in date is required";
+            tempErrors.checkIn =t('manualReservation.checkInRequired');
         }
 
         if (!form.checkOut) {
-            tempErrors.checkOut = "Check-out date is required";
+            tempErrors.checkOut =  t('manualReservation.checkOutRequired');
         } else if (form.checkIn && !isAfter(new Date(form.checkOut), new Date(form.checkIn))) {
-            tempErrors.checkOut = "Check-out must be after check-in";
+            tempErrors.checkOut = t('manualReservation.checkOutAfterCheckIn');
         } else if (form.unitId && form.checkIn && form.checkOut) {
             const hasOverlap = occupancies.some(occ => {
                 if (occ.unitId !== form.unitId) return false;
@@ -152,8 +154,8 @@ export default function ManualReservationModal({
                 return checkOverlap(form.checkIn, form.checkOut, occ.startDate, occ.endDate);
             });
             if (hasOverlap) {
-                tempErrors.checkIn = "Selected dates overlap with an existing booking or block";
-                tempErrors.checkOut = "Selected dates overlap with an existing booking or block";
+                tempErrors.checkIn = t('blockDates.overlap');
+                tempErrors.checkOut = t('blockDates.overlap');
             }
         }
 
@@ -192,7 +194,7 @@ export default function ManualReservationModal({
             onSuccess();
             onClose();
         } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : "Failed to create manual reservation.";
+            const msg = err instanceof Error ? err.message : t('manualReservation.failed');
             setSubmitError(msg);
         } finally {
             setIsSubmitting(false);
@@ -206,8 +208,8 @@ export default function ManualReservationModal({
             <div className="relative bg-[#FFFFFF] rounded-2xl shadow-2xl border border-brand-accent w-full max-w-lg overflow-hidden flex flex-col z-[9999] animate-in fade-in zoom-in-95 duration-200">
                 <div className="px-6 py-5 border-b border-brand-accent flex items-center justify-between">
                     <div>
-                        <h2 className="text-xl font-black text-brand-main tracking-tight">Add Manual Reservation</h2>
-                        <p className="text-xs text-brand-muted mt-0.5">Book a room directly bypassing Stripe payment flow.</p>
+                        <h2 className="text-xl font-black text-brand-main tracking-tight">{t('manualReservation.title')}</h2>
+                        <p className="text-xs text-brand-muted mt-0.5">{t('manualReservation.subtitle')}</p>
                     </div>
                     <button onClick={onClose} className="p-2 text-brand-muted hover:text-brand-main hover:bg-brand-bg rounded-full transition-colors">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -227,7 +229,7 @@ export default function ManualReservationModal({
                     )}
 
                     <div className="space-y-1">
-                        <label htmlFor="unitId" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Property Unit</label>
+                        <label htmlFor="unitId" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('blockDates.propertyUnit')}</label>
                         <select
                             id="unitId"
                             name="unitId"
@@ -237,7 +239,7 @@ export default function ManualReservationModal({
                                 errors.unitId ? "border-red-500" : "border-brand-accent"
                             }`}
                         >
-                            <option value="">Select Unit...</option>
+                            <option value="">{t('blockDates.selectUnitOption')}</option>
                             {units.map(unit => (
                                 <option key={unit.id} value={unit.id}>{unit.name}</option>
                             ))}
@@ -247,7 +249,7 @@ export default function ManualReservationModal({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1">
-                            <label htmlFor="checkIn" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Check-In</label>
+                            <label htmlFor="checkIn" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('manualReservation.checkIn')}</label>
                             <SharedDatePicker
                                 selected={parseDateString(form.checkIn)}
                                 onChange={(date) => {
@@ -260,7 +262,7 @@ export default function ManualReservationModal({
                                 selectsStart
                                 startDate={parseDateString(form.checkIn)}
                                 endDate={parseDateString(form.checkOut)}
-                                placeholderText="Select check-in"
+                                placeholderText={t('manualReservation.selectCheckIn')}
                                 className={`w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm font-semibold cursor-pointer text-left ${
                                     errors.checkIn ? "border-red-500" : "border-brand-accent"
                                 }`}
@@ -270,7 +272,7 @@ export default function ManualReservationModal({
                         </div>
 
                         <div className="space-y-1">
-                            <label htmlFor="checkOut" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Check-Out</label>
+                            <label htmlFor="checkOut" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('manualReservation.checkOut')}</label>
                             <SharedDatePicker
                                 selected={parseDateString(form.checkOut)}
                                 onChange={(date) => {
@@ -284,7 +286,7 @@ export default function ManualReservationModal({
                                 startDate={parseDateString(form.checkIn)}
                                 endDate={parseDateString(form.checkOut)}
                                 minDate={parseDateString(form.checkIn)}
-                                placeholderText="Select check-out"
+                                placeholderText={t('manualReservation.selectCheckOut')}
                                 className={`w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm font-semibold cursor-pointer text-left ${
                                     errors.checkOut ? "border-red-500" : "border-brand-accent"
                                 }`}
@@ -295,11 +297,11 @@ export default function ManualReservationModal({
                     </div>
 
                     <div className="border-t border-brand-accent/50 pt-4 space-y-4">
-                        <h3 className="text-sm font-black text-brand-main uppercase tracking-wider">Guest Information</h3>
+                        <h3 className="text-sm font-black text-brand-main uppercase tracking-wider">{t('manualReservation.guestInfo')}</h3>
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1">
-                                <label htmlFor="firstName" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">First Name</label>
+                                <label htmlFor="firstName" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('register.firstName')}</label>
                                 <input
                                     type="text"
                                     id="firstName"
@@ -314,7 +316,7 @@ export default function ManualReservationModal({
                             </div>
 
                             <div className="space-y-1">
-                                <label htmlFor="lastName" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Last Name</label>
+                                <label htmlFor="lastName" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('register.lastName')}</label>
                                 <input
                                     type="text"
                                     id="lastName"
@@ -331,7 +333,7 @@ export default function ManualReservationModal({
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1">
-                                <label htmlFor="email" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Email Address</label>
+                                <label htmlFor="email" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('login.email')}</label>
                                 <input
                                     type="email"
                                     id="email"
@@ -346,7 +348,7 @@ export default function ManualReservationModal({
                             </div>
 
                             <div className="space-y-1">
-                                <label htmlFor="phone" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Phone Number</label>
+                                <label htmlFor="phone" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('manualReservation.phone')}</label>
                                 <input
                                     type="tel"
                                     id="phone"
@@ -364,14 +366,14 @@ export default function ManualReservationModal({
                     </div>
 
                     <div className="space-y-1 border-t border-brand-accent/50 pt-4">
-                        <label htmlFor="note" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Internal Note (Optional)</label>
+                        <label htmlFor="note" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('manualReservation.note')}</label>
                         <textarea
                             id="note"
                             name="note"
                             value={form.note}
                             onChange={handleChange}
                             rows={3}
-                            placeholder="Add any internal details, guest preferences, or special requests..."
+                            placeholder={t('manualReservation.notePlaceholder')}
                             className="w-full px-4 py-2 border border-brand-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm resize-none"
                         />
                     </div>
@@ -382,7 +384,7 @@ export default function ManualReservationModal({
                             onClick={onClose}
                             className="px-4 py-2.5 border border-brand-accent rounded-lg text-brand-main font-bold hover:bg-gray-50 text-sm transition"
                         >
-                            Cancel
+                            {t('common.cancel')}
                         </button>
                         <button
                             type="submit"
@@ -397,10 +399,10 @@ export default function ManualReservationModal({
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                     </svg>
-                                    Creating Booking...
+                                    {t('manualReservation.creating')}
                                 </>
                             ) : (
-                                "Confirm Reservation"
+                                t('manualReservation.confirm')
                             )}
                         </button>
                     </div>

@@ -6,6 +6,7 @@ import {
     PROPERTY_TYPES,
     type FilterState,
 } from "../types/filters";
+import { useTranslation } from "react-i18next";
 
 interface FilterSidebarProps {
     filters: FilterState;
@@ -121,6 +122,7 @@ function SidebarContent({
                             onHideDesktop,
                         }: FilterSidebarProps & { isMobile: boolean; onHideDesktop?: () => void }) {
     const compact = !isMobile;
+    const { t } = useTranslation();
 
     const activeCount =
         filters.selectedAmenities.length +
@@ -142,7 +144,7 @@ function SidebarContent({
             <div className={`${compact ? "pb-3" : "pb-4"} flex items-center justify-between border-b border-gray-100 flex-shrink-0`}>
                 <div className="flex items-center gap-2.5">
                     <SlidersHorizontal className="w-4 h-4 text-[#42211D]" strokeWidth={2.5} />
-                    <span className="text-sm font-bold text-[#1A1A1A]">Filters</span>
+                    <span className="text-sm font-bold text-[#1A1A1A]">{t('filters.title')}</span>
                     {activeCount > 0 && (
                         <span className="bg-[#42211D] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center leading-none">
                             {activeCount}
@@ -155,14 +157,14 @@ function SidebarContent({
                             onClick={() => onFiltersChange(EMPTY_FILTERS)}
                             className="text-xs font-semibold text-[#42211D] hover:underline cursor-pointer"
                         >
-                            Clear all
+                            {t('filters.clearAll')}
                         </button>
                     )}
                     {isMobile ? (
                         <button
                             onClick={onClose}
                             className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                            aria-label="Close filters"
+                            aria-label={t('filters.close')}
                         >
                             <X className="w-4 h-4 text-[#7A7A7A]" />
                         </button>
@@ -170,7 +172,7 @@ function SidebarContent({
                         <button
                             onClick={onHideDesktop}
                             className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                            aria-label="Hide filters"
+                            aria-label={t('filters.hide')}
                         >
                             <X className="w-4 h-4 text-[#7A7A7A]" />
                         </button>
@@ -179,12 +181,12 @@ function SidebarContent({
             </div>
 
             <div className={isMobile ? "flex-1 overflow-y-auto" : "flex-1 overflow-visible"}>
-                <Section title="Property Type" compact={compact}>
+                <Section title={t('filters.propertyType')} compact={compact}>
                     <div className={compact ? "space-y-1.5" : "space-y-2"}>
                         {PROPERTY_TYPES.map((type) => (
                             <CheckRow
                                 key={type}
-                                label={type}
+                                label={t(`propertyTypes.${type}`, { defaultValue: type })}
                                 checked={filters.propertyTypes.includes(type)}
                                 onChange={() => toggle("propertyTypes", type)}
                                 compact={compact}
@@ -193,24 +195,24 @@ function SidebarContent({
                     </div>
                 </Section>
 
-                <Section title="Capacity" compact={compact}>
+                <Section title={t('filters.capacity')} compact={compact}>
                     <div className="space-y-1 divide-y divide-gray-50">
                         <Stepper
-                            label="Guests"
+                            label={t('filters.guests')}
                             value={filters.guests}
                             min={1}
                             onChange={(v) => onFiltersChange({ ...filters, guests: v })}
                             compact={compact}
                         />
                         <Stepper
-                            label="Bedrooms"
+                            label={t('filters.bedrooms')}
                             value={filters.bedrooms}
                             min={0}
                             onChange={(v) => onFiltersChange({ ...filters, bedrooms: v })}
                             compact={compact}
                         />
                         <Stepper
-                            label="Beds"
+                            label={t('filters.beds')}
                             value={filters.beds}
                             min={0}
                             onChange={(v) => onFiltersChange({ ...filters, beds: v })}
@@ -219,10 +221,10 @@ function SidebarContent({
                     </div>
                 </Section>
 
-                <Section title="Price per Night" compact={compact}>
+                <Section title={t('filters.pricePerNight')} compact={compact}>
                     <div className="flex items-end gap-2.5">
                         <div className="flex-1">
-                            <p className="text-[10px] font-semibold text-[#7A7A7A] uppercase tracking-wider mb-1.5">Min</p>
+                            <p className="text-[10px] font-semibold text-[#7A7A7A] uppercase tracking-wider mb-1.5">{t('filters.min')}</p>
                             <div className="relative">
                                 <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#7A7A7A] pointer-events-none">
                                     {currency}
@@ -239,7 +241,7 @@ function SidebarContent({
                         </div>
                         <span className="text-[#7A7A7A] text-sm pb-2.5 flex-shrink-0">—</span>
                         <div className="flex-1">
-                            <p className="text-[10px] font-semibold text-[#7A7A7A] uppercase tracking-wider mb-1.5">Max</p>
+                            <p className="text-[10px] font-semibold text-[#7A7A7A] uppercase tracking-wider mb-1.5">{t('filters.max')}</p>
                             <div className="relative">
                                 <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#7A7A7A] pointer-events-none">
                                     {currency}
@@ -247,7 +249,7 @@ function SidebarContent({
                                 <input
                                     type="number"
                                     min="0"
-                                    placeholder="Any"
+                                    placeholder={t('filters.any')}
                                     value={filters.maxPrice}
                                     onChange={(e) => onFiltersChange({ ...filters, maxPrice: e.target.value })}
                                     className={`${compact ? "py-2" : "py-2.5"} w-full pl-9 pr-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#42211D]/20 focus:border-[#42211D]/60 transition-all bg-solid-white text-[#1A1A1A] appearance-none`}
@@ -257,12 +259,12 @@ function SidebarContent({
                     </div>
                 </Section>
 
-                <Section title="Amenities" compact={compact}>
+                <Section title={t('filters.amenities')} compact={compact}>
                     <div className={compact ? "space-y-1.5" : "space-y-2"}>
                         {COMMON_AMENITIES.map((amenity) => (
                             <CheckRow
                                 key={amenity}
-                                label={amenity}
+                                label={t(`amenities.${amenity}`, { defaultValue: amenity })}
                                 checked={filters.selectedAmenities.includes(amenity)}
                                 onChange={() => toggle("selectedAmenities", amenity)}
                                 compact={compact}
@@ -278,6 +280,7 @@ function SidebarContent({
 export default function FilterSidebar(props: FilterSidebarProps) {
     const { isOpen, onClose } = props;
     const [isDesktopVisible, setIsDesktopVisible] = useState(true);
+    const { t } = useTranslation();
 
     return (
         <>
@@ -299,7 +302,7 @@ export default function FilterSidebar(props: FilterSidebarProps) {
                         className="inline-flex items-center gap-2 bg-solid-white border border-gray-100 rounded-xl shadow-sm px-4 py-3 text-sm font-bold text-[#42211D] hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
                     >
                         <SlidersHorizontal className="w-4 h-4" strokeWidth={2.5} />
-                        Show filters
+                        {t('filters.show')}
                     </button>
                 )}
             </div>

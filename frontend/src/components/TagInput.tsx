@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface TagInputProps {
     tags: string[];
@@ -8,8 +9,9 @@ interface TagInputProps {
     placeholder?: string;
 }
 
-export default function TagInput({ tags, onChange, label, placeholder = "Add a tag (e.g. WiFi, Parking)..." }: TagInputProps) {
+export default function TagInput({ tags, onChange, label, placeholder }: TagInputProps) {
     const [input, setInput] = useState("");
+    const { t } = useTranslation();
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter" || e.key === ",") {
@@ -54,11 +56,11 @@ export default function TagInput({ tags, onChange, label, placeholder = "Add a t
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={tags.length === 0 ? placeholder : ""}
+                    placeholder={tags.length === 0 ? (placeholder ?? t('tagInput.placeholder')) : ""}
                     className="flex-1 bg-transparent border-none outline-none p-1 text-sm font-semibold text-[#1A1A1A] placeholder-[#7A7A7A]/70 min-w-[120px]"
                 />
             </div>
-            <p className="text-xxs text-[#7A7A7A] font-semibold italic mt-1">Press Enter or Comma to add a tag.</p>
+            <p className="text-xxs text-[#7A7A7A] font-semibold italic mt-1">{t('tagInput.hint')}</p>
         </div>
     );
 }

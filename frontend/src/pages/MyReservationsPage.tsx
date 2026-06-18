@@ -4,6 +4,7 @@ import { getMyReservations, getReservationDetails } from '../api/reservationApi'
 import { getSettlementDetails, downloadInvoice } from '../api/settlementApi';
 import type {GuestReservation} from '../types/reservation';
 import { Home, Calendar, CreditCard, Info, Receipt, Droplet, FileText } from 'lucide-react';
+import {useTranslation} from "react-i18next"
 
 export default function MyReservationsPage() {
     const [reservations, setReservations] = useState<GuestReservation[]>([]);
@@ -19,6 +20,7 @@ export default function MyReservationsPage() {
             alert(err.message || "Failed to download invoice");
         }
     };
+    const {t} = useTranslation();
 
     useEffect(() => {
         getMyReservations()
@@ -46,21 +48,21 @@ export default function MyReservationsPage() {
             });
     }, []);
 
-    if (loading) return <div className="p-8 text-center text-gray-500 font-medium">Loading your reservations...</div>;
-    if (error) return <div className="p-8 text-center text-red-600 font-semibold">Error: {error}</div>;
+    if (loading) return <div className="p-8 text-center text-gray-500 font-medium">{t('myReservations.loading')}</div>;
+    if (error) return <div className="p-8 text-center text-red-600 font-semibold">{t('myReservations.error', {error})}</div>;
 
     return (
         <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
             <div>
-                <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">My Reservations</h1>
-                <p className="text-sm text-[#7A7A7A] mt-1">Manage your booked stays, view settlement billing, and upload meter readings.</p>
+                <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">{t('myReservations.title')}</h1>
+                <p className="text-sm text-[#7A7A7A] mt-1">{t('myReservations.subtitle')}</p>
             </div>
 
             {reservations.length === 0 ? (
                 <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-5 sm:p-8 text-center space-y-4">
-                    <p className="text-[#7A7A7A] font-medium">You don't have any reservations yet.</p>
+                    <p className="text-[#7A7A7A] font-medium">{t('myReservations.noReservations')}</p>
                     <Link to="/properties" className="inline-block px-6 py-2.5 bg-[#42211D] text-white font-bold hover:bg-[#2a1412] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm">
-                        Browse Catalog
+                        {t('myReservations.browseCatalog')}
                     </Link>
                 </div>
             ) : (
@@ -83,7 +85,7 @@ export default function MyReservationsPage() {
                                                     {unitNames[res.id] || `Unit: ...${res.unitId.slice(-8)}`}
                                                 </h2>
                                                 <div className="text-sm text-gray-500 mt-1" title={res.id}>
-                                                    Reservation ID: <span className="text-gray-900 font-semibold font-mono">#RES-{res.id.slice(-8)}</span>
+                                                    {t('myReservations.reservationId')} <span className="text-gray-900 font-semibold font-mono">#RES-{res.id.slice(-8)}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -91,7 +93,7 @@ export default function MyReservationsPage() {
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:px-4">
                                         <div className="space-y-1">
-                                            <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Stay Dates</span>
+                                            <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">{t('adminReservations.stayDates')}</span>
                                             <div className="flex items-center gap-2 text-sm text-[#1A1A1A]">
                                                 <Calendar size={16} className="text-[#42211D] shrink-0" />
                                                 <span className="font-semibold text-gray-800 whitespace-nowrap">{res.startDate} &rarr; {res.endDate}</span>
@@ -100,7 +102,7 @@ export default function MyReservationsPage() {
 
                                         {res.convertedTotalPrice && res.currencyInfo && (
                                             <div className="space-y-1">
-                                                <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Total Price</span>
+                                                <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">{t('checkout.totalPrice')}</span>
                                                 <div className="flex items-center gap-2 text-sm text-[#42211D]">
                                                     <CreditCard size={16} className="shrink-0" />
                                                     <span className="text-lg font-black tracking-tight whitespace-nowrap">
@@ -118,7 +120,7 @@ export default function MyReservationsPage() {
                                             res.status === 'COMPLETED' ? 'bg-blue-50 border-blue-200 text-blue-800' :
                                             'bg-gray-50 border-gray-200 text-gray-800'
                                         }`}>
-                                            {res.status}
+                                            {t(`statuses.${res.status}`)}
                                         </span>
 
                                         <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-start sm:justify-end">
@@ -127,7 +129,7 @@ export default function MyReservationsPage() {
                                                 className="px-4 py-2 text-xs font-bold text-white bg-[#42211D] hover:bg-[#321815] rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1.5 shrink-0"
                                             >
                                                 <Info size={14} />
-                                                View Details
+                                                {t('common.viewDetails')}
                                             </Link>
 
                                             {isBillEnabled ? (
@@ -136,7 +138,7 @@ export default function MyReservationsPage() {
                                                     className="px-4 py-2 text-xs font-bold bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1.5 shrink-0"
                                                 >
                                                     <Receipt size={14} />
-                                                    View Bill
+                                                    {t('myReservations.viewBill')}
                                                 </Link>
                                             ) : (
                                                 <button
@@ -144,7 +146,7 @@ export default function MyReservationsPage() {
                                                     className="px-4 py-2 text-xs font-bold rounded-lg border transition-all shadow-sm inline-flex items-center justify-center gap-1.5 shrink-0 text-[#42211D] bg-white border-[#DACDCA] disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
                                                 >
                                                     <Receipt size={14} />
-                                                    View Bill
+                                                    {t('myReservations.viewBill')}
                                                 </button>
                                             )}
 
@@ -154,7 +156,7 @@ export default function MyReservationsPage() {
                                                     className="px-4 py-2 text-xs font-bold bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1.5 shrink-0"
                                                 >
                                                     <Droplet size={14} />
-                                                    Water Meter
+                                                    {t('myReservations.waterMeter')}
                                                 </Link>
                                             ) : (
                                                 <button
@@ -162,7 +164,7 @@ export default function MyReservationsPage() {
                                                     className="px-4 py-2 text-xs font-bold rounded-lg border transition-all shadow-sm inline-flex items-center justify-center gap-1.5 shrink-0 text-[#42211D] bg-white border-[#DACDCA] disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
                                                 >
                                                     <Droplet size={14} />
-                                                    Water Meter
+                                                    {t('myReservations.waterMeter')}
                                                 </button>
                                             )}
 

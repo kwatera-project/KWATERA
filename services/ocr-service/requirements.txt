@@ -1,9 +1,14 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+torch==2.7.0+cpu
+torchvision==0.22.0+cpu
+
 fastapi>=0.110.0
 uvicorn[standard]>=0.24.0
 python-multipart
 python-dotenv
 ultralytics
-opencv-python
+opencv-python-headless
 numpy
 pillow
 pillow-heif

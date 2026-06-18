@@ -7,7 +7,9 @@ import { getUnitSettlementItems } from "../api/propertyApi";
 import WaterRateTooltip from "../components/WaterRateTooltip";
 import type { Property, Unit, UnitSettlementItem } from "../types/property";
 import { format, parseISO } from "date-fns";
+import { useTranslation } from "react-i18next";
 import { IS_DEMO_MODE } from "../api/apiConfig";
+import { getDateFnsLocale } from "../utils/locale";
 import {
     calculateStayNights,
     calculateWaterUsageRange,
@@ -85,6 +87,7 @@ export default function CheckoutPage() {
     const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
     const [settlementItems, setSettlementItems] = useState<UnitSettlementItem[]>([]);
     const [waterTariffLoaded, setWaterTariffLoaded] = useState(false);
+    const {t, i18n} = useTranslation();
 
     useEffect(() => {
         getUserProfile()
@@ -131,13 +134,13 @@ export default function CheckoutPage() {
                         </svg>
                     </div>
                 </div>
-                <h2 className="text-2xl font-bold text-brand-main tracking-tight">No Booking Selected</h2>
-                <p className="text-sm text-brand-muted leading-relaxed">It seems you navigated here directly. Please select dates for a property unit to start your checkout.</p>
+                <h2 className="text-2xl font-bold text-brand-main tracking-tight">{t('checkout.noBooking')}</h2>
+                <p className="text-sm text-brand-muted leading-relaxed">{t('checkout.noBookingDesc')}</p>
                 <button
                     onClick={() => navigate("/properties")}
                     className="w-full py-3 bg-brand-primary text-white font-bold rounded-lg hover:bg-brand-primary-hover transition-colors shadow-sm focus:outline-none"
                 >
-                    Browse Properties
+                    {t('checkout.browseProperties')}
                 </button>
             </div>
         );
@@ -148,29 +151,29 @@ export default function CheckoutPage() {
     const validate = (): boolean => {
         const tempErrors: FormErrors = {};
         if (!form.firstName.trim()) {
-            tempErrors.firstName = "First name is required";
+            tempErrors.firstName = t('manualReservation.firstNameRequired');
         } else if (form.firstName.trim().length < 2) {
-            tempErrors.firstName = "First name must be at least 2 characters";
+            tempErrors.firstName = t('manualReservation.minTwoChars');
         }
 
         if (!form.lastName.trim()) {
-            tempErrors.lastName = "Last name is required";
+            tempErrors.lastName = t('manualReservation.lastNameRequired');
         } else if (form.lastName.trim().length < 2) {
-            tempErrors.lastName = "Last name must be at least 2 characters";
+            tempErrors.lastName = t('manualReservation.minTwoChars');
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!form.email.trim()) {
-            tempErrors.email = "Email is required";
+            tempErrors.email = t('manualReservation.emailRequired');
         } else if (!emailRegex.test(form.email)) {
-            tempErrors.email = "Enter a valid email address";
+            tempErrors.email = t('manualReservation.emailInvalid');
         }
 
         const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
         if (!form.phone.trim()) {
-            tempErrors.phone = "Phone number is required";
+            tempErrors.phone = t('manualReservation.phoneRequired');
         } else if (!phoneRegex.test(form.phone)) {
-            tempErrors.phone = "Enter a valid phone number (at least 7 digits)";
+            tempErrors.phone = t('manualReservation.phoneInvalid');
         }
 
         const adultsVal = form.adults === "" ? 0 : Number(form.adults);
@@ -178,22 +181,22 @@ export default function CheckoutPage() {
         const totalGuests = adultsVal + childrenVal;
 
         if (form.adults === "" || adultsVal < 1) {
-            tempErrors.capacity = "At least 1 adult is required";
+            tempErrors.capacity = t('checkout.adultRequired');
         } else if (totalGuests > unit.capacity) {
-            tempErrors.capacity = `Total guests (${totalGuests}) exceeds unit maximum capacity (${unit.capacity})`;
+            tempErrors.capacity = t('checkout.capacityExceeded', {totalGuests, capacity: unit.capacity});
         }
 
         if (form.needInvoice) {
             if (!form.companyName.trim()) {
-                tempErrors.companyName = "Company name is required";
+                tempErrors.companyName = t('checkout.companyNameRequired');
             }
             if (!form.taxId.trim()) {
-                tempErrors.taxId = "Tax ID (NIP / VAT) is required";
+                tempErrors.taxId = t('checkout.taxIdRequired');
             } else if (form.taxId.trim().length < 5) {
-                tempErrors.taxId = "Tax ID must be at least 5 characters";
+                tempErrors.taxId = t('checkout.taxIdTooShort');
             }
             if (!form.companyAddress.trim()) {
-                tempErrors.companyAddress = "Company address is required";
+                tempErrors.companyAddress = t('checkout.companyAddressRequired');
             }
         }
 
@@ -273,14 +276,14 @@ export default function CheckoutPage() {
 
             if (IS_DEMO_MODE) {
                 void checkoutUrl;
-                setSubmitSuccess("Demo booking confirmed. Payment status: simulated success.");
+                setSubmitSuccess(t('checkout.demoSuccess'));
                 setIsSubmitting(false);
                 return;
             }
 
             window.location.assign(checkoutUrl);
         } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : "An unexpected error occurred. Please try again.";
+            const msg = err instanceof Error ? err.message : t('checkout.unexpectedError');
             setSubmitError(msg);
             setIsSubmitting(false);
         }
@@ -288,7 +291,7 @@ export default function CheckoutPage() {
 
     const formatDate = (dateStr: string) => {
         try {
-            return format(parseISO(dateStr), "EEEE, MMM dd, yyyy");
+            return format(parseISO(dateStr), "PPPP", { locale: getDateFnsLocale(i18n.language) });
         } catch {
             return dateStr;
         }
@@ -305,12 +308,12 @@ export default function CheckoutPage() {
             rate: formatWaterRate(waterTariff.pricePerUnit, waterCurrencyInfo),
             usage: formatUsageRange(waterUsageRange),
             cost: formatMoneyRange(waterUsageRange, waterTariff.pricePerUnit, waterCurrencyInfo),
-            tooltip: getRatePerLiterTooltip(waterTariff.pricePerUnit, waterCurrencyInfo),
+            tooltip: getRatePerLiterTooltip(waterTariff.pricePerUnit, waterCurrencyInfo, t),
         }
         : null;
     const waterBillingAcknowledgementCopy = waterTariffLoaded && !waterTariff
-        ? "I understand water may be billed separately after check-out."
-        : "I accept separate water billing after check-out.";
+        ? t('checkout.waterBillingMayApply')
+        : t('checkout.acceptWaterBilling');
 
     const displayNightPrice = unit.convertedPricePerNight && unit.currencyInfo && unit.currencyInfo.displayCurrency !== "PLN"
         ? `${unit.convertedPricePerNight.toFixed(2)} ${unit.currencyInfo.displayCurrency}`
@@ -345,13 +348,13 @@ export default function CheckoutPage() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                     </svg>
-                    Back to Property Details
+                    {t('checkout.backToProperty')}
                 </button>
             </div>
 
             <div className="border-b border-brand-accent pb-6">
-                <h1 className="text-3xl font-bold tracking-tight text-brand-main">Confirm and Pay</h1>
-                <p className="text-sm text-brand-muted mt-1">Please review your booking details and provide your contact information to finalize your reservation.</p>
+                <h1 className="text-3xl font-bold tracking-tight text-brand-main">{t('checkout.title')}</h1>
+                <p className="text-sm text-brand-muted mt-1">{t('checkout.subtitle')}</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
@@ -363,12 +366,12 @@ export default function CheckoutPage() {
                                 <svg className="w-5 h-5 text-brand-primary" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
-                                <h2 className="text-xl font-bold text-brand-main">Guest Information</h2>
+                                <h2 className="text-xl font-bold text-brand-main">{t('manualReservation.guestInfo')}</h2>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                    <label htmlFor="firstName" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">First Name</label>
+                                    <label htmlFor="firstName" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('register.firstName')}</label>
                                     <input
                                         type="text"
                                         id="firstName"
@@ -383,7 +386,7 @@ export default function CheckoutPage() {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label htmlFor="lastName" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Last Name</label>
+                                    <label htmlFor="lastName" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('register.lastName')}</label>
                                     <input
                                         type="text"
                                         id="lastName"
@@ -400,7 +403,7 @@ export default function CheckoutPage() {
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                    <label htmlFor="email" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Email Address</label>
+                                    <label htmlFor="email" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('login.email')}</label>
                                     <input
                                         type="email"
                                         id="email"
@@ -415,7 +418,7 @@ export default function CheckoutPage() {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label htmlFor="phone" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Phone Number</label>
+                                    <label htmlFor="phone" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('manualReservation.phone')}</label>
                                     <input
                                         type="tel"
                                         id="phone"
@@ -436,12 +439,12 @@ export default function CheckoutPage() {
                                 <svg className="w-5 h-5 text-brand-primary" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                 </svg>
-                                <h2 className="text-xl font-bold text-brand-main">Stay & Guest Details</h2>
+                                <h2 className="text-xl font-bold text-brand-main">{t('checkout.stayGuestDetails')}</h2>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div className="space-y-1">
-                                    <label htmlFor="adults" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Adults</label>
+                                    <label htmlFor="adults" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('checkout.adults')}</label>
                                     <input
                                         type="number"
                                         id="adults"
@@ -454,7 +457,7 @@ export default function CheckoutPage() {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label htmlFor="children" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Children</label>
+                                    <label htmlFor="children" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('checkout.children')}</label>
                                     <input
                                         type="number"
                                         id="children"
@@ -467,7 +470,7 @@ export default function CheckoutPage() {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label htmlFor="estimatedArrivalTime" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Arrival Time</label>
+                                    <label htmlFor="estimatedArrivalTime" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('checkout.arrivalTime')}</label>
                                     <select
                                         id="estimatedArrivalTime"
                                         name="estimatedArrivalTime"
@@ -476,7 +479,13 @@ export default function CheckoutPage() {
                                         className="w-full px-4 py-2.5 border border-brand-accent rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all font-medium"
                                     >
                                         {arrivalTimeOptions.map(opt => (
-                                            <option key={opt} value={opt}>{opt}</option>
+                                            <option key={opt} value={opt}>
+                                                {opt === "After 20:00"
+                                                    ? t("checkout.after20")
+                                                    : opt === "Not sure yet"
+                                                        ? t("checkout.notSureYet")
+                                                        : opt}
+                                            </option>
                                         ))}
                                     </select>
                                 </div>
@@ -487,13 +496,13 @@ export default function CheckoutPage() {
                             )}
 
                             <div className="space-y-1">
-                                <label htmlFor="message" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Message for the Host (Optional)</label>
+                                <label htmlFor="message" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('checkout.messageHost')}</label>
                                 <textarea
                                     id="message"
                                     name="message"
                                     value={form.message}
                                     onChange={handleChange}
-                                    placeholder="Let the host know if you have any special check-in requests, questions, or detail specifications..."
+                                    placeholder={t('checkout.messagePlaceholder')}
                                     rows={3}
                                     className="w-full px-4 py-2.5 border border-brand-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all resize-y text-sm"
                                 />
@@ -505,7 +514,7 @@ export default function CheckoutPage() {
                                 <svg className="w-5 h-5 text-brand-primary" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
-                                <h2 className="text-xl font-bold text-brand-main">Billing details</h2>
+                                <h2 className="text-xl font-bold text-brand-main">{t('checkout.billingDetails')}</h2>
                             </div>
 
                             <div className="flex items-center gap-3">
@@ -518,25 +527,25 @@ export default function CheckoutPage() {
                                     className="w-5 h-5 accent-brand-primary rounded border-brand-accent focus:ring-brand-primary text-brand-primary cursor-pointer"
                                 />
                                 <label htmlFor="needInvoice" className="text-sm font-bold text-brand-main select-none cursor-pointer">
-                                    I need a company invoice
+                                    {t('checkout.needInvoice')}
                                 </label>
                             </div>
 
                             {form.needInvoice && (
                                 <div className="p-5 bg-brand-bg/60 border border-brand-accent rounded-xl grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in">
                                     <div className="sm:col-span-2">
-                                        <p className="text-xs text-brand-muted font-bold mb-1 uppercase tracking-wider">Company Invoice Fields</p>
+                                        <p className="text-xs text-brand-muted font-bold mb-1 uppercase tracking-wider">{t('checkout.invoiceFields')}</p>
                                     </div>
                                     
                                     <div className="space-y-1">
-                                        <label htmlFor="companyName" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Company Name</label>
+                                        <label htmlFor="companyName" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('checkout.companyName')}</label>
                                         <input
                                             type="text"
                                             id="companyName"
                                             name="companyName"
                                             value={form.companyName}
                                             onChange={handleChange}
-                                            placeholder="np. Kwatera Sp. z o.o."
+                                            placeholder={t("checkout.companyNamePlaceholder")}
                                             className={`w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm ${
                                                 errors.companyName ? "border-red-500" : "border-brand-accent"
                                             }`}
@@ -545,14 +554,14 @@ export default function CheckoutPage() {
                                     </div>
 
                                     <div className="space-y-1">
-                                        <label htmlFor="taxId" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Tax ID (NIP / VAT)</label>
+                                        <label htmlFor="taxId" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('checkout.taxId')}</label>
                                         <input
                                             type="text"
                                             id="taxId"
                                             name="taxId"
                                             value={form.taxId}
                                             onChange={handleChange}
-                                            placeholder="np. 1234567890"
+                                            placeholder={t("checkout.taxIdPlaceholder")}
                                             className={`w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm ${
                                                 errors.taxId ? "border-red-500" : "border-brand-accent"
                                             }`}
@@ -561,14 +570,14 @@ export default function CheckoutPage() {
                                     </div>
 
                                     <div className="sm:col-span-2 space-y-1">
-                                        <label htmlFor="companyAddress" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Company Address</label>
+                                        <label htmlFor="companyAddress" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('checkout.companyAddress')}</label>
                                         <input
                                             type="text"
                                             id="companyAddress"
                                             name="companyAddress"
                                             value={form.companyAddress}
                                             onChange={handleChange}
-                                            placeholder="np. ul. Wiejska 1, 00-001 Warszawa"
+                                            placeholder={t("checkout.companyAddressPlaceholder")}
                                             className={`w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm ${
                                                 errors.companyAddress ? "border-red-500" : "border-brand-accent"
                                             }`}
@@ -580,7 +589,7 @@ export default function CheckoutPage() {
                         </div>
 
                         <div className="space-y-4 pt-4 border-t border-brand-accent">
-                            <p className="text-xs font-bold text-brand-muted uppercase tracking-wider mb-2">Legal & Compliance</p>
+                            <p className="text-xs font-bold text-brand-muted uppercase tracking-wider mb-2">{t('checkout.legal')}</p>
                             
                             <div className="flex items-start gap-3">
                                 <input
@@ -592,7 +601,7 @@ export default function CheckoutPage() {
                                     className="w-5 h-5 accent-brand-primary rounded border-brand-accent focus:ring-brand-primary text-brand-primary mt-0.5 cursor-pointer flex-shrink-0"
                                 />
                                 <label htmlFor="acceptRules" className="text-sm text-brand-muted font-medium select-none cursor-pointer leading-tight">
-                                    I accept the <a href="#" className="text-brand-primary font-bold hover:underline" onClick={(e) => e.preventDefault()}>House Rules</a> and <a href="#" className="text-brand-primary font-bold hover:underline" onClick={(e) => e.preventDefault()}>Terms of Service</a>. <span className="text-red-500">*</span>
+                                    {t('checkout.acceptRules')} <a href="#" className="text-brand-primary font-bold hover:underline" onClick={(e) => e.preventDefault()}>{t('checkout.houseRules')}</a> {t('checkout.acceptRulesAnd')} <a href="#" className="text-brand-primary font-bold hover:underline" onClick={(e) => e.preventDefault()}>{t('checkout.terms')}</a>. <span className="text-red-500">*</span>
                                 </label>
                             </div>
 
@@ -606,7 +615,7 @@ export default function CheckoutPage() {
                                     className="w-5 h-5 accent-brand-primary rounded border-brand-accent focus:ring-brand-primary text-brand-primary mt-0.5 cursor-pointer flex-shrink-0"
                                 />
                                 <label htmlFor="acceptPrivacy" className="text-sm text-brand-muted font-medium select-none cursor-pointer leading-tight">
-                                    I acknowledge the <a href="#" className="text-brand-primary font-bold hover:underline" onClick={(e) => e.preventDefault()}>Privacy Policy</a> and consent to standard processing of my personal details. <span className="text-red-500">*</span>
+                                    {t('checkout.acceptPrivacy')}{" "}<a href="#" className="text-brand-primary font-bold hover:underline" onClick={(e) => e.preventDefault()}>{t('checkout.privacy')}</a> {t('checkout.acceptPrivacyEnd')}<span className="text-red-500">*</span>
                                 </label>
                             </div>
 
@@ -661,19 +670,19 @@ export default function CheckoutPage() {
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                         </svg>
-                                        Processing Reservation...
+                                        {t('checkout.processing')}
                                     </>
                                 ) : (
                                     <>
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                                         </svg>
-                                        Confirm and Pay with Stripe
+                                        {t('checkout.confirmPay')}
                                     </>
                                 )}
                             </button>
                             {isRequiredAcknowledgementUnchecked && (
-                                <p className="text-center text-xs text-brand-muted mt-2 font-medium">Please accept all required acknowledgements to proceed to payment.</p>
+                                <p className="text-center text-xs text-brand-muted mt-2 font-medium">{t('checkout.acknowledgementsRequired')}</p>
                             )}
                         </div>
                     </form>
@@ -691,35 +700,35 @@ export default function CheckoutPage() {
                                 <h3 className="font-bold text-lg leading-snug">{property.title}</h3>
                                 <p className="text-xs text-brand-muted font-medium mt-0.5">{property.city}, {property.country}</p>
                                 <div className="mt-3 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-brand-bg border border-brand-accent text-brand-muted">
-                                    Unit: {unit.name}
+                                    {t('checkout.unit')}: {unit.name}
                                 </div>
                             </div>
 
                             <hr className="border-brand-accent" />
 
                             <div className="space-y-4 text-sm">
-                                <h4 className="font-bold text-xs uppercase tracking-wider text-brand-muted">Stay Details</h4>
+                                <h4 className="font-bold text-xs uppercase tracking-wider text-brand-muted">{t('checkout.stayDetails')}</h4>
                                 
                                 <div className="flex justify-between items-start gap-4">
-                                    <span className="text-brand-muted font-medium">Check-in</span>
+                                    <span className="text-brand-muted font-medium">{t('manualReservation.checkIn')}</span>
                                     <span className="font-semibold text-right">{formatDate(checkIn)}</span>
                                 </div>
 
                                 <div className="flex justify-between items-start gap-4">
-                                    <span className="text-brand-muted font-medium">Check-out</span>
+                                    <span className="text-brand-muted font-medium">{t('manualReservation.checkOut')}</span>
                                     <span className="font-semibold text-right">{formatDate(checkOut)}</span>
                                 </div>
 
                                 <div className="flex justify-between items-start gap-4 border-t border-dashed border-brand-accent pt-3">
-                                    <span className="text-brand-muted font-medium">Duration</span>
-                                    <span className="font-semibold text-brand-main">{nights} {nights === 1 ? "night" : "nights"}</span>
+                                    <span className="text-brand-muted font-medium">{t('checkout.duration')}</span>
+                                    <span className="font-semibold text-brand-main">{nights} {t('checkout.night', {count: nights})}</span>
                                 </div>
 
                                 <div className="flex justify-between items-start gap-4 border-t border-dashed border-brand-accent pt-3">
-                                    <span className="text-brand-muted font-medium">Guest Selection</span>
+                                    <span className="text-brand-muted font-medium">{t('checkout.guestSelection')}</span>
                                     <span className="font-semibold text-brand-main">
-                                        {form.adults !== "" ? `${form.adults} ${Number(form.adults) === 1 ? "Adult" : "Adults"}` : "0 Adults"}
-                                        {form.children !== "" && Number(form.children) > 0 ? `, ${form.children} ${Number(form.children) === 1 ? "Child" : "Children"}` : ""}
+                                        {form.adults !== "" ? `${form.adults} ${t('checkout.adult', {count: Number(form.adults)})}` : `0 ${t('checkout.adult', {count: 0})}`}
+                                        {form.children !== "" && Number(form.children) > 0 ? `, ${form.children} ${t('checkout.child', {count: Number(form.children)})}` : ""}
                                     </span>
                                 </div>
                             </div>
@@ -727,41 +736,41 @@ export default function CheckoutPage() {
                             <hr className="border-brand-accent" />
 
                             <div className="space-y-4 text-sm">
-                                <h4 className="font-bold text-xs uppercase tracking-wider text-brand-muted">Price Details</h4>
+                                <h4 className="font-bold text-xs uppercase tracking-wider text-brand-muted">{t('checkout.priceDetails')}</h4>
 
                                 <div className="flex justify-between items-center">
-                                    <span className="text-brand-muted font-medium">{displayNightPrice} x {nights} nights</span>
+                                    <span className="text-brand-muted font-medium">{displayNightPrice} x {nights} {t('checkout.nights')}</span>
                                     <span className="font-semibold">{displayTotalPrice}</span>
                                 </div>
 
                                 <div className="flex justify-between items-center border-t border-brand-accent pt-4 text-base font-bold text-brand-primary">
-                                    <span>Accommodation total</span>
+                                    <span>{t('checkout.accommodationTotal')}</span>
                                     <span className="text-lg">{displayTotalPrice}</span>
                                 </div>
 
                                 <div className="border-t border-dashed border-brand-accent pt-4 space-y-2 overflow-visible">
                                     <div>
-                                        <h5 className="font-bold text-xs uppercase tracking-wider text-brand-muted">Water billing</h5>
-                                        <p className="text-xs text-brand-muted mt-1">Water is billed separately after your stay.</p>
+                                        <h5 className="font-bold text-xs uppercase tracking-wider text-brand-muted">{t('checkout.waterBilling')}</h5>
+                                        <p className="text-xs text-brand-muted mt-1">{t('checkout.waterBilledSeparately')}</p>
                                     </div>
 
                                     {!waterTariffLoaded ? (
-                                        <p className="text-xs text-brand-muted font-medium">Checking water tariff...</p>
+                                        <p className="text-xs text-brand-muted font-medium">{t('checkout.checkingWaterTariff')}</p>
                                     ) : waterEstimate ? (
                                         <div className="space-y-1.5">
                                             <WaterRateTooltip text={waterEstimate.tooltip} value={waterEstimate.rate} />
                                             <div className="flex justify-between items-start gap-4">
-                                                <span className="text-brand-muted font-medium">Estimated usage</span>
+                                                <span className="text-brand-muted font-medium">{t('checkout.estimatedUsage')}</span>
                                                 <span className="font-semibold text-right">{waterEstimate.usage}</span>
                                             </div>
                                             <div className="flex justify-between items-start gap-4">
-                                                <span className="text-brand-muted font-medium">Estimated cost</span>
+                                                <span className="text-brand-muted font-medium">{t('checkout.estimatedCost')}</span>
                                                 <span className="font-semibold text-right">{waterEstimate.cost}</span>
                                             </div>
-                                            <p className="text-xs text-brand-muted">Final cost may be lower or higher based on meter readings.</p>
+                                            <p className="text-xs text-brand-muted">{t('checkout.finalWaterCostMayVary')}</p>
                                         </div>
                                     ) : (
-                                        <p className="text-xs text-brand-muted font-medium">Water may be billed separately after your stay if configured for this unit.</p>
+                                        <p className="text-xs text-brand-muted font-medium">{t('checkout.waterMayBeBilled')}</p>
                                     )}
                                 </div>
                             </div>
@@ -784,19 +793,19 @@ export default function CheckoutPage() {
                                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                             </svg>
-                                            Processing...
+                                            {t('checkout.processingShort')}
                                         </>
                                     ) : (
                                         <>
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                                             </svg>
-                                            Confirm and Pay
+                                            {t('checkout.confirmPayShort')}
                                         </>
                                     )}
                                 </button>
                                 {isRequiredAcknowledgementUnchecked && (
-                                    <p className="text-center text-xs text-brand-muted mt-2 font-medium">Please accept all required acknowledgements in the form above to proceed.</p>
+                                    <p className="text-center text-xs text-brand-muted mt-2 font-medium">{t('checkout.acknowledgementsRequiredMobile')}</p>
                                 )}
                             </div>
                         </div>

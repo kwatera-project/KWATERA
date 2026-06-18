@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import type { ComponentProps } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { useTranslation } from "react-i18next";
+import { getDateFnsLocale, getLocaleCode } from "../utils/locale";
 
 interface SharedDatePickerProps {
     selected: Date | null;
@@ -20,10 +22,6 @@ interface SharedDatePickerProps {
     allowPastDates?: boolean;
 }
 
-const MONTHS = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-];
 
 export interface CustomCalendarHeaderProps {
     date: Date;
@@ -47,6 +45,13 @@ export const CustomCalendarHeader = ({
     const [isOpen, setIsOpen] = useState(false);
     const [pickerYear, setPickerYear] = useState(date.getFullYear());
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const { i18n } = useTranslation();
+    const localeCode = getLocaleCode(i18n.language);
+    const months = Array.from({ length: 12 }, (_, index) =>
+        new Date(2024, index, 1).toLocaleString(localeCode, {
+            month: "short",
+        })
+    );
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -89,7 +94,10 @@ export const CustomCalendarHeader = ({
                     onClick={handleToggle}
                     className="text-stone-800 text-[15px] font-bold capitalize hover:bg-stone-100 px-3 py-1 rounded-md transition-colors cursor-pointer"
                 >
-                    {date.toLocaleString('en-US', { month: 'long' })} {date.getFullYear()}
+                    {date.toLocaleString(localeCode, {
+                        month: "long",
+                    })}{" "}
+                    {date.getFullYear()}
                 </button>
 
                 {isOpen && (
@@ -116,7 +124,7 @@ export const CustomCalendarHeader = ({
                         </div>
 
                         <div className="grid grid-cols-3 gap-2 bg-solid-white" style={{ backgroundColor: "#FFFFFF" }}>
-                            {MONTHS.map((month, index) => {
+                            {months.map((month, index) => {
                                 const isSelected = pickerYear === date.getFullYear() && index === date.getMonth();
                                 return (
                                     <button
@@ -167,6 +175,7 @@ export default function SharedDatePicker({
     popperPlacement,
     allowPastDates = false
 }: SharedDatePickerProps) {
+    const { i18n } = useTranslation();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -193,6 +202,7 @@ export default function SharedDatePicker({
                 calendarStartDay={1}
                 wrapperClassName={wrapperClassName}
                 popperPlacement={popperPlacement}
+                locale={getDateFnsLocale(i18n.language)}
                 popperProps={{
                     strategy: "fixed"
                 }}

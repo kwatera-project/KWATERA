@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { FocusEvent } from "react";
+import { useTranslation } from "react-i18next";
 
 type WaterRateTooltipProps = {
     text: string;
@@ -14,12 +15,14 @@ type WaterRateTooltipProps = {
 export default function WaterRateTooltip({
     text,
     value,
-    label = "Rate",
+    label,
     iconClassName = "border-brand-accent text-brand-muted bg-white",
     panelClassName = "border-brand-accent bg-white text-brand-main shadow-sm",
     labelClassName = "text-brand-muted font-medium",
     valueClassName = "font-semibold text-brand-main",
 }: WaterRateTooltipProps) {
+    const { t } = useTranslation();
+    const resolvedLabel = label ?? t('checkout.rate');
     const tooltipId = useId();
     const closeTimerRef = useRef<number | null>(null);
     const [isIconHovered, setIsIconHovered] = useState(false);
@@ -74,10 +77,10 @@ export default function WaterRateTooltip({
         >
             <div className="grid grid-cols-[auto,minmax(0,1fr)] items-start gap-x-4 gap-y-1">
                 <span className={`inline-flex items-center gap-1 min-w-0 ${labelClassName}`}>
-                    {label}
+                    {resolvedLabel}
                     <button
                         type="button"
-                        aria-label="Water rate conversion"
+                        aria-label={t('checkout.waterRateConversion')}
                         aria-expanded={isOpen}
                         aria-controls={tooltipId}
                         onFocus={() => setIsFocused(true)}

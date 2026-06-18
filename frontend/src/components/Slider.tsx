@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {useTranslation} from "react-i18next"
 
 interface Slide {
     id: string;
@@ -13,6 +14,7 @@ interface SliderProps {
 export default function Slider({ slides }: SliderProps) {
     const [index, setIndex] = useState(0);
     const navigate = useNavigate();
+    const {t} = useTranslation();
 
     useEffect(() => {
         if (!slides || slides.length === 0) return;
@@ -52,10 +54,10 @@ export default function Slider({ slides }: SliderProps) {
             <div className="absolute bottom-0 left-0 w-full bg-card z-20 rounded-t-[50px] pt-24 pb-20 md:pt-12 md:pb-32 px-10 md:px-20 shadow-2xl">
                 <div className="max-w-6xl mx-auto">
                     <h1 className="text-4xl md:text-5xl font-bold mb-3" style={{ color: 'rgb(var(--color-burgundy))' }}>
-                        Good Morning!
+                        {t('slider.greeting')}
                     </h1>
                     <p className="text-details text-lg md:text-xl font-medium">
-                        Explore beautiful places in the world with Kwatera
+                        {t('slider.subtitle')}
                     </p>
                 </div>
             </div>
