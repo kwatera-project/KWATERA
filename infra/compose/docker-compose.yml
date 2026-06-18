@@ -235,6 +235,8 @@ services:
       - "POSTGRES_USER=${POSTGRES_USER}"
     ports:
       - "5433:5432"
+    volumes:
+      - ./images:/images
 
   mailpit:
     image: axllent/mailpit:latest
