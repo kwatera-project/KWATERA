@@ -88,7 +88,15 @@ public class PaymentWebhookService {
   private void handleCheckoutCompleted(Event event, String eventId) throws StripeException {
 
     Session eventSession = deserializeSession(event);
-    Session session = stripeClient.retrieveSession(eventSession.getId());
+    Session session;
+    try {
+      session = stripeClient.retrieveSession(eventSession.getId());
+    } catch (StripeException e) {
+      session = eventSession;
+    }
+    if (session == null || session.getMetadata() == null || session.getMetadata().isEmpty()) {
+      session = eventSession;
+    }
 
     PaymentMetadataDto metadata = PaymentMetadataDto.from(session.getMetadata());
 

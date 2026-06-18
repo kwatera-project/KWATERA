@@ -1,7 +1,362 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title th:text="${invoiceNumber != null ? 'Invoice ' + invoiceNumber : 'Settlement Invoice'}">Invoice</title>
+    <style th:if="${invoiceNumber != null}">
+        @page {
+            size: A4;
+            margin: 1.5cm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            color: #1A1A1A;
+            background-color: #FFFFFF;
+            font-size: 8px;
+            line-height: 1.4;
+            margin: 0;
+            padding: 0;
+        }
+        .header-table {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .logo-circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background-color: #42211D;
+            display: inline-block;
+            vertical-align: middle;
+            text-align: center;
+        }
+        .logo-svg {
+            width: 24px;
+            height: 24px;
+            margin-top: 9px;
+            fill: #FFFFFF;
+        }
+        .logo-text-container {
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 12px;
+        }
+        .company-name {
+            font-size: 22px;
+            font-weight: 800;
+            color: #42211D;
+            letter-spacing: 0.05em;
+            line-height: 1;
+        }
+        .company-sub {
+            font-size: 7.5px;
+            font-weight: bold;
+            color: #7A7A7A;
+            letter-spacing: 0.1em;
+            margin-top: 3px;
+        }
+        .report-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #1A1A1A;
+            text-align: right;
+            line-height: 1.1;
+        }
+        .report-sub {
+            font-size: 9px;
+            color: #7A7A7A;
+            text-align: right;
+            margin-top: 3px;
+        }
+        .divider {
+            border-top: 2.2px solid #42211D;
+            margin-bottom: 20px;
+        }
+        .details-table {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-size: 9px;
+            font-weight: bold;
+            color: #42211D;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .details-box {
+            background-color: #FFFFFF;
+            padding: 2px 0;
+        }
+        .details-name {
+            font-size: 9px;
+            font-weight: bold;
+            color: #1A1A1A;
+            margin: 0 0 3px 0;
+        }
+        .details-text {
+            font-size: 9px;
+            color: #555555;
+            margin: 2px 0;
+        }
+        .metadata-box {
+            border: 1px solid #DACDCA;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 25px;
+            background-color: #FDFDFD;
+        }
+        .metadata-table {
+            width: 100%;
+        }
+        .metadata-title {
+            font-size: 8.5px;
+            font-weight: bold;
+            color: #42211D;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .metadata-text {
+            font-size: 8.5px;
+            color: #555555;
+        }
+        .billing-title {
+            font-size: 10px;
+            font-weight: bold;
+            color: #42211D;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+            margin-top: 20px;
+        }
+        .billing-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #DACDCA;
+        }
+        .billing-table th {
+            background-color: #42211D;
+            color: #FFFFFF;
+            font-size: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            padding: 6px 8px;
+            border: 1px solid #DACDCA;
+            text-align: left;
+        }
+        .billing-table td {
+            padding: 6px 8px;
+            border: 1px solid #DACDCA;
+            font-size: 8px;
+            color: #1A1A1A;
+            vertical-align: middle;
+        }
+        .totals-table {
+            width: 35%;
+            margin-top: 15px;
+            border-collapse: collapse;
+            float: right;
+            background-color: #F7F7F7;
+            border: 1px solid #DACDCA;
+        }
+        .totals-table td {
+            padding: 6px 8px;
+            font-size: 8px;
+            color: #1A1A1A;
+            border: 1px solid #DACDCA;
+        }
+        .totals-label {
+            font-weight: bold;
+            color: #42211D;
+        }
+        .totals-value {
+            text-align: right;
+            font-weight: normal;
+            color: #1A1A1A;
+        }
+        .totals-row-gross td {
+            font-weight: bold;
+            color: #42211D;
+        }
+        .totals-row-gross .totals-value {
+            font-weight: bold;
+            color: #42211D;
+        }
+        .footer-table {
+            width: 100%;
+            margin-top: 40px;
+            border-top: 1px solid #DACDCA;
+            padding-top: 20px;
+        }
+        .remarks-box {
+            border: 1px solid #DACDCA;
+            border-radius: 6px;
+            padding: 12px;
+            background-color: #FDFDFD;
+            width: 90%;
+        }
+        .signature-line-container {
+            width: 35%;
+            text-align: center;
+            vertical-align: bottom;
+        }
+        .signature-line {
+            border-top: 1px solid #DACDCA;
+            width: 80%;
+            margin: 0 auto 4px auto;
+        }
+        .signature-label {
+            font-size: 7.5px;
+            color: #7A7A7A;
+        }
+    </style>
+</head>
 <body>
-<div th:replace="~{base-layout :: layout(~{::content})}">
+
+<div th:if="${invoiceNumber != null}">
+    <table class="header-table" border="0" cellpadding="0" cellspacing="0">
+        <tr>
+            <td width="60%" style="vertical-align: middle;">
+                <table border="0" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td style="vertical-align: middle;">
+                            <div class="logo-circle">
+                                <svg viewBox="0 -79 2000 2000" class="logo-svg" style="width: 24px; height: 24px; fill: #FFFFFF; margin-top: 9px;">
+                                    <path d="M 1001.8145 497.94141 C 989.27928 497.36938 976.614 502.27509 967.51953 512.4668 L 592.09375 933.18555 C 591.50163 933.8491 590.93365 934.52645 590.38867 935.21484 C 581.89305 942.6862 576.54688 953.64565 576.54688 965.90039 L 576.54688 1303.418 C 576.54688 1326.0369 594.75603 1344.2461 617.375 1344.2461 L 619.84961 1344.2461 C 642.46858 1344.2461 660.67969 1326.0369 660.67969 1303.418 L 660.67969 995.45898 L 1000.7637 614.3457 L 1079.8535 705.35352 C 1078.5346 706.41641 1077.2728 707.58187 1076.0801 708.84766 L 793.69727 1008.5312 C 788.97314 1013.5448 785.94625 1019.4865 784.5918 1025.6855 C 783.43366 1029.0742 782.80664 1032.7131 782.80664 1036.5039 L 782.80664 1311.3652 C 782.80664 1329.7854 797.63455 1344.6152 816.05469 1344.6152 L 833.6875 1344.6152 C 834.53571 1344.6152 835.3771 1344.5833 836.20898 1344.5215 L 836.20898 1344.8203 L 1373.168 1344.8203 C 1374.2347 1344.9076 1375.3144 1344.9531 1376.4043 1344.9531 L 1382.9395 1344.9531 C 1404.4337 1344.9531 1421.7383 1327.6486 1421.7383 1306.1543 L 1421.7383 985.41992 C 1421.7383 983.86824 1421.6481 982.33901 1421.4727 980.83594 C 1422.7897 968.69313 1419.2703 956.06425 1410.748 946.25781 L 1043.2305 523.35938 C 1041.5437 521.4184 1039.7304 519.66869 1037.8164 518.11133 C 1036.3094 516.18661 1034.6231 514.36015 1032.7578 512.6582 L 1029.082 509.30469 C 1021.2339 502.1439 1011.564 498.38631 1001.8145 497.94141 z M 1138.8477 773.23633 L 1337.6055 1001.9453 L 1337.6055 1259.998 L 866.9375 1259.998 L 866.9375 1061.8027 L 1138.8477 773.23633 z"/>
+                                </svg>
+                            </div>
+                        </td>
+                        <td style="vertical-align: middle; padding-left: 10px;">
+                            <div class="company-name">KWATERA</div>
+                            <div class="company-sub">PROPERTY MANAGEMENT PLATFORM</div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+            <td width="40%" style="text-align: right; vertical-align: middle;">
+                <div class="report-title">INVOICE SUMMARY REPORT</div>
+                <div class="report-sub">System-Generated Settlement</div>
+            </td>
+        </tr>
+    </table>
+    <div class="divider"></div>
+
+    <table class="details-table" border="0" cellpadding="0" cellspacing="0">
+        <tr>
+            <td width="50%" style="vertical-align: top; padding-right: 15px;">
+                <div class="section-title">Issuer / Seller:</div>
+                <div class="details-box">
+                    <div class="details-name" th:text="${ownerName}">Kwatera Property Management Sp. z o.o.</div>
+                    <div class="details-text">ul. Widok 12, 00-023 Warszawa, Polska</div>
+                    <div class="details-text">NIP: 5252821944</div>
+                    <div class="details-text" th:text="'Email: ' + ${ownerEmail}">Email: billing@kwatera.pl</div>
+                </div>
+            </td>
+            <td width="50%" style="vertical-align: top; padding-left: 15px;">
+                <div class="section-title">Client / Recipient:</div>
+                <div class="details-box">
+                    <div class="details-name" th:text="${buyerName}">Guest Name</div>
+                    <div class="details-text" th:if="${buyerTaxId != null and buyerTaxId != ''}" th:text="'Tax ID / NIP: ' + ${buyerTaxId}">NIP: -</div>
+                    <div class="details-text" th:if="${buyerAddress != null and buyerAddress != ''}" th:text="${buyerAddress}">Address</div>
+                    <div class="details-text" th:text="'Email: ' + ${guestEmail}">Email: guest@example.com</div>
+                    <div class="details-text" th:text="'Period: ' + ${startDate} + ' to ' + ${endDate}">Period: 2026-05-19 to 2026-06-18</div>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="metadata-box">
+        <table class="metadata-table" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+                <td width="60%" style="vertical-align: top;">
+                    <div class="metadata-title">Document Type: Statement of Services &amp; Accounts</div>
+                    <div class="metadata-text" th:text="'Document Number: ' + ${invoiceNumber}">Document Number: KWA/2026/20260618-2</div>
+                </td>
+                <td width="40%" style="vertical-align: top; text-align: right;">
+                    <div class="metadata-text" th:text="'Issue Date: ' + ${#dates.format(#dates.createNow(), 'dd.MM.yyyy')}">Issue Date: 18.06.2026</div>
+                    <div class="metadata-text" th:text="'Monitored Unit: ' + ${unitName}">Monitored Units: 1 property</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="billing-title">Itemized Billing Entries</div>
+    <table class="billing-table" border="0" cellpadding="0" cellspacing="0">
+        <thead>
+            <tr>
+                <th width="5%" style="text-align: center;">No.</th>
+                <th width="45%">Description of Service</th>
+                <th width="10%" style="text-align: center;">Qty</th>
+                <th width="10%" style="text-align: right;">Unit Price (Net)</th>
+                <th width="10%" style="text-align: right;">Net Value</th>
+                <th width="10%" style="text-align: center;">VAT</th>
+                <th width="10%" style="text-align: right;">Gross Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:with="grossAcc=${settlement.accommodationAmount}, nightsRaw=${reservation.endDate.toEpochDay() - reservation.startDate.toEpochDay()}, nights=${nightsRaw > 0 ? nightsRaw : 1}, netAcc=${grossAcc.multiply(new java.math.BigDecimal('100')).divide(new java.math.BigDecimal('108'), 2, T(java.math.RoundingMode).HALF_UP)}, vatAcc=${grossAcc.subtract(netAcc)}">
+                <td style="text-align: center;">1</td>
+                <td>Accommodation Services (Lodging &amp; Stay Management)</td>
+                <td style="text-align: center;" th:text="${nights}">3</td>
+                <td style="text-align: right;" th:text="${#numbers.formatDecimal(netAcc.divide(new java.math.BigDecimal(nights), 2, T(java.math.RoundingMode).HALF_UP), 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${currency}">1839,51 PLN</td>
+                <td style="text-align: right;" th:text="${#numbers.formatDecimal(netAcc, 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${currency}">5518,52 PLN</td>
+                <td style="text-align: center;">8%</td>
+                <td style="text-align: right;" th:text="${#numbers.formatDecimal(grossAcc, 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${currency}">5960,00 PLN</td>
+            </tr>
+            <tr th:with="grossUt=${settlement.utilitiesAmount}, netUt=${grossUt.multiply(new java.math.BigDecimal('100')).divide(new java.math.BigDecimal('108'), 2, T(java.math.RoundingMode).HALF_UP)}, vatUt=${grossUt.subtract(netUt)}">
+                <td style="text-align: center;">2</td>
+                <td>Outstanding Accounts Receivable Balance</td>
+                <td style="text-align: center;">—</td>
+                <td style="text-align: right;">—</td>
+                <td style="text-align: right;" th:text="${#numbers.formatDecimal(netUt, 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${currency}">0,00 PLN</td>
+                <td style="text-align: center;">8%</td>
+                <td style="text-align: right;" th:text="${#numbers.formatDecimal(grossUt, 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${currency}">0,00 PLN</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table class="totals-table" border="0" cellpadding="0" cellspacing="0" align="right" th:with="grossAcc=${settlement.accommodationAmount}, netAcc=${grossAcc.multiply(new java.math.BigDecimal('100')).divide(new java.math.BigDecimal('108'), 2, T(java.math.RoundingMode).HALF_UP)}, vatAcc=${grossAcc.subtract(netAcc)}, grossUt=${settlement.utilitiesAmount}, netUt=${grossUt.multiply(new java.math.BigDecimal('100')).divide(new java.math.BigDecimal('108'), 2, T(java.math.RoundingMode).HALF_UP)}, vatUt=${grossUt.subtract(netUt)}, netTotal=${netAcc.add(netUt)}, vatTotal=${vatAcc.add(vatUt)}, grossTotal=${grossAcc.add(grossUt)}">
+        <tr>
+            <td class="totals-label">Net Total:</td>
+            <td class="totals-value" th:text="${#numbers.formatDecimal(netTotal, 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${currency}">5518,52 PLN</td>
+        </tr>
+        <tr>
+            <td class="totals-label">VAT Total (8%):</td>
+            <td class="totals-value" th:text="${#numbers.formatDecimal(vatTotal, 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${currency}">441,48 PLN</td>
+        </tr>
+        <tr th:if="${settlement.discountAmount != null and settlement.discountAmount.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+            <td class="totals-label">Discount:</td>
+            <td class="totals-value" style="color: #EF4444;" th:text="'-' + ${#numbers.formatDecimal(settlement.discountAmount, 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${currency}">-20.00 PLN</td>
+        </tr>
+        <tr th:if="${settlement.depositAmount != null and settlement.depositAmount.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+            <td class="totals-label">Deposit:</td>
+            <td class="totals-value" th:text="${#numbers.formatDecimal(settlement.depositAmount, 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${currency}">100.00 PLN</td>
+        </tr>
+        <tr class="totals-row-gross">
+            <td class="totals-label">Gross Total:</td>
+            <td class="totals-value" th:text="${#numbers.formatDecimal(grossTotal, 1, 'DEFAULT', 2, 'DEFAULT')} + ' ' + ${currency}">5960,00 PLN</td>
+        </tr>
+    </table>
+    <div style="clear: both;"></div>
+
+    <table class="footer-table" border="0" cellpadding="0" cellspacing="0">
+        <tr>
+            <td width="60%" style="vertical-align: top;">
+                <div class="remarks-box" style="width: 90%;">
+                    <div class="section-title" style="color: #42211D;">Statement Remarks &amp; Access Stats</div>
+                    <div class="details-text" th:text="'Settlements Status: ' + ${statusLabel}">Settlements Status: PAID</div>
+                    <div class="details-text" th:if="${stripeReference != null and stripeReference != ''}" th:text="'Stripe Ref: ' + ${stripeReference}">Stripe Ref: ch_123</div>
+                    <div class="details-text">Generated automatically by Kwatera Platform.</div>
+                </div>
+            </td>
+            <td width="40%" class="signature-line-container" style="vertical-align: bottom; text-align: center;">
+                <div class="signature-line"></div>
+                <div class="signature-label">Authorized Signature &amp; Stamp</div>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div th:if="${invoiceNumber == null}" th:replace="~{base-layout :: layout(~{::content})}">
     <div th:fragment="content">
         <div style="margin-bottom: 20px;">
             <span th:text="${statusLabel}" 
@@ -11,44 +366,12 @@
         </div>
 
         <h2 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 700; color: #1A1A1A; letter-spacing: -0.02em;">
-            <span th:if="${invoiceNumber != null}" th:text="${invoiceNumber}">FV/2026/06/ABCDEFGH</span>
-            <span th:if="${invoiceNumber == null}" th:text="${title}">Settlement Invoice</span>
+            <span th:text="${title}">Settlement Invoice</span>
         </h2>
         
         <p style="margin: 0 0 24px 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;" th:text="${message}">
             A settlement invoice has been generated for your reservation stay.
         </p>
-
-        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 24px;" th:if="${invoiceNumber != null}">
-            <tr>
-                <td width="50%" style="padding-right: 10px; vertical-align: top;">
-                    <span style="font-size: 11px; text-transform: uppercase; color: #7A7A7A; font-weight: 600; display: block; margin-bottom: 4px;">Issuer (Seller)</span>
-                    <div style="background-color: #F7F7F7; border: 1px solid #DACDCA; padding: 12px; border-radius: 8px;">
-                        <p style="margin: 0; font-size: 13px; font-weight: bold; color: #1A1A1A;" th:text="${ownerName}">John Owner</p>
-                        <p style="margin: 4px 0 0 0; font-size: 12px; color: #7A7A7A;" th:text="${ownerEmail}">owner@example.com</p>
-                    </div>
-                </td>
-                <td width="50%" style="padding-left: 10px; vertical-align: top;">
-                    <span style="font-size: 11px; text-transform: uppercase; color: #7A7A7A; font-weight: 600; display: block; margin-bottom: 4px;">Buyer (Recipient)</span>
-                    <div style="background-color: #F7F7F7; border: 1px solid #DACDCA; padding: 12px; border-radius: 8px;">
-                        <p style="margin: 0; font-size: 13px; font-weight: bold; color: #1A1A1A;" th:text="${buyerName}">Guest Name</p>
-                        <p style="margin: 4px 0 0 0; font-size: 12px; color: #7A7A7A;" th:if="${buyerTaxId != null and buyerTaxId != ''}" th:text="'Tax ID: ' + ${buyerTaxId}">Tax ID: 123456789</p>
-                        <p style="margin: 4px 0 0 0; font-size: 12px; color: #7A7A7A;" th:if="${buyerAddress != null and buyerAddress != ''}" th:text="${buyerAddress}">Company Address</p>
-                    </div>
-                </td>
-            </tr>
-        </table>
-
-        <div style="background-color: #F7F7F7; border: 1px solid #DACDCA; border-radius: 8px; padding: 12px; margin-bottom: 24px;" th:if="${invoiceNumber != null}">
-            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="font-size: 13px;">
-                <tr>
-                    <td style="font-weight: bold; color: #7A7A7A; width: 25%;">Property:</td>
-                    <td style="color: #1A1A1A;" th:text="${unitName}">Premium Apartment</td>
-                    <td style="font-weight: bold; color: #7A7A7A; width: 25%;">Period:</td>
-                    <td style="color: #1A1A1A;" th:text="${startDate} + ' to ' + ${endDate}">2026-06-18 to 2026-06-25</td>
-                </tr>
-            </table>
-        </div>
         
         <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F7F7F7; border: 1px solid #DACDCA; border-radius: 12px; margin-bottom: 24px; border-collapse: separate;">
             <tr>
@@ -94,12 +417,6 @@
                                 50.00 PLN
                             </td>
                         </tr>
-                        <tr th:if="${invoiceNumber != null}">
-                            <td style="font-size: 14px; color: #7A7A7A; padding: 4px 0;">Post-Stay Utility Estimates:</td>
-                            <td align="right" style="font-size: 14px; font-weight: 500; color: #7A7A7A; padding: 4px 0; font-style: italic;">
-                                0.00 <span th:text="${currency}">PLN</span> (TBD)
-                            </td>
-                        </tr>
                         <tr th:if="${settlement.depositAmount != null && settlement.depositAmount.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
                             <td style="font-size: 14px; color: #7A7A7A; padding: 4px 0;">Deposit:</td>
                             <td align="right" style="font-size: 14px; font-weight: 500; color: #1A1A1A; padding: 4px 0;" 
@@ -109,7 +426,7 @@
                         </tr>
                         <tr th:if="${settlement.discountAmount != null && settlement.discountAmount.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
                             <td style="font-size: 14px; color: #7A7A7A; padding: 4px 0;">Discount:</td>
-                            <td align="right" style="font-size: 14px; font-weight: 500; color: #EF4444; padding: 4px 0;" 
+                            <td align="right" style="font-size: 14px; font-weight: 500; color: #1A1A1A; padding: 4px 0;" 
                                 th:text="'-' + ${formattedDiscount}">
                                 -20.00 PLN
                             </td>
@@ -156,12 +473,8 @@
         <p style="margin: 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;">
             If you have any questions regarding your bill, please reach out to support. Thank you!
         </p>
-
-        <div style="background-color: #F7F7F7; border-left: 4px solid #DACDCA; padding: 10px 15px; margin-top: 24px; border-radius: 0 8px 8px 0;" th:if="${stripeReference != null and stripeReference != ''}">
-            <div style="font-size: 10px; font-weight: bold; color: #7A7A7A; text-transform: uppercase;">Stripe Payment Reference</div>
-            <div style="font-family: monospace; font-size: 12px; color: #1A1A1A;" th:text="${stripeReference}">ch_1234567890</div>
-        </div>
     </div>
 </div>
+
 </body>
 </html>

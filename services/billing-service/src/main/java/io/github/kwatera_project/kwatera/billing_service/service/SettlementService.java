@@ -595,6 +595,7 @@ public class SettlementService {
       context.setVariable("stripeReference", stripeSessionId);
 
       context.setVariable("settlement", settlement);
+      context.setVariable("reservation", reservation);
       context.setVariable(
           "formattedAccommodation",
           formatPrice(settlement.getAccommodationAmount(), currency, rate));
