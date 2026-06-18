@@ -724,4 +724,36 @@ public class PropertyService {
     unitImage.setIsMain(isMain);
     unitImageRepository.save(unitImage);
   }
+
+  public long countAllProperties() {
+    return propertyRepository.count();
+  }
+
+  public Map<UUID, Long> getOwnerPropertyCounts() {
+    List<OwnerPropertyCountDto> counts = propertyRepository.countPropertiesGroupByOwnerId();
+    Map<UUID, Long> result = new HashMap<>();
+    for (OwnerPropertyCountDto dto : counts) {
+      if (dto.ownerId() != null) {
+        result.put(dto.ownerId(), dto.count());
+      }
+    }
+    return result;
+  }
+
+  public Map<UUID, Long> getOwnerPropertyCounts(List<UUID> ownerIds) {
+    if (ownerIds == null || ownerIds.isEmpty()) {
+      return Collections.emptyMap();
+    }
+    List<OwnerPropertyCountDto> counts = propertyRepository.countPropertiesByOwnerIds(ownerIds);
+    Map<UUID, Long> result = new HashMap<>();
+    for (UUID ownerId : ownerIds) {
+      result.put(ownerId, 0L);
+    }
+    for (OwnerPropertyCountDto dto : counts) {
+      if (dto.ownerId() != null) {
+        result.put(dto.ownerId(), dto.count());
+      }
+    }
+    return result;
+  }
 }

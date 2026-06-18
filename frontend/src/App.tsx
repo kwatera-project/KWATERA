@@ -15,6 +15,7 @@ const RegisterForm = lazy(() => import("./components/RegisterForm"));
 const LoginForm = lazy(() => import("./components/LoginForm.tsx"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const AdminSystemEventsPage = lazy(() => import("./pages/AdminSystemEventsPage"));
+const AdminUsersOverviewPage = lazy(() => import("./pages/AdminUsersOverviewPage"));
 const AdminReservationList = lazy(() => import("./components/AdminReservationList"));
 const OccupancyCalendarPage = lazy(() => import("./pages/OccupancyCalendarPage"));
 const MyReservationsPage = lazy(() => import("./pages/MyReservationsPage"));
@@ -81,6 +82,14 @@ function App() {
                                         <div className="p-4 sm:p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A]">
                                             <AdminSystemEventsPage/>
                                         </div>
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/admin/users"
+                                element={
+                                    <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
+                                        <AdminUsersOverviewPage/>
                                     </ProtectedRoute>
                                 }
                             />

@@ -208,3 +208,104 @@ export async function updateAdminReservationStatus(id: string, newStatus: string
 
     return res.json().catch(() => ({ id, status: newStatus }));
 }
+
+export interface AdminUser {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: "GUEST" | "OWNER" | "ADMIN";
+    status: string;
+    createdAt?: string;
+    propertyCount: number;
+}
+
+export interface AdminUserKpis {
+    totalUsers: number;
+    totalGuests: number;
+    totalOwners: number;
+    totalProperties: number;
+}
+
+export interface PaginatedResponse<T> {
+    content: T[];
+    totalPages: number;
+    totalElements: number;
+    size: number;
+    number: number;
+}
+
+const mockDemoUsers: AdminUser[] = [
+    { id: "1", firstName: "Alice", lastName: "Morgan", email: "guest.demo@kwatera.local", role: "GUEST", status: "Active", createdAt: "2026-01-15T10:00:00Z", propertyCount: 0 },
+    { id: "2", firstName: "Marcus", lastName: "Green", email: "owner.demo@kwatera.local", role: "OWNER", status: "Active", createdAt: "2026-01-20T12:30:00Z", propertyCount: 5 },
+    { id: "3", firstName: "Olivia", lastName: "Stone", email: "admin.demo@kwatera.local", role: "ADMIN", status: "Active", createdAt: "2026-01-01T08:00:00Z", propertyCount: 0 },
+    { id: "4", firstName: "John", lastName: "Smith", email: "john.smith@gmail.com", role: "GUEST", status: "Active", createdAt: "2026-02-10T14:20:00Z", propertyCount: 0 },
+    { id: "5", firstName: "Emily", lastName: "Brown", email: "emily.b@yahoo.com", role: "OWNER", status: "Active", createdAt: "2026-02-15T09:15:00Z", propertyCount: 3 },
+    { id: "6", firstName: "Michael", lastName: "Davis", email: "m.davis@outlook.com", role: "GUEST", status: "Inactive", createdAt: "2026-03-01T11:45:00Z", propertyCount: 0 },
+    { id: "7", firstName: "Sophia", lastName: "Wilson", email: "sophia.w@kwatera.local", role: "GUEST", status: "Active", createdAt: "2026-03-05T16:10:00Z", propertyCount: 0 },
+    { id: "8", firstName: "James", lastName: "Taylor", email: "james.t@gmail.com", role: "OWNER", status: "Active", createdAt: "2026-03-10T10:00:00Z", propertyCount: 1 },
+];
+
+export async function getAdminUserKpis(): Promise<AdminUserKpis> {
+    if (IS_DEMO_MODE) {
+        return {
+            totalUsers: 15,
+            totalGuests: 10,
+            totalOwners: 4,
+            totalProperties: 9
+        };
+    }
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${GATEWAY_BASE_URL}/api/admin/users/kpis`, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+    if (!res.ok) throw new Error("Failed to fetch admin user KPIs");
+    return res.json();
+}
+
+export async function getAdminUsers(page: number, size: number, role?: string, search?: string): Promise<PaginatedResponse<AdminUser>> {
+    if (IS_DEMO_MODE) {
+        let filtered = [...mockDemoUsers];
+        if (role && role !== "ALL") {
+            filtered = filtered.filter(u => u.role === role);
+        }
+        if (search) {
+            const query = search.toLowerCase();
+            filtered = filtered.filter(u => 
+                u.firstName.toLowerCase().includes(query) ||
+                u.lastName.toLowerCase().includes(query) ||
+                u.email.toLowerCase().includes(query)
+            );
+        }
+        const totalElements = filtered.length;
+        const totalPages = Math.ceil(totalElements / size);
+        const start = page * size;
+        const end = start + size;
+        const content = filtered.slice(start, end);
+        
+        return {
+            content,
+            totalPages,
+            totalElements,
+            size,
+            number: page
+        };
+    }
+    
+    const token = localStorage.getItem("token");
+    const params = new URLSearchParams();
+    params.append("page", page.toString());
+    params.append("size", size.toString());
+    if (role && role !== "ALL") params.append("role", role);
+    if (search) params.append("search", search);
+    
+    const res = await fetch(`${GATEWAY_BASE_URL}/api/admin/users?${params.toString()}`, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+    if (!res.ok) throw new Error("Failed to fetch admin users");
+    return res.json();
+}
