@@ -168,5 +168,3 @@ Direct service URLs are also available during local development:
 - [CI quality pipeline](docs/ci/CI_QUALITY_PIPELINE.md)
 - [Stage 2 API contract and local demo setup](docs/stage-2-api-and-demo.md)
 - [OCR service](services/ocr-service/README.md)
-
-## TBA
