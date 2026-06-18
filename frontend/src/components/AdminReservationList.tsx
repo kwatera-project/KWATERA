@@ -227,7 +227,7 @@ export default function AdminReservationList() {
                                             res.status === 'CANCELLED' ? 'bg-red-50 border-red-200 text-red-800' :
                                             'bg-gray-50 border-gray-200 text-gray-800'
                                         }`}>
-                                            {res.status}
+                                            {t(`statuses.${res.status}`)}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-sm text-center">

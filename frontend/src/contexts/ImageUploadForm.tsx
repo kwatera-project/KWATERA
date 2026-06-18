@@ -13,15 +13,15 @@ interface ImageUploadFormProps {
 
 export default function ImageUploadForm({
                                             onSubmit,
-                                            submitLabel = "Upload Image",
+                                            submitLabel,
                                         }: ImageUploadFormProps) {
-
+    const {t} = useTranslation();
+    const buttonLabel = submitLabel ?? t("imageUpload.upload");
     const [file, setFile] = useState<File | null>(null);
     const [isMain, setIsMain] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const {t} = useTranslation();
 
     const handleCustomButtonClick = () => {
         fileInputRef.current?.click();
@@ -103,10 +103,10 @@ export default function ImageUploadForm({
                         onClick={handleCustomButtonClick}
                         className="py-1.5 px-4 rounded-md text-xs font-bold uppercase tracking-wider bg-[#42211D] text-white hover:bg-[#5C2E29] transition-colors"
                     >
-                        {t('meterUpload.chooseFile')}
+                        {t('imageUpload.chooseFile')}
                     </button>
                     <span className="text-sm font-semibold text-[#1A1A1A] truncate">
-            {file ? file.name : t('meterUpload.noFile')}
+            {file ? file.name : t('imageUpload.noFile') }
         </span>
                 </div>
             </div>
@@ -134,7 +134,7 @@ export default function ImageUploadForm({
                     disabled={loading || !file}
                     className="w-full md:w-auto px-6 py-3 bg-[#42211D] text-white font-bold hover:bg-[#5C2E29] text-sm rounded-lg transition-all border border-[#DACDCA] shadow-sm tracking-tight disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed disabled:shadow-none"
                 >
-                    {loading ? t('meterUpload.uploading') : submitLabel}
+                    {loading ? t('imageUpload.uploading') : buttonLabel}
                 </button>
             </div>
         </form>

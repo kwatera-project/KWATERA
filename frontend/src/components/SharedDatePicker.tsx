@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import type { ComponentProps } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import {useTranslation} from "react-i18next";
 
 interface SharedDatePickerProps {
     selected: Date | null;
@@ -19,10 +20,6 @@ interface SharedDatePickerProps {
     popperPlacement?: ComponentProps<typeof DatePicker>["popperPlacement"];
 }
 
-const MONTHS = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-];
 
 export interface CustomCalendarHeaderProps {
     date: Date;
@@ -46,6 +43,12 @@ export const CustomCalendarHeader = ({
     const [isOpen, setIsOpen] = useState(false);
     const [pickerYear, setPickerYear] = useState(date.getFullYear());
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const { i18n } = useTranslation();
+    const months = Array.from({ length: 12 }, (_, index) =>
+        new Date(2024, index, 1).toLocaleString(i18n.language, {
+            month: "short",
+        })
+    );
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -88,8 +91,11 @@ export const CustomCalendarHeader = ({
                     onClick={handleToggle}
                     className="text-[#1A1A1A] text-[15px] font-bold capitalize hover:bg-gray-100 px-3 py-1 rounded-md transition-colors"
                 >
-                    {date.toLocaleString('en-US', { month: 'long' })} {date.getFullYear()}
-                </button>
+                    {date.toLocaleString(i18n.language, {
+                        month: "long",
+                    })}{" "}
+                    {date.getFullYear()}
+            </button>
 
                 {isOpen && (
                     <div 
@@ -115,8 +121,10 @@ export const CustomCalendarHeader = ({
                         </div>
 
                         <div className="grid grid-cols-3 gap-2 bg-white" style={{ backgroundColor: "#FFFFFF" }}>
-                            {MONTHS.map((month, index) => {
-                                const isSelected = pickerYear === date.getFullYear() && index === date.getMonth();
+                            {months.map((month, index) => {
+                                const isSelected =
+                                    pickerYear === date.getFullYear() &&
+                                    index === date.getMonth();
                                 return (
                                     <button
                                         key={month}

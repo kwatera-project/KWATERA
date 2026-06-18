@@ -268,7 +268,7 @@ export default function BlockDatesModal({
                             value={form.reason}
                             onChange={handleChange}
                             rows={3}
-                            placeholder="e.g., General maintenance, private use, repaint walls..."
+                            placeholder={t('blockDates.reasonPlaceholder')}
                             className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm resize-none ${
                                 errors.reason ? "border-red-500" : "border-brand-accent"
                             }`}

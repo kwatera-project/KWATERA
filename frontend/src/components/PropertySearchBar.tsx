@@ -90,7 +90,7 @@ export default function PropertySearchBar({
                         }
                     }}
                     className="w-full bg-transparent text-title placeholder-gray-400 focus:outline-none font-medium text-lg"
-                    placeholder="Warszawa, Zakopane..."
+                    placeholder={t('search.cityPlaceholder')}
                     autoComplete="off"
                 />
                 {isCitySuggestionsOpen && filteredCitySuggestions.length > 0 && (

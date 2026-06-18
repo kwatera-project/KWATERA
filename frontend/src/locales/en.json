@@ -53,6 +53,13 @@
     "cancelled": "Cancelled",
     "completed": "Completed"
   },
+
+  "statuses": {
+    "PENDING": "Pending",
+    "CONFIRMED": "Confirmed",
+    "CANCELLED": "Cancelled",
+    "COMPLETED": "Completed"
+  },
   "adminReservations": {
     "title": "Reservation Overview",
     "subtitle": "Manage guest reservations, occupancy status, and utility readings.",
@@ -95,7 +102,8 @@
     "overlap": "Selected dates overlap with an existing booking or block",
     "reasonRequired": "Please provide a reason for blocking these dates",
     "reasonTooShort": "Reason must be at least 3 characters",
-    "failed": "Failed to block selected dates."
+    "failed": "Failed to block selected dates.",
+    "reasonPlaceholder": "e.g. General maintenance, private use, repainting walls..."
   },
 
   "manualReservation": {
@@ -186,7 +194,10 @@
     "setMain": "Set as main image for this property/unit",
     "invalidFormat": "Only JPG, JPEG, and PNG files are allowed.",
     "noFile": "Please select a file first.",
-    "error": "Something went wrong during the upload."
+    "error": "Something went wrong during the upload.",
+    "chooseFile": "Choose file",
+    "upload": "Upload image",
+    "uploading": "Uploading..."
   },
 
   "propertyForm": {
@@ -211,7 +222,270 @@
     "maxGuests": "Max Guests",
     "unitNumber": "Unit Number (e.g. 104A)",
     "floor": "Floor"
+  },
+
+  "adminMeterReadings": {
+    "backToReservations": "Back to Reservations Overview",
+    "missingData": "Missing settlement or unit data.",
+    "title": "Admin Water Meter Readings",
+    "subtitle": "Review OCR water readings and approve corrected values if needed.",
+    "loading": "Loading readings...",
+    "loadError": "Failed to load readings",
+    "noReading": "No water reading has been uploaded yet.",
+    "currentStatus": "Current Water Reading Status",
+    "reading": "Reading",
+    "confidence": "Confidence",
+    "source": "Source",
+    "uploadedPhotos": "Uploaded Meter Photos",
+    "noAttempts": "No upload attempts yet.",
+    "noImage": "No image available.",
+    "ocrValue": "OCR Value"
+  },
+
+  "checkout": {
+    "noBooking": "No Booking Selected",
+    "noBookingDesc": "It seems you navigated here directly. Please select dates for a property unit to start your checkout.",
+    "browseProperties": "Browse Properties",
+    "backToProperty": "Back to Property Details",
+    "title": "Confirm and Pay",
+    "subtitle": "Please review your booking details and provide your contact information to finalize your reservation.",
+    "stayGuestDetails": "Stay & Guest Details",
+    "adults": "Adults",
+    "children": "Children",
+    "arrivalTime": "Arrival Time",
+    "messageHost": "Message for the Host (Optional)",
+    "messagePlaceholder": "Let the host know if you have any special check-in requests, questions, or detail specifications...",
+    "billingDetails": "Billing details",
+    "needInvoice": "I need a company invoice",
+    "invoiceFields": "Company Invoice Fields",
+    "companyName": "Company Name",
+    "taxId": "Tax ID (NIP / VAT)",
+    "companyAddress": "Company Address",
+    "legal": "Legal & Compliance",
+    "houseRules": "House Rules",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "acceptRules": "I accept the",
+    "acceptRulesAnd": "and",
+    "acceptPrivacy": "I acknowledge the",
+    "acceptPrivacyEnd": "and consent to standard processing of my personal details.",
+    "processing": "Processing Reservation...",
+    "processingShort": "Processing...",
+    "confirmPay": "Confirm and Pay with Stripe",
+    "confirmPayShort": "Confirm and Pay",
+    "acceptLegalHint": "Please accept the legal terms and privacy policies to proceed to payment.",
+    "acceptLegalHintMobile": "Please accept legal agreements in the form above to proceed.",
+    "stayDetails": "Stay Details",
+    "duration": "Duration",
+    "night_one": "night",
+    "night_other": "nights",
+    "nights": "nights",
+    "guestSelection": "Guest Selection",
+    "adult_one": "Adult",
+    "adult_other": "Adults",
+    "child_one": "Child",
+    "child_other": "Children",
+    "priceDetails": "Price Details",
+    "totalPrice": "Total Price",
+    "unit": "Unit",
+    "adultRequired": "At least 1 adult is required",
+    "capacityExceeded": "Total guests ({{totalGuests}}) exceeds unit maximum capacity ({{capacity}})",
+    "companyNameRequired": "Company name is required",
+    "taxIdRequired": "Tax ID (NIP / VAT) is required",
+    "taxIdTooShort": "Tax ID must be at least 5 characters",
+    "companyAddressRequired": "Company address is required",
+    "unexpectedError": "An unexpected error occurred. Please try again.",
+    "after20": "After 20:00",
+    "notSureYet": "Not sure yet",
+    "companyNamePlaceholder": "e.g. Kwatera Ltd.",
+    "taxIdPlaceholder": "e.g. 1234567890",
+    "companyAddressPlaceholder": "e.g. 1 Main Street, London"
+  },
+
+  "createProperty": {
+    "title": "Create Property",
+    "subtitle": "Add a new property to your portfolio and set up its location details",
+    "back": "Back to Properties",
+    "submit": "Create Property",
+    "failed": "Failed to create property"
+  },
+
+  "ocrStatuses": {
+    "AUTO_APPROVED": "Approved",
+    "REQUEST_MANUAL_REVIEW": "Requires review",
+    "REQUEST_REUPLOAD": "Reupload required"
+  },
+
+  "createUnit": {
+    "missingPropertyId": "Missing property ID",
+    "failed": "Failed to create unit",
+    "back": "Back to Units",
+    "title": "Create Unit",
+    "subtitle": "Add a new rental unit, room, or apartment to this property",
+    "submit": "Create Unit"
+  },
+
+  "dashboard": {
+    "title": "Dashboard",
+    "globalAdministrator": "Global Administrator",
+    "propertyOwner": "Property Owner",
+    "adminDescription": "Global performance metrics, system-wide occupancy, and cash flow volume.",
+    "ownerDescription": "Owner statistics, property occupancy trends, and unit revenue collection.",
+    "from": "From",
+    "to": "To",
+    "start": "Start",
+    "end": "End",
+    "filter": "Filter",
+    "reservations": "Reservations",
+    "activeBookings": "Active bookings in the selected range",
+    "occupancyRate": "Occupancy Rate",
+    "totalNightsUnits": "{{nights}} total nights, {{units}} units monitored",
+    "collectedRevenue": "Collected Revenue",
+    "paidSettlementsAndDeposits": "Paid settlements and deposits",
+    "outstandingReceivables": "Outstanding Receivables",
+    "pendingInvoiceSettlements": "Pending invoice settlements",
+    "occupancyTrend": "Occupancy Trend",
+    "occupancyTrendDescription": "Shows how occupancy percentages fluctuate over the selected range.",
+    "noOccupancyData": "No occupancy trend data available",
+    "priceAnalysis": "Base vs. Sold Price Analysis",
+    "priceAnalysisDescription": "Comparison between the base property price and the actual sold price (ADR).",
+    "staticBasePrice": "Static Base Price",
+    "actualPriceAdr": "Actual Price (ADR)",
+    "noPricingData": "No dynamic pricing data available",
+    "netProfitUtilityExpenses": "Net Profit & Utility Expenses",
+    "netProfitDescription": "Gross revenue compared with utility expenses.",
+    "grossRevenue": "Gross Revenue",
+    "utilityExpenses": "Utility Expenses",
+    "netProfit": "Net Profit",
+    "noFinancialHistory": "No financial transaction history in this range",
+    "unitProfitabilityRanking": "Unit Profitability Ranking",
+    "unitRankingDescription": "Top-performing accommodations sorted by gross rental revenue.",
+    "totalRevenue": "Total Revenue",
+    "noActiveRentals": "No active rentals or units available in this range",
+    "settlementsPaymentRatio": "Settlements Payment Ratio",
+    "settlementsPaymentRatioDescription": "Proportion of paid and unpaid settlements within the selected date range.",
+    "total": "Total",
+    "paidInvoices": "Paid Invoices",
+    "unpaidIssued": "Unpaid/Issued",
+    "settlement_one": "settlement",
+    "settlement_other": "settlements",
+    "noSettlementData": "No Settlement Data Available",
+    "financialVolumeBreakdown": "Financial Volume Breakdown",
+    "financialVolumeDescription": "Collected revenue compared directly with outstanding receivables.",
+    "totalSettlementsVolume": "Total Settlements Volume:",
+    "noRevenueData": "No Revenue Data Available",
+    "occupancy": "Occupancy",
+    "baseStaticPrice": "Base Static Price",
+    "actualSoldPriceAdr": "Actual Sold Price (ADR)",
+    "pricingMargin": "Pricing Margin",
+    "utilityCosts": "Utility Costs",
+    "unknownUnit": "Unknown Unit",
+    "bookingsCount": "Bookings Count",
+    "stay_one": "stay",
+    "stay_other": "stays"
+  },
+
+  "editPropertyImages": {
+    "title": "Manage Property Images",
+    "subtitle": "Upload new gallery photos and select the primary image for your property listing",
+    "loading": "Loading...",
+    "uploadLabel": "Upload Image",
+    "uploadSuccess": "Image uploaded successfully!",
+    "uploadFailed": "Failed to upload property image",
+    "deleteConfirm": "Are you sure you want to delete this image?",
+    "deleteSuccess": "Image deleted successfully!",
+    "deleteFailed": "Failed to delete image",
+    "mainSuccess": "Main image updated successfully!",
+    "mainFailed": "Failed to update main image",
+    "currentGallery": "Current Gallery",
+    "noImages": "No images uploaded yet for this property.",
+    "mainImage": "Main Image",
+    "activeMain": "✓ Active Main",
+    "setMain": "Set as Main",
+    "delete": "Delete"
+  },
+
+  "editProperty": {
+    "title": "Edit Property",
+    "subtitle": "Modify the general settings, details, and location of your property",
+    "submit": "Save Changes",
+    "failed": "Failed to update property",
+    "notFound": "Property not found"
+  },
+
+  "editUnitImages": {
+    "title": "Manage Unit Images",
+    "subtitle": "Upload and manage the photo gallery for this specific rental unit",
+    "back": "Back to Units",
+    "noImages": "No images uploaded yet for this unit.",
+    "uploadFailed": "Failed to upload unit image"
+  },
+
+  "editUnit": {
+    "title": "Edit Unit",
+    "subtitle": "Modify the general settings, pricing, and details of your unit",
+    "failed": "Failed to update unit",
+    "notFound": "Unit not found"
+  },
+  "meterReadings": {
+    "backToReservations": "Back to My Reservations",
+    "title": "Water Meter Readings",
+    "subtitle": "Upload water meter photos for check-in and check-out tracking.",
+    "checkInManualReview": "Check-in reading was sent for manual review by the owner.",
+    "checkOutManualReview": "Check-out reading was sent for manual review by the owner."
+  },
+
+  "myReservations": {
+    "title": "My Reservations",
+    "subtitle": "Manage your booked stays, view settlement billing, and upload meter readings.",
+    "loading": "Loading your reservations...",
+    "error": "Error: {{error}}",
+    "noReservations": "You don't have any reservations yet.",
+    "browseCatalog": "Browse Catalog",
+    "reservationId": "Reservation ID:",
+    "viewBill": "View Bill",
+    "waterMeter": "Water Meter"
+  },
+
+  "occupancy": {
+    "title": "Occupancy Dashboard",
+    "subtitle": "Manage occupancies, manual reservations, and maintenance blocks.",
+    "dateAnchor": "Date Anchor",
+    "selectMonth": "Select Month",
+    "addReservation": "Add Reservation",
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri",
+    "sat": "Sat",
+    "sun": "Sun",
+    "quickAction": "Quick Action",
+    "date": "Date:",
+    "newBooking": "New Booking",
+    "reservationInfo": "Reservation Info",
+    "reservationStatus": "Reservation Status",
+    "stayAccommodation": "Stay & Accommodation",
+    "accommodation": "Accommodation",
+    "financialSummary": "Financial Summary",
+    "unassignedGuest": "Unassigned Guest",
+    "viewFullDetails": "View Full Details",
+    "close": "Close"
+  },
+  "ownerProperties": {
+    "title": "My Properties",
+    "subtitle": "Manage and configure your rental accommodations",
+    "addProperty": "Add Property",
+    "noProperties": "No properties found. Click \"Add Property\" to create one.",
+    "deleteConfirm": "Are you sure you want to delete this property?",
+    "deleteHasReservations": "Property contains units with reservations and cannot be deleted",
+    "deleteFailed": "Failed to delete property",
+    "address": "Address",
+    "manageUnits": "Manage Units",
+    "manageImages": "Manage Images",
+    "edit": "Edit"
   }
+
 
 
 

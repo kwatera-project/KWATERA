@@ -3,6 +3,7 @@ import {useEffect, useState} from "react";
 import ImageUploadForm from "../contexts/ImageUploadForm.tsx";
 import { deleteUnitImage, setUnitImageAsMain, uploadUnitImage } from "../api/ownerUnitApi.ts";
 import { getUnitImages } from "../api/propertyApi.ts";
+import {useTranslation} from "react-i18next"
 
 interface UnitImage {
     id: string;
@@ -17,6 +18,7 @@ export default function EditUnitImages() {
     const [loading, setLoading] = useState(true);
     const [images, setImages] = useState<UnitImage[]>([]);
     const [refreshKey, setRefreshKey] = useState(0);
+    const {t} = useTranslation();
 
     useEffect(() => {
         if (!unitId || !propertyId) return;
@@ -43,28 +45,28 @@ export default function EditUnitImages() {
 
         try {
             await uploadUnitImage(propertyId, unitId, data.file, data.isMain);
-            alert("Image uploaded successfully!");
+            alert(t('editPropertyImages.uploadSuccess'));
             navigate(`/owner/properties/${propertyId}/units`);
         } catch (error) {
             console.error(error);
-            alert("Failed to upload unit image");
+            alert(t('editUnitImages.uploadFailed'));
         }
     };
 
     const handleDeleteImage = async (imageId: string) => {
         if (!unitId || !propertyId) return;
 
-        if (!confirm("Are you sure you want to delete this image?")) {
+        if (!confirm(t('editPropertyImages.deleteConfirm'))) {
             return;
         }
 
         try {
             await deleteUnitImage(propertyId, unitId, imageId);
-            alert("Image deleted successfully!");
+            alert(t('editPropertyImages.deleteSuccess'));
             triggerRefresh();
         } catch (error) {
             console.error(error);
-            alert("Failed to delete image");
+            alert(t('editPropertyImages.deleteFailed'));
         }
     };
 
@@ -73,18 +75,18 @@ export default function EditUnitImages() {
 
         try {
             await setUnitImageAsMain(propertyId, unitId, imageId, true);
-            alert("Main image updated successfully!");
+            alert(t('editPropertyImages.mainSuccess'));
             triggerRefresh();
         } catch (error) {
             console.error(error);
-            alert("Failed to update main image");
+            alert(t('editPropertyImages.mainFailed'));
         }
     };
 
     if (loading && images.length === 0) {
         return (
             <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#7A7A7A] font-semibold text-sm">
-                Loading...
+                {t('editPropertyImages.loading')}
             </div>
         );
     }
@@ -97,17 +99,17 @@ export default function EditUnitImages() {
                     to={`/owner/properties/${propertyId}/units`}
                     className="inline-flex items-center text-sm font-semibold text-[#7A7A7A] hover:text-[#1A1A1A] transition-colors mb-2"
                 >
-                    ← Back to Units
+                    ← {t('editUnitImages.back')}
                 </Link>
             </div>
 
 
             <div className="border-b border-[#DACDCA] pb-4 mb-6">
                 <h1 className="text-3xl font-black text-[#1A1A1A] tracking-tight">
-                    Manage Unit Images
+                    {t('editUnitImages.title')}
                 </h1>
                 <p className="text-sm font-semibold text-[#7A7A7A] mt-1">
-                    Upload and manage the photo gallery for this specific rental unit
+                    {t('editUnitImages.subtitle')}
                 </p>
             </div>
 
@@ -116,18 +118,18 @@ export default function EditUnitImages() {
                 <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-8 mt-6">
                     <ImageUploadForm
                         onSubmit={handleImageSubmit}
-                        submitLabel="Upload Image"
+                        submitLabel={t('editPropertyImages.uploadLabel')}
                     />
                 </div>
 
                 <div className="space-y-4">
                     <h2 className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
-                        Current Gallery
+                        {t('editPropertyImages.currentGallery')}
                     </h2>
 
                     {images.length === 0 ? (
                         <div className="text-gray-500 italic py-8 text-center bg-white border border-[#DACDCA] rounded-xl shadow-sm">
-                            No images uploaded yet for this unit.
+                            {t('editUnitImages.noImages')}
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -146,7 +148,7 @@ export default function EditUnitImages() {
 
                                             {img.isMain && (
                                                 <span className="absolute top-3 left-3 bg-[#42211D] border border-[#DACDCA]/40 text-white text-xxs font-bold uppercase tracking-wider px-2.5 py-1 rounded-md shadow-sm">
-                                                    Main Image
+                                                    {t('editPropertyImages.mainImage')}
                                                 </span>
                                             )}
                                         </div>
@@ -161,7 +163,7 @@ export default function EditUnitImages() {
                                                         : "bg-white text-[#42211D] border-[#42211D] hover:bg-gray-50"
                                                 }`}
                                             >
-                                                {img.isMain ? "✓ Active Main" : "Set as Main"}
+                                                {img.isMain ? t('editPropertyImages.activeMain') : t('editPropertyImages.setMain')}
                                             </button>
                                         </div>
                                     </div>
@@ -174,7 +176,7 @@ export default function EditUnitImages() {
                                             onClick={() => img?.id && handleDeleteImage(img.id)}
                                             className="px-3 py-1 border border-red-200 bg-red-50 text-red-700 font-bold hover:bg-red-100 text-xs rounded-lg shadow-sm transition-all"
                                         >
-                                            Delete
+                                            {t('editPropertyImages.delete')}
                                         </button>
                                     </div>
                                 </div>

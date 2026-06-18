@@ -13,6 +13,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({isSubpage}: NavbarProps = {}) {
+    const {t} = useTranslation();
     const token = localStorage.getItem("token");
     const userRoles = getUserRoles(token);
     const isLoggedIn = !!token;
@@ -20,7 +21,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
     const sub = payload?.sub as string | undefined;
     const firstName = payload?.firstName as string | undefined;
     const lastName = payload?.lastName as string | undefined;
-    const displayName = (firstName && lastName) ? `${firstName} ${lastName}` : (sub ? sub.split('@')[0] : 'Profile');
+    const displayName = (firstName && lastName) ? `${firstName} ${lastName}` : (sub ? sub.split('@')[0] : t('navbar.myProfile'));
 
     const logout = useLogout()
     const {currency, setCurrency} = useCurrency();
@@ -31,7 +32,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
     const [isScrolled, setIsScrolled] = useState(false);
     const profileDropdownRef = useRef<HTMLDivElement>(null);
 
-    const {t} = useTranslation();
+
     const [currentLang, setCurrentLang] = useState(i18n.language);
     const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
 

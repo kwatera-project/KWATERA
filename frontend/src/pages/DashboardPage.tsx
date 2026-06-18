@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import DatePicker from "react-datepicker";
 import SharedDatePicker from "../components/SharedDatePicker";
+import { useTranslation } from "react-i18next";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -46,9 +47,8 @@ export default function DashboardPage() {
     activeReservations,
     refreshData
   } = useDashboardData();
-
   const dateToRef = useRef<DatePicker | null>(null);
-
+  const {t} = useTranslation();
   const totalReservations = resMetrics.totalReservations;
   const occupancyRate = resMetrics.occupancyRate;
   const occupiedDays = resMetrics.occupiedDays;
@@ -72,7 +72,7 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-[#DACDCA] pb-6">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-extrabold text-[#1A1A1A] tracking-tight">Dashboard</h1>
+            <h1 className="text-3xl font-extrabold text-[#1A1A1A] tracking-tight">{t("dashboard.title")}</h1>
             {userRole && (
               <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider ${
                 userRole === "ADMIN" 
@@ -80,21 +80,21 @@ export default function DashboardPage() {
                   : "bg-indigo-50 text-indigo-800 border-indigo-200"
               }`}>
                 <Shield className="w-3.5 h-3.5" />
-                {userRole === "ADMIN" ? "Global Administrator" : "Property Owner"}
+                  {userRole === "ADMIN" ? t("dashboard.globalAdministrator") : t("dashboard.propertyOwner")}
               </span>
             )}
           </div>
           <p className="text-sm text-[#7A7A7A]">
-            {userRole === "ADMIN" 
-              ? "Global performance metrics, system-wide occupancy, and cashflow volume."
-              : "Scoped owner stats, property occupancy trends, and unit revenue collection."}
+              {userRole === "ADMIN"
+                  ? t("dashboard.adminDescription")
+                  : t("dashboard.ownerDescription")}
           </p>
         </div>
 
         <div className="flex flex-col items-end gap-3 ml-auto">
           <form onSubmit={handleFilterSubmit} className="flex flex-wrap items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-[#DACDCA]">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">From</span>
+              <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">{t("dashboard.from")}</span>
               <div className="flex items-center bg-[#F7F7F7] border border-[#DACDCA] rounded-lg px-3 py-1.5 shadow-sm focus-within:ring-1 focus-within:ring-[#42211D]">
                 <SharedDatePicker
                   selected={startDate}
@@ -109,13 +109,13 @@ export default function DashboardPage() {
                   selectsStart
                   startDate={startDate}
                   endDate={endDate}
-                  placeholderText="Start"
+                  placeholderText={t("dashboard.start")}
                   className="bg-transparent text-sm font-bold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center"
                 />
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">To</span>
+              <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">{t("dashboard.to")}</span>
               <div className="flex items-center bg-[#F7F7F7] border border-[#DACDCA] rounded-lg px-3 py-1.5 shadow-sm focus-within:ring-1 focus-within:ring-[#42211D]">
                 <SharedDatePicker
                   datepickerRef={dateToRef}
@@ -125,7 +125,7 @@ export default function DashboardPage() {
                   startDate={startDate}
                   endDate={endDate}
                   minDate={startDate}
-                  placeholderText="End"
+                  placeholderText={t("dashboard.end")}
                   className="bg-transparent text-sm font-bold text-[#1A1A1A] outline-none cursor-pointer w-24 text-center"
                 />
               </div>
@@ -134,7 +134,7 @@ export default function DashboardPage() {
               type="submit"
               className="px-5 py-2 bg-[#42211D] text-white font-bold hover:bg-[#2a1412] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm cursor-pointer"
             >
-              Filter
+                {t("dashboard.filter")}
             </button>
           </form>
           <div className="flex flex-wrap items-center gap-3 justify-end">
@@ -188,7 +188,7 @@ export default function DashboardPage() {
               <div className="flex flex-col justify-between h-full space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
-                    Reservations
+                    {t("dashboard.reservations")}
                   </span>
                   <span className="p-2 bg-[#42211D]/10 text-[#42211D] rounded-xl">
                     <Calendar className="w-5 h-5" />
@@ -199,7 +199,7 @@ export default function DashboardPage() {
                     {totalReservations}
                   </h2>
                   <p className="text-xs text-[#7A7A7A] mt-2 font-medium">
-                    Active bookings in selected range
+                      {t("dashboard.activeBookings")}
                   </p>
                 </div>
               </div>
@@ -210,7 +210,7 @@ export default function DashboardPage() {
               <div className="flex flex-col justify-between h-full space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
-                    Occupancy Rate
+                    {t("dashboard.occupancyRate")}
                   </span>
                   <span className="p-2 bg-emerald-100 text-emerald-700 rounded-xl">
                     <Percent className="w-5 h-5" />
@@ -227,7 +227,8 @@ export default function DashboardPage() {
                     ></div>
                   </div>
                   <p className="text-[10px] text-[#7A7A7A] mt-2 font-medium">
-                    {occupiedDays} total nights ({totalUnitsCount} units monitored)
+                      {t("dashboard.totalNightsUnits", {nights: occupiedDays, units: totalUnitsCount
+                      })}
                   </p>
                 </div>
               </div>
@@ -238,7 +239,7 @@ export default function DashboardPage() {
               <div className="flex flex-col justify-between h-full space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
-                    Collected Revenue
+                    {t("dashboard.collectedRevenue")}
                   </span>
                   <span className="p-2 bg-blue-100 text-blue-700 rounded-xl">
                     <DollarSign className="w-5 h-5" />
@@ -249,7 +250,7 @@ export default function DashboardPage() {
                     {revenueFromSettlements.toLocaleString("pl-PL", { style: "currency", currency: "PLN" })}
                   </h2>
                   <p className="text-xs text-[#7A7A7A] mt-2 font-medium">
-                    Paid settlements and deposits
+                      {t("dashboard.paidSettlementsAndDeposits")}
                   </p>
                 </div>
               </div>
@@ -260,7 +261,7 @@ export default function DashboardPage() {
               <div className="flex flex-col justify-between h-full space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
-                    Outstanding Receivables
+                    {t("dashboard.outstandingReceivables")}
                   </span>
                   <span className="p-2 bg-amber-100 text-amber-700 rounded-xl">
                     <Activity className="w-5 h-5" />
@@ -271,7 +272,7 @@ export default function DashboardPage() {
                     {unpaidBalance.toLocaleString("pl-PL", { style: "currency", currency: "PLN" })}
                   </h2>
                   <p className="text-xs text-[#7A7A7A] mt-2 font-medium">
-                    Pending invoice settlements
+                      {t("dashboard.pendingInvoiceSettlements")}
                   </p>
                 </div>
               </div>
@@ -285,10 +286,10 @@ export default function DashboardPage() {
             <div id="occupancy-chart" className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4">
               <div>
                 <h3 className="text-lg font-bold text-[#1A1A1A]">
-                  Occupancy Trend
+                    {t("dashboard.occupancyTrend")}
                 </h3>
                 <p className="text-xs text-[#7A7A7A]">
-                  Shows how occupancy percentages fluctuate over the selected range.
+                    {t("dashboard.occupancyTrendDescription")}
                 </p>
               </div>
               <div className="h-80 w-full">
@@ -310,7 +311,7 @@ export default function DashboardPage() {
                   </ResponsiveContainer>
                 ) : (
                   <div className="h-full flex items-center justify-center text-sm font-medium text-gray-400">
-                    No occupancy trend data available
+                      {t("dashboard.noOccupancyData")}
                   </div>
                 )}
               </div>
@@ -320,10 +321,10 @@ export default function DashboardPage() {
             <div className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4">
               <div>
                 <h3 className="text-lg font-bold text-[#1A1A1A]">
-                  Base vs. Sold Price Analysis
+                    {t("dashboard.priceAnalysis")}
                 </h3>
                 <p className="text-xs text-[#7A7A7A]">
-                  Comparison between the base property price and the actual price sold (ADR).
+                    {t("dashboard.priceAnalysisDescription")}
                 </p>
               </div>
               <div className="h-80 w-full">
@@ -335,13 +336,13 @@ export default function DashboardPage() {
                       <YAxis stroke="#7A7A7A" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `zł${v}`} />
                       <Tooltip content={<CustomPricingTooltip />} wrapperStyle={{ backgroundColor: 'transparent', border: 'none', outline: 'none' }} />
                       <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, fontWeight: "bold" }} />
-                      <Line type="monotone" dataKey="staticAdr" name="Static Base Price" stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" dot={false} activeDot={{ r: 4 }} />
-                      <Line type="monotone" dataKey="aiAdr" name="Actual Price (ADR)" stroke="#6366F1" strokeWidth={2.5} dot={{ r: 3, strokeWidth: 1 }} activeDot={{ r: 6 }} />
+                      <Line type="monotone" dataKey="staticAdr" name={t("dashboard.staticBasePrice")}  stroke="#9CA3AF" strokeWidth={2} strokeDasharray="5 5" dot={false} activeDot={{ r: 4 }} />
+                      <Line type="monotone" dataKey="aiAdr" name={t("dashboard.actualPriceAdr")} stroke="#6366F1" strokeWidth={2.5} dot={{ r: 3, strokeWidth: 1 }} activeDot={{ r: 6 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 ) : (
                   <div className="h-full flex items-center justify-center text-sm font-medium text-gray-400">
-                    No dynamic pricing data available
+                      {t("dashboard.noPricingData")}
                   </div>
                 )}
               </div>
@@ -351,10 +352,10 @@ export default function DashboardPage() {
             <div id="revenue-chart" className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4">
               <div>
                 <h3 className="text-lg font-bold text-[#1A1A1A]">
-                  Net Profit & Utility Expenses
+                    {t("dashboard.netProfitUtilityExpenses")}
                 </h3>
                 <p className="text-xs text-[#7A7A7A]">
-                  Gross revenue mapped against media and utility expenses.
+                    {t("dashboard.netProfitDescription")}
                 </p>
               </div>
               <div className="h-80 w-full">
@@ -366,14 +367,14 @@ export default function DashboardPage() {
                       <YAxis stroke="#7A7A7A" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `zł${v}`} />
                       <Tooltip content={<CustomProfitTooltip />} wrapperStyle={{ backgroundColor: 'transparent', border: 'none', outline: 'none' }} />
                       <Legend verticalAlign="top" height={36} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, fontWeight: "bold" }} />
-                      <Bar dataKey="grossRevenue" name="Gross Revenue" fill="#3B82F6" radius={[4, 4, 0, 0]} barSize={20} />
-                      <Bar dataKey="utilityCosts" name="Utility Expenses" fill="#EF4444" radius={[4, 4, 0, 0]} barSize={20} />
-                      <Line type="monotone" dataKey="netProfit" name="Net Profit" stroke="#10B981" strokeWidth={3} dot={{ r: 4 }} />
+                      <Bar dataKey="grossRevenue" name={t("dashboard.grossRevenue")} fill="#3B82F6" radius={[4, 4, 0, 0]} barSize={20} />
+                      <Bar dataKey="utilityCosts" name={t("dashboard.utilityExpenses")} fill="#EF4444" radius={[4, 4, 0, 0]} barSize={20} />
+                      <Line type="monotone" dataKey="netProfit" name={t("dashboard.netProfit")} stroke="#10B981" strokeWidth={3} dot={{ r: 4 }} />
                     </ComposedChart>
                   </ResponsiveContainer>
                 ) : (
                   <div className="h-full flex items-center justify-center text-sm font-medium text-gray-400">
-                    No financial transaction history in this range
+                      {t("dashboard.noFinancialHistory")}
                   </div>
                 )}
               </div>
@@ -383,10 +384,10 @@ export default function DashboardPage() {
             <div className="bg-white rounded-xl border border-[#DACDCA] shadow-sm p-6 space-y-4">
               <div>
                 <h3 className="text-lg font-bold text-[#1A1A1A]">
-                  Unit Profitability Ranking
+                    {t("dashboard.unitProfitabilityRanking")}
                 </h3>
                 <p className="text-xs text-[#7A7A7A]">
-                  Top performing accommodations sorted by gross rental revenue.
+                    {t("dashboard.unitRankingDescription")}
                 </p>
               </div>
               <div className="h-80 w-full">
@@ -401,12 +402,12 @@ export default function DashboardPage() {
                       <XAxis type="number" stroke="#7A7A7A" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `zł${v}`} />
                       <YAxis type="category" dataKey="name" stroke="#7A7A7A" fontSize={10} tickLine={false} axisLine={false} width={80} />
                       <Tooltip content={<CustomRankingTooltip />} wrapperStyle={{ backgroundColor: 'transparent', border: 'none', outline: 'none' }} />
-                      <Bar dataKey="revenue" name="Total Revenue" fill="#42211D" radius={[0, 4, 4, 0]} barSize={14} />
+                      <Bar dataKey="revenue" name={t("dashboard.totalRevenue")} fill="#42211D" radius={[0, 4, 4, 0]} barSize={14} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
                   <div className="h-full flex items-center justify-center text-sm font-medium text-gray-400">
-                    No active rentals or units resolved in this range
+                      {t("dashboard.noActiveRentals")}
                   </div>
                 )}
               </div>
@@ -419,10 +420,10 @@ export default function DashboardPage() {
             <div className="bg-white p-6 sm:p-8 rounded-xl border border-[#DACDCA] shadow-sm flex flex-col justify-between h-96">
               <div>
                 <h3 className="text-lg font-bold text-[#1A1A1A]">
-                  Settlements Payment Ratio
+                    {t("dashboard.settlementsPaymentRatio")}
                 </h3>
                 <p className="text-xs text-[#7A7A7A] mt-1">
-                  Proportion of paid versus unpaid settlements within date range.
+                    {t("dashboard.settlementsPaymentRatioDescription")}
                 </p>
               </div>
 
@@ -464,7 +465,7 @@ export default function DashboardPage() {
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
                         <span className="text-2xl font-black text-[#1A1A1A]">{totalSettlements}</span>
-                        <span className="text-[10px] uppercase font-bold tracking-widest text-[#7A7A7A]">Total</span>
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-[#7A7A7A]">{t("dashboard.total")}</span>
                       </div>
                     </div>
 
@@ -472,18 +473,22 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-3">
                         <span className="w-3.5 h-3.5 rounded-full bg-[#42211D] flex-shrink-0"></span>
                         <div className="flex flex-col">
-                          <span className="text-sm font-semibold text-gray-700">Paid Invoices</span>
+                          <span className="text-sm font-semibold text-gray-700">{t("dashboard.paidInvoices")}</span>
                           <span className="text-xs font-medium text-[#7A7A7A]">
-                            {paidSettlementsCount} settlements ({Math.round(paidPct)}%)
+                              {paidSettlementsCount}{" "}
+                              {t("dashboard.settlement", { count: paidSettlementsCount })}{" "}
+                              ({Math.round(paidPct)}%)
                           </span>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="w-3.5 h-3.5 rounded-full bg-amber-500 flex-shrink-0"></span>
                         <div className="flex flex-col">
-                          <span className="text-sm font-semibold text-gray-700">Unpaid/Issued</span>
+                          <span className="text-sm font-semibold text-gray-700">{t("dashboard.unpaidIssued")}</span>
                           <span className="text-xs font-medium text-[#7A7A7A]">
-                            {unpaidSettlementsCount} settlements ({Math.round(100 - paidPct)}%)
+                            {unpaidSettlementsCount}{" "}
+                              {t("dashboard.settlement", { count: unpaidSettlementsCount })}{" "}
+                              ({Math.round(100 - paidPct)}%)
                           </span>
                         </div>
                       </div>
@@ -494,7 +499,7 @@ export default function DashboardPage() {
                     <div className="mx-auto w-16 h-16 text-gray-200 bg-gray-50 rounded-full flex items-center justify-center">
                       <AlertCircle className="w-8 h-8" />
                     </div>
-                    <p className="text-sm font-semibold text-[#7A7A7A]">No Settlement Data Available</p>
+                    <p className="text-sm font-semibold text-[#7A7A7A]">{t("dashboard.noSettlementData")}</p>
                   </div>
                 )}
               </div>
@@ -503,10 +508,10 @@ export default function DashboardPage() {
             <div className="bg-white p-6 sm:p-8 rounded-xl border border-[#DACDCA] shadow-sm flex flex-col justify-between h-96">
               <div>
                 <h3 className="text-lg font-bold text-[#1A1A1A]">
-                  Financial Volume Breakdown
+                    {t("dashboard.financialVolumeBreakdown")}
                 </h3>
                 <p className="text-xs text-[#7A7A7A] mt-1">
-                  Collected revenue compared directly to outstanding receivables.
+                    {t("dashboard.financialVolumeDescription")}
                 </p>
               </div>
 
@@ -517,7 +522,7 @@ export default function DashboardPage() {
                       <div className="flex items-center justify-between text-sm">
                         <span className="font-semibold text-gray-700 flex items-center gap-2">
                           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                          Collected Revenue
+                            {t("dashboard.collectedRevenue")}
                         </span>
                         <span className="font-bold text-gray-900">
                           {revenueFromSettlements.toLocaleString("pl-PL", { style: "currency", currency: "PLN" })}
@@ -541,7 +546,7 @@ export default function DashboardPage() {
                       <div className="flex items-center justify-between text-sm">
                         <span className="font-semibold text-gray-700 flex items-center gap-2">
                           <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                          Outstanding Receivables
+                            {t("dashboard.outstandingReceivables")}
                         </span>
                         <span className="font-bold text-gray-900">
                           {unpaidBalance.toLocaleString("pl-PL", { style: "currency", currency: "PLN" })}
@@ -562,7 +567,7 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="border-t border-gray-100 pt-4 flex justify-between text-xs text-[#7A7A7A] font-bold">
-                      <span>Total Settlements Volume:</span>
+                        <span>{t("dashboard.totalSettlementsVolume")}</span>
                       <span>
                         {(revenueFromSettlements + unpaidBalance).toLocaleString("pl-PL", { style: "currency", currency: "PLN" })}
                       </span>
@@ -573,7 +578,7 @@ export default function DashboardPage() {
                     <div className="mx-auto w-16 h-16 text-gray-200 bg-gray-50 rounded-full flex items-center justify-center">
                       <AlertCircle className="w-8 h-8" />
                     </div>
-                    <p className="text-sm font-semibold text-[#7A7A7A]">No Revenue Data Available</p>
+                    <p className="text-sm font-semibold text-[#7A7A7A]">{t("dashboard.noRevenueData")}</p>
                   </div>
                 )}
               </div>
@@ -592,13 +597,14 @@ interface CustomTooltipProps {
 }
 
 const CustomOccupancyTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+    const {t} = useTranslation();
   if (active && payload && payload.length) {
     return (
       <div className="bg-white p-3.5 rounded-xl shadow-lg border border-gray-100 text-xs font-semibold space-y-1" style={{ backgroundColor: '#ffffff' }}>
         <p className="text-gray-400 font-bold uppercase tracking-wider text-[9px]">{label}</p>
         <p className="text-sm flex items-center gap-1.5 font-bold text-gray-900">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-          Occupancy: <span className="text-emerald-600 text-base">{payload[0].value}%</span>
+            {t("dashboard.occupancy")}: <span className="text-emerald-600 text-base">{payload[0].value}%</span>
         </p>
       </div>
     );
@@ -607,7 +613,8 @@ const CustomOccupancyTooltip = ({ active, payload, label }: CustomTooltipProps) 
 };
 
 const CustomPricingTooltip = ({ active, payload, label }: CustomTooltipProps) => {
-  if (active && payload && payload.length) {
+    const {t} = useTranslation();
+    if (active && payload && payload.length) {
     const staticVal = payload.find(p => p.dataKey === 'staticAdr')?.value ?? 0;
     const aiVal = payload.find(p => p.dataKey === 'aiAdr')?.value ?? 0;
     const diff = Number(aiVal) - Number(staticVal);
@@ -619,19 +626,19 @@ const CustomPricingTooltip = ({ active, payload, label }: CustomTooltipProps) =>
           <p className="flex items-center justify-between gap-4 font-semibold text-gray-600">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
-              Base Static Price:
+                {t("dashboard.baseStaticPrice")}:
             </span>
             <span>zł{Number(staticVal).toLocaleString("pl-PL", { minimumFractionDigits: 2 })}</span>
           </p>
           <p className="flex items-center justify-between gap-4 font-semibold text-indigo-600">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
-              Actual Sold Price (ADR):
+                {t("dashboard.actualSoldPriceAdr")}:
             </span>
             <span>zł{Number(aiVal).toLocaleString("pl-PL", { minimumFractionDigits: 2 })}</span>
           </p>
           <div className="border-t border-gray-100 pt-1.5 mt-1.5 flex items-center justify-between gap-4 font-bold text-emerald-600">
-            <span>Pricing Margin:</span>
+            <span>{t("dashboard.pricingMargin")}:</span>
             <span>+zł{diff.toLocaleString("pl-PL", { minimumFractionDigits: 2 })} ({pct.toFixed(1)}%)</span>
           </div>
         </div>
@@ -642,7 +649,8 @@ const CustomPricingTooltip = ({ active, payload, label }: CustomTooltipProps) =>
 };
 
 const CustomProfitTooltip = ({ active, payload, label }: CustomTooltipProps) => {
-  if (active && payload && payload.length) {
+    const {t} = useTranslation();
+    if (active && payload && payload.length) {
     const gross = payload.find(p => p.dataKey === 'grossRevenue')?.value ?? 0;
     const utilities = payload.find(p => p.dataKey === 'utilityCosts')?.value ?? 0;
     const net = Number(gross) - Number(utilities);
@@ -653,19 +661,19 @@ const CustomProfitTooltip = ({ active, payload, label }: CustomTooltipProps) => 
           <p className="flex items-center justify-between gap-4 font-semibold text-blue-600">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-              Gross Revenue:
+                {t("dashboard.grossRevenue")}:
             </span>
             <span>zł{Number(gross).toLocaleString("pl-PL")}</span>
           </p>
           <p className="flex items-center justify-between gap-4 font-semibold text-red-600">
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
-              Utility Costs:
+                {t("dashboard.utilityCosts")}:
             </span>
             <span>zł{Number(utilities).toLocaleString("pl-PL")}</span>
           </p>
           <div className="border-t border-gray-100 pt-1.5 mt-1.5 flex items-center justify-between gap-4 font-bold text-emerald-600">
-            <span>Net Profit:</span>
+            <span>{t("dashboard.netProfit")}:</span>
             <span>zł{net.toLocaleString("pl-PL")}</span>
           </div>
         </div>
@@ -676,22 +684,25 @@ const CustomProfitTooltip = ({ active, payload, label }: CustomTooltipProps) => 
 };
 
 const CustomRankingTooltip = ({ active, payload }: CustomTooltipProps) => {
-  if (active && payload && payload.length) {
+    const {t} = useTranslation();
+    if (active && payload && payload.length) {
     const revenue = payload.find(p => p.dataKey === 'revenue')?.value ?? 0;
     const itemPayload = payload[0]?.payload || {};
-    const uName = itemPayload.name || "Unknown Unit";
+    const uName = itemPayload.name || t("dashboard.unknownUnit");
     const bookings = itemPayload.bookings || 0;
     return (
       <div className="bg-white p-3.5 rounded-xl shadow-lg border border-gray-100 text-xs font-semibold space-y-1.5" style={{ backgroundColor: '#ffffff' }}>
         <p className="text-gray-900 font-extrabold">{uName}</p>
         <p className="text-sm font-bold text-gray-700 flex justify-between gap-4">
-          <span>Total Revenue:</span>
+            <span>{t("dashboard.totalRevenue")}:</span>
           <span className="text-[#42211D]">zł{Number(revenue).toLocaleString("pl-PL")}</span>
         </p>
-        <p className="text-xs text-gray-500 flex justify-between gap-4">
-          <span>Bookings Count:</span>
-          <span>{bookings} stay{bookings === 1 ? "" : "s"}</span>
-        </p>
+          <p className="text-xs text-gray-500 flex justify-between gap-4">
+              <span>{t("dashboard.bookingsCount")}:</span>
+              <span>
+                  {bookings} {t("dashboard.stay", { count: bookings })}
+              </span>
+          </p>
       </div>
     );
   }

@@ -53,6 +53,14 @@
     "cancelled": "Anulowana",
     "completed": "Zakończona"
   },
+
+  "statuses": {
+    "PENDING": "Oczekująca",
+    "CONFIRMED": "Potwierdzona",
+    "CANCELLED": "Anulowana",
+    "COMPLETED": "Zakończona"
+  },
+
   "adminReservations": {
     "title": "Przegląd rezerwacji",
     "subtitle": "Zarządzaj rezerwacjami gości, obłożeniem i odczytami liczników.",
@@ -95,7 +103,8 @@
     "overlap": "Wybrane daty nakładają się z istniejącą rezerwacją lub blokadą",
     "reasonRequired": "Podaj powód blokady dat",
     "reasonTooShort": "Powód musi mieć co najmniej 3 znaki",
-    "failed": "Nie udało się zablokować wybranych dat."
+    "failed": "Nie udało się zablokować wybranych dat.",
+    "reasonPlaceholder": "Np. konserwacja, użytek prywatny, malowanie ścian..."
   },
 
   "manualReservation": {
@@ -185,7 +194,10 @@
     "setMain": "Ustaw jako główne zdjęcie tej nieruchomości/jednostki",
     "invalidFormat": "Dozwolone są tylko pliki JPG, JPEG i PNG.",
     "noFile": "Najpierw wybierz plik.",
-    "error": "Coś poszło nie tak podczas przesyłania."
+    "error": "Coś poszło nie tak podczas przesyłania.",
+    "chooseFile": "Wybierz plik",
+    "upload": "Prześlij zdjęcie",
+    "uploading": "Przesyłanie..."
   },
 
   "propertyForm": {
@@ -201,16 +213,272 @@
   },
 
   "unitForm": {
-    "name": "Nazwa jednostki",
+    "name": "Nazwa lokalu",
     "namePlaceholder": "np. Apartament 4B",
-    "descriptionPlaceholder": "Opisz jednostkę, wyjątkowe cechy lub układ łóżek...",
+    "descriptionPlaceholder": "Opisz lokal, wyjątkowe cechy lub układ łóżek...",
     "pricingType": "Cena i typ",
     "pricePerNight": "Cena za noc",
     "spaceLocation": "Przestrzeń i lokalizacja",
     "maxGuests": "Maks. goście",
     "unitNumber": "Numer jednostki (np. 104A)",
     "floor": "Piętro"
+  },
+
+  "adminMeterReadings": {
+    "backToReservations": "Powrót do przeglądu rezerwacji",
+    "missingData": "Brak danych rozliczenia lub jednostki.",
+    "title": "Odczyty licznika wody",
+    "subtitle": "Przejrzyj odczyty OCR i zatwierdź poprawione wartości w razie potrzeby.",
+    "loading": "Ładowanie odczytów...",
+    "loadError": "Nie udało się załadować odczytów",
+    "noReading": "Nie przesłano jeszcze żadnego odczytu wody.",
+    "currentStatus": "Aktualny status odczytu wody",
+    "reading": "Odczyt",
+    "confidence": "Pewność",
+    "source": "Źródło",
+    "uploadedPhotos": "Przesłane zdjęcia licznika",
+    "noAttempts": "Brak prób przesłania.",
+    "noImage": "Brak zdjęcia.",
+    "ocrValue": "Wartość OCR"
+  },
+
+  "checkout": {
+    "noBooking": "Nie wybrano rezerwacji",
+    "noBookingDesc": "Wygląda na to, że trafiłeś tu bezpośrednio. Wybierz daty dla jednostki nieruchomości, aby rozpocząć rezerwację.",
+    "browseProperties": "Przeglądaj nieruchomości",
+    "backToProperty": "Powrót do szczegółów nieruchomości",
+    "title": "Potwierdź i zapłać",
+    "subtitle": "Sprawdź szczegóły rezerwacji i podaj dane kontaktowe, aby sfinalizować rezerwację.",
+    "stayGuestDetails": "Szczegóły pobytu i gości",
+    "adults": "Dorośli",
+    "children": "Dzieci",
+    "arrivalTime": "Godzina przyjazdu",
+    "messagePlaceholder": "Poinformuj gospodarza o specjalnych życzeniach dotyczących zameldowania lub innych szczegółach...",
+    "billingDetails": "Dane do faktury",
+    "needInvoice": "Potrzebuję faktury firmowej",
+    "invoiceFields": "Dane do faktury firmowej",
+    "companyName": "Nazwa firmy",
+    "taxId": "NIP / VAT",
+    "companyAddress": "Adres firmy",
+    "legal": "Kwestie prawne",
+    "houseRules": "Regulamin obiektu",
+    "terms": "Warunki korzystania",
+    "privacy": "Politykę prywatności",
+    "acceptRules": "Akceptuję",
+    "acceptRulesAnd": "i",
+    "acceptPrivacy": "Potwierdzam zapoznanie się z",
+    "acceptPrivacyEnd": "i wyrażam zgodę na standardowe przetwarzanie moich danych osobowych.",
+    "processing": "Przetwarzanie rezerwacji...",
+    "processingShort": "Przetwarzanie...",
+    "confirmPay": "Potwierdź i zapłać przez Stripe",
+    "confirmPayShort": "Potwierdź i zapłać",
+    "acceptLegalHint": "Zaakceptuj warunki prawne i politykę prywatności, aby przejść do płatności.",
+    "acceptLegalHintMobile": "Zaakceptuj warunki prawne w formularzu powyżej, aby kontynuować.",
+    "stayDetails": "Szczegóły pobytu",
+    "duration": "Czas trwania",
+    "night_one": "noc",
+    "night_other": "nocy",
+    "nights": "nocy",
+    "guestSelection": "Wybór gości",
+    "adult_one": "Dorosły",
+    "adult_other": "Dorosłych",
+    "child_one": "Dziecko",
+    "child_other": "Dzieci",
+    "priceDetails": "Szczegóły ceny",
+    "totalPrice": "Łączna cena",
+    "unit": "Jednostka",
+    "adultRequired": "Wymagany co najmniej 1 dorosły",
+    "capacityExceeded": "Łączna liczba gości ({{totalGuests}}) przekracza maksymalną pojemność jednostki ({{capacity}})",
+    "companyNameRequired": "Nazwa firmy jest wymagana",
+    "taxIdRequired": "NIP / VAT jest wymagany",
+    "taxIdTooShort": "NIP musi mieć co najmniej 5 znaków",
+    "companyAddressRequired": "Adres firmy jest wymagany",
+    "unexpectedError": "Wystąpił nieoczekiwany błąd. Spróbuj ponownie.",
+    "after20": "Po 20:00",
+    "notSureYet": "Jeszcze nie wiem",
+    "messageHost": "Wiadomość do gospodarza (opcjonalnie)",
+    "companyNamePlaceholder": "np. Kwatera Sp. z o.o.",
+    "taxIdPlaceholder": "np. 1234567890",
+    "companyAddressPlaceholder": "np. ul. Wiejska 1, 00-001 Warszawa"
+  },
+
+  "createProperty": {
+    "title": "Dodaj nieruchomość",
+    "subtitle": "Dodaj nową nieruchomość do swojego portfolio i uzupełnij szczegóły lokalizacji",
+    "back": "Powrót do nieruchomości",
+    "submit": "Utwórz nieruchomość",
+    "failed": "Nie udało się utworzyć nieruchomości"
+  },
+
+  "ocrStatuses": {
+    "AUTO_APPROVED": "Zatwierdzony",
+    "REQUEST_MANUAL_REVIEW": "Wymaga weryfikacji",
+    "REQUEST_REUPLOAD": "Wymagane ponowne przesłanie"
+  },
+
+  "createUnit": {
+    "missingPropertyId": "Brak identyfikatora nieruchomości",
+    "failed": "Nie udało się utworzyć lokalu",
+    "back": "Powrót do lokalu",
+    "title": "Dodaj lokal",
+    "subtitle": "Dodaj nowy lokal, pokój lub apartament do tej nieruchomości",
+    "submit": "Utwórz lokal"
+  },
+
+  "dashboard": {
+    "title": "Panel",
+    "globalAdministrator": "Administrator globalny",
+    "propertyOwner": "Właściciel nieruchomości",
+    "adminDescription": "Globalne wyniki, obłożenie całego systemu oraz przepływy finansowe.",
+    "ownerDescription": "Statystyki właściciela, trendy obłożenia nieruchomości oraz przychody jednostek.",
+    "from": "Od",
+    "to": "Do",
+    "start": "Początek",
+    "end": "Koniec",
+    "filter": "Filtruj",
+    "reservations": "Rezerwacje",
+    "activeBookings": "Aktywne rezerwacje w wybranym okresie",
+    "occupancyRate": "Poziom obłożenia",
+    "totalNightsUnits": "Łącznie {{nights}} nocy, monitorowane jednostki: {{units}}",
+    "collectedRevenue": "Uzyskany przychód",
+    "paidSettlementsAndDeposits": "Opłacone rozliczenia i depozyty",
+    "outstandingReceivables": "Należności do zapłaty",
+    "pendingInvoiceSettlements": "Oczekujące rozliczenia faktur",
+    "occupancyTrend": "Trend obłożenia",
+    "occupancyTrendDescription": "Pokazuje zmiany poziomu obłożenia w wybranym okresie.",
+    "noOccupancyData": "Brak danych dotyczących trendu obłożenia",
+    "priceAnalysis": "Analiza ceny podstawowej i sprzedażowej",
+    "priceAnalysisDescription": "Porównanie podstawowej ceny nieruchomości z rzeczywistą ceną sprzedaży (ADR).",
+    "staticBasePrice": "Podstawowa cena",
+    "actualPriceAdr": "Rzeczywista cena (ADR)",
+    "noPricingData": "Brak danych dotyczących cen dynamicznych",
+    "netProfitUtilityExpenses": "Zysk netto i koszty mediów",
+    "netProfitDescription": "Porównanie przychodu brutto z kosztami mediów.",
+    "grossRevenue": "Przychód brutto",
+    "utilityExpenses": "Koszty mediów",
+    "netProfit": "Zysk netto",
+    "noFinancialHistory": "Brak historii transakcji finansowych w tym okresie",
+    "unitProfitabilityRanking": "Ranking rentowności jednostek",
+    "unitRankingDescription": "Najlepiej działające jednostki według przychodu brutto z wynajmu.",
+    "totalRevenue": "Łączny przychód",
+    "noActiveRentals": "Brak aktywnych wynajmów lub jednostek w tym okresie",
+    "settlementsPaymentRatio": "Stosunek opłaconych rozliczeń",
+    "settlementsPaymentRatioDescription": "Stosunek opłaconych i nieopłaconych rozliczeń w wybranym okresie.",
+    "total": "Łącznie",
+    "paidInvoices": "Opłacone faktury",
+    "unpaidIssued": "Nieopłacone/wystawione",
+    "settlement_one": "rozliczenie",
+    "settlement_few": "rozliczenia",
+    "settlement_many": "rozliczeń",
+    "settlement_other": "rozliczeń",
+    "noSettlementData": "Brak danych o rozliczeniach",
+    "financialVolumeBreakdown": "Podział wartości finansowych",
+    "financialVolumeDescription": "Porównanie uzyskanego przychodu z należnościami do zapłaty.",
+    "totalSettlementsVolume": "Łączna wartość rozliczeń:",
+    "noRevenueData": "Brak danych o przychodach",
+    "occupancy": "Obłożenie",
+    "baseStaticPrice": "Podstawowa cena",
+    "actualSoldPriceAdr": "Rzeczywista cena sprzedaży (ADR)",
+    "pricingMargin": "Różnica cenowa",
+    "utilityCosts": "Koszty mediów",
+    "unknownUnit": "Nieznana jednostka",
+    "bookingsCount": "Liczba rezerwacji",
+    "stay_one": "pobyt",
+    "stay_few": "pobyty",
+    "stay_many": "pobytów",
+    "stay_other": "pobytów"
+  },
+
+  "editPropertyImages": {
+    "title": "Zarządzaj zdjęciami nieruchomości",
+    "subtitle": "Prześlij nowe zdjęcia i wybierz główne zdjęcie dla swojego ogłoszenia",
+    "loading": "Ładowanie...",
+    "uploadLabel": "Prześlij zdjęcie",
+    "uploadSuccess": "Zdjęcie zostało przesłane!",
+    "uploadFailed": "Nie udało się przesłać zdjęcia nieruchomości",
+    "deleteConfirm": "Czy na pewno chcesz usunąć to zdjęcie?",
+    "deleteSuccess": "Zdjęcie zostało usunięte!",
+    "deleteFailed": "Nie udało się usunąć zdjęcia",
+    "mainSuccess": "Główne zdjęcie zostało zaktualizowane!",
+    "mainFailed": "Nie udało się zaktualizować głównego zdjęcia",
+    "currentGallery": "Aktualna galeria",
+    "noImages": "Nie przesłano jeszcze żadnych zdjęć dla tej nieruchomości.",
+    "mainImage": "Główne zdjęcie",
+    "activeMain": "✓ Aktywne główne",
+    "setMain": "Ustaw jako główne",
+    "delete": "Usuń"
+  },
+
+  "editProperty": {
+    "title": "Edytuj nieruchomość",
+    "subtitle": "Zmień ogólne ustawienia, szczegóły i lokalizację swojej nieruchomości",
+    "submit": "Zapisz zmiany",
+    "failed": "Nie udało się zaktualizować nieruchomości",
+    "notFound": "Nie znaleziono nieruchomości"
+  },
+
+  "editUnitImages": {
+    "title": "Zarządzaj zdjęciami lokalu",
+    "subtitle": "Prześlij zdjęcia i zarządzaj galerią dla tego lokalu",
+    "back": "Powrót do lokali",
+    "noImages": "Nie przesłano jeszcze żadnych zdjęć dla tego lokalu.",
+    "uploadFailed": "Nie udało się przesłać zdjęcia lokalu"
+  },
+
+  "editUnit": {
+    "title": "Edytuj lokal",
+    "subtitle": "Zmień ogólne ustawienia, ceny i szczegóły swojego lokalu",
+    "failed": "Nie udało się zaktualizować lokalu",
+    "notFound": "Nie znaleziono lokalu"
+  },
+  "meterReadings": {
+    "backToReservations": "Powrót do moich rezerwacji",
+    "title": "Odczyty licznika wody",
+    "subtitle": "Prześlij zdjęcia licznika wody przy zameldowaniu i wymeldowaniu.",
+    "checkInManualReview": "Odczyt przy zameldowaniu został wysłany do ręcznej weryfikacji przez właściciela.",
+    "checkOutManualReview": "Odczyt przy wymeldowaniu został wysłany do ręcznej weryfikacji przez właściciela."
+  },
+  "occupancy": {
+    "title": "Panel obłożenia",
+    "subtitle": "Zarządzaj rezerwacjami, ręcznymi rezerwacjami i blokadami.",
+    "dateAnchor":  "Wybierz miesiąc",
+    "selectMonth": "Wybierz miesiąc",
+    "addReservation": "Dodaj rezerwację",
+    "mon": "Pon",
+    "tue": "Wt",
+    "wed": "Śr",
+    "thu": "Czw",
+    "fri": "Pt",
+    "sat": "Sob",
+    "sun": "Nd",
+    "quickAction": "Szybka akcja",
+    "date": "Data:",
+    "newBooking": "Nowa rezerwacja",
+    "reservationInfo": "Informacje o rezerwacji",
+    "reservationStatus": "Status rezerwacji",
+    "stayAccommodation": "Pobyt i zakwaterowanie",
+    "accommodation": "Zakwaterowanie",
+    "financialSummary": "Podsumowanie finansowe",
+    "unassignedGuest": "Nieprzypisany gość",
+    "viewFullDetails": "Zobacz pełne szczegóły",
+    "close": "Zamknij"
+  },
+
+  "ownerProperties": {
+    "title": "Moje nieruchomości",
+    "subtitle": "Zarządzaj i konfiguruj swoje obiekty wynajmu",
+    "addProperty": "Dodaj nieruchomość",
+    "noProperties": "Nie znaleziono nieruchomości. Kliknij \"Dodaj nieruchomość\" aby utworzyć.",
+    "deleteConfirm": "Czy na pewno chcesz usunąć tę nieruchomość?",
+    "deleteHasReservations": "Nieruchomość zawiera lokale z rezerwacjami i nie może być usunięta",
+    "deleteFailed": "Nie udało się usunąć nieruchomości",
+    "address": "Adres",
+    "manageUnits": "Zarządzaj lokalami",
+    "manageImages": "Zarządzaj zdjęciami",
+    "edit": "Edytuj"
   }
+
+
 
 
 }

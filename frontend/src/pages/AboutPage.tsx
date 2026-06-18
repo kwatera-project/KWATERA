@@ -70,7 +70,7 @@ export default function AboutPage() {
         {
             category: "AI & OCR Models",
             icon: <Brain className="w-6 h-6 text-brand-primary" />,
-            techs: ["Python", "YOLOv8 Object Detection", "Tesseract OCR", "Dynamic Pricing Engine"]
+            techs: ["Python", "YOLOv8 Object Detection", "Dynamic Pricing Engine"]
         }
     ];
 

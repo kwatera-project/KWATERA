@@ -23,7 +23,7 @@ export default function LoginForm() {
                 localStorage.setItem("token", data.token)
                 navigate("/")
             } else {
-                const errorData = await response.json().catch(() => ({ error: 'Login failed' }))
+                const errorData = await response.json().catch(() => ({ error: t('login.loginFailed') }))
                 setMessage(`✘ ${errorData.error || t('login.loginFailed')}`)
             }
         } catch {
