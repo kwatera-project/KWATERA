@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { GATEWAY_BASE_URL } from '../api/apiConfig';
 import { getSettlementDetails } from '../api/settlementApi';
 import { ChevronDown } from 'lucide-react';
+import {useTranslation} from "react-i18next"
+
 
 interface ReservationOverview {
     id: string;
@@ -20,6 +22,8 @@ export default function AdminReservationList() {
     const API_BASE_URL = GATEWAY_BASE_URL;
     const [settlementIds, setSettlementIds] = useState<Record<string, string>>({});
     const [unitIds, setUnitIds] = useState<Record<string, string>>({});
+    const {t} = useTranslation();
+
 
     const fetchReservations = useCallback(() => {
         const url = statusFilter
@@ -81,23 +85,23 @@ export default function AdminReservationList() {
         })
             .then(async (res) => {
                 if (res.ok) {
-                    setMessage({ text: "Reservation status updated successfully!", type: 'success' });
+                    setMessage({ text: t('adminReservations.statusUpdated'), type: 'success' });
                     setReservations(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
                 } else {
-                    const errorData = await res.json().catch(() => ({ message: "An error occurred" }));
-                    let errorMsg = errorData.message || "An error occurred";
+                    const errorData = await res.json().catch(() => ({ message:  t('adminReservations.errorOccurred') }));
+                    let errorMsg = errorData.message ||  t('adminReservations.errorOccurred');
 
-                    if (res.status === 400) errorMsg = "This status transition is not allowed";
-                    if (res.status === 401) errorMsg = "Session expired or invalid. Please log in again";
-                    if (res.status === 403) errorMsg = "You are not allowed to update this reservation";
-                    if (res.status === 404) errorMsg = "Reservation not found";
+                    if (res.status === 400) errorMsg = t('adminReservations.statusNotAllowed');
+                    if (res.status === 401) errorMsg = t('adminReservations.sessionExpired');
+                    if (res.status === 403) errorMsg = t('adminReservations.notAllowed');
+                    if (res.status === 404) errorMsg = t('adminReservations.notFound')
 
                     setMessage({ text: errorMsg, type: 'error' });
                 }
             })
             .catch((err) => {
                 console.error(err);
-                setMessage({ text: "Network error occurred", type: 'error' });
+                setMessage({ text: t('adminReservations.networkError'), type: 'error' });
             });
     };
 
@@ -120,20 +124,20 @@ export default function AdminReservationList() {
         <div className="p-8 max-w-7xl mx-auto min-h-screen text-[#1A1A1A] space-y-6">
             <div className="border-b border-[#DACDCA] pb-6 mb-6 space-y-2">
                 <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                    <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">Reservation Overview</h1>
+                    <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">{t('adminReservations.title')}</h1>
                     <div className="flex bg-[#F7F7F7] p-1 rounded-lg border border-[#DACDCA] shadow-sm self-start sm:self-center">
                         <span className="px-4 py-2 text-sm font-bold rounded-md bg-[#FFFFFF] text-[#1A1A1A] shadow border border-[#DACDCA] cursor-default">
-                            List View
+                            {t('adminReservations.listView')}
                         </span>
                         <Link
                             to="/admin/occupancy"
                             className="px-4 py-2 text-sm font-medium rounded-md text-[#7A7A7A] hover:bg-[#FFFFFF] hover:text-[#1A1A1A] hover:shadow-sm transition-all"
                         >
-                            Calendar View
+                            {t('adminReservations.calendarView')}
                         </Link>
                     </div>
                 </div>
-                <p className="text-sm text-[#7A7A7A]">Manage guest reservations, occupancy status, and utility readings.</p>
+                <p className="text-sm text-[#7A7A7A]">{t('adminReservations.subtitle')}</p>
             </div>
 
             {message && (
@@ -153,21 +157,21 @@ export default function AdminReservationList() {
             {/* Compact, Inline Toolbar Section */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#F7F7F7] border border-gray-100 rounded-xl p-4">
                 <div className="text-sm font-medium text-[#7A7A7A]">
-                    Showing <span className="font-bold text-[#1A1A1A]">{filteredReservations.length}</span> reservation{filteredReservations.length === 1 ? '' : 's'}
+                    {t('adminReservations.showing')} <span className="font-bold text-[#1A1A1A]">{filteredReservations.length}</span> {t('adminReservations.reservation', {count: filteredReservations.length})}
                 </div>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <span className="text-sm font-medium text-gray-500 mr-2 shrink-0">Filter by Status:</span>
+                    <span className="text-sm font-medium text-gray-500 mr-2 shrink-0">{t('adminReservations.filterByStatus')}</span>
                     <div className="relative w-full sm:w-44">
                         <select
                             className="appearance-none block w-full bg-white border border-gray-300 rounded-md py-2 pl-3 pr-10 text-sm text-[#1A1A1A] font-semibold focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition-all shadow-sm cursor-pointer"
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
                         >
-                            <option value="">All Statuses</option>
-                            <option value="PENDING">Pending</option>
-                            <option value="CONFIRMED">Confirmed</option>
-                            <option value="CANCELLED">Cancelled</option>
-                            <option value="COMPLETED">Completed</option>
+                            <option value="">{t('adminReservations.allStatuses')}</option>
+                            <option value="PENDING">{t('common.pending')}</option>
+                            <option value="CONFIRMED">{t('common.confirmed')}</option>
+                            <option value="CANCELLED">{t('common.cancelled')}</option>
+                            <option value="COMPLETED">{t('common.completed')}</option>
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                             <ChevronDown className="h-4 w-4 text-[#7A7A7A]" />
@@ -178,7 +182,7 @@ export default function AdminReservationList() {
                             onClick={() => setStatusFilter("")}
                             className="text-sm font-medium text-gray-500 hover:text-brand-main transition-colors shrink-0 cursor-pointer"
                         >
-                            Clear
+                            {t('common.clear')}
                         </button>
                     )}
                 </div>
@@ -188,11 +192,11 @@ export default function AdminReservationList() {
                 <table className="min-w-full table-auto">
                     <thead className="bg-[#F7F7F7] border-b border-[#DACDCA]">
                         <tr>
-                            <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-left">Guest</th>
-                            <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-left">Unit/Property</th>
-                            <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-left">Stay Dates</th>
-                            <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-left">Status</th>
-                            <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-center">Actions</th>
+                            <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-left">{t('adminReservations.guest')}</th>
+                            <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-left">{t('adminReservations.unitProperty')}</th>
+                            <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-left">{t('adminReservations.stayDates')}</th>
+                            <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-left">{t('common.status')}</th>
+                            <th className="px-6 py-4 text-sm font-semibold text-[#7A7A7A] text-center">{t('common.actions')}</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-[#DACDCA]/60 bg-white">
@@ -232,7 +236,7 @@ export default function AdminReservationList() {
                                                 to={`/reservations/${res.id}`}
                                                 className="px-3 py-1.5 text-xs font-semibold text-white bg-[#42211D] hover:bg-[#321815] rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1 shrink-0 cursor-pointer"
                                             >
-                                                View Details
+                                                {t('common.viewDetails')}
                                             </Link>
 
                                             {isMeterReadingsEnabled ? (
@@ -240,14 +244,14 @@ export default function AdminReservationList() {
                                                     to={`/admin/settlements/${settlementIds[res.id]}/meter-readings?unitId=${unitIds[res.id]}`}
                                                     className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1 shrink-0 cursor-pointer"
                                                 >
-                                                    Meter Readings
+                                                    {t('common.meterReadings')}
                                                 </Link>
                                             ) : (
                                                 <button
                                                     disabled
                                                     className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200"
                                                 >
-                                                    Meter Readings
+                                                    {t('common.meterReadings')}
                                                 </button>
                                             )}
 
@@ -256,7 +260,7 @@ export default function AdminReservationList() {
                                                 onClick={() => handleStatusChange(res.id, 'CONFIRMED')}
                                                 className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
                                             >
-                                                Confirm
+                                                {t('common.confirm')}
                                             </button>
 
                                             <button
@@ -264,7 +268,7 @@ export default function AdminReservationList() {
                                                 onClick={() => handleStatusChange(res.id, 'COMPLETED')}
                                                 className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all inline-flex items-center justify-center gap-1 shrink-0 text-gray-700 bg-white border-gray-300 hover:bg-gray-50 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
                                             >
-                                                Complete
+                                                {t('common.complete')}
                                             </button>
 
                                             <button
@@ -272,7 +276,7 @@ export default function AdminReservationList() {
                                                 onClick={() => handleStatusChange(res.id, 'CANCELLED')}
                                                 className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-transparent transition-all inline-flex items-center justify-center gap-1 shrink-0 text-red-600 bg-red-50 hover:bg-red-100 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 cursor-pointer disabled:cursor-not-allowed"
                                             >
-                                                Cancel
+                                                {t('common.cancel')}
                                             </button>
                                         </div>
                                     </td>
@@ -282,7 +286,7 @@ export default function AdminReservationList() {
                         {filteredReservations.length === 0 && (
                             <tr>
                                 <td colSpan={5} className="px-6 py-8 text-center text-[#7A7A7A] font-medium bg-white">
-                                    No reservations found.
+                                    {t('adminReservations.noReservations')}
                                 </td>
                             </tr>
                         )}

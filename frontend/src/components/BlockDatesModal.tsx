@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { createBlock } from "../api/availabilityApi";
 import { format } from "date-fns";
 import SharedDatePicker from "./SharedDatePicker";
+import {useTranslation} from "react-i18next"
 
 const parseDateString = (str: string): Date | null => {
     if (!str) return null;
@@ -93,21 +94,23 @@ export default function BlockDatesModal({
     const [errors, setErrors] = useState<FormErrors>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
+    const {t} = useTranslation();
+
 
     if (!isOpen) return null;
 
     const validate = (): boolean => {
         const tempErrors: FormErrors = {};
-        if (!form.unitId) tempErrors.unitId = "Please select a unit";
+        if (!form.unitId) tempErrors.unitId = t('blockDates.selectUnit');
         
         if (!form.checkIn) {
-            tempErrors.checkIn = "Start date is required";
+            tempErrors.checkIn = t('blockDates.startDateRequired');
         }
 
         if (!form.checkOut) {
-            tempErrors.checkOut = "End date is required";
+            tempErrors.checkOut = t('blockDates.endDateRequired');
         } else if (form.checkIn && form.checkOut < form.checkIn) {
-            tempErrors.checkOut = "End date cannot be before start date";
+            tempErrors.checkOut = t('blockDates.endBeforeStart');
         } else if (form.unitId && form.checkIn && form.checkOut) {
             const hasOverlap = occupancies.some(occ => {
                 if (occ.unitId !== form.unitId) return false;
@@ -115,15 +118,15 @@ export default function BlockDatesModal({
                 return checkOverlap(form.checkIn, form.checkOut, occ.startDate, occ.endDate);
             });
             if (hasOverlap) {
-                tempErrors.checkIn = "Selected dates overlap with an existing booking or block";
-                tempErrors.checkOut = "Selected dates overlap with an existing booking or block";
+                tempErrors.checkIn = t('blockDates.overlap');
+                tempErrors.checkOut = t('blockDates.overlap');
             }
         }
 
         if (!form.reason.trim()) {
-            tempErrors.reason = "Please provide a reason for blocking these dates";
+            tempErrors.reason = t('blockDates.reasonRequired')
         } else if (form.reason.trim().length < 3) {
-            tempErrors.reason = "Reason must be at least 3 characters";
+            tempErrors.reason = t('blockDates.reasonTooShort');
         }
 
         setErrors(tempErrors);
@@ -155,7 +158,7 @@ export default function BlockDatesModal({
             onSuccess();
             onClose();
         } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : "Failed to block selected dates.";
+            const msg = err instanceof Error ? err.message : t('blockDates.failed');
             setSubmitError(msg);
         } finally {
             setIsSubmitting(false);
@@ -169,8 +172,8 @@ export default function BlockDatesModal({
             <div className="relative bg-[#FFFFFF] rounded-2xl shadow-2xl border border-brand-accent w-full max-w-md overflow-hidden flex flex-col z-[9999] animate-in fade-in zoom-in-95 duration-200">
                 <div className="px-6 py-5 border-b border-brand-accent flex items-center justify-between">
                     <div>
-                        <h2 className="text-xl font-black text-brand-main tracking-tight">Block Dates</h2>
-                        <p className="text-xs text-brand-muted mt-0.5">Mark a room as unavailable for maintenance or other reasons.</p>
+                        <h2 className="text-xl font-black text-brand-main tracking-tight">{t('blockDates.title')}</h2>
+                        <p className="text-xs text-brand-muted mt-0.5">{t('blockDates.subtitle')}</p>
                     </div>
                     <button onClick={onClose} className="p-2 text-brand-muted hover:text-brand-main hover:bg-brand-bg rounded-full transition-colors">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -190,7 +193,7 @@ export default function BlockDatesModal({
                     )}
 
                     <div className="space-y-1">
-                        <label htmlFor="unitId" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Property Unit</label>
+                        <label htmlFor="unitId" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('blockDates.propertyUnit')}</label>
                         <select
                             id="unitId"
                             name="unitId"
@@ -200,7 +203,7 @@ export default function BlockDatesModal({
                                 errors.unitId ? "border-red-500" : "border-brand-accent"
                             }`}
                         >
-                            <option value="">Select Unit...</option>
+                            <option value="">{t('blockDates.selectUnitOption')}</option>
                             {units.map(unit => (
                                 <option key={unit.id} value={unit.id}>{unit.name}</option>
                             ))}
@@ -210,7 +213,7 @@ export default function BlockDatesModal({
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                            <label htmlFor="checkIn" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Start Date</label>
+                            <label htmlFor="checkIn" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('blockDates.startDate')}</label>
                             <SharedDatePicker
                                 selected={parseDateString(form.checkIn)}
                                 onChange={(date) => {
@@ -223,7 +226,7 @@ export default function BlockDatesModal({
                                 selectsStart
                                 startDate={parseDateString(form.checkIn)}
                                 endDate={parseDateString(form.checkOut)}
-                                placeholderText="Select start date"
+                                placeholderText={t('blockDates.selectStartDate')}
                                 className={`w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm font-semibold cursor-pointer text-left ${
                                     errors.checkIn ? "border-red-500" : "border-brand-accent"
                                 }`}
@@ -233,7 +236,7 @@ export default function BlockDatesModal({
                         </div>
 
                         <div className="grid grid-cols-1 space-y-1">
-                            <label htmlFor="checkOut" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">End Date</label>
+                            <label htmlFor="checkOut" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('blockDates.endDate')}</label>
                             <SharedDatePicker
                                 selected={parseDateString(form.checkOut)}
                                 onChange={(date) => {
@@ -247,7 +250,7 @@ export default function BlockDatesModal({
                                 startDate={parseDateString(form.checkIn)}
                                 endDate={parseDateString(form.checkOut)}
                                 minDate={parseDateString(form.checkIn)}
-                                placeholderText="Select end date"
+                                placeholderText={t('blockDates.selectEndDate')}
                                 className={`w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm font-semibold cursor-pointer text-left ${
                                     errors.checkOut ? "border-red-500" : "border-brand-accent"
                                 }`}
@@ -258,7 +261,7 @@ export default function BlockDatesModal({
                     </div>
 
                     <div className="space-y-1">
-                        <label htmlFor="reason" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">Reason for block</label>
+                        <label htmlFor="reason" className="block text-xs font-bold text-brand-muted uppercase tracking-wider">{t('blockDates.reason')}</label>
                         <textarea
                             id="reason"
                             name="reason"
@@ -279,7 +282,7 @@ export default function BlockDatesModal({
                             onClick={onClose}
                             className="px-4 py-2.5 border border-brand-accent rounded-lg text-brand-main font-bold hover:bg-gray-50 text-sm transition"
                         >
-                            Cancel
+                            {t('common.cancel')}
                         </button>
                         <button
                             type="submit"
@@ -294,10 +297,10 @@ export default function BlockDatesModal({
                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                     </svg>
-                                    Blocking Dates...
+                                    {t('blockDates.blocking')}
                                 </>
                             ) : (
-                                "Apply Block"
+                                t('blockDates.apply')
                             )}
                         </button>
                     </div>

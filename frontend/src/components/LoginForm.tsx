@@ -2,11 +2,13 @@ import '../App.css'
 import { GATEWAY_BASE_URL } from '../api/apiConfig'
 import { useState } from "react"
 import { useNavigate, Link } from "react-router-dom"
+import {useTranslation} from "react-i18next"
 
 export default function LoginForm() {
     const [formData, setFormData] = useState({ email: '', password: '' })
     const navigate = useNavigate()
     const [message, setMessage] = useState('')
+    const {t} = useTranslation();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -22,10 +24,10 @@ export default function LoginForm() {
                 navigate("/")
             } else {
                 const errorData = await response.json().catch(() => ({ error: 'Login failed' }))
-                setMessage(`✘ ${errorData.error || 'Login failed'}`)
+                setMessage(`✘ ${errorData.error || t('login.loginFailed')}`)
             }
         } catch {
-            setMessage('✘ Error connecting to server')
+            setMessage(`✘ ${t('login.serverError')}`)
         }
     }
 
@@ -38,13 +40,13 @@ export default function LoginForm() {
                 <div className="lg:col-span-5 flex flex-col justify-center items-center overflow-y-auto p-4">
                     <div className="w-full max-w-md bg-white border border-gray-100 rounded-2xl shadow-xl p-8 sm:p-10 space-y-6">
                         <div className="text-center space-y-2">
-                            <h1 className="text-2xl font-bold text-gray-900">Sign In</h1>
-                            <p className="text-sm text-gray-500">Welcome back! Please enter your details to access your account.</p>
+                            <h1 className="text-2xl font-bold text-gray-900">{t('login.title')}</h1>
+                            <p className="text-sm text-gray-500">{t('login.subtitle')}</p>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="space-y-1.5">
-                                <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                                <label className="block text-sm font-medium text-gray-700">{t('login.email')}</label>
                                 <input
                                     type="email"
                                     placeholder="name@example.com"
@@ -55,7 +57,7 @@ export default function LoginForm() {
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="block text-sm font-medium text-gray-700">Password</label>
+                                <label className="block text-sm font-medium text-gray-700">{t('login.password')}</label>
                                 <input
                                     type="password"
                                     placeholder="••••••••"
@@ -69,14 +71,14 @@ export default function LoginForm() {
                                 type="submit"
                                 className="w-full py-3 bg-[#42211D] text-white font-bold rounded-lg hover:opacity-90 transition shadow-sm"
                             >
-                                Sign In
+                                {t('login.submit')}
                             </button>
                         </form>
 
                         <p className="text-center text-sm text-gray-600">
-                            Don't have an account?{" "}
+                            {t('login.noAccount')}{" "}
                             <Link to="/register" className="text-[#42211D] font-bold hover:underline">
-                                Sign Up
+                                {t('login.signUp')}
                             </Link>
                         </p>
 

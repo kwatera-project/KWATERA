@@ -1,0 +1,102 @@
+{
+  "navbar": {
+    "catalog": "Katalog",
+    "about": "O nas",
+    "myAccount": "Moje konto",
+    "myProfile": "Mój profil",
+    "myReservations": "Moje rezerwacje",
+    "reservations": "Rezerwacje",
+    "dashboard": "Panel",
+    "manageProperties": "Zarządzaj nieruchomościami",
+    "logout": "Wyloguj",
+    "login": "ZALOGUJ",
+    "signUp": "ZAREJESTRUJ"
+  },
+
+  "login": {
+    "title": "Zaloguj się",
+    "subtitle": "Witaj z powrotem! Wprowadź swoje dane aby uzyskać dostęp do konta.",
+    "email": "Adres e-mail",
+    "password": "Hasło",
+    "submit": "Zaloguj się",
+    "noAccount": "Nie masz konta?",
+    "signUp": "Zarejestruj się",
+    "serverError": "Błąd połączenia z serwerem",
+    "loginFailed": "Logowanie nie powiodło się"
+  },
+
+  "register": {
+    "title": "Utwórz konto",
+    "subtitle": "Zarejestruj się aby przeglądać nieruchomości lub dodać własne.",
+    "registerAs": "Chcę się zarejestrować jako:",
+    "owner": "Właściciel",
+    "guest": "Gość",
+    "firstName": "Imię",
+    "lastName": "Nazwisko",
+    "username": "Nazwa użytkownika",
+    "submit": "Zarejestruj się",
+    "hasAccount": "Masz już konto?",
+    "registrationFailed": "Rejestracja nie powiodła się"
+  },
+
+  "common": {
+    "status": "Status",
+    "actions": "Akcje",
+    "viewDetails": "Szczegóły",
+    "meterReadings": "Odczyty licznika",
+    "confirm": "Potwierdź",
+    "complete": "Zakończ",
+    "cancel": "Anuluj",
+    "clear": "Wyczyść",
+    "pending": "Oczekująca",
+    "confirmed": "Potwierdzona",
+    "cancelled": "Anulowana",
+    "completed": "Zakończona"
+  },
+  "adminReservations": {
+    "title": "Przegląd rezerwacji",
+    "subtitle": "Zarządzaj rezerwacjami gości, obłożeniem i odczytami liczników.",
+    "listView": "Widok listy",
+    "calendarView": "Widok kalendarza",
+    "showing": "Wyświetlono",
+    "reservation_one": "rezerwację",
+    "reservation_other": "rezerwacji",
+    "filterByStatus": "Filtruj według statusu:",
+    "allStatuses": "Wszystkie statusy",
+    "guest": "Gość",
+    "unitProperty": "Jednostka/Nieruchomość",
+    "stayDates": "Daty pobytu",
+    "noReservations": "Nie znaleziono rezerwacji.",
+    "statusUpdated": "Status rezerwacji został zaktualizowany!",
+    "errorOccurred": "Wystąpił błąd",
+    "statusNotAllowed": "Ta zmiana statusu jest niedozwolona",
+    "sessionExpired": "Sesja wygasła lub jest nieprawidłowa. Zaloguj się ponownie",
+    "notAllowed": "Nie masz uprawnień do aktualizacji tej rezerwacji",
+    "notFound": "Nie znaleziono rezerwacji",
+    "networkError": "Wystąpił błąd sieci"
+  },
+
+  "blockDates": {
+    "title": "Zablokuj daty",
+    "subtitle": "Oznacz pokój jako niedostępny z powodu konserwacji lub innych przyczyn.",
+    "propertyUnit": "Jednostka",
+    "selectUnitOption": "Wybierz jednostkę...",
+    "startDate": "Data początkowa",
+    "selectStartDate": "Wybierz datę początkową",
+    "endDate": "Data końcowa",
+    "selectEndDate": "Wybierz datę końcową",
+    "reason": "Powód blokady",
+    "apply": "Zastosuj blokadę",
+    "blocking": "Blokowanie dat...",
+    "selectUnit": "Wybierz jednostkę",
+    "startDateRequired": "Data początkowa jest wymagana",
+    "endDateRequired": "Data końcowa jest wymagana",
+    "endBeforeStart": "Data końcowa nie może być wcześniejsza niż początkowa",
+    "overlap": "Wybrane daty nakładają się z istniejącą rezerwacją lub blokadą",
+    "reasonRequired": "Podaj powód blokady dat",
+    "reasonTooShort": "Powód musi mieć co najmniej 3 znaki",
+    "failed": "Nie udało się zablokować wybranych dat."
+  }
+
+
+}

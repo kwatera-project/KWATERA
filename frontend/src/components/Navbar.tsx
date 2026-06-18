@@ -5,6 +5,8 @@ import {getUserRoles, decodeJwt} from "../utils/jwtUtils.ts"
 import {useState, useEffect, useRef} from "react"
 import {useCurrency} from "../contexts/CurrencyContext"
 import {User, LogOut, LayoutDashboard, Calendar, Settings, Home} from 'lucide-react'
+import {useTranslation} from "react-i18next"
+import i18n from "../i18n"
 
 interface NavbarProps {
     isSubpage?: boolean;
@@ -28,6 +30,10 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
     const isHomePage = location.pathname === '/';
     const [isScrolled, setIsScrolled] = useState(false);
     const profileDropdownRef = useRef<HTMLDivElement>(null);
+
+    const {t} = useTranslation();
+    const [currentLang, setCurrentLang] = useState(i18n.language);
+    const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -53,13 +59,14 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
         const timer = setTimeout(() => {
             setIsProfileDropdownOpen(false);
             setIsCurrencyDropdownOpen(false);
+            setIsLangDropdownOpen(false);
         }, 0);
         return () => clearTimeout(timer);
     }, [location.pathname]);
 
     const navLinks = [
-        {name: 'Catalog', path: '/properties'},
-        {name: 'About', path: '/about'},
+        {name: t('navbar.catalog'), path: '/properties'},
+        {name: t('navbar.about'), path: '/about'},
     ];
 
     const isEffectiveSubpage = isSubpage !== undefined ? isSubpage : !isHomePage;
@@ -109,6 +116,32 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                 <div className="flex items-center gap-6 md:gap-8">
                     <div className="relative">
                         <button
+                            onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+                            className={`font-bold text-sm tracking-widest uppercase transition-all duration-300 focus:outline-none ${isScrolledActive ? 'text-stone-800 hover:text-brand-primary' : 'text-white hover:text-white/80 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]'}`}
+                        >
+                            {currentLang === 'en' ? 'EN' : 'PL'}
+                        </button>
+                        {isLangDropdownOpen && (
+                            <div className="absolute top-full right-0 mt-3 w-20 bg-card rounded-2xl shadow-xl z-50 overflow-hidden py-1.5 border border-[#DACDCA]/40">
+                                {['en', 'pl'].map((lang) => (
+                                    <button
+                                        key={lang}
+                                        onClick={() => {
+                                            i18n.changeLanguage(lang);
+                                            localStorage.setItem('language', lang);
+                                            setCurrentLang(lang);
+                                            setIsLangDropdownOpen(false);
+                                        }}
+                                        className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors uppercase tracking-widest font-bold ${currentLang === lang ? 'text-[rgb(var(--color-burgundy))] bg-gray-50' : 'text-title font-medium'}`}
+                                    >
+                                        {lang.toUpperCase()}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    <div className="relative">
+                        <button
                             onClick={() => setIsCurrencyDropdownOpen(!isCurrencyDropdownOpen)}
                             className={`font-medium text-sm transition-all uppercase tracking-widest flex items-center gap-1.5 focus:outline-none ${isScrolledActive ? 'text-stone-800 hover:text-[#8B4513]' : 'text-white hover:text-white/80 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]'}`}
                         >
@@ -154,21 +187,21 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                                 <div
                                     className="absolute top-full right-0 mt-3 w-56 bg-card rounded-2xl shadow-2xl z-[1000] overflow-hidden border border-[#DACDCA]/40 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
                                     <div className="px-4 py-3 border-b border-gray-100 mb-1">
-                                        <p className="text-xs font-bold uppercase tracking-wider text-details">My
-                                            Account</p>
+                                        <p className="text-xs font-bold uppercase tracking-wider text-details">
+                                            {t('navbar.myAccount')}</p>
                                     </div>
 
                                     <Link to="/profile"
                                           className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
                                         <Settings size={16}/>
-                                        My Profile
+                                        {t('navbar.myProfile')}
                                     </Link>
 
                                     {(!userRoles.includes("ROLE_ADMIN") && !userRoles.includes("ROLE_OWNER")) && (
                                         <Link to="/my-reservations"
                                               className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
                                             <Calendar size={16}/>
-                                            My Reservations
+                                            {t('navbar.myReservations')}
                                         </Link>
                                     )}
 
@@ -177,17 +210,17 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                                         <Link to="/admin/reservations"
                                               className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
                                             <Calendar size={16}/>
-                                            Reservations
+                                            {t('navbar.reservations')}
                                         </Link>
                                         <Link to="/admin/dashboard"
                                               className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
                                             <LayoutDashboard size={16}/>
-                                            Dashboard
+                                            {t('navbar.dashboard')}
                                         </Link>
                                         <Link to="/owner/properties"
                                             className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
                                             <Home size={16} />
-                                            Manage properties
+                                            {t('navbar.manageProperties')}
                                         </Link>
                                         </>
                                         )}
@@ -199,7 +232,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors font-bold"
                                     >
                                         <LogOut size={16}/>
-                                        Logout
+                                        {t('navbar.logout')}
                                     </button>
                                 </div>
                             )}
@@ -210,13 +243,13 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                                 to="/login"
                                 className={`font-bold text-sm tracking-wide uppercase transition-all duration-300 ${isScrolledActive ? 'text-stone-800 hover:bg-stone-100 px-4 py-2 rounded-full' : 'text-white hover:text-gray-200 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]'}`}
                             >
-                                LOG IN
+                                {t('navbar.login')}
                             </Link>
                             <Link
                                 to="/register"
                                 className="bg-[rgb(var(--color-burgundy))] hover:bg-[rgb(var(--color-burgundy-hover))] text-white font-bold text-sm tracking-wide px-5 py-2 rounded-full transition-all duration-300 shadow-md active:scale-95"
                             >
-                                SIGN UP
+                                {t('navbar.signUp')}
                             </Link>
                         </div>
                     )}

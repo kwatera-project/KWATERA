@@ -1,0 +1,101 @@
+{
+  "navbar": {
+    "catalog": "Catalog",
+    "about": "About",
+    "myAccount": "My Account",
+    "myProfile": "My Profile",
+    "myReservations": "My Reservations",
+    "reservations": "Reservations",
+    "dashboard": "Dashboard",
+    "manageProperties": "Manage Properties",
+    "logout": "Logout",
+    "login": "LOG IN",
+    "signUp": "SIGN UP"
+  },
+
+  "login": {
+    "title": "Sign In",
+    "subtitle": "Welcome back! Please enter your details to access your account.",
+    "email": "Email Address",
+    "password": "Password",
+    "submit": "Sign In",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign Up",
+    "serverError": "Error connecting to server",
+    "loginFailed": "Login failed"
+  },
+
+  "register": {
+    "title": "Create Account",
+    "subtitle": "Sign up to explore properties or list your own properties.",
+    "registerAs": "I want to register as:",
+    "owner": "Owner",
+    "guest": "Guest",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "username": "Username",
+    "submit": "Sign Up",
+    "hasAccount": "Already have an account?",
+    "registrationFailed": "Registration failed"
+  },
+
+  "common": {
+    "status": "Status",
+    "actions": "Actions",
+    "viewDetails": "View Details",
+    "meterReadings": "Meter Readings",
+    "confirm": "Confirm",
+    "complete": "Complete",
+    "cancel": "Cancel",
+    "clear": "Clear",
+    "pending": "Pending",
+    "confirmed": "Confirmed",
+    "cancelled": "Cancelled",
+    "completed": "Completed"
+  },
+  "adminReservations": {
+    "title": "Reservation Overview",
+    "subtitle": "Manage guest reservations, occupancy status, and utility readings.",
+    "listView": "List View",
+    "calendarView": "Calendar View",
+    "showing": "Showing",
+    "reservation_one": "reservation",
+    "reservation_other": "reservations",
+    "filterByStatus": "Filter by Status:",
+    "allStatuses": "All Statuses",
+    "guest": "Guest",
+    "unitProperty": "Unit/Property",
+    "stayDates": "Stay Dates",
+    "noReservations": "No reservations found.",
+    "statusUpdated": "Reservation status updated successfully!",
+    "errorOccurred": "An error occurred",
+    "statusNotAllowed": "This status transition is not allowed",
+    "sessionExpired": "Session expired or invalid. Please log in again",
+    "notAllowed": "You are not allowed to update this reservation",
+    "notFound": "Reservation not found",
+    "networkError": "Network error occurred"
+  },
+
+  "blockDates": {
+    "title": "Block Dates",
+    "subtitle": "Mark a room as unavailable for maintenance or other reasons.",
+    "propertyUnit": "Property Unit",
+    "selectUnitOption": "Select Unit...",
+    "startDate": "Start Date",
+    "selectStartDate": "Select start date",
+    "endDate": "End Date",
+    "selectEndDate": "Select end date",
+    "reason": "Reason for block",
+    "apply": "Apply Block",
+    "blocking": "Blocking Dates...",
+    "selectUnit": "Please select a unit",
+    "startDateRequired": "Start date is required",
+    "endDateRequired": "End date is required",
+    "endBeforeStart": "End date cannot be before start date",
+    "overlap": "Selected dates overlap with an existing booking or block",
+    "reasonRequired": "Please provide a reason for blocking these dates",
+    "reasonTooShort": "Reason must be at least 3 characters",
+    "failed": "Failed to block selected dates."
+  }
+
+}
