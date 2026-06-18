@@ -1,19 +1,22 @@
 import React, { useEffect, useState } from "react";
-import { 
-    Users, 
-    UserCheck, 
-    Home, 
-    Search, 
-    X, 
-    ChevronLeft, 
+import {
+    Users,
+    UserCheck,
+    Home,
+    Search,
+    X,
+    ChevronLeft,
     ChevronRight,
     Calendar,
     Mail,
     RefreshCw
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { getAdminUsers, getAdminUserKpis, type AdminUser, type AdminUserKpis } from "../api/adminApi";
 
 export default function AdminUsersOverviewPage() {
+    const { t, i18n } = useTranslation();
+
     const [kpis, setKpis] = useState<AdminUserKpis | null>(null);
     const [loadingKpis, setLoadingKpis] = useState(true);
 
@@ -72,7 +75,7 @@ export default function AdminUsersOverviewPage() {
                 }
             })
             .catch((err) => {
-                const message = err instanceof Error ? err.message : "Failed to load users list";
+                const message = err instanceof Error ? err.message : t("adminUsers.loadUsersFailed");
                 if (active) {
                     setError(message);
                     setLoadingUsers(false);
@@ -104,7 +107,7 @@ export default function AdminUsersOverviewPage() {
     const handleRefresh = () => {
         setLoadingKpis(true);
         setLoadingUsers(true);
-        
+
         getAdminUserKpis()
             .then((data) => {
                 setKpis(data);
@@ -123,19 +126,28 @@ export default function AdminUsersOverviewPage() {
                 setLoadingUsers(false);
             })
             .catch((err) => {
-                const message = err instanceof Error ? err.message : "Failed to load users list";
+                const message = err instanceof Error ? err.message : t("adminUsers.loadUsersFailed");
                 setError(message);
                 setLoadingUsers(false);
             });
     };
 
     const formatDate = (dateString?: string) => {
-        if (!dateString) return "N/A";
-        return new Date(dateString).toLocaleDateString("en-US", {
+        if (!dateString) return t("common.notAvailable");
+        const locale = i18n.language === "pl" ? "pl-PL" : "en-US";
+        return new Date(dateString).toLocaleDateString(locale, {
             year: "numeric",
             month: "short",
             day: "numeric",
         });
+    };
+
+    const getRoleLabel = (role: string) => {
+        return t(`adminUsers.roles.${role}`, { defaultValue: role });
+    };
+
+    const getStatusLabel = (status: string) => {
+        return t(`adminUsers.statuses.${status}`, { defaultValue: status });
     };
 
     return (
@@ -144,20 +156,20 @@ export default function AdminUsersOverviewPage() {
                 <div className="space-y-2">
                     <h1 className="text-3xl font-extrabold text-[#1A1A1A] tracking-tight flex items-center gap-3">
                         <Users className="text-[#42211D] stroke-[2.5]" size={32} />
-                        Users Overview
+                        {t("adminUsers.title")}
                     </h1>
                     <p className="text-sm text-[#7A7A7A]">
-                        Monitor system accounts, role distributions, and managed properties in real-time.
+                        {t("adminUsers.subtitle")}
                     </p>
                 </div>
-                
+
                 <div className="flex items-end gap-3 ml-auto md:ml-0">
                     <button
                         onClick={handleRefresh}
                         className="px-5 py-2 bg-[#42211D] text-white font-bold hover:bg-[#2a1412] text-sm rounded-lg transition-colors border border-[#DACDCA] shadow-sm cursor-pointer flex items-center gap-2"
                     >
                         <RefreshCw size={16} className={`${loadingUsers || loadingKpis ? 'animate-spin' : ''}`} />
-                        Refresh
+                        {t("adminUsers.refresh")}
                     </button>
                 </div>
             </div>
@@ -168,7 +180,7 @@ export default function AdminUsersOverviewPage() {
                     <div className="flex flex-col justify-between h-full space-y-4">
                         <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
-                                Total Users
+                                {t("adminUsers.kpi.totalUsers")}
                             </span>
                             <span className="p-2 bg-[#42211D]/10 text-[#42211D] rounded-xl">
                                 <Users className="w-5 h-5" />
@@ -183,7 +195,7 @@ export default function AdminUsersOverviewPage() {
                                 </h2>
                             )}
                             <p className="text-xs text-[#7A7A7A] mt-2 font-medium">
-                                All registered accounts
+                                {t("adminUsers.kpi.totalUsersDesc")}
                             </p>
                         </div>
                     </div>
@@ -194,7 +206,7 @@ export default function AdminUsersOverviewPage() {
                     <div className="flex flex-col justify-between h-full space-y-4">
                         <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
-                                Guests
+                                {t("adminUsers.kpi.guests")}
                             </span>
                             <span className="p-2 bg-blue-100 text-blue-700 rounded-xl">
                                 <UserCheck className="w-5 h-5" />
@@ -209,7 +221,7 @@ export default function AdminUsersOverviewPage() {
                                 </h2>
                             )}
                             <p className="text-xs text-[#7A7A7A] mt-2 font-medium">
-                                Clients placing reservations
+                                {t("adminUsers.kpi.guestsDesc")}
                             </p>
                         </div>
                     </div>
@@ -220,7 +232,7 @@ export default function AdminUsersOverviewPage() {
                     <div className="flex flex-col justify-between h-full space-y-4">
                         <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
-                                Property Owners
+                                {t("adminUsers.kpi.propertyOwners")}
                             </span>
                             <span className="p-2 bg-emerald-100 text-emerald-700 rounded-xl">
                                 <Users className="w-5 h-5" />
@@ -235,7 +247,7 @@ export default function AdminUsersOverviewPage() {
                                 </h2>
                             )}
                             <p className="text-xs text-[#7A7A7A] mt-2 font-medium">
-                                Managing listings & rentals
+                                {t("adminUsers.kpi.propertyOwnersDesc")}
                             </p>
                         </div>
                     </div>
@@ -246,7 +258,7 @@ export default function AdminUsersOverviewPage() {
                     <div className="flex flex-col justify-between h-full space-y-4">
                         <div className="flex items-center justify-between">
                             <span className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
-                                Properties
+                                {t("adminUsers.kpi.properties")}
                             </span>
                             <span className="p-2 bg-amber-100 text-amber-700 rounded-xl">
                                 <Home className="w-5 h-5" />
@@ -261,7 +273,7 @@ export default function AdminUsersOverviewPage() {
                                 </h2>
                             )}
                             <p className="text-xs text-[#7A7A7A] mt-2 font-medium">
-                                Properties listed on KWATERA
+                                {t("adminUsers.kpi.propertiesDesc")}
                             </p>
                         </div>
                     </div>
@@ -274,7 +286,7 @@ export default function AdminUsersOverviewPage() {
                         <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" />
                         <input
                             type="text"
-                            placeholder="Search by name or email..."
+                            placeholder={t("adminUsers.searchPlaceholder")}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full bg-[#F7F7F7] border border-[#DACDCA] focus:border-[#42211D] focus:bg-white pl-11 pr-10 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-[#42211D]"
@@ -290,16 +302,17 @@ export default function AdminUsersOverviewPage() {
                     </div>
 
                     <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <label className="text-sm font-bold text-[#7A7A7A] uppercase tracking-wider hidden sm:block">Role:</label>
+                        <label className="text-sm font-bold text-[#7A7A7A] uppercase tracking-wider hidden sm:block">
+                            {t("adminUsers.roleLabel")}
+                        </label>
                         <select
                             value={selectedRole}
                             onChange={handleRoleChange}
                             className="w-full sm:w-48 bg-[#F7F7F7] border border-[#DACDCA] hover:border-[#7A7A7A] py-2.5 px-4 rounded-lg text-sm font-bold text-[#1A1A1A] transition-all duration-200 focus:outline-none focus:bg-white focus:ring-1 focus:ring-[#42211D]"
                         >
-                            <option value="ALL">All Roles</option>
-                            <option value="GUEST">Guest</option>
-                            <option value="OWNER">Owner</option>
-                            <option value="ADMIN">Admin</option>
+                            <option value="ALL">{t("adminUsers.roles.ALL")}</option>
+                            <option value="GUEST">{t("adminUsers.roles.GUEST")}</option>
+                            <option value="OWNER">{t("adminUsers.roles.OWNER")}</option>
                         </select>
                     </div>
                 </div>
@@ -328,7 +341,7 @@ export default function AdminUsersOverviewPage() {
                 ) : users.length === 0 ? (
                     <div className="bg-white border border-[#DACDCA] rounded-xl p-8 text-center">
                         <Users className="mx-auto text-[#DACDCA] mb-2" size={36} />
-                        <h3 className="text-[#1A1A1A] font-bold text-sm">No Users Found</h3>
+                        <h3 className="text-[#1A1A1A] font-bold text-sm">{t("adminUsers.noUsersFound")}</h3>
                     </div>
                 ) : (
                     users.map((user) => (
@@ -341,33 +354,33 @@ export default function AdminUsersOverviewPage() {
                                         <span className="break-all">{user.email}</span>
                                     </div>
                                 </div>
-                                <span 
+                                <span
                                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                                        user.role === "ADMIN" 
-                                            ? "bg-red-50 text-red-800 border border-red-200" 
+                                        user.role === "ADMIN"
+                                            ? "bg-red-50 text-red-800 border border-red-200"
                                             : user.role === "OWNER"
                                               ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
                                               : "bg-blue-50 text-blue-800 border border-blue-200"
                                     }`}
                                 >
-                                    {user.role}
+                                    {getRoleLabel(user.role)}
                                 </span>
                             </div>
-                            
+
                             <div className="h-px bg-[#DACDCA]/50 my-3"></div>
-                            
+
                             <div className="flex justify-between items-center text-xs">
-                                <span 
+                                <span
                                     className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full font-bold ${
-                                        user.status === "Active" 
-                                            ? "bg-emerald-100 text-emerald-800" 
+                                        user.status === "Active"
+                                            ? "bg-emerald-100 text-emerald-800"
                                             : "bg-[#F7F7F7] text-[#7A7A7A] border border-[#DACDCA]"
                                     }`}
                                 >
                                     <span className={`w-1.5 h-1.5 rounded-full ${user.status === "Active" ? 'bg-emerald-600' : 'bg-stone-400'}`}></span>
-                                    {user.status}
+                                    {getStatusLabel(user.status)}
                                 </span>
-                                
+
                                 <div className="text-[#7A7A7A] flex items-center gap-1 font-medium">
                                     <Calendar size={12} />
                                     <span>{formatDate(user.createdAt)}</span>
@@ -376,7 +389,7 @@ export default function AdminUsersOverviewPage() {
 
                             {user.role === "OWNER" && (
                                 <div className="mt-3 pt-3 border-t border-[#DACDCA]/50 flex justify-between items-center text-xs">
-                                    <span className="text-[#7A7A7A] font-bold">Properties managed:</span>
+                                    <span className="text-[#7A7A7A] font-bold">{t("adminUsers.propertiesManaged")}</span>
                                     <span className="bg-[#F7F7F7] border border-[#DACDCA] px-2.5 py-0.5 rounded font-black text-[#1A1A1A]">
                                         {user.propertyCount}
                                     </span>
@@ -392,13 +405,13 @@ export default function AdminUsersOverviewPage() {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-[#F7F7F7] border-b border-[#DACDCA] text-[#7A7A7A] font-bold text-xs uppercase tracking-wider">
-                                <th className="py-4.5 px-6">First Name</th>
-                                <th className="py-4.5 px-6">Last Name</th>
-                                <th className="py-4.5 px-6">Email</th>
-                                <th className="py-4.5 px-6">Role</th>
-                                <th className="py-4.5 px-6">Status</th>
-                                <th className="py-4.5 px-6">Created Date</th>
-                                <th className="py-4.5 px-6 text-right">Properties</th>
+                                <th className="py-4.5 px-6">{t("adminUsers.tableHeaders.firstName")}</th>
+                                <th className="py-4.5 px-6">{t("adminUsers.tableHeaders.lastName")}</th>
+                                <th className="py-4.5 px-6">{t("adminUsers.tableHeaders.email")}</th>
+                                <th className="py-4.5 px-6">{t("adminUsers.tableHeaders.role")}</th>
+                                <th className="py-4.5 px-6">{t("adminUsers.tableHeaders.status")}</th>
+                                <th className="py-4.5 px-6">{t("adminUsers.tableHeaders.createdDate")}</th>
+                                <th className="py-4.5 px-6 text-right">{t("adminUsers.tableHeaders.properties")}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#DACDCA]/50 text-sm font-medium text-[#1A1A1A]">
@@ -418,9 +431,9 @@ export default function AdminUsersOverviewPage() {
                                 <tr>
                                     <td colSpan={7} className="py-16 text-center">
                                         <Users className="mx-auto text-[#DACDCA] mb-3 stroke-[1.5]" size={40} />
-                                        <h3 className="text-[#1A1A1A] font-bold text-base">No Users Found</h3>
+                                        <h3 className="text-[#1A1A1A] font-bold text-base">{t("adminUsers.noUsersFound")}</h3>
                                         <p className="text-[#7A7A7A] text-xs mt-1">
-                                            No user accounts match your search parameters.
+                                            {t("adminUsers.noUsersMatchSearch")}
                                         </p>
                                     </td>
                                 </tr>
@@ -436,28 +449,28 @@ export default function AdminUsersOverviewPage() {
                                             </div>
                                         </td>
                                         <td className="py-4 px-6">
-                                            <span 
+                                            <span
                                                 className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider ${
-                                                    user.role === "ADMIN" 
-                                                        ? "bg-red-50 text-red-800 border-red-200" 
+                                                    user.role === "ADMIN"
+                                                        ? "bg-red-50 text-red-800 border-red-200"
                                                         : user.role === "OWNER"
                                                           ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                                                           : "bg-blue-50 text-blue-800 border-blue-200"
                                                 }`}
                                             >
-                                                {user.role}
+                                                {getRoleLabel(user.role)}
                                             </span>
                                         </td>
                                         <td className="py-4 px-6">
-                                            <span 
+                                            <span
                                                 className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold ${
-                                                    user.status === "Active" 
-                                                        ? "bg-emerald-100 text-emerald-800" 
+                                                    user.status === "Active"
+                                                        ? "bg-emerald-100 text-emerald-800"
                                                         : "bg-[#F7F7F7] text-[#7A7A7A] border border-[#DACDCA]"
                                                 }`}
                                             >
                                                 <span className={`w-1.5 h-1.5 rounded-full ${user.status === "Active" ? 'bg-emerald-600' : 'bg-stone-400'}`}></span>
-                                                {user.status}
+                                                {getStatusLabel(user.status)}
                                             </span>
                                         </td>
                                         <td className="py-4 px-6 text-[#7A7A7A] font-normal">
@@ -485,8 +498,8 @@ export default function AdminUsersOverviewPage() {
                 {!loadingUsers && totalPages > 0 && (
                     <div className="bg-[#F7F7F7] border-t border-[#DACDCA] px-6 py-4 flex items-center justify-between">
                         <div className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
-                            Showing <span className="text-[#1A1A1A]">{users.length}</span> of{" "}
-                            <span className="text-[#1A1A1A]">{totalElements}</span> users
+                            {t("adminUsers.showing")} <span className="text-[#1A1A1A]">{users.length}</span> {t("adminUsers.of")}{" "}
+                            <span className="text-[#1A1A1A]">{totalElements}</span> {t("adminUsers.users")}
                         </div>
                         <div className="flex items-center gap-2">
                             <button
@@ -497,7 +510,7 @@ export default function AdminUsersOverviewPage() {
                                 <ChevronLeft size={16} />
                             </button>
                             <span className="text-xs font-bold text-[#7A7A7A] px-2">
-                                Page {currentPage + 1} of {totalPages}
+                                {t("adminUsers.page")} {currentPage + 1} {t("adminUsers.of2")} {totalPages}
                             </span>
                             <button
                                 onClick={() => handlePageChange(currentPage + 1)}
@@ -514,7 +527,7 @@ export default function AdminUsersOverviewPage() {
             {!loadingUsers && totalPages > 0 && (
                 <div className="flex md:hidden bg-[#F7F7F7] border border-[#DACDCA] rounded-xl px-4 py-3 items-center justify-between">
                     <div className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
-                        Total: <span className="text-[#1A1A1A]">{totalElements}</span> users
+                        {t("adminUsers.total")} <span className="text-[#1A1A1A]">{totalElements}</span> {t("adminUsers.users")}
                     </div>
                     <div className="flex items-center gap-1">
                         <button
