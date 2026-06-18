@@ -8,15 +8,16 @@ import { formatSearchDate, parseGuests, parseSearchDate } from "../utils/searchD
 import { getCitySuggestions } from "../utils/citySuggestions";
 import PropertyMap from "../components/PropertyMap";
 import { useCurrency } from "../contexts/CurrencyContext";
+import {useTranslation} from "react-i18next"
 
 interface AvailabilityResponse {
     available: boolean;
     message: string;
 }
 
-const PROPERTIES_LOAD_ERROR = "Could not load properties. Please try again later.";
-const UNITS_FILTER_ERROR = "Could not load units for filtering. Please try again later.";
-const AVAILABILITY_FILTER_ERROR = "Could not verify availability. Please try again or adjust your filters.";
+const PROPERTIES_LOAD_ERROR = "properties.loadError";
+const UNITS_FILTER_ERROR = "properties.unitsFilterError";
+const AVAILABILITY_FILTER_ERROR = "properties.availabilityFilterError";
 
 function propertyMatchesCity(property: Property, city: string) {
     const normalizeCityText = (value: string) => value.toLowerCase().replace(/[,\s]+/g, " ").trim();
@@ -42,6 +43,7 @@ export default function PropertiesPage() {
     const [propertiesError, setPropertiesError] = useState<string | null>(null);
     const [filterError, setFilterError] = useState<string | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
+    const {t} = useTranslation();
 
     const [mapBounds, setMapBounds] = useState<{
         minLat: number;
@@ -254,8 +256,8 @@ export default function PropertiesPage() {
             <div className="mb-6 space-y-4 shrink-0">
                 <div className="flex justify-between items-center">
                     <div>
-                        <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">Properties</h1>
-                        <p className="text-sm text-[#7A7A7A] mt-1">Explore our curated selection of properties.</p>
+                        <h1 className="text-3xl font-bold text-[#1A1A1A] tracking-tight">{t('properties.title')}</h1>
+                        <p className="text-sm text-[#7A7A7A] mt-1">{t('properties.subtitle')}</p>
                     </div>
                     <button
                         onClick={toggleMap}
@@ -268,7 +270,7 @@ export default function PropertiesPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                             )}
                         </svg>
-                        {showMap ? "Hide map" : "Show map"}
+                        {showMap ? t('properties.hideMap') : t('properties.showMap')}
                     </button>
                 </div>
                 <PropertySearchBar
@@ -282,13 +284,13 @@ export default function PropertiesPage() {
 
             {(isLoading || isFilteringAvailability) && (
                 <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 text-center text-[#7A7A7A] font-medium mb-6 shrink-0 animate-pulse">
-                    {isLoading ? "Loading properties..." : "Checking availability..."}
+                    {isLoading ? t('properties.loading') : t('properties.checkingAvailability')}
                 </div>
             )}
 
             {(propertiesError || filterError) && (
                 <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700 font-semibold mb-6 shrink-0">
-                    {propertiesError || filterError}
+                    {t(propertiesError || filterError || "")}
                 </div>
             )}
 
@@ -302,16 +304,16 @@ export default function PropertiesPage() {
                     >
                         {filteredProperties.length === 0 ? (
                             <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-8 text-center">
-                                <h2 className="text-xl font-bold text-[#1A1A1A] tracking-tight">No properties found</h2>
+                                <h2 className="text-xl font-bold text-[#1A1A1A] tracking-tight">{t('properties.noResults')}</h2>
                                 <p className="text-sm text-[#7A7A7A] mt-2">
-                                    Try a different city or date range.
+                                    {t('properties.noResultsHint')}
                                 </p>
                             </div>
                         ) : visibleProperties.length === 0 && showMap ? (
                             <div className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-8 text-center">
-                                <h2 className="text-xl font-bold text-[#1A1A1A] tracking-tight">No properties in this map area</h2>
+                                <h2 className="text-xl font-bold text-[#1A1A1A] tracking-tight">{t('properties.noMapResults')}</h2>
                                 <p className="text-sm text-[#7A7A7A] mt-2">
-                                    Pan the map or zoom out to see more properties.
+                                    {t('properties.noMapResultsHint')}
                                 </p>
                             </div>
                         ) : (
@@ -364,14 +366,14 @@ export default function PropertiesPage() {
                                                             <p className="text-xs text-[#7A7A7A] mt-0.5 font-medium">{p.city}</p>
                                                         </div>
                                                         <div className="text-right shrink-0 ml-4">
-                                                            <span className="text-[9px] text-[#7A7A7A] block font-bold uppercase tracking-wider leading-none mb-0.5">From</span>
+                                                            <span className="text-[9px] text-[#7A7A7A] block font-bold uppercase tracking-wider leading-none mb-0.5">{t('propertyMap.from')}</span>
                                                             <span className="font-black text-base text-[#42211D]">
                                                                 {propertyPrices[p.id] !== undefined ? (
                                                                     `${Math.round(propertyPrices[p.id])} ${currency}`
                                                                 ) : (
                                                                     <span className="text-xs font-normal text-[#7A7A7A]">...</span>
                                                                 )}
-                                                                <span className="text-[10px] text-[#7A7A7A] font-normal ml-0.5">/night</span>
+                                                                <span className="text-[10px] text-[#7A7A7A] font-normal ml-0.5">{t('propertyMap.perNight')}</span>
                                                             </span>
                                                         </div>
                                                     </div>
@@ -415,14 +417,14 @@ export default function PropertiesPage() {
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
-                            Hide map
+                            {t('properties.hideMap')}
                         </>
                     ) : (
                         <>
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                             </svg>
-                            Show map
+                            {t('properties.showMap')}
                         </>
                     )}
                 </button>

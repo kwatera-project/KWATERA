@@ -51,7 +51,8 @@
     "pending": "Oczekująca",
     "confirmed": "Potwierdzona",
     "cancelled": "Anulowana",
-    "completed": "Zakończona"
+    "completed": "Zakończona",
+    "notAvailable": "Brak"
   },
 
   "statuses": {
@@ -476,6 +477,294 @@
     "manageUnits": "Zarządzaj lokalami",
     "manageImages": "Zarządzaj zdjęciami",
     "edit": "Edytuj"
+  },
+
+  "ownerUnits": {
+    "loading": "Ładowanie...",
+    "subtitle": "Zarządzaj lokalami",
+    "addUnit": "Dodaj lokal",
+    "noUnits": "Nie znaleziono lokali dla tej nieruchomości. Kliknij \"Dodaj lokal\" aby rozpocząć.",
+    "deleteConfirm": "Czy na pewno chcesz usunąć ten lokal?",
+    "deleteHasReservations": "Lokal ma rezerwacje i nie może zostać usunięty",
+    "deleteFailed": "Nie udało się usunąć lokalu",
+    "priceUpdated": "Cena zaktualizowana!",
+    "priceUpdateFailed": "Nie udało się zaktualizować ceny. Spróbuj ponownie.",
+    "unitType": "Typ lokalu",
+    "unitNumberShort": "Numer lokalu",
+    "floorLevel": "Piętro",
+    "guestCapacity": "Pojemność",
+    "guests": "gości",
+    "currentPrice": "Aktualna cena",
+    "perNight": "/ noc",
+    "suggestedPrice": "Sugerowana cena (AI)",
+    "calculating": "Obliczanie...",
+    "applying": "Stosowanie...",
+    "applyAiPrice": "Zastosuj cenę AI",
+    "unavailable": "Niedostępna"
+  },
+
+  "myReservations": {
+    "title": "Moje rezerwacje",
+    "subtitle": "Zarządzaj rezerwacjami, przeglądaj rozliczenia i przesyłaj odczyty liczników.",
+    "loading": "Ładowanie rezerwacji...",
+    "error": "Błąd: {{error}}",
+    "noReservations": "Nie masz jeszcze żadnych rezerwacji.",
+    "browseCatalog": "Przeglądaj katalog",
+    "reservationId": "ID rezerwacji:",
+    "viewBill": "Pokaż rachunek",
+    "waterMeter": "Licznik wody"
+  },
+
+  "paymentCancel": {
+    "title": "Płatność anulowana",
+    "subtitle": "Twoja transakcja płatności została anulowana. Żadne opłaty nie zostały pobrane.",
+    "backHome": "Powrót do strony głównej"
+  },
+
+  "profile": {
+    "loadError": "Nie udało się załadować danych profilu.",
+    "nameRequired": "Imię i nazwisko są wymagane.",
+    "updateError": "Nie udało się zaktualizować danych profilu.",
+    "error": "Błąd: {{error}}",
+    "notFound": "Nie znaleziono profilu.",
+    "tryAgain": "Spróbuj ponownie",
+    "adminTitle": "Profil administratora",
+    "ownerTitle": "Profil właściciela",
+    "guestTitle": "Profil gościa",
+    "adminDesc": "Zarządzaj konfiguracją systemu i kontami administracyjnymi.",
+    "ownerDesc": "Zarządzaj danymi właściciela nieruchomości i preferencjami powiadomień.",
+    "guestDesc": "Zarządzaj danymi konta gościa i preferencjami powiadomień.",
+    "personalDetails": "Dane konta osobistego",
+    "basicInfo": "Podstawowe informacje",
+    "firstName": "Imię",
+    "firstNamePlaceholder": "Wprowadź imię",
+    "lastName": "Nazwisko",
+    "lastNamePlaceholder": "Wprowadź nazwisko",
+    "username": "Nazwa użytkownika",
+    "contactSecurity": "Kontakt i bezpieczeństwo",
+    "email": "Adres e-mail",
+    "activeNotifications": "Aktywny dla powiadomień",
+    "saving": "Zapisywanie...",
+    "editProfile": "Edytuj profil"
+  },
+
+  "properties": {
+    "title": "Nieruchomości",
+    "subtitle": "Odkryj naszą starannie dobraną ofertę nieruchomości.",
+    "loading": "Ładowanie nieruchomości...",
+    "checkingAvailability": "Sprawdzanie dostępności...",
+    "showMap": "Pokaż mapę",
+    "hideMap": "Ukryj mapę",
+    "noResults": "Nie znaleziono nieruchomości",
+    "noResultsHint": "Spróbuj innego miasta lub zakresu dat.",
+    "noMapResults": "Brak nieruchomości w tym obszarze mapy",
+    "noMapResultsHint": "Przesuń mapę lub oddal, aby zobaczyć więcej.",
+    "loadError": "Nie udało się załadować nieruchomości. Spróbuj ponownie później.",
+    "unitsFilterError": "Nie udało się załadować lokali potrzebnych do filtrowania. Spróbuj ponownie później.",
+    "availabilityFilterError": "Nie udało się sprawdzić dostępności. Spróbuj ponownie lub zmień filtry."
+  },
+
+  "propertyDetails": {
+    "selectDates": "Wybierz daty pobytu",
+    "selectDatesDesc": "Wybierz preferowane daty zameldowania i wymeldowania, aby sprawdzić ogólną dostępność.",
+    "unitsAvailability": "Lokale i dostępność",
+    "hideCalendar": "Ukryj szczegółowy kalendarz",
+    "showCalendar": "Sprawdź szczegółowy kalendarz obłożenia",
+    "checkoutOnly": "Dostępne tylko do wymeldowania",
+    "checkinOnly": "Dostępne tylko do zameldowania",
+    "available": "Dostępne",
+    "occupied": "Zajęte",
+    "selected": "Wybrane",
+    "stayDetailsSummary": "Podsumowanie pobytu",
+    "totalPrice": "Łączna cena",
+    "capacity": "Pojemność",
+    "personSingle": "osoba",
+    "personPlural": "osób",
+    "processing": "Przetwarzanie...",
+    "redirecting": "Przekierowywanie do płatności...",
+    "capacityTooLow": "Za mała pojemność",
+    "selectDatesToBook": "Wybierz daty, aby zarezerwować",
+    "bookDates": "Zarezerwuj te daty",
+    "unitCapacityError": "Ten lokal mieści maksymalnie {{capacity}} {{unit}}.",
+    "notAvailable": "Lokal niedostępny w wybranych datach wyszukiwania.",
+    "availabilityError": "Nie można potwierdzić dostępności dla wybranych dat.",
+    "notAvailableDetailed": "Lokal niedostępny w tych datach. Sprawdź szczegółowy kalendarz obłożenia powyżej.",
+    "minimumStay": "Minimalny pobyt to 1 noc. Wybierz inną datę wymeldowania.",
+    "overlap": "Wybrane daty pokrywają się z istniejącą rezerwacją.",
+    "selectValidRange": "Wybierz prawidłowy zakres dat w kalendarzu",
+    "loginRequired": "Zaloguj się, aby zarezerwować ten lokal",
+    "thumbnailAlt": "Miniatura nieruchomości {{number}}"
+  },
+
+  "reservationDetails": {
+    "loading": "Ładowanie szczegółów rezerwacji...",
+    "notFound": "Nie znaleziono rezerwacji.",
+    "title": "Panel rezerwacji",
+    "stayInfo": "Pobyt i nieruchomość",
+    "propertyUnit": "Nieruchomość / lokal",
+    "nameUnavailable": "Nazwa nieruchomości niedostępna",
+    "city": "Miasto:",
+    "unitId": "UUID lokalu:",
+    "bookedOn": "Data rezerwacji",
+    "guestInfo": "Gość i konto",
+    "guestIdentity": "Tożsamość gościa",
+    "email": "Email:",
+    "guestUserId": "ID użytkownika gościa",
+    "guestMessage": "Wiadomość od gościa",
+    "ownerInfo": "Informacje o właścicielu",
+    "propertyOwner": "Właściciel nieruchomości",
+    "priceSnapshot": "Cena za noc (snapshot)",
+    "baseTotalPrice": "Łączna cena bazowa",
+    "exchangeRate": "Kurs wymiany (snapshot)",
+    "totalConverted": "Łączna cena przeliczona",
+    "loadError": "Nie udało się załadować szczegółów rezerwacji."
+  },
+  "settlement": {
+    "loading": "Ładowanie szczegółów rozliczenia...",
+    "notFound": "Nie znaleziono rozliczenia.",
+    "accessDenied": "Brak dostępu",
+    "accessDeniedDesc": "Nie masz uprawnień do wyświetlenia tej strony rozliczenia. Jeśli uważasz, że to błąd, skontaktuj się z pomocą techniczną.",
+    "title": "Szczegóły rozliczenia",
+    "subtitle": "Szczegółowy podział cen i transakcje rozliczeniowe.",
+    "settlementId": "ID rozliczenia",
+    "balanceDue": "Pozostała kwota",
+    "currencySnapshot": "Informacje o kursie waluty (Admin/Właściciel)",
+    "guestCurrency": "Waluta wybrana przez gościa",
+    "priceBreakdown": "Podział ceny",
+    "accommodation": "Kwota za zakwaterowanie",
+    "utilities": "Kwota za media",
+    "deposit": "Kwota kaucji",
+    "total": "Łączna kwota",
+    "amountPaid": "Zapłacona kwota",
+    "issuedAt": "Data wystawienia",
+    "paidAt": "Data płatności",
+    "stripeNote": "* Uwaga: Pomimo wybranej waluty wyświetlania, transakcja płatności na bramce Stripe zostanie przetworzona w walucie bazowej systemu (PLN). Ewentualne opłaty za przeliczenie waluty zależą od Twojego banku. Zastosowany kurs wymiany: {{rate}} {{currency}}/PLN.",
+    "pay": "Zapłać",
+    "loadError": "Nie udało się załadować szczegółów rozliczenia."
+  },
+
+  "settlementStatuses": {
+    "PAID": "Opłacone",
+    "ISSUED": "Wystawione",
+    "PENDING": "Oczekujące",
+    "UNPAID": "Nieopłacone"
+  },
+
+  "settlementItemTypes": {
+    "DEPOSIT": "kaucję",
+    "ACCOMMODATION": "zakwaterowanie",
+    "WATER": "wodę",
+    "ELECTRICITY": "energię elektryczną",
+    "CLEANING_FEE": "opłatę za sprzątanie"
+  },
+
+  "about": {
+    "badge": "O Kwatera",
+    "title": "KWATERA: Zarządzanie wynajmem nowej generacji",
+    "subtitle": "Kompleksowa platforma łącząca inteligentne rozliczanie mediów, dynamiczne ceny AI i płynny przepływ rezerwacji.",
+    "collaboration": "Opracowane we współpracy akademickiej i korporacyjnej z",
+    "projectContext": "O projekcie",
+    "projectDesc1": "to system webowy do zarządzania rezerwacjami obiektów wypoczynkowych, dostępnością, rozliczeniami mediów, płatnościami, raportowaniem i administracją.",
+    "projectDesc2": "Jako projekt semestralny, KWATERA skupia się na budowie realistycznej, gotowej do produkcji platformy zarządzania obiektami, a nie prostej aplikacji CRUD.",
+    "systemArchBadge": "Architektura systemu",
+    "systemArchTitle": "Łącząc innowację i gościnność",
+    "systemArchDesc": "Nasz system automatyzuje cykl wynajmu, od odczytów liczników OCR po dynamiczne ceny AI wszystko zorganizowane w ramach solidnej architektury mikroserwisów.",
+    "coreFeaturesBadge": "Główne funkcje",
+    "featuresTitle": "Funkcje platformy i stos technologiczny",
+    "feature1Title": "Dynamiczne ceny oparte na AI",
+    "feature1Desc": "Maksymalizuj przychody dzięki naszemu inteligentnemu silnikowi cenowemu. Analizując trendy rynkowe i dane nieruchomości, system automatycznie dostosowuje stawki dzienne.",
+    "feature2Title": "Rozliczanie mediów YOLO & OCR",
+    "feature2Desc": "Wyeliminuj ręczne odczyty liczników. Nasz zaawansowany moduł OCR wykorzystuje przetwarzanie obrazu do wykrywania i wyodrębniania danych o zużyciu mediów ze zdjęć.",
+    "feature3Title": "Płynny proces rezerwacji",
+    "feature3Desc": "Zapewnij bezproblemowe doświadczenie rezerwacji. Od przeglądania katalogu nieruchomości po bezpieczne płatności przez Stripe, cała ścieżka gościa jest zoptymalizowana.",
+    "feature4Title": "Kompleksowy panel właściciela",
+    "feature4Desc": "Przejmij pełną kontrolę. Zarządzaj lokalami, śledź obłożenie w czasie rzeczywistym i monitoruj rozliczenia finansowe z centralnego panelu.",
+    "techBadge": "Główne technologie",
+    "techTitle": "Stos technologiczny systemu",
+    "creatorsBadge": "Twórcy projektu",
+    "creatorsTitle": "Poznaj twórców",
+    "creatorsDesc": "KWATERA została opracowana w ramach akademickiego programu studiów z Informatyki Stosowanej na Wydziale Fizyki Technicznej, Informatyki i Matematyki Stosowanej (FTIMS) Politechniki Łódzkiej."
+  },
+
+  "blogSection": {
+    "badge": "Nasz blog",
+    "title": "Porady i przewodniki podróżnicze",
+    "seeMore": "Zobacz więcej",
+    "post1Title": "10 ukrytych perełek w Tatrach",
+    "post1Date": "20 lutego 2026",
+    "post1Excerpt": "Ucieknij od tłumów i odkryj zachwycające, mniej znane szlaki. Przygotowaliśmy listę najspokojniejszych miejsc w Tatrach.",
+    "post2Title": "Przewodnik po polskiej kuchni dla podróżnych",
+    "post2Date": "5 marca 2025",
+    "post2Excerpt": "Od klasycznych pierogów po sycące dania regionalne. Poznaj potrawy, których warto spróbować podczas podróży po Polsce.",
+    "post3Title": "Zrównoważona turystyka: jak podróżować bardziej ekologicznie",
+    "post3Date": "12 kwietnia 2025",
+    "post3Excerpt": "Dowiedz się, jak podróżować odpowiedzialnie. Poznaj proste sposoby na ograniczenie śladu węglowego podczas wakacji."
+  },
+
+  "exploreSection": {
+    "badge": "Odkrywaj",
+    "title": "Odkrywaj Polskę",
+    "description": "Odkryj prawdziwe piękno Polski, od majestatycznych Tatr po tętniące życiem ulice Warszawy. Znajdź idealne miejsce na kolejny wyjazd i zanurz się w lokalnej kulturze.",
+    "button": "Zobacz wszystkie kierunki",
+    "image1Alt": "Góry w Polsce",
+    "image2Alt": "Polska dolina",
+    "image3Alt": "Polski krajobraz"
+  },
+
+  "featuresSection": {
+    "badge": "Dlaczego warto wybrać nas?",
+    "title": "Poznaj najlepsze strony Kwatery",
+    "feature1Title": "Konkurencyjne ceny",
+    "feature1Description": "Oferujemy atrakcyjne ceny bez ukrytych opłat. Znajdź idealne miejsce na pobyt, które pasuje do Twojego budżetu.",
+    "feature2Title": "Bezpieczna rezerwacja",
+    "feature2Description": "Twoje dane osobowe i płatności są bezpieczne. Korzystamy z nowoczesnych zabezpieczeń, aby proces rezerwacji był spokojny i wygodny.",
+    "feature3Title": "Prosta obsługa",
+    "feature3Description": "Rezerwacja kolejnego wyjazdu jest szybka i wygodna. Nasza intuicyjna platforma pozwala znaleźć i zarezerwować miejsce w kilku kliknięciach."
+  },
+
+  "footer": {
+    "support": "Wsparcie",
+    "helpCenter": "Centrum pomocy",
+    "reportIssue": "Zgłoś problem",
+    "privacyTerms": "Warunki prywatności",
+    "company": "Firma",
+    "aboutUs": "O nas",
+    "pressRoom": "Dla mediów",
+    "contact": "Kontakt",
+    "faq": "FAQ",
+    "supportCenter": "Centrum wsparcia",
+    "social": "Social media",
+    "rightsReserved": "Wszelkie prawa zastrzeżone.",
+    "privacyPolicy": "Polityka prywatności",
+    "termsOfService": "Regulamin"
+  },
+
+  "heroSection": {
+    "title": "Dzień dobry!",
+    "subtitle": "Odkrywaj piękne miejsca na świecie z Kwaterą",
+    "backgroundAlt": "Tło sekcji głównej"
+  },
+
+  "newsletterSection": {
+    "title": "Otrzymuj specjalne oferty i więcej od Kwatery",
+    "description": "Dołącz do naszej społeczności i jako pierwszy otrzymuj informacje o wyjątkowych zniżkach, spersonalizowanych rekomendacjach i inspirujących kierunkach podróży.",
+    "emailPlaceholder": "Wpisz swój adres e-mail",
+    "subscribe": "Zapisz się",
+    "imageAlt": "Krajobraz kempingowy"
+  },
+
+  "topPropertiesSection": {
+    "badge": "TOP REZERWACJE",
+    "title": "Polecane nieruchomości",
+    "viewAll": "Zobacz wszystkie nieruchomości",
+    "propertyImageAlt": "Zdjęcie nieruchomości",
+    "fallbackTitle": "Przytulny obiekt",
+    "fallbackLocation": "Polska",
+    "perNight": "/noc"
+  },
+
+  "trustBadges": {
+    "secureCheckout": "Bezpieczna płatność"
   }
 
 

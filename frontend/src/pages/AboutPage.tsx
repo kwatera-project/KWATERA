@@ -1,5 +1,6 @@
 import { Brain, Scan, Calendar, LayoutDashboard, Server, Database, Code } from 'lucide-react';
 import Footer from '../components/landing/Footer';
+import {useTranslation} from "react-i18next"
 
 interface TeamMember {
     name: string;
@@ -13,6 +14,7 @@ interface TeamMember {
 }
 
 export default function AboutPage() {
+    const {t} = useTranslation();
     const teamMembers: TeamMember[] = [
         {
             name: "Zuzanna Adamczyk",
@@ -82,18 +84,18 @@ export default function AboutPage() {
                 <div className="bg-white border-b border-brand-accent py-24 px-6 text-center">
                     <div className="max-w-4xl mx-auto space-y-8">
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold tracking-[0.2em] uppercase text-brand-primary bg-brand-primary/5 rounded-full">
-                            About Kwatera
+                            {t('about.badge')}
                         </span>
                         <h1 className="text-4xl md:text-6xl font-extrabold text-brand-main tracking-tight leading-tight">
-                            KWATERA: Next-Generation Vacation Rental Management
+                            {t('about.title')}
                         </h1>
                         <p className="text-lg md:text-xl text-brand-muted max-w-3xl mx-auto font-light leading-relaxed">
-                            An all-in-one platform integrating intelligent utility billing, dynamic AI pricing, and seamless reservation flows to empower property owners and delight guests.
+                            {t('about.subtitle')}
                         </p>
 
                         <div className="pt-10 border-t border-brand-accent/40 flex flex-col items-center justify-center space-y-4">
                             <span className="text-[11px] font-bold tracking-[0.25em] text-brand-muted uppercase">
-                                Developed in academic & corporate collaboration with
+                                {t('about.collaboration')}
                             </span>
                             <a 
                                 href="https://lodz.commerzbank.pl" 
@@ -114,17 +116,17 @@ export default function AboutPage() {
                 <div className="max-w-6xl mx-auto px-6 md:px-8 mt-16">
                     <div className="bg-white border-l-4 border-brand-primary border-y border-r border-brand-accent rounded-r-2xl p-8 md:p-10 shadow-sm space-y-6 text-left">
                         <div className="space-y-2">
-                            <h2 className="text-xl md:text-2xl font-bold text-brand-main tracking-tight">Project Context</h2>
+                            <h2 className="text-xl md:text-2xl font-bold text-brand-main tracking-tight">{t('about.projectContext')}</h2>
                             <p className="text-xs md:text-sm text-brand-primary font-bold tracking-wide">
                                 Kompleksowy Webowy Asystent Terminarza, Energii, Rezerwacji i Administracji
                             </p>
                         </div>
                         <div className="text-brand-muted text-base leading-relaxed font-light space-y-4">
                             <p>
-                                <strong>KWATERA</strong> is a web-based system for managing holiday accommodation bookings, availability, utility settlements, payments, reporting, and administration.
+                                <strong>KWATERA</strong> {t('about.projectDesc1')}
                             </p>
                             <p>
-                                As a semester project, KWATERA focuses on building a realistic, production-ready accommodation management platform rather than a simple CRUD application.
+                                {t('about.projectDesc2')}
                             </p>
                         </div>
                     </div>
@@ -136,13 +138,13 @@ export default function AboutPage() {
                         <div className="space-y-8 bg-white border border-brand-accent rounded-3xl p-8 md:p-12 shadow-sm">
                             <div className="max-w-3xl mx-auto text-center space-y-4">
                                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-bg text-brand-muted text-xs font-semibold">
-                                    System Architecture
+                                    {t('about.systemArchBadge')}
                                 </span>
                                 <h2 className="text-2xl md:text-3xl font-extrabold text-brand-main tracking-tight">
-                                    Bridging innovation and hospitality
+                                    {t('about.systemArchTitle')}
                                 </h2>
                                 <p className="text-brand-muted text-base leading-relaxed font-light">
-                                    Our system automates the rental lifecycle - from OCR-based utility readings to AI-driven dynamic pricing - all orchestrated within a robust microservices architecture.
+                                    {t('about.systemArchDesc')}
                                 </p>
                             </div>
 
@@ -216,10 +218,10 @@ export default function AboutPage() {
                         <div className="space-y-10">
                             <div className="text-center space-y-2">
                                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white text-brand-primary border border-brand-accent/50 text-xs font-semibold">
-                                    Core Features
+                                   {t('about.coreFeaturesBadge')}
                                 </span>
                                 <h2 className="text-3xl font-extrabold text-brand-main tracking-tight">
-                                    Platform Features & Tech Stack
+                                    {t('about.featuresTitle')}
                                 </h2>
                             </div>
 
@@ -229,9 +231,9 @@ export default function AboutPage() {
                                     <div className="w-10 h-10 rounded-xl bg-brand-accent/30 flex items-center justify-center mb-5">
                                         <Brain className="w-5 h-5 text-brand-primary" />
                                     </div>
-                                    <h3 className="text-xl font-bold text-brand-main mb-2">AI-Powered Dynamic Pricing</h3>
+                                    <h3 className="text-xl font-bold text-brand-main mb-2">{t('about.feature1Title')}</h3>
                                     <p className="text-brand-muted text-base leading-relaxed font-light">
-                                        Maximize revenue with our intelligent pricing engine. By analyzing market trends and property data, the system automatically adjusts daily rates for optimal profitability.
+                                        {t('about.feature1Desc')}
                                     </p>
                                 </div>
 
@@ -239,9 +241,9 @@ export default function AboutPage() {
                                     <div className="w-10 h-10 rounded-xl bg-brand-accent/30 flex items-center justify-center mb-5">
                                         <Scan className="w-5 h-5 text-brand-primary" />
                                     </div>
-                                    <h3 className="text-xl font-bold text-brand-main mb-2">YOLO & OCR Utility Billing</h3>
+                                    <h3 className="text-xl font-bold text-brand-main mb-2">{t('about.feature2Title')}</h3>
                                     <p className="text-brand-muted text-base leading-relaxed font-light">
-                                        Eliminate manual meter readings. Our advanced OCR module utilizes image processing to detect and extract utility data from photos, streamlining your billing.
+                                        {t('about.feature2Desc')}
                                     </p>
                                 </div>
 
@@ -249,9 +251,9 @@ export default function AboutPage() {
                                     <div className="w-10 h-10 rounded-xl bg-brand-accent/30 flex items-center justify-center mb-5">
                                         <Calendar className="w-5 h-5 text-brand-primary" />
                                     </div>
-                                    <h3 className="text-xl font-bold text-brand-main mb-2">Seamless Reservation Flow</h3>
+                                    <h3 className="text-xl font-bold text-brand-main mb-2">{t('about.feature3Title')}</h3>
                                     <p className="text-brand-muted text-base leading-relaxed font-light">
-                                        Deliver a frictionless booking experience. From browsing our property catalog to secure Stripe-integrated checkouts, the entire guest journey is optimized for conversion.
+                                        {t('about.feature3Desc')}
                                     </p>
                                 </div>
 
@@ -259,9 +261,9 @@ export default function AboutPage() {
                                     <div className="w-10 h-10 rounded-xl bg-brand-accent/30 flex items-center justify-center mb-5">
                                         <LayoutDashboard className="w-5 h-5 text-brand-primary" />
                                     </div>
-                                    <h3 className="text-xl font-bold text-brand-main mb-2">Comprehensive Owner Dashboard</h3>
+                                    <h3 className="text-xl font-bold text-brand-main mb-2">{t('about.feature4Title')}</h3>
                                     <p className="text-brand-muted text-base leading-relaxed font-light">
-                                        Take full control. Manage units, track real-time occupancy, and monitor financial settlements from a centralized, professional command center.
+                                        {t('about.feature4Desc')}
                                     </p>
                                 </div>
 
@@ -271,10 +273,10 @@ export default function AboutPage() {
                         <div className="space-y-10 pt-4">
                             <div className="text-center space-y-2">
                                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white text-brand-primary border border-brand-accent/50 text-xs font-semibold">
-                                    Core Technologies
+                                    {t('about.techBadge')}
                                 </span>
                                 <h2 className="text-xl md:text-2xl font-bold text-brand-main tracking-tight">
-                                    System Technology Stack
+                                    {t('about.techTitle')}
                                 </h2>
                             </div>
                             
@@ -303,16 +305,13 @@ export default function AboutPage() {
                 <div className="max-w-6xl mx-auto px-6 md:px-8 py-24 space-y-12">
                     <div className="text-center space-y-2">
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-primary/5 text-brand-primary text-xs font-semibold">
-                            Project Creators
+                            {t('about.creatorsBadge')}
                         </span>
                         <h2 className="text-2xl md:text-3xl font-extrabold text-brand-main tracking-tight">
-                            Meet the Creators
+                            {t('about.creatorsTitle')}
                         </h2>
                         <p className="text-brand-muted text-sm md:text-base leading-relaxed font-light max-w-3xl mx-auto">
-                            KWATERA was conceptualized and developed as part of our academic degree program in 
-                            <span className="font-semibold text-brand-main"> Applied Computer Science</span> at the 
-                            <span className="font-semibold text-brand-main"> Faculty of Technical Physics, Information Technology and Applied Mathematics (FTIMS)</span>, 
-                            <span className="font-semibold text-brand-main"> Lodz University of Technology</span>.
+                            {t('about.creatorsDesc')}
                         </p>
                     </div>
 

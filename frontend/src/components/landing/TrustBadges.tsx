@@ -1,13 +1,15 @@
 import { Lock } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 
 export default function TrustBadges() {
+    const {t} = useTranslation();
   return (
     <div className="w-full bg-white py-10 border-t border-[#DACDCA]/20">
       <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-6 md:gap-8 justify-center items-center opacity-60 grayscale hover:opacity-90 transition-opacity duration-300">
         
         <div className="flex items-center gap-2 font-black text-xs md:text-sm tracking-widest text-title uppercase">
           <Lock size={15} className="text-orange-900" />
-          <span>Secure Checkout</span>
+            <span>{t("trustBadges.secureCheckout")}</span>
         </div>
 
         <div className="h-4 w-px bg-stone-300 hidden md:block"></div>

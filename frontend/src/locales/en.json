@@ -51,7 +51,8 @@
     "pending": "Pending",
     "confirmed": "Confirmed",
     "cancelled": "Cancelled",
-    "completed": "Completed"
+    "completed": "Completed",
+    "notAvailable": "N/A"
   },
 
   "statuses": {
@@ -484,6 +485,281 @@
     "manageUnits": "Manage Units",
     "manageImages": "Manage Images",
     "edit": "Edit"
+  },
+
+  "ownerUnits": {
+    "loading": "Loading Accommodation...",
+    "subtitle": "Manage Accommodation Units",
+    "addUnit": "Add Unit",
+    "noUnits": "No accommodation units found for this property. Click \"Add Unit\" to get started.",
+    "deleteConfirm": "Are you sure you want to delete this unit?",
+    "deleteHasReservations": "Unit has reservations and cannot be deleted",
+    "deleteFailed": "Failed to delete unit",
+    "priceUpdated": "Price updated successfully!",
+    "priceUpdateFailed": "Failed to update price. Please try again.",
+    "unitType": "Unit Type",
+    "unitNumberShort": "Unit Number",
+    "floorLevel": "Floor Level",
+    "guestCapacity": "Guest Capacity",
+    "guests": "guests",
+    "currentPrice": "Current Price",
+    "perNight": "/ night",
+    "suggestedPrice": "Suggested Price (AI)",
+    "calculating": "Calculating...",
+    "applying": "Applying...",
+    "applyAiPrice": "Apply AI Price",
+    "unavailable": "Unavailable"
+  },
+
+  "paymentCancel": {
+    "title": "Payment Cancelled",
+    "subtitle": "Your payment transaction was cancelled. No charges were made to your account.",
+    "backHome": "Back to Homepage"
+  },
+
+  "profile": {
+    "loadError": "Failed to load profile details.",
+    "nameRequired": "First Name and Last Name are required.",
+    "updateError": "Failed to update profile details.",
+    "error": "Error: {{error}}",
+    "notFound": "Profile could not be found.",
+    "tryAgain": "Try Again",
+    "adminTitle": "Admin Profile",
+    "ownerTitle": "Owner Profile",
+    "guestTitle": "Guest Profile",
+    "adminDesc": "Manage system configuration and administrative accounts.",
+    "ownerDesc": "Manage your property owner details and notification preferences.",
+    "guestDesc": "Manage your guest account details and notification preferences.",
+    "personalDetails": "Personal Account Details",
+    "basicInfo": "Basic Information",
+    "firstName": "First Name",
+    "firstNamePlaceholder": "Enter first name",
+    "lastName": "Last Name",
+    "lastNamePlaceholder": "Enter last name",
+    "username": "Username",
+    "contactSecurity": "Contact & Security",
+    "email": "Email Address",
+    "activeNotifications": "Active for Notifications",
+    "saving": "Saving...",
+    "editProfile": "Edit Profile"
+  },
+  "properties": {
+    "title": "Properties",
+    "subtitle": "Explore our curated selection of properties.",
+    "loading": "Loading properties...",
+    "checkingAvailability": "Checking availability...",
+    "showMap": "Show map",
+    "hideMap": "Hide map",
+    "noResults": "No properties found",
+    "noResultsHint": "Try a different city or date range.",
+    "noMapResults": "No properties in this map area",
+    "noMapResultsHint": "Pan the map or zoom out to see more properties.",
+    "loadError": "Could not load properties. Please try again later.",
+    "unitsFilterError": "Could not load units for filtering. Please try again later.",
+    "availabilityFilterError": "Could not verify availability. Please try again or adjust your filters."
+  },
+
+  "propertyDetails": {
+    "selectDates": "Select Stay Dates",
+    "selectDatesDesc": "Choose your preferred check-in and check-out window to check general availability across all options.",
+    "unitsAvailability": "Units & Availability",
+    "hideCalendar": "Hide Detailed Calendar",
+    "showCalendar": "Check Detailed Occupancy Calendar",
+    "checkoutOnly": "Available for check-out only",
+    "checkinOnly": "Available for check-in only",
+    "available": "Available",
+    "occupied": "Occupied",
+    "selected": "Selected",
+    "stayDetailsSummary": "Stay Details Summary",
+    "totalPrice": "Total price",
+    "capacity": "Capacity",
+    "personSingle": "person",
+    "personPlural": "people",
+    "processing": "Processing...",
+    "redirecting": "Redirecting to payment...",
+    "capacityTooLow": "Capacity too low",
+    "selectDatesToBook": "Select dates to book",
+    "bookDates": "Book these dates",
+    "unitCapacityError": "This unit hosts up to {{capacity}} {{unit}}.",
+    "notAvailable": "Room not available for the selected search dates.",
+    "availabilityError": "Unable to confirm availability for the selected search dates.",
+    "notAvailableDetailed": "Room not available for these dates. Check the detailed occupancy calendar above to find available slots.",
+    "minimumStay": "Minimum stay is 1 night. Select a different end date.",
+    "overlap": "Selected dates overlap with an existing reservation.",
+    "selectValidRange": "Select a valid date range on the calendar",
+    "loginRequired": "Log in to book this unit",
+    "thumbnailAlt": "Property thumbnail {{number}}"
+  },
+
+  "reservationDetails": {
+    "loading": "Loading reservation details...",
+    "notFound": "Reservation not found.",
+    "title": "Reservation Dashboard",
+    "stayInfo": "Stay & Property Info",
+    "propertyUnit": "Property / Unit Name",
+    "nameUnavailable": "Property name not available",
+    "city": "City:",
+    "unitId": "Unit ID UUID:",
+    "bookedOn": "Booked On",
+    "guestInfo": "Guest & Account Info",
+    "guestIdentity": "Guest Identity",
+    "email": "Email:",
+    "guestUserId": "Guest User ID",
+    "guestMessage": "Message from Guest",
+    "ownerInfo": "Owner Info",
+    "propertyOwner": "Property Owner",
+    "priceSnapshot": "Price per Night Snapshot",
+    "baseTotalPrice": "Base Total Price",
+    "exchangeRate": "Exchange Rate Snapshot",
+    "totalConverted": "Total Converted Price",
+    "loadError": "Failed to load reservation details."
+  },
+
+  "settlement": {
+    "loading": "Loading settlement details...",
+    "notFound": "Settlement not found.",
+    "accessDenied": "Access Denied",
+    "accessDeniedDesc": "You do not have permission to view this settlement billing page. If you believe this is an error, please contact support.",
+    "title": "Settlement Details",
+    "subtitle": "Detailed pricing breakdown and settlement transactions.",
+    "settlementId": "Settlement ID",
+    "balanceDue": "Balance Due",
+    "currencySnapshot": "Currency Snapshot Info (Admin/Owner)",
+    "guestCurrency": "Guest Selected Currency",
+    "priceBreakdown": "Price Breakdown",
+    "accommodation": "Accommodation Amount",
+    "utilities": "Utilities Amount",
+    "deposit": "Deposit Amount",
+    "total": "Total Amount",
+    "amountPaid": "Amount Paid",
+    "issuedAt": "Issued At",
+    "paidAt": "Paid At",
+    "stripeNote": "* Note: Despite the selected display currency, the payment transaction on the Stripe gateway will be processed in the system's base currency (PLN). Any potential foreign exchange conversion fees depend on your bank. Exchange rate applied: {{rate}} {{currency}}/PLN.",
+    "pay": "Pay",
+    "loadError": "Failed to load settlement details."
+  },
+
+  "settlementStatuses": {
+    "PAID": "Paid",
+    "ISSUED": "Issued",
+    "PENDING": "Pending",
+    "UNPAID": "Unpaid"
+  },
+
+  "settlementItemTypes": {
+    "DEPOSIT": "Deposit",
+    "ACCOMMODATION": "Accommodation",
+    "WATER": "Water",
+    "ELECTRICITY": "Electricity",
+    "CLEANING_FEE": "Cleaning fee"
+  },
+  "about": {
+    "badge": "About Kwatera",
+    "title": "KWATERA: Next-Generation Vacation Rental Management",
+    "subtitle": "An all-in-one platform integrating intelligent utility billing, dynamic AI pricing, and seamless reservation flows to empower property owners and delight guests.",
+    "collaboration": "Developed in academic & corporate collaboration with",
+    "projectContext": "Project Context",
+    "projectDesc1": "is a web-based system for managing holiday accommodation bookings, availability, utility settlements, payments, reporting, and administration.",
+    "projectDesc2": "As a semester project, KWATERA focuses on building a realistic, production-ready accommodation management platform rather than a simple CRUD application.",
+    "systemArchBadge": "System Architecture",
+    "systemArchTitle": "Bridging innovation and hospitality",
+    "systemArchDesc": "Our system automates the rental lifecycle - from OCR-based utility readings to AI-driven dynamic pricing - all orchestrated within a robust microservices architecture.",
+    "coreFeaturesBadge": "Core Features",
+    "featuresTitle": "Platform Features & Tech Stack",
+    "feature1Title": "AI-Powered Dynamic Pricing",
+    "feature1Desc": "Maximize revenue with our intelligent pricing engine. By analyzing market trends and property data, the system automatically adjusts daily rates for optimal profitability.",
+    "feature2Title": "YOLO & OCR Utility Billing",
+    "feature2Desc": "Eliminate manual meter readings. Our advanced OCR module utilizes image processing to detect and extract utility data from photos, streamlining your billing.",
+    "feature3Title": "Seamless Reservation Flow",
+    "feature3Desc": "Deliver a frictionless booking experience. From browsing our property catalog to secure Stripe-integrated checkouts, the entire guest journey is optimized for conversion.",
+    "feature4Title": "Comprehensive Owner Dashboard",
+    "feature4Desc": "Take full control. Manage units, track real-time occupancy, and monitor financial settlements from a centralized, professional command center.",
+    "techBadge": "Core Technologies",
+    "techTitle": "System Technology Stack",
+    "creatorsBadge": "Project Creators",
+    "creatorsTitle": "Meet the Creators",
+    "creatorsDesc": "KWATERA was conceptualized and developed as part of our academic degree program in Applied Computer Science at the Faculty of Technical Physics, Information Technology and Applied Mathematics (FTIMS), Lodz University of Technology."
+  },
+
+  "blogSection": {
+    "badge": "Our Blog",
+    "title": "Travel Tips & Guides",
+    "seeMore": "See more",
+    "post1Title": "Top 10 Hidden Gems in Tatra Mountains",
+    "post1Date": "February 20, 2026",
+    "post1Excerpt": "Escape the crowds and discover breathtaking, untamed trails. Here is our exclusive list of the most peaceful spots in the Tatras.",
+    "post2Title": "A Guide to Polish Cuisine for Travelers",
+    "post2Date": "March 05, 2025",
+    "post2Excerpt": "From classic pierogi to hearty regional stews. Explore the must-try dishes that will make your Polish journey unforgettable.",
+    "post3Title": "Sustainable Tourism: How to Travel Green",
+    "post3Date": "April 12, 2025",
+    "post3Excerpt": "Learn how to explore the world responsibly. Discover simple, actionable tips to reduce your carbon footprint while enjoying your vacation."
+  },
+
+  "exploreSection": {
+    "badge": "DISCOVER",
+    "title": "Explore Poland",
+    "description": "Discover the true beauty of Poland, from the majestic Tatra Mountains to the vibrant streets of Warsaw. Find the perfect stay for your next adventure and immerse yourself in local culture.",
+    "button": "See all destinations",
+    "image1Alt": "Mountains in Poland",
+    "image2Alt": "Polish valley",
+    "image3Alt": "Polish landscape"
+  },
+
+  "featuresSection": {
+    "badge": "Why Choose Us?",
+    "title": "Experience the best of Kwatera",
+    "feature1Title": "Competitive Prices",
+    "feature1Description": "We offer the best rates on the market with no hidden fees. Find your dream accommodation that fits your budget perfectly.",
+    "feature2Title": "Secure Booking",
+    "feature2Description": "Your personal data and payments are completely safe. We use state-of-the-art encryption to ensure a worry-free transaction.",
+    "feature3Title": "Seamless Experience",
+    "feature3Description": "Booking your next trip has never been easier. Our intuitive platform allows you to find and reserve places in just a few clicks."
+  },
+
+  "footer": {
+    "support": "Support",
+    "helpCenter": "Help Center",
+    "reportIssue": "Report an issue",
+    "privacyTerms": "Privacy Terms",
+    "company": "Company",
+    "aboutUs": "About us",
+    "pressRoom": "Press room",
+    "contact": "Contact",
+    "faq": "FAQ",
+    "supportCenter": "Support center",
+    "social": "Social",
+    "rightsReserved": "All rights reserved.",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service"
+  },
+
+  "heroSection": {
+    "title": "Good Morning!",
+    "subtitle": "Explore beautiful places in the world with Kwatera",
+    "backgroundAlt": "Hero background"
+  },
+
+  "newsletterSection": {
+    "title": "Get special offers, and more from Kwatera",
+    "description": "Join our community and be the first to know about exclusive discounts, personalized recommendations, and inspiring travel destinations directly in your inbox.",
+    "emailPlaceholder": "Enter your email address",
+    "subscribe": "Subscribe",
+    "imageAlt": "Camping landscape"
+  },
+
+  "topPropertiesSection": {
+    "badge": "TOP BOOK NOW",
+    "title": "Featured Properties",
+    "viewAll": "View All Properties",
+    "propertyImageAlt": "Property image",
+    "fallbackTitle": "Cozy Accommodation",
+    "fallbackLocation": "Poland",
+    "perNight": "/night"
+  },
+
+  "trustBadges": {
+    "secureCheckout": "Secure Checkout"
   }
 
 

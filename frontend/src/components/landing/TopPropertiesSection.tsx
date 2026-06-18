@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { getUnits } from '../../api/propertyApi';
 import type { Unit } from '../../types/property';
+import { useTranslation } from "react-i18next";
 
 interface Property {
     id: string;
@@ -39,7 +40,7 @@ export default function TopPropertiesSection({ properties = [] }: TopPropertiesP
       ? properties.slice(0, 4)
       : [];
   }, [properties]);
-
+  const {t} = useTranslation();
   const { currency } = useCurrency();
   const [prices, setPrices] = useState<Record<string, { price: number; displayCurrency: string }>>({});
 
@@ -77,11 +78,11 @@ export default function TopPropertiesSection({ properties = [] }: TopPropertiesP
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16">
           <div className="flex flex-col items-start text-left">
-            <span className="block text-xs md:text-sm font-bold uppercase tracking-widest mb-2.5" style={{ color: 'rgb(var(--color-burgundy))' }}>TOP BOOK NOW</span>
-            <h2 className="text-3xl md:text-5xl font-bold text-title">Featured Properties</h2>
+            <span className="block text-xs md:text-sm font-bold uppercase tracking-widest mb-2.5" style={{ color: 'rgb(var(--color-burgundy))' }}>{t("topPropertiesSection.badge")}</span>
+            <h2 className="text-3xl md:text-5xl font-bold text-title">{t("topPropertiesSection.title")}</h2>
           </div>
           <Link to="/properties" className="mt-6 md:mt-0 text-title font-semibold hover:text-[rgb(var(--color-burgundy))] transition-colors text-lg">
-            View All Properties &rarr;
+              {t("topPropertiesSection.viewAll")} &rarr;
           </Link>
         </div>
 
@@ -105,8 +106,8 @@ export default function TopPropertiesSection({ properties = [] }: TopPropertiesP
 
                 <div className="relative aspect-[4/3] rounded-2xl overflow-hidden mb-5 shadow-sm">
                   <img 
-                    src={property.imageUrl || 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} 
-                    alt={property.title || property.name || "Property image"} 
+                    src={property.imageUrl || 'https://images.unsplash.com/photo-1510798831971-661eb04b3739?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'}
+                    alt={property.title || property.name || t("topPropertiesSection.propertyImageAlt")}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   />
                 </div>
@@ -114,19 +115,21 @@ export default function TopPropertiesSection({ properties = [] }: TopPropertiesP
                 <div className="flex justify-between items-start gap-3 px-1.5">
                   <div className="flex-1">
                     <h3 className="font-bold text-title text-lg mb-1.5 group-hover:text-[rgb(var(--color-burgundy))] transition-colors line-clamp-1">
-                      {property.title || property.name || 'Cozy Accommodation'}
+                        {property.title || property.name || t("topPropertiesSection.fallbackTitle")}
                     </h3>
-                    <div className="flex items-center gap-1.5 text-details font-medium">
-                      <MapPin size={15} />
-                      <span className="text-sm">{property.city || property.country || 'Poland'}</span>
-                    </div>
+                      <div className="flex items-center gap-1.5 text-details font-medium">
+                          <MapPin size={15} />
+                          <span className="text-sm">
+                             {property.city || property.country || t("topPropertiesSection.fallbackLocation")}
+                          </span>
+                      </div>
                   </div>
                   <div className="text-right whitespace-nowrap">
                     <span className="font-black text-lg text-[rgb(var(--color-burgundy))]">
                       {Math.round(displayPrice)}{' '}
                       <span className="font-bold text-[10px] ml-0.5 text-[rgb(var(--color-burgundy))]/85">{displayCurr}</span>
                     </span>
-                    <span className="text-[10px] text-details block font-semibold">/night</span>
+                      <span className="text-[10px] text-details block font-semibold">{t("topPropertiesSection.perNight")}</span>
                   </div>
                 </div>
               </Link>

@@ -9,6 +9,8 @@ import { format } from "date-fns";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { CustomCalendarHeader } from "../components/SharedDatePicker";
 import { formatSearchDate, parseGuests, parseSearchDate } from "../utils/searchDates";
+import {useTranslation} from "react-i18next"
+
 
 interface AvailabilityResponse {
     available: boolean;
@@ -39,7 +41,7 @@ export default function PropertyDetailsPage() {
     const [selectedDates, setSelectedDates] = useState<Record<string, [Date | null, Date | null]>>({});
     const [globalDates, setGlobalDates] = useState<[Date | null, Date | null]>([initialSearch.checkIn, initialSearch.checkOut]);
     const [showCalendar, setShowCalendar] = useState<Record<string, boolean>>({});
-
+    const {t} = useTranslation();
     const [bookingState, setBookingState] = useState<
         Record<string, { loading: boolean; success?: boolean; error?: string }>
     >({});
@@ -74,7 +76,13 @@ export default function PropertyDetailsPage() {
                     nextSelectedDates[unit.id] = [null, null];
                     nextBookingState[unit.id] = {
                         loading: false,
-                        error: `This unit hosts up to ${unit.capacity} ${unit.capacity === 1 ? "person" : "people"}.`,
+                        error: t("propertyDetails.unitCapacityError", {
+                            capacity: unit.capacity,
+                            unit:
+                                unit.capacity === 1
+                                    ? t("propertyDetails.personSingle")
+                                    : t("propertyDetails.personPlural")
+                        }),
                     };
                     return;
                 }
@@ -93,14 +101,14 @@ export default function PropertyDetailsPage() {
                         nextSelectedDates[unit.id] = [null, null];
                         nextBookingState[unit.id] = {
                             loading: false,
-                            error: "Room not available for the selected search dates.",
+                            error: t("propertyDetails.notAvailable"),
                         };
                     }
                 } catch {
                     nextSelectedDates[unit.id] = [null, null];
                     nextBookingState[unit.id] = {
                         loading: false,
-                        error: "Unable to confirm availability for the selected search dates.",
+                        error: t("propertyDetails.availabilityError"),
                     };
                 }
             }));
@@ -119,7 +127,7 @@ export default function PropertyDetailsPage() {
                     setMainImage(mainImgObject.url);
                 }
             });
-    }, [id, currency, initialSearch.checkIn, initialSearch.checkOut, initialSearch.guests, hasInitialDateRange]);
+    }, [id, currency, initialSearch.checkIn, initialSearch.checkOut, initialSearch.guests, hasInitialDateRange, t]);
 
     const handleGlobalDateChange = (dates: [Date | null, Date | null]) => {
         setGlobalDates(dates);
@@ -131,8 +139,13 @@ export default function PropertyDetailsPage() {
                     ...prev,
                     [u.id]: {
                         loading: false,
-                        error: `This unit hosts up to ${u.capacity} ${u.capacity === 1 ? "person" : "people"}.`
-                    }
+                        error: t("propertyDetails.unitCapacityError", {
+                            capacity: u.capacity,
+                            unit:
+                                u.capacity === 1
+                                    ? t("propertyDetails.personSingle")
+                                    : t("propertyDetails.personPlural")
+                        }) }
                 }));
                 return;
             }
@@ -157,7 +170,7 @@ export default function PropertyDetailsPage() {
                     setSelectedDates(prev => ({ ...prev, [u.id]: [null, null] }));
                     setBookingState(prev => ({
                         ...prev,
-                        [u.id]: { loading: false, error: "Room not available for these dates. Check the detailed occupancy calendar above to find available slots." }
+                        [u.id]: { loading: false, error: t("propertyDetails.notAvailableDetailed") }
                     }));
                 } else {
                     setSelectedDates(prev => ({ ...prev, [u.id]: [null, null] }));
@@ -208,8 +221,13 @@ export default function PropertyDetailsPage() {
                 ...prev,
                 [unitId]: {
                     loading: false,
-                    error: `This unit hosts up to ${unit.capacity} ${unit.capacity === 1 ? "person" : "people"}.`
-                }
+                    error: t("propertyDetails.unitCapacityError", {
+                        capacity: unit.capacity,
+                        unit:
+                            unit.capacity === 1
+                                ? t("propertyDetails.personSingle")
+                                : t("propertyDetails.personPlural")
+                    })}
             }));
             return;
         }
@@ -220,7 +238,7 @@ export default function PropertyDetailsPage() {
                 setSelectedDates(prev => ({ ...prev, [unitId]: [start, null] }));
                 setBookingState(prev => ({
                     ...prev,
-                    [unitId]: { loading: false, error: "Minimum stay is 1 night. Select a different end date." }
+                    [unitId]: { loading: false, error: t("propertyDetails.minimumStay") }
                 }));
                 return;
             }
@@ -240,7 +258,7 @@ export default function PropertyDetailsPage() {
                 setSelectedDates(prev => ({ ...prev, [unitId]: [start, null] }));
                 setBookingState(prev => ({
                     ...prev,
-                    [unitId]: { loading: false, error: "Selected dates overlap with an existing reservation." }
+                    [unitId]: { loading: false, error: t("propertyDetails.overlap") }
                 }));
                 return;
             }
@@ -258,7 +276,13 @@ export default function PropertyDetailsPage() {
                 ...prev,
                 [unitId]: {
                     loading: false,
-                    error: `This unit hosts up to ${unit.capacity} ${unit.capacity === 1 ? "person" : "people"}.`
+                    error: t("propertyDetails.unitCapacityError", {
+                        capacity: unit.capacity,
+                        unit:
+                            unit.capacity === 1
+                                ? t("propertyDetails.personSingle")
+                                : t("propertyDetails.personPlural")
+                    })
                 }
             }));
             return;
@@ -268,7 +292,7 @@ export default function PropertyDetailsPage() {
         if (!dates || !dates[0] || !dates[1]) {
             setBookingState(prev => ({
                 ...prev,
-                [unitId]: { loading: false, error: "Select a valid date range on the calendar" }
+                [unitId]: { loading: false, error: t("propertyDetails.selectValidRange") }
             }));
             return;
         }
@@ -277,7 +301,7 @@ export default function PropertyDetailsPage() {
         if (!token) {
             setBookingState(prev => ({
                 ...prev,
-                [unitId]: { loading: false, error: "Log in to book this unit" }
+                [unitId]: { loading: false, error: t("propertyDetails.loginRequired") }
             }));
             return;
         }
@@ -310,7 +334,7 @@ export default function PropertyDetailsPage() {
     };
 
     if (!property) {
-        return <div className="p-6">Loading...</div>;
+        return <div className="p-6">{t('editPropertyImages.loading')}</div>;
     }
 
     return (
@@ -330,7 +354,7 @@ export default function PropertyDetailsPage() {
                             className={`w-20 h-20 object-cover rounded-lg cursor-pointer border-2 transition-all hover:scale-105 ${
                                 mainImage === img.url ? "border-brand-primary shadow-md" : "border-brand-accent hover:border-gray-400"
                             }`}
-                            alt={`Property thumbnail ${i + 1}`}
+                            alt={t("propertyDetails.thumbnailAlt", { number: i + 1 })}
                         />
                     ))}
                 </div>
@@ -343,8 +367,8 @@ export default function PropertyDetailsPage() {
 
             <div className="bg-white border border-brand-accent rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300 flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="max-w-md text-center md:text-left space-y-1">
-                    <h3 className="font-bold text-xl text-brand-main tracking-tight">Select Stay Dates</h3>
-                    <p className="text-sm text-brand-muted leading-relaxed">Choose your preferred check-in and check-out window to check general availability across all options.</p>
+                    <h3 className="font-bold text-xl text-brand-main tracking-tight">{t('propertyDetails.selectDates')}</h3>
+                    <p className="text-sm text-brand-muted leading-relaxed">{t('propertyDetails.selectDatesDesc')}</p>
                 </div>
                 <div className="flex justify-center w-full md:w-auto mt-4 md:mt-0">
                     <DatePicker
@@ -362,7 +386,7 @@ export default function PropertyDetailsPage() {
             </div>
 
             <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-brand-main tracking-tight">Units & Availability</h2>
+                <h2 className="text-2xl font-bold text-brand-main tracking-tight">{t('propertyDetails.unitsAvailability')}</h2>
 
                 <div className="space-y-6">
                     {units.map((u) => {
@@ -384,11 +408,14 @@ export default function PropertyDetailsPage() {
                                         <div className="flex flex-wrap items-center gap-4 pt-2">
                                             <p className="text-lg font-bold text-brand-primary">
                                                 {u.convertedPricePerNight && u.currencyInfo && u.currencyInfo.displayCurrency !== 'PLN'
-                                                    ? `${u.convertedPricePerNight.toFixed(2)} ${u.currencyInfo.displayCurrency} / night`
-                                                    : `${u.pricePerNight} PLN / night`}
+                                                    ? `${u.convertedPricePerNight.toFixed(2)} ${u.currencyInfo.displayCurrency} ${t("propertyMap.perNight")}`
+                                                    : `${u.pricePerNight} PLN ${t("propertyMap.perNight")}`}
                                             </p>
                                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-brand-bg border border-brand-accent text-brand-muted">
-                                                Capacity: {u.capacity} {u.capacity === 1 ? "person" : "people"}
+                                                {t("propertyDetails.capacity")}: {u.capacity}{" "}
+                                                {u.capacity === 1
+                                                    ? t("propertyDetails.personSingle")
+                                                    : t("propertyDetails.personPlural")}
                                             </span>
                                         </div>
                                     </div>
@@ -401,7 +428,7 @@ export default function PropertyDetailsPage() {
                                             className="text-sm font-bold text-brand-primary hover:text-brand-primary-hover hover:underline mb-4 flex items-center gap-1.5 focus:outline-none"
                                         >
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 002-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                            {showCalendar[u.id] ? "Hide Detailed Calendar" : "Check Detailed Occupancy Calendar"}
+                                            {showCalendar[u.id] ? t('propertyDetails.hideCalendar') : t('propertyDetails.showCalendar')}
                                         </button>
 
                                         {showCalendar[u.id] && (
@@ -421,23 +448,23 @@ export default function PropertyDetailsPage() {
                                                     renderDayContents={(dayOfMonth, date) => {
                                                         const cls = getDayClass(date, u.id);
                                                         let tooltipTitle = undefined;
-                                                        if (cls === "checkin-day") tooltipTitle = "Available for check-out only";
-                                                        if (cls === "checkout-day") tooltipTitle = "Available for check-in only";
+                                                        if (cls === "checkin-day") tooltipTitle = t('propertyDetails.checkoutOnly');
+                                                        if (cls === "checkout-day") tooltipTitle = t('propertyDetails.checkinOnly');
                                                         return <span title={tooltipTitle} className="w-full h-full block align-middle pt-0.5">{dayOfMonth}</span>;
                                                     }}
                                                 />
                                                 <div className="flex gap-4 items-center justify-center mt-4 text-xs font-bold text-brand-muted w-full">
                                                     <div className="flex items-center gap-1.5">
                                                         <div className="w-3 h-3 bg-white border border-brand-accent rounded-sm"></div>
-                                                        <span>Available</span>
+                                                        <span>{t('propertyDetails.available')}</span>
                                                     </div>
                                                     <div className="flex items-center gap-1.5">
                                                         <div className="w-3 h-3 bg-[#e5e5e5] border border-brand-accent rounded-sm"></div>
-                                                        <span>Occupied</span>
+                                                        <span>{t('propertyDetails.occupied')}</span>
                                                     </div>
                                                     <div className="flex items-center gap-1.5">
                                                         <div className="w-3 h-3 bg-brand-accent border border-brand-primary rounded-sm"></div>
-                                                        <span>Selected</span>
+                                                        <span>{t('propertyDetails.selected')}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -446,17 +473,22 @@ export default function PropertyDetailsPage() {
 
                                     {unitStart && unitEnd && nights > 0 && (
                                         <div className="w-full bg-brand-bg border border-brand-accent rounded-xl p-4 mt-6 text-sm flex flex-col gap-2">
-                                            <p className="text-xs font-bold text-brand-main tracking-wider border-b border-brand-accent pb-2 mb-1">Stay Details Summary</p>
-                                            <p className="flex justify-between"><span className="text-brand-muted font-medium">Check-in:</span> <span className="font-semibold text-brand-main">{format(unitStart, "EEEE, MMM dd, yyyy")}</span></p>
-                                            <p className="flex justify-between"><span className="text-brand-muted font-medium">Check-out:</span> <span className="font-semibold text-brand-main">{format(unitEnd, "EEEE, MMM dd, yyyy")}</span></p>
-                                            <p className="flex justify-between"><span className="text-brand-muted font-medium">Duration:</span> <span className="font-semibold text-brand-main">{nights} {nights === 1 ? "night" : "nights"}</span></p>
+                                            <p className="text-xs font-bold text-brand-main tracking-wider border-b border-brand-accent pb-2 mb-1">{t('propertyDetails.stayDetailsSummary')}</p>
+                                            <p className="flex justify-between"><span className="text-brand-muted font-medium">{t('manualReservation.checkIn')}:</span> <span className="font-semibold text-brand-main">{format(unitStart, "EEEE, MMM dd, yyyy")}</span></p>
+                                            <p className="flex justify-between"><span className="text-brand-muted font-medium">{t('manualReservation.checkOut')}:</span> <span className="font-semibold text-brand-main">{format(unitEnd, "EEEE, MMM dd, yyyy")}</span></p>
+                                            <p className="flex justify-between"><span className="text-brand-muted font-medium">{t('checkout.duration')}:</span> <span className="font-semibold text-brand-main">{nights} {t("checkout.night", { count: nights })}</span></p>
                                             <div className="mt-2 pt-2 border-t border-brand-accent text-base font-bold text-brand-primary flex justify-between items-center">
-                                                <span>Total price:</span>
+                                                <span>{t('propertyDetails.totalPrice')}:</span>
                                                 <div className="text-right">
-                                                    {u.convertedPricePerNight && u.currencyInfo && u.currencyInfo.displayCurrency !== 'PLN' ? (
-                                                        <div>{(nights * u.convertedPricePerNight).toFixed(2)} {u.currencyInfo.displayCurrency}</div>
+                                                    {u.convertedPricePerNight &&
+                                                    u.currencyInfo &&
+                                                    u.currencyInfo.displayCurrency !== "PLN" ? (
+                                                        <div>
+                                                            {(nights * u.convertedPricePerNight).toFixed(2)}{" "}
+                                                            {u.currencyInfo.displayCurrency}
+                                                        </div>
                                                     ) : (
-                                                        <span>{totalPrice} PLN</span>
+                                                        <span>{totalPrice.toFixed(2)} PLN</span>
                                                     )}
                                                 </div>
                                             </div>
@@ -477,10 +509,10 @@ export default function PropertyDetailsPage() {
                                                             : "bg-brand-primary text-white hover:bg-brand-primary-hover"
                                             }`}
                                         >
-                                            {bookingState[u.id]?.loading ? "Processing..." :
-                                                bookingState[u.id]?.success ? "Redirecting to payment..." :
-                                                    lacksRequestedCapacity ? "Capacity too low" :
-                                                        (!unitStart || !unitEnd) ? "Select dates to book" : "Book these dates"}
+                                            {bookingState[u.id]?.loading ? t('propertyDetails.processing') :
+                                                bookingState[u.id]?.success ? t('propertyDetails.redirecting'):
+                                                    lacksRequestedCapacity ? t('propertyDetails.capacityTooLow') :
+                                                        (!unitStart || !unitEnd) ? t('propertyDetails.selectDatesToBook') : t('propertyDetails.bookDates')}
                                         </button>
 
                                         {bookingState[u.id]?.error && (
