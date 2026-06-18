@@ -1,4 +1,5 @@
 import { useState } from "react";
+import {useTranslation} from "react-i18next"
 
 export interface UnitFormData {
     name: string;
@@ -45,6 +46,7 @@ export default function UnitForm({
             floor: "" as unknown as number,
         }
     );
+    const {t} = useTranslation();
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -73,10 +75,10 @@ export default function UnitForm({
     return (
         <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1">
-                <label className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Unit Name</label>
+                <label className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">{t('unitForm.name')}</label>
                 <input
                     name="name"
-                    placeholder="e.g. Apartment 4B"
+                    placeholder={t('unitForm.namePlaceholder')}
                     value={form.name}
                     onChange={handleChange}
                     className={inputClasses}
@@ -85,10 +87,10 @@ export default function UnitForm({
             </div>
 
             <div className="space-y-1">
-                <label className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Description</label>
+                <label className="text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">{t('propertyForm.description')}</label>
                 <textarea
                     name="description"
-                    placeholder="Describe unit details, unique features, or bedding arrangements..."
+                    placeholder={t('unitForm.descriptionPlaceholder')}
                     value={form.description}
                     onChange={handleChange}
                     className={inputClasses}
@@ -97,14 +99,14 @@ export default function UnitForm({
             </div>
 
             <div className="border-t border-[#DACDCA]/50 my-6 pt-4 space-y-4">
-                <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider mb-2">Pricing & Type</span>
+                <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider mb-2">{t('unitForm.pricingType')}</span>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
                         <input
                             type="number"
                             name="pricePerNight"
-                            placeholder="Price per night"
+                            placeholder={t('unitForm.pricePerNight')}
                             value={form.pricePerNight === 0 || isNaN(form.pricePerNight) ? "" : form.pricePerNight}
                             onChange={handleChange}
                             className={inputClasses}
@@ -131,14 +133,14 @@ export default function UnitForm({
                     </div>
                 </div>
 
-                <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider mb-2 pt-2">Space & Location</span>
+                <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider mb-2 pt-2">{t('unitForm.spaceLocation')}</span>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-1">
                         <input
                             type="number"
                             name="capacity"
-                            placeholder="Max Guests"
+                            placeholder={t('unitForm.maxGuests')}
                             value={form.capacity === 0 || isNaN(form.capacity) ? "" : form.capacity}
                             onChange={handleChange}
                             className={inputClasses}
@@ -150,7 +152,7 @@ export default function UnitForm({
                     <div className="space-y-1">
                         <input
                             name="unitNumber"
-                            placeholder="Unit Number (e.g. 104A)"
+                            placeholder={t('unitForm.unitNumber')}
                             value={form.unitNumber}
                             onChange={handleChange}
                             className={inputClasses}
@@ -162,7 +164,7 @@ export default function UnitForm({
                         <input
                             type="number"
                             name="floor"
-                            placeholder="Floor"
+                            placeholder={t('unitForm.floor')}
                             value={isNaN(form.floor) ? "" : form.floor}
                             onChange={handleChange}
                             className={inputClasses}

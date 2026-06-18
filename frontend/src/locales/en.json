@@ -96,6 +96,127 @@
     "reasonRequired": "Please provide a reason for blocking these dates",
     "reasonTooShort": "Reason must be at least 3 characters",
     "failed": "Failed to block selected dates."
+  },
+
+  "manualReservation": {
+    "title": "Add Manual Reservation",
+    "subtitle": "Book a room directly bypassing Stripe payment flow.",
+    "checkIn": "Check-In",
+    "selectCheckIn": "Select check-in",
+    "checkOut": "Check-Out",
+    "selectCheckOut": "Select check-out",
+    "guestInfo": "Guest Information",
+    "phone": "Phone Number",
+    "note": "Internal Note (Optional)",
+    "confirm": "Confirm Reservation",
+    "creating": "Creating Booking...",
+    "failed": "Failed to create manual reservation.",
+    "firstNameRequired": "First name is required",
+    "lastNameRequired": "Last name is required",
+    "minTwoChars": "Must be at least 2 characters",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Enter a valid email address",
+    "phoneRequired": "Phone number is required",
+    "phoneInvalid": "Enter a valid phone number",
+    "checkInRequired": "Check-in date is required",
+    "checkOutRequired": "Check-out date is required",
+    "checkOutAfterCheckIn": "Check-out must be after check-in",
+    "notePlaceholder": "Add any internal details, guest preferences, or special requests..."
+
+  },
+
+  "meterApproval": {
+    "invalidValue": "Please enter a valid reading value",
+    "failed": "Approval failed",
+    "initial": "Initial",
+    "final": "Final",
+    "success": "{{readingType}} reading for {{utilityType}} approved successfully.",
+    "title": "Manual Approval",
+    "description": "OCR could not read this meter reliably. Please enter the correct reading manually.",
+    "placeholder": "Enter meter reading",
+    "approving": "Approving...",
+    "approve": "Approve"
+  },
+
+  "meterUpload": {
+    "heicError": "Could not convert HEIF/HEIC image. Please upload JPG, PNG or WebP.",
+    "uploadFailed": "Upload failed",
+    "chooseFile": "Choose file",
+    "noFile": "No file chosen",
+    "supportedFormats": "Supported formats: JPG, PNG, WebP, HEIF, HEIC.",
+    "uploading": "Uploading...",
+    "upload": "Upload Photo",
+    "retryHint": "Please take a clearer photo and try again.",
+    "meterReading": "Meter Reading"
+  },
+
+  "propertyMap": {
+    "noImage": "No image",
+    "from": "From",
+    "perNight": "/night"
+  },
+
+  "search": {
+    "city": "City",
+    "checkIn": "Check in",
+    "checkOut": "Check out",
+    "addDates": "Add dates",
+    "guests": "Guests",
+    "addGuests": "Add guests"
+  },
+
+  "report": {
+    "downloadCsv": "Download CSV",
+    "downloadPdf": "Download Report (PDF)",
+    "generating": "Generating Report",
+    "loadingAssets": "Loading brand assets...",
+    "capturingCharts": "Capturing occupancy and revenue charts...",
+    "generatingPdf": "Generating report PDF...",
+    "error": "An error occurred while generating the PDF report. Please try again."
+  },
+
+  "slider": {
+    "greeting": "Good Morning!",
+    "subtitle": "Explore beautiful places in the world with Kwatera"
+  },
+
+  "imageUpload": {
+    "title": "Upload New Image",
+    "label": "Select Image File (JPG, PNG)",
+    "setMain": "Set as main image for this property/unit",
+    "invalidFormat": "Only JPG, JPEG, and PNG files are allowed.",
+    "noFile": "Please select a file first.",
+    "error": "Something went wrong during the upload."
+  },
+
+  "propertyForm": {
+    "title": "Property Title",
+    "titlePlaceholder": "e.g. Cozy Downtown Apartment",
+    "description": "Description",
+    "descriptionPlaceholder": "Describe your property, amenities, and surroundings...",
+    "locationDetails": "Location Details",
+    "country": "Country",
+    "postalCode": "Postal Code",
+    "street": "Street",
+    "streetNumber": "Street Number"
+  },
+
+  "unitForm": {
+    "name": "Unit Name",
+    "namePlaceholder": "e.g. Apartment 4B",
+    "descriptionPlaceholder": "Describe unit details, unique features, or bedding arrangements...",
+    "pricingType": "Pricing & Type",
+    "pricePerNight": "Price per night",
+    "spaceLocation": "Space & Location",
+    "maxGuests": "Max Guests",
+    "unitNumber": "Unit Number (e.g. 104A)",
+    "floor": "Floor"
   }
+
+
+
+
+
+
 
 }

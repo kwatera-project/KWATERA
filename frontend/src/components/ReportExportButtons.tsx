@@ -4,6 +4,7 @@ import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import { FileText, Download, Loader2 } from "lucide-react";
 import { decodeJwt } from "../utils/jwtUtils";
+import {useTranslation} from "react-i18next"
 
 interface ReservationOverview {
   id: string;
@@ -50,6 +51,7 @@ export default function ReportExportButtons({
 }: ReportExportButtonsProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
+  const {t} = useTranslation();
 
   const totalReservations = resMetrics?.totalReservations ?? 0;
   const occupancyRate = resMetrics?.occupancyRate ?? 0;
@@ -136,7 +138,7 @@ export default function ReportExportButtons({
   const handleDownloadPDF = async () => {
     if (!startDate || !endDate) return;
     setIsGenerating(true);
-    setStatusMessage("Loading brand assets...");
+    setStatusMessage(t('report.loadingAssets'));
 
     try {
       const logoEl = await new Promise<HTMLImageElement | null>((resolve) => {
@@ -148,7 +150,7 @@ export default function ReportExportButtons({
         };
       });
 
-      setStatusMessage("Capturing occupancy and revenue charts...");
+      setStatusMessage(t('report.capturingCharts'));
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       const occupancyChartEl = document.getElementById("occupancy-chart");
@@ -179,7 +181,7 @@ export default function ReportExportButtons({
         revenueAspect = revenueChartEl.offsetWidth / revenueChartEl.offsetHeight;
       }
 
-      setStatusMessage("Generating report PDF...");
+      setStatusMessage(t('report.generatingPdf'));
 
       const pdf = new jsPDF("p", "mm", "a4");
 
@@ -650,7 +652,7 @@ export default function ReportExportButtons({
       );
     } catch (error) {
       console.error("Failed to generate PDF report:", error);
-      alert("An error occurred while generating the PDF report. Please try again.");
+        alert(t('report.error'));
     } finally {
       setIsGenerating(false);
       setStatusMessage("");
@@ -665,7 +667,7 @@ export default function ReportExportButtons({
         className="px-4 py-2 text-sm font-bold text-[#42211D] bg-[#F7F7F7] border border-[#DACDCA] hover:bg-gray-100 rounded-lg transition-all shadow-sm cursor-pointer flex items-center gap-2 active:scale-[0.98]"
       >
         <FileText className="w-4 h-4" />
-        Download CSV
+          {t('report.downloadCsv')}
       </button>
 
       <button
@@ -679,14 +681,14 @@ export default function ReportExportButtons({
         ) : (
           <Download className="w-4 h-4" />
         )}
-        Download Report (PDF)
+          {t('report.downloadPdf')}
       </button>
 
       {isGenerating && (
         <div className="fixed inset-0 bg-black/45 backdrop-blur-sm z-[9999] flex flex-col items-center justify-center text-white">
           <div className="bg-[#ffffff] text-[#1A1A1A] px-8 py-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 border border-[#DACDCA] max-w-sm text-center">
             <Loader2 className="w-8 h-8 text-[#42211D] animate-spin" />
-            <h3 className="text-lg font-extrabold text-[#1A1A1A]">Generating Report</h3>
+            <h3 className="text-lg font-extrabold text-[#1A1A1A]">{t('report.generating')}</h3>
             <p className="text-sm text-[#7A7A7A] font-medium">{statusMessage}</p>
           </div>
         </div>

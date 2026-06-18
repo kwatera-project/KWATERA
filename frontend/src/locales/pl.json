@@ -96,6 +96,120 @@
     "reasonRequired": "Podaj powód blokady dat",
     "reasonTooShort": "Powód musi mieć co najmniej 3 znaki",
     "failed": "Nie udało się zablokować wybranych dat."
+  },
+
+  "manualReservation": {
+    "title": "Dodaj rezerwację ręczną",
+    "subtitle": "Zarezerwuj pokój bezpośrednio z pominięciem płatności Stripe.",
+    "checkIn": "Zameldowanie",
+    "selectCheckIn": "Wybierz datę zameldowania",
+    "checkOut": "Wymeldowanie",
+    "selectCheckOut": "Wybierz datę wymeldowania",
+    "guestInfo": "Dane gościa",
+    "phone": "Numer telefonu",
+    "note": "Notatka wewnętrzna (opcjonalnie)",
+    "confirm": "Potwierdź rezerwację",
+    "creating": "Tworzenie rezerwacji...",
+    "failed": "Nie udało się utworzyć rezerwacji ręcznej.",
+    "firstNameRequired": "Imię jest wymagane",
+    "lastNameRequired": "Nazwisko jest wymagane",
+    "minTwoChars": "Musi mieć co najmniej 2 znaki",
+    "emailRequired": "Email jest wymagany",
+    "emailInvalid": "Podaj prawidłowy adres email",
+    "phoneRequired": "Numer telefonu jest wymagany",
+    "phoneInvalid": "Podaj prawidłowy numer telefonu",
+    "checkInRequired": "Data zameldowania jest wymagana",
+    "checkOutRequired": "Data wymeldowania jest wymagana",
+    "checkOutAfterCheckIn": "Wymeldowanie musi być po zameldowaniu",
+    "notePlaceholder": "Dodaj wewnętrzne szczegóły, preferencje gościa lub specjalne życzenia..."
+  },
+
+  "meterApproval": {
+    "invalidValue": "Podaj prawidłową wartość odczytu",
+    "failed": "Zatwierdzenie nie powiodło się",
+    "initial": "Początkowy",
+    "final": "Końcowy",
+    "success": "Odczyt {{readingType}} dla {{utilityType}} został zatwierdzony.",
+    "title": "Ręczne zatwierdzenie",
+    "description": "OCR nie mógł odczytać licznika wiarygodnie. Wprowadź poprawny odczyt ręcznie.",
+    "placeholder": "Wprowadź odczyt licznika",
+    "approving": "Zatwierdzanie...",
+    "approve": "Zatwierdź"
+  },
+
+  "meterUpload": {
+    "heicError": "Nie można przekonwertować pliku HEIF/HEIC. Prześlij JPG, PNG lub WebP.",
+    "uploadFailed": "Przesyłanie nie powiodło się",
+    "chooseFile": "Wybierz plik",
+    "noFile": "Nie wybrano pliku",
+    "supportedFormats": "Obsługiwane formaty: JPG, PNG, WebP, HEIF, HEIC.",
+    "uploading": "Przesyłanie...",
+    "upload": "Prześlij zdjęcie",
+    "retryHint": "Zrób wyraźniejsze zdjęcie i spróbuj ponownie.",
+    "meterReading": "Odczyt licznika"
+  },
+
+  "propertyMap": {
+    "noImage": "Brak zdjęcia",
+    "from": "Od",
+    "perNight": "/noc"
+  },
+
+  "search": {
+    "city": "Miasto",
+    "checkIn": "Zameldowanie",
+    "checkOut": "Wymeldowanie",
+    "addDates": "Dodaj daty",
+    "guests": "Goście",
+    "addGuests": "Dodaj gości"
+  },
+
+  "report": {
+    "downloadCsv": "Pobierz CSV",
+    "downloadPdf": "Pobierz raport (PDF)",
+    "generating": "Generowanie raportu",
+    "loadingAssets": "Ładowanie zasobów...",
+    "capturingCharts": "Przechwytywanie wykresów...",
+    "generatingPdf": "Generowanie PDF...",
+    "error": "Wystąpił błąd podczas generowania raportu PDF. Spróbuj ponownie."
+  },
+
+  "slider": {
+    "greeting": "Dzień dobry!",
+    "subtitle": "Odkryj piękne miejsca na świecie z Kwatera"
+  },
+
+  "imageUpload": {
+    "title": "Prześlij nowe zdjęcie",
+    "label": "Wybierz plik (JPG, PNG)",
+    "setMain": "Ustaw jako główne zdjęcie tej nieruchomości/jednostki",
+    "invalidFormat": "Dozwolone są tylko pliki JPG, JPEG i PNG.",
+    "noFile": "Najpierw wybierz plik.",
+    "error": "Coś poszło nie tak podczas przesyłania."
+  },
+
+  "propertyForm": {
+    "title": "Nazwa nieruchomości",
+    "titlePlaceholder": "np. Przytulne mieszkanie w centrum",
+    "description": "Opis",
+    "descriptionPlaceholder": "Opisz nieruchomość, udogodnienia i okolicę...",
+    "locationDetails": "Szczegóły lokalizacji",
+    "country": "Kraj",
+    "postalCode": "Kod pocztowy",
+    "street": "Ulica",
+    "streetNumber": "Numer"
+  },
+
+  "unitForm": {
+    "name": "Nazwa jednostki",
+    "namePlaceholder": "np. Apartament 4B",
+    "descriptionPlaceholder": "Opisz jednostkę, wyjątkowe cechy lub układ łóżek...",
+    "pricingType": "Cena i typ",
+    "pricePerNight": "Cena za noc",
+    "spaceLocation": "Przestrzeń i lokalizacja",
+    "maxGuests": "Maks. goście",
+    "unitNumber": "Numer jednostki (np. 104A)",
+    "floor": "Piętro"
   }
 
 

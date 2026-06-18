@@ -6,6 +6,7 @@ import { getUnits } from "../api/propertyApi";
 import type { Property, Unit } from "../types/property";
 import { useCurrency } from "../contexts/CurrencyContext";
 import { Link } from "react-router-dom";
+import {useTranslation} from "react-i18next"
 
 const createCustomMarkerIcon = () => {
   return L.divIcon({
@@ -33,8 +34,10 @@ function PropertyPopupContent({ property, propertyDetailsSearch = "" }: Property
   const [minPrice, setMinPrice] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const { currency } = useCurrency();
+  const {t} = useTranslation();
 
-  useEffect(() => {
+
+    useEffect(() => {
     let isMounted = true;
     getUnits(property.id, currency)
       .then((units: Unit[]) => {
@@ -73,7 +76,7 @@ function PropertyPopupContent({ property, propertyDetailsSearch = "" }: Property
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gray-200 text-[#7A7A7A] text-xs">
-              No image
+                {t('propertyMap.noImage')}
             </div>
           )}
         </div>
@@ -83,7 +86,7 @@ function PropertyPopupContent({ property, propertyDetailsSearch = "" }: Property
           </h4>
           <p className="text-[11px] text-[#7A7A7A] font-medium mb-2">{property.city}</p>
           <div className="flex items-baseline justify-between border-t border-gray-100 pt-2 mt-1">
-            <span className="text-[10px] text-[#7A7A7A] uppercase font-bold tracking-wider">From</span>
+            <span className="text-[10px] text-[#7A7A7A] uppercase font-bold tracking-wider">{t('propertyMap.from')}</span>
             <span className="font-black text-sm text-[#42211D]">
               {loading ? (
                 <span className="animate-pulse">...</span>
@@ -92,7 +95,7 @@ function PropertyPopupContent({ property, propertyDetailsSearch = "" }: Property
               ) : (
                 "N/A"
               )}
-              <span className="text-[10px] text-[#7A7A7A] font-normal ml-0.5">/night</span>
+              <span className="text-[10px] text-[#7A7A7A] font-normal ml-0.5">{t('propertyMap.perNight')}</span>
             </span>
           </div>
         </div>

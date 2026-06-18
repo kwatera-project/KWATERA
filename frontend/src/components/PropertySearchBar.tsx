@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import DatePicker from "react-datepicker";
 import { CalendarDays, MapPin, Search, Users } from "lucide-react";
 import SharedDatePicker from "./SharedDatePicker";
+import {useTranslation} from "react-i18next"
 
 export interface PropertySearchValues {
     city: string;
@@ -31,6 +32,7 @@ export default function PropertySearchBar({
     const [guests, setGuests] = useState(initialValues?.guests ?? "");
     const checkOutRef = useRef<DatePicker | null>(null);
     const cityWrapperRef = useRef<HTMLDivElement>(null);
+    const {t} = useTranslation();
 
     const filteredCitySuggestions = useMemo(() => {
         const normalizedCity = city.trim().toLowerCase();
@@ -71,7 +73,7 @@ export default function PropertySearchBar({
         >
             <div ref={cityWrapperRef} className="flex-1 w-full px-6 py-3 flex flex-col items-start hover:bg-gray-50 rounded-full transition-colors relative group z-[100]">
                 <label htmlFor="property-search-city" className="text-xs font-bold text-title uppercase tracking-wider mb-1 cursor-pointer flex items-center gap-1.5">
-                    <MapPin size={14} className="text-[rgb(var(--color-burgundy))]" /> City
+                    <MapPin size={14} className="text-[rgb(var(--color-burgundy))]" /> {t('search.city')}
                 </label>
                 <input
                     type="text"
@@ -113,7 +115,7 @@ export default function PropertySearchBar({
 
             <div className="flex-1 w-full px-6 py-3 flex flex-col items-start hover:bg-gray-50 rounded-full transition-colors relative z-50">
                 <label className="text-xs font-bold text-title uppercase tracking-wider mb-1 cursor-pointer flex items-center gap-1.5">
-                    <CalendarDays size={14} className="text-[rgb(var(--color-burgundy))]" /> Check in
+                    <CalendarDays size={14} className="text-[rgb(var(--color-burgundy))]" /> {t('search.checkIn')}
                 </label>
                 <SharedDatePicker
                     selected={checkIn}
@@ -131,7 +133,7 @@ export default function PropertySearchBar({
                     selectsStart
                     startDate={checkIn}
                     endDate={checkOut}
-                    placeholderText="Add dates"
+                    placeholderText={t('search.addDates')}
                     className="w-full text-sm text-primary bg-transparent focus:outline-none font-medium cursor-pointer"
                     dateFormat="dd/MM/yyyy"
                     minDate={new Date()}
@@ -140,7 +142,7 @@ export default function PropertySearchBar({
 
             <div className="flex-1 w-full px-6 py-3 flex flex-col items-start hover:bg-gray-50 rounded-full transition-colors relative z-50">
                 <label className="text-xs font-bold text-title uppercase tracking-wider mb-1 cursor-pointer flex items-center gap-1.5">
-                    <CalendarDays size={14} className="text-[rgb(var(--color-burgundy))]" /> Check out
+                    <CalendarDays size={14} className="text-[rgb(var(--color-burgundy))]" /> {t('search.checkOut')}
                 </label>
                 <SharedDatePicker
                     datepickerRef={checkOutRef}
@@ -150,7 +152,7 @@ export default function PropertySearchBar({
                     startDate={checkIn}
                     endDate={checkOut}
                     minDate={checkIn || new Date()}
-                    placeholderText="Add dates"
+                    placeholderText={t('search.addDates')}
                     className="w-full text-sm text-primary bg-transparent focus:outline-none font-medium cursor-pointer"
                     dateFormat="dd/MM/yyyy"
                 />
@@ -159,13 +161,13 @@ export default function PropertySearchBar({
             <div className="flex-1 w-full pl-6 pr-3 py-3 flex items-center justify-between hover:bg-gray-50 rounded-full transition-colors">
                 <div className="flex flex-col items-start">
                     <label htmlFor="property-search-guests" className="text-xs font-bold text-title uppercase tracking-wider mb-1 cursor-pointer flex items-center gap-1.5">
-                        <Users size={14} className="text-[rgb(var(--color-burgundy))]" /> Guests
+                        <Users size={14} className="text-[rgb(var(--color-burgundy))]" /> {t('search.guests')}
                     </label>
                     <input
                         id="property-search-guests"
                         type="number"
                         min="1"
-                        placeholder="Add guests"
+                        placeholder={t('search.addGuests')}
                         value={guests}
                         onChange={(event) => setGuests(event.target.value)}
                         className="w-full text-sm text-primary bg-transparent focus:outline-none placeholder-gray-400 font-medium"
