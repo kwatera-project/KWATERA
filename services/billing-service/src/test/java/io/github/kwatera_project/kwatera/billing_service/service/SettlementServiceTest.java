@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.github.kwatera_project.kwatera.billing_service.client.PropertyClient;
+import io.github.kwatera_project.kwatera.billing_service.client.ReservationClient;
 import io.github.kwatera_project.kwatera.billing_service.client.SystemEventClient;
 import io.github.kwatera_project.kwatera.billing_service.dto.CurrencyMetadataDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto;
@@ -15,26 +16,25 @@ import io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseD
 import io.github.kwatera_project.kwatera.billing_service.dto.UnitSettlementItemDto;
 import io.github.kwatera_project.kwatera.billing_service.event.SettlementEventPublisher;
 import io.github.kwatera_project.kwatera.billing_service.model.*;
+import io.github.kwatera_project.kwatera.billing_service.repository.PaymentTransactionRepository;
 import io.github.kwatera_project.kwatera.billing_service.repository.SettlementItemRepository;
 import io.github.kwatera_project.kwatera.billing_service.repository.SettlementRepository;
-import io.github.kwatera_project.kwatera.billing_service.client.ReservationClient;
-import io.github.kwatera_project.kwatera.billing_service.repository.PaymentTransactionRepository;
-import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.context.Context;
-import org.mockito.ArgumentCaptor;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
 @ExtendWith(MockitoExtension.class)
 class SettlementServiceTest {
@@ -1121,7 +1121,8 @@ class SettlementServiceTest {
     reservationDto.setOwnerEmail("jane@example.com");
     reservationDto.setStartDate(java.time.LocalDate.now());
     reservationDto.setEndDate(java.time.LocalDate.now().plusDays(2));
-    reservationDto.setCurrencyInfo(new CurrencyMetadataDto("PLN", "EUR", BigDecimal.valueOf(4.0), null));
+    reservationDto.setCurrencyInfo(
+        new CurrencyMetadataDto("PLN", "EUR", BigDecimal.valueOf(4.0), null));
 
     when(reservationClient.getReservation(reservationId)).thenReturn(reservationDto);
 
@@ -1182,7 +1183,8 @@ class SettlementServiceTest {
     reservationDto.setOwnerEmail("jane@example.com");
     reservationDto.setStartDate(java.time.LocalDate.now());
     reservationDto.setEndDate(java.time.LocalDate.now().plusDays(2));
-    reservationDto.setCurrencyInfo(new CurrencyMetadataDto("PLN", "EUR", BigDecimal.valueOf(4.0), null));
+    reservationDto.setCurrencyInfo(
+        new CurrencyMetadataDto("PLN", "EUR", BigDecimal.valueOf(4.0), null));
 
     when(reservationClient.getReservation(reservationId)).thenReturn(reservationDto);
     when(paymentTransactionRepository.findBySettlementId(settlementId)).thenReturn(List.of());

@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.kwatera_project.kwatera.billing_service.dto.CheckoutRequest;
 import io.github.kwatera_project.kwatera.billing_service.dto.ReservationDto;
+import io.github.kwatera_project.kwatera.billing_service.dto.SettlementDto;
 import io.github.kwatera_project.kwatera.billing_service.dto.SettlementResponseDto;
 import io.github.kwatera_project.kwatera.billing_service.service.PaymentService;
 import io.github.kwatera_project.kwatera.billing_service.service.SettlementService;
@@ -21,7 +22,6 @@ import java.nio.file.Path;
 import java.security.Key;
 import java.util.List;
 import java.util.UUID;
-import io.github.kwatera_project.kwatera.billing_service.dto.SettlementDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -384,7 +384,11 @@ class BillingControllerTest {
                 .header("Authorization", "Bearer " + token))
         .andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_PDF))
-        .andExpect(header().string("Content-Disposition", "attachment; filename=\"invoice-" + reservationId + ".pdf\""))
+        .andExpect(
+            header()
+                .string(
+                    "Content-Disposition",
+                    "attachment; filename=\"invoice-" + reservationId + ".pdf\""))
         .andExpect(content().bytes("pdf content".getBytes()));
 
     Files.deleteIfExists(tempFile);

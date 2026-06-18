@@ -2,13 +2,13 @@ package io.github.kwatera_project.kwatera.billing_service.service;
 
 import static org.mockito.Mockito.*;
 
+import com.stripe.exception.ApiException;
 import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.checkout.Session;
 import io.github.kwatera_project.kwatera.billing_service.client.StripeClient;
 import io.github.kwatera_project.kwatera.billing_service.client.SystemEventClient;
-import com.stripe.exception.ApiException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -283,7 +283,8 @@ class PaymentWebhookServiceTest {
 
     paymentWebhookService.processWebhook("payload", "sig");
 
-    verify(settlementService).registerPayment(any(), any(), any(), any(), any(), any(), eq("guest@example.com"));
+    verify(settlementService)
+        .registerPayment(any(), any(), any(), any(), any(), any(), eq("guest@example.com"));
     verify(settlementService).generateInvoicePdfIfNeeded(any());
     verify(paymentTransactionService).markSuccessIfAllowed("evt_fallback_1");
   }
@@ -308,7 +309,8 @@ class PaymentWebhookServiceTest {
 
     paymentWebhookService.processWebhook("payload", "sig");
 
-    verify(settlementService).registerPayment(any(), any(), any(), any(), any(), any(), eq("guest@example.com"));
+    verify(settlementService)
+        .registerPayment(any(), any(), any(), any(), any(), any(), eq("guest@example.com"));
     verify(settlementService).generateInvoicePdfIfNeeded(any());
     verify(paymentTransactionService).markSuccessIfAllowed("evt_fallback_2");
   }
