@@ -52,6 +52,7 @@
     "backToLanding": "Back to landing page",
     "poster": "Poster demo",
     "exploreWithoutPassword": "Choose a role and explore the main flows without a password.",
+    "banner": "Demo mode: sample data only, no server writes.",
     "roles": {
       "guest": "Continue as guest",
       "owner": "Continue as owner",
@@ -501,7 +502,9 @@
     "waterMayBeBilled": "Water may be billed separately after your stay if configured for this unit.",
     "finalWaterCostMeterReadings": "Final water cost is based on meter readings when configured.",
     "rate": "Rate",
-    "waterRateConversion": "Water rate conversion"
+    "waterRateConversion": "Water rate conversion",
+    "waterRateTooltipPln": "1 {{cubicMeter}} = 1000 L, so {{rate}} PLN/{{cubicMeter}} = {{literRate}} PLN/L.",
+    "waterRateTooltipConverted": "1 {{cubicMeter}} = 1000 L. {{plnRate}} PLN/{{cubicMeter}} ≈ {{convertedRate}} {{currency}}/{{cubicMeter}}, so ≈ {{literRate}} {{currency}}/L."
   },
 
   "createProperty": {
@@ -746,7 +749,12 @@
     "email": "Email Address",
     "activeNotifications": "Active for Notifications",
     "saving": "Saving...",
-    "editProfile": "Edit Profile"
+    "editProfile": "Edit Profile",
+    "roles": {
+      "ADMIN": "Administrator",
+      "OWNER": "Owner",
+      "GUEST": "Guest"
+    }
   },
   "properties": {
     "title": "Properties",
@@ -844,7 +852,8 @@
     "paidAt": "Paid At",
     "stripeNote": "* Note: Despite the selected display currency, the payment transaction on the Stripe gateway will be processed in the system's base currency (PLN). Any potential foreign exchange conversion fees depend on your bank. Exchange rate applied: {{rate}} {{currency}}/PLN.",
     "pay": "Pay",
-    "loadError": "Failed to load settlement details."
+    "loadError": "Failed to load settlement details.",
+    "waterUsage": "Water usage"
   },
 
   "settlementStatuses": {
@@ -905,6 +914,7 @@
     "title": "KWATERA: Next-Generation Vacation Rental Management",
     "subtitle": "An all-in-one platform integrating intelligent utility billing, dynamic AI pricing, and seamless reservation flows to empower property owners and delight guests.",
     "collaboration": "Developed in academic & corporate collaboration with",
+    "commerzbankLogoAlt": "Commerzbank logo",
     "projectContext": "Project Context",
     "projectDesc1": "is a web-based system for managing holiday accommodation bookings, availability, utility settlements, payments, reporting, and administration.",
     "projectDesc2": "As a semester project, KWATERA focuses on building a realistic, production-ready accommodation management platform rather than a simple CRUD application.",
@@ -926,12 +936,19 @@
     "creatorsBadge": "Project Creators",
     "creatorsTitle": "Meet the Creators",
     "creatorsDesc": "KWATERA was conceptualized and developed as part of our academic degree program in Applied Computer Science at the Faculty of Technical Physics, Information Technology and Applied Mathematics (FTIMS), Lodz University of Technology.",
-    "reactClient": "React Client App",
-    "apiGateway": "API Gateway",
-    "securityRouting": "Security & Routing",
-    "corePropertyService": "Core & Property Service",
-    "aiDynamicPricing": "AI Dynamic Pricing",
-    "ocrUtilityBilling": "OCR Utility Billing"
+    "acronymExpansion": "Comprehensive Web Assistant for Scheduling, Energy, Reservations and Administration",
+    "techCategories": {
+      "frontend": "Frontend",
+      "backend": "Backend Services",
+      "aiOcr": "AI & OCR Models"
+    },
+    "team": {
+      "affiliation": "FTIMS | Lodz University of Technology",
+      "zuzannaBio": "Developed the core OCR module for automated utility readings and the property catalog, connecting artificial intelligence with practical billing automation.",
+      "lukaszBio": "Coordinated the microservices architecture, CI/CD pipelines, and system integration, establishing standards that support platform stability and scalability.",
+      "nadzeyaBio": "Designed the core backend domain, including billing microservices and Stripe payment integration, to support the complete rental-management lifecycle.",
+      "alicjaBio": "Led the end-to-end reservation flow and frontend user experience, creating intuitive dashboards and secure checkout flows for a seamless user journey."
+    }
   },
 
   "blogSection": {

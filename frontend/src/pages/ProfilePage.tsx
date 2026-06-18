@@ -181,7 +181,7 @@ export default function ProfilePage() {
                         </div>
                         <div>
                             <span className="bg-brand-bg border border-brand-accent text-brand-primary font-bold text-xs uppercase tracking-wider px-3.5 py-2 rounded-full shadow-sm">
-                                {userRole}
+                                {t(`profile.roles.${userRole}`, { defaultValue: userRole })}
                             </span>
                         </div>
                     </div>

@@ -93,7 +93,7 @@ export default function ReservationDetailsPage() {
             rate: formatWaterRate(waterTariff.pricePerUnit, reservation.currencyInfo),
             usage: formatUsageRange(waterUsageRange),
             cost: formatMoneyRange(waterUsageRange, waterTariff.pricePerUnit, reservation.currencyInfo),
-            tooltip: getRatePerLiterTooltip(waterTariff.pricePerUnit, reservation.currencyInfo),
+            tooltip: getRatePerLiterTooltip(waterTariff.pricePerUnit, reservation.currencyInfo, t),
         }
         : null;
 

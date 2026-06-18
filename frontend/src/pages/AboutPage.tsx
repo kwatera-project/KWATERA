@@ -4,7 +4,7 @@ import {useTranslation} from "react-i18next"
 interface TeamMember {
     name: string;
     role: string;
-    bio: string;
+    bioKey: string;
     github: string;
     linkedin: string;
     initials: string;
@@ -18,7 +18,7 @@ export default function AboutPage() {
         {
             name: "Zuzanna Adamczyk",
             role: "AI/OCR & Catalog Engineer",
-            bio: "Engineered the core OCR module for automated utility readings and developed the property catalog. Bridging artificial intelligence with practical, automated billing solutions.",
+            bioKey: "about.team.zuzannaBio",
             github: "https://github.com/ZuzannaAdamczyk",
             linkedin: "https://www.linkedin.com/in/zuzanna-adamczyk-26a56928a/",
             initials: "ZA",
@@ -28,7 +28,7 @@ export default function AboutPage() {
         {
             name: "Łukasz Jęcek",
             role: "Tech Lead & System Architect",
-            bio: "Orchestrated the microservices architecture, CI/CD pipelines, and system integration. Established robust coding standards to ensure platform stability and scalability.",
+            bioKey: "about.team.lukaszBio",
             github: "https://github.com/lukaszjecek",
             linkedin: "https://www.linkedin.com/in/lukasz-jecek",
             initials: "ŁJ",
@@ -38,7 +38,7 @@ export default function AboutPage() {
         {
             name: "Nadzeya Silchankava",
             role: "Backend Domain & Payments Engineer",
-            bio: "Architected the foundational backend domain, focusing on billing microservices and Stripe payment integration, enabling a full-cycle rental administration.",
+            bioKey: "about.team.nadzeyaBio",
             github: "https://github.com/sinadzeya",
             linkedin: "https://www.linkedin.com/in/nadzeya-silchankava/",
             initials: "NS",
@@ -48,7 +48,7 @@ export default function AboutPage() {
         {
             name: "Alicja Świercz",
             role: "Reservation Flow & UX Engineer",
-            bio: "Spearheaded the end-to-end reservation lifecycle and crafted the frontend user experience. Designed intuitive dashboards and secure checkout flows, ensuring a seamless journey for all users.",
+            bioKey: "about.team.alicjaBio",
             github: "https://github.com/alicjaswiers",
             linkedin: "https://www.linkedin.com/in/alicjaswiers/",
             initials: "AŚ",
@@ -59,17 +59,17 @@ export default function AboutPage() {
 
     const techStack = [
         {
-            category: "Frontend",
+            categoryKey: "about.techCategories.frontend",
             icon: <Code className="w-6 h-6 text-brand-primary" />,
             techs: ["React 19", "TypeScript", "TailwindCSS v4", "Vite", "React Router 6"]
         },
         {
-            category: "Backend Services",
+            categoryKey: "about.techCategories.backend",
             icon: <Database className="w-6 h-6 text-brand-primary" />,
             techs: ["Java 25", "Spring Boot", "Spring Security & JWT", "PostgreSQL", "REST APIs"]
         },
         {
-            category: "AI & OCR Models",
+            categoryKey: "about.techCategories.aiOcr",
             icon: <Brain className="w-6 h-6 text-brand-primary" />,
             techs: ["Python", "YOLOv8 Object Detection", "Dynamic Pricing Engine"]
         }
@@ -104,7 +104,7 @@ export default function AboutPage() {
                             >
                                 <img 
                                     src={`${import.meta.env.BASE_URL}commerzbank_logo.png`} 
-                                    alt="Commerzbank Logo" 
+                                    alt={t('about.commerzbankLogoAlt')}
                                     className="h-16 md:h-20 object-contain mix-blend-multiply" 
                                 />
                             </a>
@@ -117,7 +117,7 @@ export default function AboutPage() {
                         <div className="space-y-2">
                             <h2 className="text-xl md:text-2xl font-bold text-brand-main tracking-tight">{t('about.projectContext')}</h2>
                             <p className="text-xs md:text-sm text-brand-primary font-bold tracking-wide">
-                                Kompleksowy Webowy Asystent Terminarza, Energii, Rezerwacji i Administracji
+                                {t('about.acronymExpansion')}
                             </p>
                         </div>
                         <div className="text-brand-muted text-base leading-relaxed font-light space-y-4">
@@ -153,7 +153,7 @@ export default function AboutPage() {
                                     <div className="z-10 bg-white border border-brand-accent rounded-xl px-5 py-3 shadow-sm flex items-center gap-2.5 hover:border-brand-primary/40 transition-colors">
                                         <Code className="w-5 h-5 text-brand-primary" />
                                         <div className="text-left">
-                                            <h4 className="text-sm font-bold text-brand-main leading-none">{t('about.reactClient')}</h4>
+                                            <h4 className="text-sm font-bold text-brand-main leading-none">React Client App</h4>
                                             <span className="text-[10px] text-brand-muted">Vite • Tailwind CSS</span>
                                         </div>
                                     </div>
@@ -163,8 +163,8 @@ export default function AboutPage() {
                                     <div className="z-10 bg-white border border-brand-accent rounded-xl px-6 py-2.5 shadow-sm flex items-center gap-2.5 hover:border-brand-primary/40 transition-colors">
                                         <Server className="w-4 h-4 text-brand-primary" />
                                         <div className="text-left">
-                                            <h4 className="text-sm font-bold text-brand-main leading-none">{t('about.apiGateway')}</h4>
-                                            <span className="text-[9px] text-brand-muted">{t('about.securityRouting')}</span>
+                                            <h4 className="text-sm font-bold text-brand-main leading-none">API Gateway</h4>
+                                            <span className="text-[9px] text-brand-muted">Security &amp; Routing</span>
                                         </div>
                                     </div>
 
@@ -184,7 +184,7 @@ export default function AboutPage() {
                                                 <Database className="w-3.5 h-3.5 md:w-4 h-4 text-brand-primary animate-pulse" />
                                             </div>
                                             <div>
-                                                <h5 className="text-[9px] md:text-xs font-bold text-brand-main leading-tight break-words">{t('about.corePropertyService')}</h5>
+                                                <h5 className="text-[9px] md:text-xs font-bold text-brand-main leading-tight break-words">Core &amp; Property Service</h5>
                                                 <p className="text-[7px] md:text-[9px] text-brand-muted leading-tight mt-0.5">Java / Spring Boot</p>
                                             </div>
                                         </div>
@@ -194,7 +194,7 @@ export default function AboutPage() {
                                                 <Brain className="w-3.5 h-3.5 md:w-4 h-4 text-brand-primary animate-pulse" />
                                             </div>
                                             <div>
-                                                <h5 className="text-[9px] md:text-xs font-bold text-brand-main leading-tight break-words">{t('about.aiDynamicPricing')}</h5>
+                                                <h5 className="text-[9px] md:text-xs font-bold text-brand-main leading-tight break-words">AI Dynamic Pricing</h5>
                                                 <p className="text-[7px] md:text-[9px] text-brand-muted leading-tight mt-0.5">Python / ML Engine</p>
                                             </div>
                                         </div>
@@ -204,7 +204,7 @@ export default function AboutPage() {
                                                 <Scan className="w-3.5 h-3.5 md:w-4 h-4 text-brand-primary animate-pulse" />
                                             </div>
                                             <div>
-                                                <h5 className="text-[9px] md:text-xs font-bold text-brand-main leading-tight break-words">{t('about.ocrUtilityBilling')}</h5>
+                                                <h5 className="text-[9px] md:text-xs font-bold text-brand-main leading-tight break-words">OCR Utility Billing</h5>
                                                 <p className="text-[7px] md:text-[9px] text-brand-muted leading-tight mt-0.5">Python / YOLOv8</p>
                                             </div>
                                         </div>
@@ -281,10 +281,10 @@ export default function AboutPage() {
                             
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 {techStack.map((stack) => (
-                                    <div key={stack.category} className="bg-white border border-brand-accent rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300">
+                                    <div key={stack.categoryKey} className="bg-white border border-brand-accent rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300">
                                         <div className="flex items-center gap-3 border-b border-brand-accent/30 pb-4 mb-4">
                                             {stack.icon}
-                                            <h3 className="font-bold text-base text-brand-main">{stack.category}</h3>
+                                            <h3 className="font-bold text-base text-brand-main">{t(stack.categoryKey)}</h3>
                                         </div>
                                         <div className="flex flex-wrap gap-2">
                                             {stack.techs.map((tech) => (
@@ -343,13 +343,13 @@ export default function AboutPage() {
                                         </div>
                                         <div className="h-6 flex items-center justify-center">
                                             <p className="text-[10px] md:text-xs text-brand-muted font-semibold leading-normal">
-                                                FTIMS | Lodz University of Technology
+                                                {t('about.team.affiliation')}
                                             </p>
                                         </div>
                                     </div>
 
                                     <p className="text-brand-muted text-xs md:text-sm font-light text-center leading-relaxed">
-                                        {member.bio}
+                                        {t(member.bioKey)}
                                     </p>
                                 </div>
                                 

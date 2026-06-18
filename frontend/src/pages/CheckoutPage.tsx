@@ -308,7 +308,7 @@ export default function CheckoutPage() {
             rate: formatWaterRate(waterTariff.pricePerUnit, waterCurrencyInfo),
             usage: formatUsageRange(waterUsageRange),
             cost: formatMoneyRange(waterUsageRange, waterTariff.pricePerUnit, waterCurrencyInfo),
-            tooltip: getRatePerLiterTooltip(waterTariff.pricePerUnit, waterCurrencyInfo),
+            tooltip: getRatePerLiterTooltip(waterTariff.pricePerUnit, waterCurrencyInfo, t),
         }
         : null;
     const waterBillingAcknowledgementCopy = waterTariffLoaded && !waterTariff

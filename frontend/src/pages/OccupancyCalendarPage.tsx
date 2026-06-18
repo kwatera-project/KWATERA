@@ -174,7 +174,7 @@ export default function OccupancyCalendarPage() {
                 }
 
                 const unitName = unitMap.get(occ.unitId) || occ.unitId;
-                const displayText = `${unitName} - ${occ.guestName || occ.status}`;
+                const displayText = `${unitName} - ${occ.guestName || t(`statuses.${occ.status}`, { defaultValue: occ.status })}`;
 
                 elements.push(
                     <button
@@ -291,7 +291,7 @@ export default function OccupancyCalendarPage() {
                     </svg>
                 </button>
                 <h2 className="text-xl font-black text-brand-main tracking-tight">
-                    {format(anchorDate, 'MMMM yyyy', { locale: getDateFnsLocale(i18n.language) })}
+                    {format(anchorDate, 'LLLL yyyy', { locale: getDateFnsLocale(i18n.language) })}
                 </h2>
                 <button onClick={handleNextMonth}
                         className="p-2 border border-brand-accent rounded-lg hover:bg-gray-50 transition">
@@ -435,7 +435,7 @@ export default function OccupancyCalendarPage() {
                                 ) : (
                                     <span
                                         className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider bg-gray-50 border-gray-200 text-gray-800 animate-fade-in">
-                                        {selectedOcc.status}
+                                        {t(`statuses.${selectedOcc.status}`, { defaultValue: selectedOcc.status })}
                                     </span>
                                 )}
                             </div>

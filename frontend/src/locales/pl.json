@@ -52,6 +52,7 @@
     "backToLanding": "Powrót do strony głównej",
     "poster": "Tryb demonstracyjny",
     "exploreWithoutPassword": "Wybierz rolę i poznaj główne funkcje bez hasła.",
+    "banner": "Tryb demonstracyjny: wyłącznie dane przykładowe, bez zapisu na serwerze.",
     "roles": {
       "guest": "Kontynuuj jako gość",
       "owner": "Kontynuuj jako właściciel",
@@ -89,6 +90,8 @@
     "calendarView": "Widok kalendarza",
     "showing": "Wyświetlono",
     "reservation_one": "rezerwację",
+    "reservation_few": "rezerwacje",
+    "reservation_many": "rezerwacji",
     "reservation_other": "rezerwacji",
     "filterByStatus": "Filtruj według statusu:",
     "allStatuses": "Wszystkie statusy",
@@ -503,7 +506,9 @@
     "waterMayBeBilled": "Woda może zostać rozliczona osobno po pobycie, jeśli skonfigurowano ją dla tego lokalu.",
     "finalWaterCostMeterReadings": "Końcowy koszt wody jest ustalany na podstawie odczytów licznika, jeśli je skonfigurowano.",
     "rate": "Stawka",
-    "waterRateConversion": "Przeliczenie stawki za wodę"
+    "waterRateConversion": "Przeliczenie stawki za wodę",
+    "waterRateTooltipPln": "1 {{cubicMeter}} = 1000 l, więc {{rate}} PLN/{{cubicMeter}} = {{literRate}} PLN/l.",
+    "waterRateTooltipConverted": "1 {{cubicMeter}} = 1000 l. {{plnRate}} PLN/{{cubicMeter}} ≈ {{convertedRate}} {{currency}}/{{cubicMeter}}, czyli ≈ {{literRate}} {{currency}}/l."
   },
 
   "createProperty": {
@@ -752,7 +757,12 @@
     "email": "Adres e-mail",
     "activeNotifications": "Aktywny dla powiadomień",
     "saving": "Zapisywanie...",
-    "editProfile": "Edytuj profil"
+    "editProfile": "Edytuj profil",
+    "roles": {
+      "ADMIN": "Administrator",
+      "OWNER": "Właściciel",
+      "GUEST": "Gość"
+    }
   },
 
   "properties": {
@@ -850,7 +860,8 @@
     "paidAt": "Data płatności",
     "stripeNote": "* Uwaga: Pomimo wybranej waluty wyświetlania, transakcja płatności na bramce Stripe zostanie przetworzona w walucie bazowej systemu (PLN). Ewentualne opłaty za przeliczenie waluty zależą od Twojego banku. Zastosowany kurs wymiany: {{rate}} {{currency}}/PLN.",
     "pay": "Zapłać",
-    "loadError": "Nie udało się załadować szczegółów rozliczenia."
+    "loadError": "Nie udało się załadować szczegółów rozliczenia.",
+    "waterUsage": "Zużycie wody"
   },
 
   "settlementStatuses": {
@@ -912,6 +923,7 @@
     "title": "KWATERA: Zarządzanie wynajmem nowej generacji",
     "subtitle": "Kompleksowa platforma łącząca inteligentne rozliczanie mediów, dynamiczne ceny AI i płynny przepływ rezerwacji.",
     "collaboration": "Opracowane we współpracy akademickiej i korporacyjnej z",
+    "commerzbankLogoAlt": "Logo Commerzbank",
     "projectContext": "O projekcie",
     "projectDesc1": "to system webowy do zarządzania rezerwacjami obiektów wypoczynkowych, dostępnością, rozliczeniami mediów, płatnościami, raportowaniem i administracją.",
     "projectDesc2": "Jako projekt semestralny, KWATERA skupia się na budowie realistycznej, gotowej do produkcji platformy zarządzania obiektami, a nie prostej aplikacji CRUD.",
@@ -933,12 +945,19 @@
     "creatorsBadge": "Twórcy projektu",
     "creatorsTitle": "Poznaj twórców",
     "creatorsDesc": "KWATERA została opracowana w ramach akademickiego programu studiów z Informatyki Stosowanej na Wydziale Fizyki Technicznej, Informatyki i Matematyki Stosowanej (FTIMS) Politechniki Łódzkiej.",
-    "reactClient": "Aplikacja kliencka React",
-    "apiGateway": "Brama API",
-    "securityRouting": "Bezpieczeństwo i routing",
-    "corePropertyService": "Usługa główna i nieruchomości",
-    "aiDynamicPricing": "Dynamiczne ceny AI",
-    "ocrUtilityBilling": "Rozliczanie mediów OCR"
+    "acronymExpansion": "Kompleksowy Webowy Asystent Terminarza, Energii, Rezerwacji i Administracji",
+    "techCategories": {
+      "frontend": "Frontend",
+      "backend": "Usługi backendowe",
+      "aiOcr": "Modele AI i OCR"
+    },
+    "team": {
+      "affiliation": "FTIMS | Politechnika Łódzka",
+      "zuzannaBio": "Opracowała główny moduł OCR do automatycznych odczytów liczników oraz katalog nieruchomości, łącząc sztuczną inteligencję z praktyczną automatyzacją rozliczeń.",
+      "lukaszBio": "Koordynował architekturę mikroserwisów, potoki CI/CD i integrację systemu, ustanawiając standardy wspierające stabilność i skalowalność platformy.",
+      "nadzeyaBio": "Zaprojektowała podstawową domenę backendową, w tym mikroserwisy rozliczeniowe i integrację płatności Stripe, wspierając pełny cykl zarządzania wynajmem.",
+      "alicjaBio": "Prowadziła kompleksowy proces rezerwacji i rozwój interfejsu użytkownika, tworząc intuicyjne panele oraz bezpieczne ścieżki płatności."
+    }
   },
 
   "blogSection": {

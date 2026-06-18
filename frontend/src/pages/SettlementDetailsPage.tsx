@@ -251,6 +251,14 @@ export default function SettlementDetailsPage() {
     };
 
     const isPaidOrZero = settlement.status === "PAID" || settlement.balanceDue === 0;
+    const getItemDescription = (item: SettlementItemDetails) => {
+        if (item.type === "WATER" && item.description?.trim().toLowerCase() === "water usage") {
+            return t("settlement.waterUsage");
+        }
+        return item.description || t(`settlementItemTypes.${item.type}`, {
+            defaultValue: item.type
+        });
+    };
 
     return (
         <div className="max-w-3xl mx-auto p-4 md:p-8 min-h-screen text-[#1A1A1A] space-y-6 flex flex-col">
@@ -344,10 +352,7 @@ export default function SettlementDetailsPage() {
                                                     return (
                                                         <li key={item.id} className="text-xs text-[#7A7A7A] flex justify-between gap-4 font-medium">
                                                             <span>
-                                                                {item.description ||
-                                                                    t(`settlementItemTypes.${item.type}`, {
-                                                                        defaultValue: item.type
-                                                                    })} ({item.quantity} x {displayCurrency !== 'PLN' ? Number((item.unitPrice / rate).toFixed(2)) : item.unitPrice} {displayCurrency})
+                                                                {getItemDescription(item)} ({item.quantity} x {displayCurrency !== 'PLN' ? Number((item.unitPrice / rate).toFixed(2)) : item.unitPrice} {displayCurrency})
                                                             </span>
                                                             <span className="font-bold text-[#1A1A1A]">
                                                                 {convertedAmount} {displayCurrency}

@@ -4,7 +4,7 @@ import {useLogout} from "./Logout.tsx"
 import {getUserRoles, decodeJwt} from "../utils/jwtUtils.ts"
 import {useState, useEffect, useRef} from "react"
 import {useCurrency} from "../contexts/CurrencyContext"
-import {User, LogOut, LayoutDashboard, Calendar, Settings, Home, FileClock, Menu, X} from 'lucide-react'
+import {User, LogOut, LayoutDashboard, Calendar, Settings, Home, FileClock, Globe2, Menu, X} from 'lucide-react'
 import {useTranslation} from "react-i18next"
 import i18n from "../i18n"
 import {IS_DEMO_MODE} from "../api/apiConfig.ts"
@@ -29,15 +29,21 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
     const [isCurrencyDropdownOpen, setIsCurrencyDropdownOpen] = useState(false);
     const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isMobilePreferencesOpen, setIsMobilePreferencesOpen] = useState(false);
     const location = useLocation();
     const isHomePage = location.pathname === '/';
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const profileDropdownRef = useRef<HTMLDivElement>(null);
+    const mobilePreferencesRef = useRef<HTMLDivElement>(null);
 
 
     const [currentLang, setCurrentLang] = useState(i18n.language);
     const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
+    const languageOptions = [
+        {code: 'en', label: 'ENG'},
+        {code: 'pl', label: 'PL'},
+    ];
 
     useEffect(() => {
         const handleResize = () => {
@@ -72,6 +78,9 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
             if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
                 setIsProfileDropdownOpen(false);
             }
+            if (mobilePreferencesRef.current && !mobilePreferencesRef.current.contains(event.target as Node)) {
+                setIsMobilePreferencesOpen(false);
+            }
         }
 
         document.addEventListener("mousedown", handleClickOutside);
@@ -86,6 +95,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
             setIsCurrencyDropdownOpen(false);
             setIsLangDropdownOpen(false);
             setIsMobileMenuOpen(false);
+            setIsMobilePreferencesOpen(false);
         }, 0);
         return () => clearTimeout(timer);
     }, [location.pathname]);
@@ -99,7 +109,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
     const isFullScreenPage = ['/login', '/register', '/payment-cancel'].some(path => location.pathname.includes(path));
     const positionClass = (isEffectiveSubpage && !isFullScreenPage) ? 'sticky top-0' : 'fixed top-0';
 
-    const isNavbarWhite = isScrolled || isEffectiveSubpage || isFullScreenPage || isMobileMenuOpen;
+    const isNavbarWhite = isScrolled || isEffectiveSubpage || isFullScreenPage || isMobileMenuOpen || isMobilePreferencesOpen;
 
     const bgAndPaddingClass = isNavbarWhite
         ? (isMobile ? 'bg-solid-white border-b border-gray-200 py-4 shadow-sm' : 'bg-white/95 backdrop-blur-md border-b border-gray-200 py-4 shadow-sm')
@@ -141,30 +151,30 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                     <div className="relative hidden lg:block">
                         <button
                             onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
-                            className={`font-bold text-sm tracking-widest uppercase transition-all duration-300 focus:outline-none ${isNavbarWhite ? 'text-stone-800 hover:text-brand-primary' : 'text-white hover:text-white/80 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]'}`}
+                            className={`font-medium text-sm tracking-wide transition-all duration-300 focus:outline-none ${isNavbarWhite ? 'text-stone-800 hover:text-brand-primary' : 'text-white hover:text-white/80 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]'}`}
                         >
-                            {currentLang === 'en' ? 'EN' : 'PL'}
+                            {languageOptions.find(({code}) => code === currentLang)?.label ?? 'ENG'}
                         </button>
                         {isLangDropdownOpen && (
-                            <div className="absolute top-full right-0 mt-3 w-20 bg-card rounded-2xl shadow-xl z-50 overflow-hidden py-1.5 border border-[#DACDCA]/40">
-                                {['en', 'pl'].map((lang) => (
+                            <div className="absolute top-full right-0 mt-3 w-28 bg-card rounded-2xl shadow-xl z-50 overflow-hidden py-1.5 border border-[#DACDCA]/40">
+                                {languageOptions.map(({code, label}) => (
                                     <button
-                                        key={lang}
+                                        key={code}
                                         onClick={() => {
-                                            i18n.changeLanguage(lang);
-                                            localStorage.setItem('language', lang);
-                                            setCurrentLang(lang);
+                                            i18n.changeLanguage(code);
+                                            localStorage.setItem('language', code);
+                                            setCurrentLang(code);
                                             setIsLangDropdownOpen(false);
                                         }}
-                                        className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors uppercase tracking-widest font-bold ${currentLang === lang ? 'text-[rgb(var(--color-burgundy))] bg-gray-50' : 'text-title font-medium'}`}
+                                        className={`w-full text-left px-4 py-2 text-sm font-medium transition-colors ${currentLang === code ? 'text-[rgb(var(--color-burgundy))] bg-gray-100' : 'text-title hover:bg-gray-50 opacity-80 hover:opacity-100'}`}
                                     >
-                                        {lang.toUpperCase()}
+                                        {label}
                                     </button>
                                 ))}
                             </div>
                         )}
                     </div>
-                    <div className="relative">
+                    <div className="relative hidden lg:block">
                         <button
                             onClick={() => setIsCurrencyDropdownOpen(!isCurrencyDropdownOpen)}
                             className={`font-medium text-sm transition-all uppercase tracking-widest flex items-center gap-1.5 focus:outline-none ${isNavbarWhite ? 'text-stone-800 hover:text-[#8B4513]' : 'text-white hover:text-white/80 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]'}`}
@@ -186,6 +196,70 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                                         {curr}
                                     </button>
                                 ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="relative lg:hidden" ref={mobilePreferencesRef}>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setIsMobilePreferencesOpen((isOpen) => !isOpen);
+                                setIsMobileMenuOpen(false);
+                                setIsProfileDropdownOpen(false);
+                            }}
+                            aria-label={`${t('navbar.language')} / ${t('navbar.currency')}`}
+                            title={`${t('navbar.language')} / ${t('navbar.currency')}`}
+                            className={`inline-flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:outline-none cursor-pointer ${isNavbarWhite ? 'text-stone-800 hover:bg-stone-100' : 'text-white hover:bg-white/10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]'}`}
+                        >
+                            <Globe2 size={22} strokeWidth={2}/>
+                        </button>
+
+                        {isMobilePreferencesOpen && (
+                            <div className="absolute top-full right-0 mt-3 w-64 bg-solid-white rounded-2xl shadow-2xl z-[21000] border border-[#DACDCA]/40 p-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                                <div className="flex flex-col gap-2">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-stone-400">{t('navbar.language')}</span>
+                                    <div className="flex gap-2">
+                                        {languageOptions.map(({code, label}) => (
+                                            <button
+                                                key={code}
+                                                type="button"
+                                                onClick={() => {
+                                                    i18n.changeLanguage(code);
+                                                    localStorage.setItem('language', code);
+                                                    setCurrentLang(code);
+                                                }}
+                                                className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all ${
+                                                    currentLang === code
+                                                        ? 'bg-[rgb(var(--color-burgundy))] border-[rgb(var(--color-burgundy))] text-white shadow-sm'
+                                                        : 'bg-stone-100 border-transparent text-stone-600 hover:bg-stone-200 opacity-80 hover:opacity-100'
+                                                }`}
+                                            >
+                                                {label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-2">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-stone-400">{t('navbar.currency')}</span>
+                                    <div className="flex gap-2">
+                                        {['PLN', 'EUR', 'USD'].map((curr) => (
+                                            <button
+                                                key={curr}
+                                                type="button"
+                                                onClick={() => setCurrency(curr)}
+                                                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                                                    currency === curr
+                                                        ? 'bg-[rgb(var(--color-burgundy))] text-white shadow-sm'
+                                                        : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                                                }`}
+                                            >
+                                                {curr}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -299,8 +373,11 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                     )}
 
                     <button
-                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        className={`lg:hidden p-2 rounded-lg transition-colors focus:outline-none cursor-pointer ${isNavbarWhite ? 'text-stone-800 hover:bg-stone-100' : 'text-white hover:bg-white/10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]'}`}
+                        onClick={() => {
+                            setIsMobileMenuOpen(!isMobileMenuOpen);
+                            setIsMobilePreferencesOpen(false);
+                        }}
+                        className={`lg:hidden inline-flex h-10 w-10 items-center justify-center rounded-lg transition-colors focus:outline-none cursor-pointer ${isNavbarWhite ? 'text-stone-800 hover:bg-stone-100' : 'text-white hover:bg-white/10 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]'}`}
                     >
                         {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
                     </button>
@@ -323,21 +400,21 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                     <div className="py-2.5 flex flex-col gap-2">
                         <span className="text-xs font-bold uppercase tracking-wider text-stone-400">{t('navbar.language')}</span>
                         <div className="flex gap-2">
-                            {['en', 'pl'].map((lang) => (
+                            {languageOptions.map(({code, label}) => (
                                 <button
-                                    key={lang}
+                                    key={code}
                                     onClick={() => {
-                                        i18n.changeLanguage(lang);
-                                        localStorage.setItem('language', lang);
-                                        setCurrentLang(lang);
+                                        i18n.changeLanguage(code);
+                                        localStorage.setItem('language', code);
+                                        setCurrentLang(code);
                                     }}
-                                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                                        currentLang === lang
-                                            ? 'bg-[rgb(var(--color-burgundy))] text-white shadow-sm'
-                                            : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                                    className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all ${
+                                        currentLang === code
+                                            ? 'bg-[rgb(var(--color-burgundy))] border-[rgb(var(--color-burgundy))] text-white shadow-sm'
+                                            : 'bg-stone-100 border-transparent text-stone-600 hover:bg-stone-200 opacity-80 hover:opacity-100'
                                     }`}
                                 >
-                                    {lang.toUpperCase()}
+                                    {label}
                                 </button>
                             ))}
                         </div>
