@@ -31,8 +31,9 @@ export default function NewsletterSection() {
       await subscribeToNewsletter(email);
       toast.success("Please check your email to confirm subscription.");
       setEmail("");
-    } catch (err: any) {
-      toast.error(err.message || "Something went wrong.");
+    } catch (err) {
+      const error = err as { message?: string };
+      toast.error(error.message || "Something went wrong.");
     } finally {
       setLoading(false);
     }
