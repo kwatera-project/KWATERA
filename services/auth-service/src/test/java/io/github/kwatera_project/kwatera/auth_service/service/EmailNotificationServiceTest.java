@@ -44,7 +44,9 @@ class EmailNotificationServiceTest {
             propertyClient,
             userRepository,
             "no-reply@kwatera.local",
-            "test@kwatera.local");
+            "test@kwatera.local",
+            "http://localhost:8090",
+            "http://localhost:5173");
   }
 
   @Test
@@ -215,7 +217,9 @@ class EmailNotificationServiceTest {
             propertyClient,
             null,
             "no-reply@kwatera.local",
-            "test@kwatera.local");
+            "test@kwatera.local",
+            "http://localhost:8090",
+            "http://localhost:5173");
 
     when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
     Map<String, Object> prop = new java.util.HashMap<>();

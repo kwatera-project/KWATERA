@@ -32,6 +32,8 @@ public class EmailNotificationService {
   private final UserRepository userRepository;
   private final String fromAddress;
   private final String testRecipient;
+  private final String publicGatewayUrl;
+  private final String frontendBaseUrl;
 
   @SuppressFBWarnings("EI_EXPOSE_REP2")
   public EmailNotificationService(
@@ -40,13 +42,17 @@ public class EmailNotificationService {
       PropertyClient propertyClient,
       UserRepository userRepository,
       @Value("${kwatera.mail.from}") String fromAddress,
-      @Value("${kwatera.mail.test-recipient}") String testRecipient) {
+      @Value("${kwatera.mail.test-recipient}") String testRecipient,
+      @Value("${kwatera.urls.public-gateway}") String publicGatewayUrl,
+      @Value("${kwatera.urls.frontend-base}") String frontendBaseUrl) {
     this.mailSender = mailSender;
     this.templateEngine = templateEngine;
     this.propertyClient = propertyClient;
     this.userRepository = userRepository;
     this.fromAddress = fromAddress;
     this.testRecipient = testRecipient;
+    this.publicGatewayUrl = publicGatewayUrl;
+    this.frontendBaseUrl = frontendBaseUrl;
   }
 
   public void sendThankYouEmail(String recipientEmail, String firstName) {
@@ -55,6 +61,7 @@ public class EmailNotificationService {
     context.setVariable("subject", subject);
     String sanitizedFirstName = firstName != null ? firstName.replaceAll("[\r\n]", "") : "User";
     context.setVariable("firstName", sanitizedFirstName);
+    context.setVariable("loginLink", frontendBaseUrl + "/login");
 
     String htmlBody = templateEngine.process("thank-you-signup", context);
     send(recipientEmail, subject, htmlBody);
@@ -64,6 +71,7 @@ public class EmailNotificationService {
     String subject = "Welcome to KWATERA Newsletter!";
     Context context = new Context();
     context.setVariable("subject", subject);
+    context.setVariable("homeLink", frontendBaseUrl);
     String htmlBody = templateEngine.process("welcome-newsletter-template", context);
     send(recipientEmail, subject, htmlBody);
   }
@@ -72,7 +80,7 @@ public class EmailNotificationService {
     String subject = "Confirm your KWATERA subscription";
     Context context = new Context();
     context.setVariable("subject", subject);
-    String confirmLink = "http://localhost:8090/api/newsletter/confirm?token=" + token;
+    String confirmLink = publicGatewayUrl + "/api/newsletter/confirm?token=" + token;
     context.setVariable("confirmLink", confirmLink);
     String htmlBody = templateEngine.process("confirm-newsletter-template", context);
     send(recipientEmail, subject, htmlBody);
@@ -98,12 +106,12 @@ public class EmailNotificationService {
       Map<String, Object> item = new HashMap<>();
       item.put("title", prop.get("title"));
       item.put("description", prop.get("description"));
-      item.put("link", "http://localhost:5173/property/" + prop.get("id"));
+      item.put("link", frontendBaseUrl + "/property/" + prop.get("id"));
       item.put("imageUrl", prop.get("imageUrl"));
       UUID propertyId = null;
       try {
         propertyId = UUID.fromString((String) prop.get("id"));
-      } catch (Exception ignored) {
+      } catch (IllegalArgumentException ignored) {
       }
       java.math.BigDecimal pricePerNight = null;
       if (propertyId != null) {
@@ -117,7 +125,7 @@ public class EmailNotificationService {
                 if (pricePerNight == null || price.compareTo(pricePerNight) < 0) {
                   pricePerNight = price;
                 }
-              } catch (Exception ignored) {
+              } catch (NumberFormatException ignored) {
               }
             }
           }
@@ -132,7 +140,7 @@ public class EmailNotificationService {
     context.setVariable("featuredItems", featuredItems);
     context.setVariable(
         "unsubscribeLink",
-        "http://localhost:8090/api/newsletter/unsubscribe?email=" + recipientEmail);
+        publicGatewayUrl + "/api/newsletter/unsubscribe?email=" + recipientEmail);
     String htmlBody = templateEngine.process("weekly-newsletter-template", context);
     send(recipientEmail, subject, htmlBody);
   }

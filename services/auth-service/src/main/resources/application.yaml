@@ -39,6 +39,9 @@ kwatera:
     test-recipient: ${KWATERA_MAIL_TEST_RECIPIENT:guest@kwatera.local}
   security:
     internal-token: ${KWATERA_INTERNAL_TOKEN:kwatera-internal-secret-token}
+  urls:
+    public-gateway: ${PUBLIC_GATEWAY_URL:http://localhost:8090}
+    frontend-base: ${FRONTEND_BASE_URL:http://localhost:5173}
 
 services:
   property:

@@ -150,4 +150,36 @@ class NewsletterControllerTest {
     verify(emailNotificationService, never())
         .sendNewsletterVerificationEmail(anyString(), anyString());
   }
+
+  @Test
+  void shouldUnsubscribeEmail() throws Exception {
+    NewsletterSubscriber subscriber = new NewsletterSubscriber();
+    subscriber.setEmail("unsubscribe@example.com");
+
+    when(subscriberRepository.findByEmail("unsubscribe@example.com"))
+        .thenReturn(Optional.of(subscriber));
+
+    mockMvc
+        .perform(get("/api/newsletter/unsubscribe?email=unsubscribe@example.com"))
+        .andExpect(status().isFound())
+        .andExpect(
+            header().string("Location", "http://localhost:5173/?newsletterUnsubscribed=true"));
+
+    verify(subscriberRepository).findByEmail("unsubscribe@example.com");
+    verify(subscriberRepository).delete(subscriber);
+  }
+
+  @Test
+  void shouldDoNothingOnUnsubscribeWhenNotFound() throws Exception {
+    when(subscriberRepository.findByEmail("notfound@example.com")).thenReturn(Optional.empty());
+
+    mockMvc
+        .perform(get("/api/newsletter/unsubscribe?email=notfound@example.com"))
+        .andExpect(status().isFound())
+        .andExpect(
+            header().string("Location", "http://localhost:5173/?newsletterUnsubscribed=true"));
+
+    verify(subscriberRepository).findByEmail("notfound@example.com");
+    verify(subscriberRepository, never()).delete(any(NewsletterSubscriber.class));
+  }
 }
