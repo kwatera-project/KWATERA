@@ -74,6 +74,9 @@ public class EmailNotificationService {
     context.setVariable("resetUrl", resetUrl);
 
     String htmlBody = templateEngine.process("password-reset-template", context);
+    send(recipientEmail, subject, htmlBody);
+  }
+
   public void sendNewsletterWelcomeEmail(String recipientEmail) {
     String subject = "Welcome to KWATERA Newsletter!";
     Context context = new Context();
