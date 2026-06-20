@@ -179,7 +179,7 @@ function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: stri
                                             <button
                                                 onClick={handleApplySuggestedPrice}
                                                 disabled={isUpdatingPrice}
-                                                className="inline-flex items-center gap-1 px-2.5 py-1 border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-xs font-bold rounded-md shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 border border-brand-accent/80 bg-white text-brand-primary hover:text-[#5c2e29] hover:bg-brand-bg hover:border-brand-primary hover:shadow-[0_0_12px_rgba(66,33,29,0.15)] hover:scale-[1.02] active:scale-95 text-xs font-bold rounded-md shadow-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100 cursor-pointer"
                                             >
                                                 {isUpdatingPrice ? (
                                                     <>
