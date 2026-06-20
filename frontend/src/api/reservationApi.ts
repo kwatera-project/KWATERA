@@ -141,6 +141,7 @@ export async function createManualReservation(
             status: reservation.status,
             guestName: reservation.guestName,
             totalPrice: reservation.totalPrice,
+            guestEmail: reservation.guestEmail,
         });
 
         if (!demoOccupiedDatesByUnit[unitId]) {

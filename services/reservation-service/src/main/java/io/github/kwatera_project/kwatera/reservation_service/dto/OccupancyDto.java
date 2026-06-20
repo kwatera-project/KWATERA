@@ -11,6 +11,8 @@ public class OccupancyDto {
   private LocalDate startDate;
   private LocalDate endDate;
   private String status;
+  private String guestEmail;
+  private String guestName;
 
   public OccupancyDto() {}
 
@@ -20,13 +22,17 @@ public class OccupancyDto {
       String unitName,
       LocalDate startDate,
       LocalDate endDate,
-      String status) {
+      String status,
+      String guestEmail,
+      String guestName) {
     this.reservationId = reservationId;
     this.unitId = unitId;
     this.unitName = unitName;
     this.startDate = startDate;
     this.endDate = endDate;
     this.status = status;
+    this.guestEmail = guestEmail;
+    this.guestName = guestName;
   }
 
   public UUID getReservationId() {
@@ -75,5 +81,21 @@ public class OccupancyDto {
 
   public void setStatus(String status) {
     this.status = status;
+  }
+
+  public String getGuestEmail() {
+    return guestEmail;
+  }
+
+  public void setGuestEmail(String guestEmail) {
+    this.guestEmail = guestEmail;
+  }
+
+  public String getGuestName() {
+    return guestName;
+  }
+
+  public void setGuestName(String guestName) {
+    this.guestName = guestName;
   }
 }

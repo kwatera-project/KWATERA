@@ -733,6 +733,7 @@
     "accommodation": "Zakwaterowanie",
     "financialSummary": "Podsumowanie finansowe",
     "unassignedGuest": "Nieprzypisany gość",
+    "unknownGuest": "nieznany gość",
     "viewFullDetails": "Zobacz pełne szczegóły",
     "close": "Zamknij"
   },
@@ -759,7 +760,7 @@
     "deleteConfirm": "Czy na pewno chcesz usunąć ten lokal?",
     "deleteHasReservations": "Lokal ma rezerwacje i nie może zostać usunięty",
     "deleteFailed": "Nie udało się usunąć lokalu",
-    "priceUpdated": "Cena zaktualizowana!",
+    "priceUpdated": "Cena AI została pomyślnie zastosowana!",
     "priceUpdateFailed": "Nie udało się zaktualizować ceny. Spróbuj ponownie.",
     "unitType": "Typ lokalu",
     "unitNumberShort": "Numer lokalu",
@@ -772,7 +773,10 @@
     "calculating": "Obliczanie...",
     "applying": "Stosowanie...",
     "applyAiPrice": "Zastosuj cenę AI",
-    "unavailable": "Niedostępna"
+    "unavailable": "Niedostępna",
+    "priceUpdatedDesc": "Sugerowana cena AI została pomyślnie zastosowana dla tego lokalu.",
+    "priceUpdateFailedDesc": "Wystąpił błąd podczas próby aktualizacji ceny. Spróbuj ponownie.",
+    "ok": "OK"
   },
 
   "myReservations": {

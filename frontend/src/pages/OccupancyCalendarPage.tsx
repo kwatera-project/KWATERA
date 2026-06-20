@@ -28,6 +28,7 @@ interface Occupancy {
     status: string;
     guestName?: string;
     totalPrice?: number;
+    guestEmail?: string;
 }
 
 export default function OccupancyCalendarPage() {
@@ -459,6 +460,11 @@ export default function OccupancyCalendarPage() {
                                             <p className="text-sm font-bold text-brand-main mt-0.5">
                                                 {formatGuestLabel(selectedOcc.guestName)}
                                             </p>
+                                            {selectedOcc.reservationId && (
+                                                <p className="text-xs text-brand-muted mt-0.5 break-all">
+                                                    {selectedOcc.guestEmail || t('occupancy.unknownGuest', { defaultValue: 'nieznany gość' })}
+                                                </p>
+                                            )}
                                         </div>
                                         <div>
                                             <span
