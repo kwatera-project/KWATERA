@@ -4,6 +4,7 @@ import { getProperty } from "../api/propertyApi.ts";
 import type { Property, Unit } from "../types/property";
 import {deleteUnit, getPropertyUnits, updateUnit} from "../api/ownerUnitApi.ts";
 import { getPredictedPrice } from "../api/predictionApi.ts";
+import { Sparkles } from "lucide-react";
 import {useTranslation} from "react-i18next";
 import { toast } from "react-hot-toast";
 
@@ -158,45 +159,54 @@ function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: stri
                     </div>
                 </div>
 
-                <div className="pt-4 flex flex-wrap gap-x-10 gap-y-4 items-center border-t border-gray-100 mt-4">
+                <div className="pt-4 border-t border-gray-100 mt-4 flex flex-wrap items-end gap-6">
                     <div>
-                        <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-1">{t('ownerUnits.currentPrice')}</span>
-                        <div className="text-sm font-bold text-[#7A7A7A]">
-                            <span className="text-xl font-black text-[#1A1A1A]">{currentPrice.toFixed(2)} PLN</span> {t('ownerUnits.perNight')}
+                        <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t('ownerUnits.currentPrice')}</span>
+                        <div className="text-sm font-bold text-gray-500">
+                            <span className="text-xl font-black text-stone-900">{currentPrice.toFixed(2)} PLN</span> {t('ownerUnits.perNight')}
                         </div>
                     </div>
 
-                    <div>
-                        <span className="block text-xxs uppercase tracking-wider text-[#7A7A7A] mb-1"> {t('ownerUnits.suggestedPrice')}</span>
-                        <div className="text-sm font-bold text-[#7A7A7A] flex items-center gap-1.5">
-                            {loadingPrediction ? (
-                                <span className="text-gray-400 text-sm animate-pulse font-semibold">{t('ownerUnits.calculating')}</span>
-                            ) : predictedPrice !== null ? (
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-xl font-black text-indigo-600">{predictedPrice.toFixed(2)} PLN</span>
+                    {loadingPrediction ? (
+                        <div>
+                            <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t('ownerUnits.suggestedPrice')}</span>
+                            <span className="text-gray-400 text-sm animate-pulse font-semibold block py-1">{t('ownerUnits.calculating')}</span>
+                        </div>
+                    ) : predictedPrice !== null ? (
+                        <>
+                            <div>
+                                <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t('ownerUnits.suggestedPrice')}</span>
+                                <div className="text-sm font-bold text-gray-500">
+                                    <span className="text-xl font-black text-stone-900">{predictedPrice.toFixed(2)} PLN</span>
+                                </div>
+                            </div>
 
-                                        {Math.abs(currentPrice - predictedPrice) > 0.01 && (
-                                            <button
-                                                onClick={handleApplySuggestedPrice}
-                                                disabled={isUpdatingPrice}
-                                                className="inline-flex items-center gap-1 px-2.5 py-1 border border-brand-accent/80 bg-white text-brand-primary hover:text-[#5c2e29] hover:bg-brand-bg hover:border-brand-primary hover:shadow-[0_0_12px_rgba(66,33,29,0.15)] hover:scale-[1.02] active:scale-95 text-xs font-bold rounded-md shadow-sm transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100 cursor-pointer"
-                                            >
-                                                {isUpdatingPrice ? (
-                                                    <>
-                                                        <span className="w-2.5 h-2.5 rounded-full border border-gray-300 border-t-gray-700 animate-spin inline-block shrink-0" />
-                                                        <span>{t('ownerUnits.applying')}</span>
-                                                    </>
-                                                ) : (
-                                                    <span>{t('ownerUnits.applyAiPrice')}</span>
-                                                )}
-                                            </button>
-                                        )}
-                                    </div>
-                            ) : (
-                                <span className="text-amber-600 text-sm font-semibold">{t('ownerUnits.unavailable')}</span>
+                            {Math.abs(currentPrice - predictedPrice) > 0.01 && (
+                                <button
+                                    onClick={handleApplySuggestedPrice}
+                                    disabled={isUpdatingPrice}
+                                    className="flex items-center justify-center gap-2 px-4 py-2 border border-stone-300 bg-white text-stone-700 hover:bg-stone-50 text-sm font-bold rounded-md shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                    {isUpdatingPrice ? (
+                                        <>
+                                            <span className="w-4 h-4 rounded-full border-2 border-stone-300 border-t-stone-700 animate-spin inline-block shrink-0" />
+                                            <span>{t('ownerUnits.applying')}</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Sparkles className="w-[18px] h-[18px] text-stone-500" />
+                                            <span>{t('ownerUnits.applyAiPrice')}</span>
+                                        </>
+                                    )}
+                                </button>
                             )}
+                        </>
+                    ) : (
+                        <div>
+                            <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t('ownerUnits.suggestedPrice')}</span>
+                            <span className="text-amber-600 text-sm font-semibold block py-1">{t('ownerUnits.unavailable')}</span>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
 
