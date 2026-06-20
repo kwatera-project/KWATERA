@@ -12,8 +12,8 @@
 -- This keeps the occupancy calendar visually clean and avoids relying on generated UUIDs.
 --
 -- MediaReadingService considers WATER consumption normal when it is between 20% and
--- 300% of capacity * stay_nights * 0.1 m3. This seed uses 85%-115% of that expected
--- value for every non-cancelled stay, keeping the normal path safely auto-approved.
+-- 300% of capacity * stay_nights * 0.1 m3. Completed stays use 85%-115% of that
+-- expected value; non-completed stays have no final reading or utility cost.
 
 CREATE TEMP TABLE seed_196_reservations ON COMMIT DROP AS
 WITH inventory(property_title, unit_name, market, unit_order) AS (
@@ -198,16 +198,16 @@ with_utility AS (
     SELECT wg.*,
            utility.price_per_unit AS water_unit_price,
            CASE
-               -- Cancelled reservations represent pre-stay cancellations: no occupancy,
-               -- no meter movement and a financially closed zero settlement.
-               WHEN wg.status = 'CANCELLED' THEN 0.00::numeric
-               ELSE round(
+               -- Meter consumption is an observed check-out fact. Future/current and
+               -- cancelled reservations have no final reading or utility charge yet.
+               WHEN wg.status = 'COMPLETED' THEN round(
                    wg.capacity
                    * wg.nights
                    * 0.10
                    * (0.85 + ((wg.slot_no + wg.unit_order) % 7) * 0.05),
                    2
                )
+               ELSE 0.00::numeric
            END AS water_consumption
     FROM with_guest wg
     LEFT JOIN LATERAL (
@@ -327,8 +327,8 @@ BEGIN
 
     SELECT count(*) INTO invalid_water_rows
     FROM seed_196_reservations
-    WHERE (status = 'CANCELLED' AND water_consumption <> 0)
-       OR (status <> 'CANCELLED' AND (
+    WHERE (status <> 'COMPLETED' AND water_consumption <> 0)
+       OR (status = 'COMPLETED' AND (
               water_consumption IS NULL
               OR water_consumption < capacity * nights * 0.10 * 0.20
               OR water_consumption > capacity * nights * 0.10 * 3.00
@@ -435,9 +435,8 @@ SELECT sr.*,
        CASE WHEN sr.status = 'CONFIRMED'
             THEN round(sr.accommodation_amount * 0.20, 2)
             ELSE 0.00::numeric END::numeric(12, 2) AS deposit_amount,
-       -- DRAFT readings are captured for the media/OCR flow but are not billed until
-       -- the reservation is confirmed. Cancelled pre-stay reservations remain zeroed.
-       CASE WHEN sr.status IN ('COMPLETED', 'CONFIRMED')
+       -- Utilities become billable only after a completed stay has a final reading.
+       CASE WHEN sr.status = 'COMPLETED'
             THEN round(sr.water_consumption * sr.water_unit_price, 2)
             ELSE 0.00::numeric END::numeric(12, 2) AS utilities_amount
 FROM seed_196_reservations sr;
@@ -541,7 +540,7 @@ SELECT md5('issue-196|item|water|' || reservation_id)::uuid,
        utilities_amount,
        end_date + TIME '11:00'
 FROM seed_196_financials
-WHERE settlement_status IN ('PAID', 'PARTIALLY_PAID');
+WHERE settlement_status = 'PAID';
 
 -- Successful transaction totals equal amount_paid. Failed attempts never affect amount_paid.
 INSERT INTO payment_transactions (
@@ -633,8 +632,8 @@ FROM seed_196_financials
 WHERE status IN ('PENDING', 'CANCELLED')
   AND (slot_no + unit_order) % 2 = 0;
 
--- Every non-cancelled reservation gets the full WATER meter/OCR flow. Cancelled rows
--- are intentionally pre-stay cancellations with zero consumption and no meter event.
+-- Meter/OCR data is historical evidence: only completed stays have the full flow.
+-- Confirmed, pending and cancelled reservations have no fabricated meter event.
 CREATE TEMP TABLE seed_196_readings ON COMMIT DROP AS
 SELECT sf.*,
        md5('issue-196|reading|water|' || reservation_id)::uuid AS media_reading_id,
@@ -646,7 +645,7 @@ SELECT sf.*,
        (0.90 + ((slot_no + unit_order + 3) % 8) * 0.01)::numeric(12, 6)
            AS final_confidence
 FROM seed_196_financials sf
-WHERE status <> 'CANCELLED';
+WHERE status = 'COMPLETED';
 
 INSERT INTO media_readings (
     id,
@@ -730,6 +729,7 @@ DO $$
 DECLARE
     price_errors integer;
     missing_readings integer;
+    premature_readings integer;
     invalid_readings integer;
     missing_upload_pairs integer;
     settlement_errors integer;
@@ -742,7 +742,7 @@ BEGIN
 
     SELECT count(*) INTO missing_readings
     FROM seed_196_reservations sr
-    WHERE sr.status <> 'CANCELLED'
+    WHERE sr.status = 'COMPLETED'
       AND NOT EXISTS (
           SELECT 1
           FROM settlements s
@@ -751,13 +751,23 @@ BEGIN
             AND mr.utility_type = 'WATER'
       );
 
+    SELECT count(*) INTO premature_readings
+    FROM seed_196_reservations sr
+    JOIN settlements s ON s.reservation_id = sr.reservation_id
+    JOIN media_readings mr
+      ON mr.settlement_id = s.id
+     AND mr.utility_type = 'WATER'
+    WHERE sr.status <> 'COMPLETED';
+
     SELECT count(*) INTO invalid_readings
     FROM seed_196_reservations sr
     JOIN settlements s ON s.reservation_id = sr.reservation_id
     JOIN media_readings mr
       ON mr.settlement_id = s.id
      AND mr.utility_type = 'WATER'
-    WHERE sr.status = 'CANCELLED'
+    WHERE sr.status <> 'COMPLETED'
+       OR mr.initial_reading IS NULL
+       OR mr.final_reading IS NULL
        OR mr.final_reading < mr.initial_reading
        OR mr.consumption_difference <> mr.final_reading - mr.initial_reading
        OR mr.calculated_cost <> round(mr.consumption_difference * mr.unit_price, 2)
@@ -788,6 +798,7 @@ BEGIN
               s.accommodation_amount + s.utilities_amount + s.deposit_amount - s.discount_amount
        OR s.balance_due <> s.total_amount - s.amount_paid
        OR (s.status = 'PARTIALLY_PAID' AND s.paid_at IS NOT NULL)
+       OR (sf.status <> 'COMPLETED' AND s.utilities_amount <> 0)
        OR (s.status = 'CANCELLED' AND (
               s.accommodation_amount <> 0
               OR s.utilities_amount <> 0
@@ -808,7 +819,13 @@ BEGIN
     WHERE (s.status IN ('PAID', 'PARTIALLY_PAID')
            AND coalesce(item_totals.item_total, 0) <> s.total_amount)
        OR (s.status IN ('DRAFT', 'CANCELLED')
-           AND coalesce(item_totals.item_total, 0) <> 0);
+           AND coalesce(item_totals.item_total, 0) <> 0)
+       OR (sf.status <> 'COMPLETED' AND EXISTS (
+              SELECT 1
+              FROM settlement_items water_item
+              WHERE water_item.settlement_id = s.id
+                AND water_item.type = 'WATER'
+          ));
 
     SELECT count(*) INTO payment_errors
     FROM seed_196_financials sf
@@ -819,19 +836,28 @@ BEGIN
         FROM payment_transactions
         GROUP BY settlement_id
     ) payment_totals ON payment_totals.settlement_id = s.id
-    WHERE coalesce(payment_totals.paid_total, 0) <> s.amount_paid;
+    WHERE coalesce(payment_totals.paid_total, 0) <> s.amount_paid
+       OR (sf.status <> 'COMPLETED' AND EXISTS (
+              SELECT 1
+              FROM payment_transactions water_payment
+              WHERE water_payment.settlement_id = s.id
+                AND water_payment.type = 'WATER'
+                AND water_payment.status = 'SUCCESS'
+          ));
 
     IF price_errors > 0
        OR missing_readings > 0
+       OR premature_readings > 0
        OR invalid_readings > 0
        OR missing_upload_pairs > 0
        OR settlement_errors > 0
        OR settlement_item_errors > 0
        OR payment_errors > 0 THEN
         RAISE EXCEPTION
-            'Issue #196 reconciliation failed: prices=%, missing_readings=%, invalid_readings=%, missing_upload_pairs=%, settlements=%, items=%, payments=%',
+            'Issue #196 reconciliation failed: prices=%, missing_completed_readings=%, premature_readings=%, invalid_readings=%, missing_upload_pairs=%, settlements=%, items=%, payments=%',
             price_errors,
             missing_readings,
+            premature_readings,
             invalid_readings,
             missing_upload_pairs,
             settlement_errors,
