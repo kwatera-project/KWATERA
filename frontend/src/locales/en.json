@@ -726,6 +726,7 @@
     "accommodation": "Accommodation",
     "financialSummary": "Financial Summary",
     "unassignedGuest": "Unassigned Guest",
+    "unknownGuest": "Unknown Guest",
     "viewFullDetails": "View Full Details",
     "close": "Close"
   },
