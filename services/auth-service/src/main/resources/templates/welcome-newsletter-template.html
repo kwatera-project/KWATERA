@@ -4,31 +4,20 @@
 <div th:replace="~{base-layout :: layout(~{::content})}">
     <div th:fragment="content">
         <h2 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 700; color: #1A1A1A; letter-spacing: -0.02em;">
-            Thank you for registering!
+            Welcome to KWATERA!
         </h2>
-        
         <p style="margin: 0 0 24px 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;">
-            Hello <span th:text="${firstName}" style="font-weight: 600; color: #42211D;">User</span>,
+            Welcome to KWATERA! Thank you for subscribing to our newsletter. We are excited to keep you updated with the latest properties, special offers, and professional accommodation management news.
         </p>
-
         <p style="margin: 0 0 24px 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;">
-            Welcome to KWATERA! Your account has been successfully created. We are thrilled to have you join our community.
+            Stay tuned for our upcoming weekly digests. In the meantime, feel free to browse our premium collection of accommodations.
         </p>
-
-        <p style="margin: 0 0 24px 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;">
-            You can now log in to access your dashboard, manage bookings, check property details, and handle your settlements.
-        </p>
-
         <div style="margin-bottom: 24px; text-align: center;">
-            <a th:href="${loginLink}" 
+            <a th:href="${homeLink}" 
                style="display: inline-block; padding: 12px 24px; font-size: 15px; font-weight: 600; color: #FFFFFF; background-color: #42211D; border-radius: 8px; text-decoration: none; box-shadow: 0 4px 6px rgba(66, 33, 29, 0.15);">
-                Log In to Your Account
+                Explore Properties
             </a>
         </div>
-        
-        <p style="margin: 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;">
-            If you have any questions or need assistance setting up, please don't hesitate to reach out to our support team.
-        </p>
     </div>
 </div>
 </body>

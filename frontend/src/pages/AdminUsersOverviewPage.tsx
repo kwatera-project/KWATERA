@@ -84,7 +84,7 @@ export default function AdminUsersOverviewPage() {
         return () => {
             active = false;
         };
-    }, [currentPage, pageSize, selectedRole, debouncedSearch]);
+    }, [currentPage, pageSize, selectedRole, debouncedSearch, t]);
 
     const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedRole(e.target.value);
