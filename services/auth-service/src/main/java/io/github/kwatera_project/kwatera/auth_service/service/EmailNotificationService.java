@@ -46,6 +46,24 @@ public class EmailNotificationService {
     send(recipientEmail, subject, htmlBody);
   }
 
+  public void sendNewsletterWelcomeEmail(String recipientEmail) {
+    String subject = "Welcome to KWATERA Newsletter!";
+    Context context = new Context();
+    context.setVariable("subject", subject);
+    String htmlBody = templateEngine.process("welcome-newsletter-template", context);
+    send(recipientEmail, subject, htmlBody);
+  }
+
+  public void sendNewsletterVerificationEmail(String recipientEmail, String token) {
+    String subject = "Confirm your KWATERA subscription";
+    Context context = new Context();
+    context.setVariable("subject", subject);
+    String confirmLink = "http://localhost:8090/api/newsletter/confirm?token=" + token;
+    context.setVariable("confirmLink", confirmLink);
+    String htmlBody = templateEngine.process("confirm-newsletter-template", context);
+    send(recipientEmail, subject, htmlBody);
+  }
+
   private void send(String recipientEmail, String subject, String htmlBody) {
     String recipient = resolveRecipient(recipientEmail, subject);
     try {

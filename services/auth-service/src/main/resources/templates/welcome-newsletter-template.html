@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:replace="~{base-layout :: layout(~{::content})}">
+    <div th:fragment="content">
+        <h2 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 700; color: #1A1A1A; letter-spacing: -0.02em;">
+            Welcome to KWATERA!
+        </h2>
+        <p style="margin: 0 0 24px 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;">
+            Welcome to KWATERA! Thank you for subscribing to our newsletter. We are excited to keep you updated with the latest properties, special offers, and professional accommodation management news.
+        </p>
+        <p style="margin: 0 0 24px 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;">
+            Stay tuned for our upcoming weekly digests. In the meantime, feel free to browse our premium collection of accommodations.
+        </p>
+        <div style="margin-bottom: 24px; text-align: center;">
+            <a href="http://localhost:5173" 
+               style="display: inline-block; padding: 12px 24px; font-size: 15px; font-weight: 600; color: #FFFFFF; background-color: #42211D; border-radius: 8px; text-decoration: none; box-shadow: 0 4px 6px rgba(66, 33, 29, 0.15);">
+                Explore Properties
+            </a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

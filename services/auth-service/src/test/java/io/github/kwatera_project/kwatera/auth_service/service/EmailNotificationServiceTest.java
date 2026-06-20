@@ -51,6 +51,43 @@ class EmailNotificationServiceTest {
   }
 
   @Test
+  void shouldSendNewsletterWelcomeEmail() {
+    when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+    when(templateEngine.process(eq("welcome-newsletter-template"), any(Context.class)))
+        .thenReturn("<html>Welcome!</html>");
+
+    emailNotificationService.sendNewsletterWelcomeEmail("subscriber@example.com");
+
+    verify(mailSender).send(mimeMessage);
+
+    ArgumentCaptor<Context> contextCaptor = ArgumentCaptor.forClass(Context.class);
+    verify(templateEngine).process(eq("welcome-newsletter-template"), contextCaptor.capture());
+
+    Context context = contextCaptor.getValue();
+    assertThat(context.getVariable("subject")).isEqualTo("Welcome to KWATERA Newsletter!");
+  }
+
+  @Test
+  void shouldSendNewsletterVerificationEmail() {
+    when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+    when(templateEngine.process(eq("confirm-newsletter-template"), any(Context.class)))
+        .thenReturn("<html>Confirm!</html>");
+
+    emailNotificationService.sendNewsletterVerificationEmail(
+        "subscriber@example.com", "test-token");
+
+    verify(mailSender).send(mimeMessage);
+
+    ArgumentCaptor<Context> contextCaptor = ArgumentCaptor.forClass(Context.class);
+    verify(templateEngine).process(eq("confirm-newsletter-template"), contextCaptor.capture());
+
+    Context context = contextCaptor.getValue();
+    assertThat(context.getVariable("subject")).isEqualTo("Confirm your KWATERA subscription");
+    assertThat(context.getVariable("confirmLink"))
+        .isEqualTo("http://localhost:8090/api/newsletter/confirm?token=test-token");
+  }
+
+  @Test
   void shouldNotThrowWhenMailSendingFails() {
     when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
     when(templateEngine.process(eq("thank-you-signup"), any(Context.class)))

@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import './App.css'
+import { Toaster } from "react-hot-toast";
 import {Routes, Route, useLocation} from "react-router-dom"
 import Navbar from "./components/Navbar"
 import ProtectedRoute from "./components/ProtectedRoute"
@@ -57,6 +58,7 @@ function App() {
 
     return (
         <CurrencyProvider>
+            <Toaster />
             <div className="min-h-screen flex flex-col bg-card">
                 <DemoModeBanner/>
                 <Navbar/>

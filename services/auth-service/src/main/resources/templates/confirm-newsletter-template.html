@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:replace="~{base-layout :: layout(~{::content})}">
+    <div th:fragment="content">
+        <h2 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 700; color: #1A1A1A; letter-spacing: -0.02em;">
+            Confirm your subscription
+        </h2>
+        <p style="margin: 0 0 24px 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;">
+            Thank you for signing up for the KWATERA newsletter! Please click the button below to confirm your subscription and start receiving our updates.
+        </p>
+        <div style="margin-bottom: 24px; text-align: center;">
+            <a th:href="${confirmLink}" 
+               style="display: inline-block; padding: 12px 24px; font-size: 15px; font-weight: 600; color: #FFFFFF; background-color: #42211D; border-radius: 8px; text-decoration: none; box-shadow: 0 4px 6px rgba(66, 33, 29, 0.15);">
+                Confirm Subscription
+            </a>
+        </div>
+        <p style="margin: 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;">
+            If you did not request this subscription, you can safely ignore this email.
+        </p>
+    </div>
+</div>
+</body>
+</html>
