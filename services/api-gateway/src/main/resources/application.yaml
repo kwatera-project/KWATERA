@@ -16,7 +16,7 @@ spring:
             - id: auth-service
               uri: lb://auth-service
               predicates:
-                - Path=/api/auth,/api/auth/**
+                - Path=/api/auth,/api/auth/**,/api/newsletter,/api/newsletter/**
 
             - id: auth-service-admin
               uri: lb://auth-service
@@ -70,7 +70,10 @@ eureka:
       defaultZone: http://service-registry:8761/eureka/
 
 management:
+  endpoint:
+    gateway:
+      enabled: true
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,gateway
