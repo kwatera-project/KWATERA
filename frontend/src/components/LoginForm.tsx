@@ -76,6 +76,15 @@ export default function LoginForm() {
                                 />
                             </div>
 
+                            <div className="text-right">
+                                <Link
+                                    to="/forgot-password"
+                                    className="text-sm font-medium text-[#42211D] hover:underline"
+                                >
+                                    {t('login.forgotPassword')}
+                                </Link>
+                            </div>
+
                             <button
                                 type="submit"
                                 className="w-full py-3 bg-[#42211D] text-white font-bold rounded-lg hover:opacity-90 transition shadow-sm"

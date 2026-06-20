@@ -8,12 +8,14 @@ import DemoModeBanner from "./components/DemoModeBanner";
 import Footer from "./components/landing/Footer";
 import { Toaster } from "react-hot-toast";
 
-const FULL_SCREEN_ROUTES = ["/login", "/register", "/payment-cancel"];
+const FULL_SCREEN_ROUTES = ["/login", "/register", "/payment-cancel", "/forgot-password", "/reset-password"];
 
 const HomePage = lazy(() => import("./pages/HomePage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const RegisterForm = lazy(() => import("./components/RegisterForm"));
 const LoginForm = lazy(() => import("./components/LoginForm.tsx"));
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const AdminSystemEventsPage = lazy(() => import("./pages/AdminSystemEventsPage"));
 const AdminUsersOverviewPage = lazy(() => import("./pages/AdminUsersOverviewPage"));
@@ -69,6 +71,8 @@ function App() {
                             <Route path="/about" element={<AboutPage/>}/>
                             <Route path="/register" element={<RegisterForm/>}/>
                             <Route path="/login" element={<LoginForm/>}/>
+                            <Route path="/forgot-password" element={<ForgotPasswordPage/>}/>
+                            <Route path="/reset-password" element={<ResetPasswordPage/>}/>
                             <Route
                                 path="/admin/dashboard"
                                 element={

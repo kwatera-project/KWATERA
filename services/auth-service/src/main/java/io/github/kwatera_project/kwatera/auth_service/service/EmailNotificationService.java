@@ -46,6 +46,16 @@ public class EmailNotificationService {
     send(recipientEmail, subject, htmlBody);
   }
 
+  public void sendPasswordResetEmail(String recipientEmail, String resetUrl) {
+    String subject = "Password Reset Request";
+    Context context = new Context();
+    context.setVariable("subject", subject);
+    context.setVariable("resetUrl", resetUrl);
+
+    String htmlBody = templateEngine.process("password-reset-template", context);
+    send(recipientEmail, subject, htmlBody);
+  }
+
   private void send(String recipientEmail, String subject, String htmlBody) {
     String recipient = resolveRecipient(recipientEmail, subject);
     try {

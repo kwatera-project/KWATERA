@@ -24,12 +24,34 @@
     "email": "Email Address",
     "emailPlaceholder": "name@example.com",
     "password": "Password",
+    "forgotPassword": "Forgot password?",
     "submit": "Sign In",
     "noAccount": "Don't have an account?",
     "signUp": "Sign Up",
     "serverError": "Error connecting to server",
     "loginFailed": "Login failed",
     "imageAlt": "Interior"
+  },
+  "forgotPassword": {
+    "title": "Forgot Password",
+    "subtitle": "Enter your email address and we'll send you a link to reset your password.",
+    "emailLabel": "Email Address",
+    "emailPlaceholder": "name@example.com",
+    "submit": "Send Reset Link",
+    "backToLogin": "Back to login",
+    "successMessage": "Reset link sent! Please check your email.",
+    "errorMessage": "Failed to send reset link. Please try again."
+  },
+  "resetPassword": {
+    "title": "Reset Password",
+    "subtitle": "Choose a secure new password for your account.",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password",
+    "submit": "Reset Password",
+    "successMessage": "Password updated successfully! You can now log in.",
+    "errorMessage": "Failed to reset password. The link may have expired or is invalid.",
+    "validationError": "Passwords do not match.",
+    "passwordLengthError": "Password must be at least 8 characters long."
   },
 
   "register": {
