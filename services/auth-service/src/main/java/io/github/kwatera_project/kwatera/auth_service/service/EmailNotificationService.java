@@ -87,7 +87,9 @@ public class EmailNotificationService {
       featuredItems.add(item);
     }
     context.setVariable("featuredItems", featuredItems);
-    context.setVariable("unsubscribeLink", "http://localhost:8090/api/newsletter/unsubscribe?email=" + recipientEmail);
+    context.setVariable(
+        "unsubscribeLink",
+        "http://localhost:8090/api/newsletter/unsubscribe?email=" + recipientEmail);
     String htmlBody = templateEngine.process("weekly-newsletter-template", context);
     send(recipientEmail, subject, htmlBody);
   }

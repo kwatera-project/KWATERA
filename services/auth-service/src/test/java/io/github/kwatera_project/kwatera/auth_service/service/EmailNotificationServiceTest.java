@@ -33,7 +33,11 @@ class EmailNotificationServiceTest {
   void setUp() {
     emailNotificationService =
         new EmailNotificationService(
-            mailSender, templateEngine, propertyClient, "no-reply@kwatera.local", "test@kwatera.local");
+            mailSender,
+            templateEngine,
+            propertyClient,
+            "no-reply@kwatera.local",
+            "test@kwatera.local");
   }
 
   @Test
@@ -98,7 +102,8 @@ class EmailNotificationServiceTest {
     prop.put("id", "12345");
     prop.put("title", "Luxury Villa");
     prop.put("description", "A beautiful villa");
-    when(propertyClient.getRandomProperties(3)).thenReturn(java.util.Collections.singletonList(prop));
+    when(propertyClient.getRandomProperties(3))
+        .thenReturn(java.util.Collections.singletonList(prop));
     when(templateEngine.process(eq("weekly-newsletter-template"), any(Context.class)))
         .thenReturn("<html>Weekly Newsletter!</html>");
 
@@ -118,7 +123,8 @@ class EmailNotificationServiceTest {
     assertThat(item.get("title")).isEqualTo("Luxury Villa");
     assertThat(item.get("description")).isEqualTo("A beautiful villa");
     assertThat(item.get("link")).isEqualTo("http://localhost:5173/property/12345");
-    assertThat(context.getVariable("unsubscribeLink")).isEqualTo("http://localhost:8090/api/newsletter/unsubscribe?email=subscriber@example.com");
+    assertThat(context.getVariable("unsubscribeLink"))
+        .isEqualTo("http://localhost:8090/api/newsletter/unsubscribe?email=subscriber@example.com");
   }
 
   @Test
