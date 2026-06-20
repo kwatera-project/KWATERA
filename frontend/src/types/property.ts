@@ -11,7 +11,6 @@ export interface Property {
     latitude: number;
     longitude: number;
     amenities: string[];
-    propertyType?: string;
 }
 
 export interface PropertyCreateRequest {
@@ -23,7 +22,6 @@ export interface PropertyCreateRequest {
     street: string;
     streetNumber: string;
     amenities?: string[];
-    propertyType?: string;
 }
 
 export interface PropertyUpdateRequest {
@@ -35,7 +33,6 @@ export interface PropertyUpdateRequest {
     street?: string;
     streetNumber?: string;
     amenities?: string[];
-    propertyType?: string;
 }
 
 export interface Unit {

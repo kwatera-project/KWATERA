@@ -28,8 +28,7 @@ class PropertyDtoTest {
             "89-678",
             "Street",
             "12F",
-            List.of("WiFi"),
-            null);
+            List.of("WiFi"));
 
     assertEquals(id, dto.getId());
     assertEquals(ownerId, dto.getOwnerId());

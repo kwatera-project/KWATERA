@@ -357,7 +357,7 @@
     "postalCode": "Kod pocztowy",
     "street": "Ulica",
     "streetNumber": "Numer",
-    "propertyType": "Typ nieruchomości",
+    "unitType": "Typ nieruchomości",
     "selected": "Wybrano",
     "amenitiesTags": "Udogodnienia i tagi"
   },
@@ -425,7 +425,7 @@
     "close": "Zamknij filtry",
     "hide": "Ukryj filtry",
     "show": "Pokaż filtry",
-    "propertyType": "Typ nieruchomości",
+    "unitType": "Typ nieruchomości",
     "capacity": "Pojemność",
     "guests": "Goście",
     "bedrooms": "Sypialnie",
@@ -455,11 +455,23 @@
     "Parking": "Parking",
     "Pet Friendly": "Przyjazne zwierzętom",
     "TV": "Telewizor",
-    "AC": "Klimatyzacja",
+    "Air Conditioning": "Klimatyzacja",
     "Kitchen": "Kuchnia",
     "Pool": "Basen",
     "Gym": "Siłownia",
-    "Breakfast": "Śniadanie"
+    "Breakfast": "Śniadanie",
+    "Fireplace": "Kominek",
+    "BBQ": "Grill",
+    "Hot Tub": "Balia / Jacuzzi",
+    "Shared Kitchen": "Wspólna kuchnia",
+    "Sauna": "Sauna",
+    "Kayaks": "Kajaki",
+    "Elevator": "Winda",
+    "River View": "Widok na rzekę",
+    "Sea View": "Widok na morze",
+    "Historic View": "Widok na zabytki",
+    "Terrace": "Taras",
+    "Balcony": "Balkon"
   },
 
   "adminMeterReadings": {

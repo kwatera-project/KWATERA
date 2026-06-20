@@ -68,8 +68,4 @@ public class Property {
   @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "amenities", columnDefinition = "jsonb")
   private List<String> amenities = new ArrayList<>();
-
-  @Column(name = "property_type")
-  @Enumerated(EnumType.STRING)
-  private PropertyType propertyType;
 }

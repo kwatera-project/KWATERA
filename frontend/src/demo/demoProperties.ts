@@ -13,7 +13,6 @@ export const demoProperties: Property[] = [
         latitude: 49.7177,
         longitude: 19.032,
         imageUrl: "https://images.pexels.com/photos/18628485/pexels-photo-18628485.jpeg",
-        propertyType: "Cabin",
         amenities: ["WiFi", "Parking", "Fireplace", "BBQ"],
     },
     {
@@ -28,7 +27,6 @@ export const demoProperties: Property[] = [
         latitude: 49.2902,
         longitude: 19.8895,
         imageUrl: "https://images.pexels.com/photos/13181168/pexels-photo-13181168.jpeg",
-        propertyType: "Cabin",
         amenities: ["WiFi", "Hot Tub", "Parking", "Fireplace"],
     },
     {
@@ -43,7 +41,6 @@ export const demoProperties: Property[] = [
         latitude: 49.1279,
         longitude: 22.468,
         imageUrl: "https://images.pexels.com/photos/35124483/pexels-photo-35124483.jpeg",
-        propertyType: "Cabin",
         amenities: ["WiFi", "BBQ", "Terrace", "Parking"],
     },
     {
@@ -58,7 +55,6 @@ export const demoProperties: Property[] = [
         latitude: 50.7767,
         longitude: 15.755,
         imageUrl: "https://images.pexels.com/photos/8001411/pexels-photo-8001411.jpeg",
-        propertyType: "Cabin",
         amenities: ["WiFi", "Sauna", "Parking", "Fireplace"],
     },
     {
@@ -73,7 +69,6 @@ export const demoProperties: Property[] = [
         latitude: 53.8023,
         longitude: 21.5701,
         imageUrl: "https://images.pexels.com/photos/17804250/pexels-photo-17804250.jpeg",
-        propertyType: "Cottage",
         amenities: ["WiFi", "Kayaks", "Parking", "BBQ"],
     },
     {
@@ -88,7 +83,6 @@ export const demoProperties: Property[] = [
         latitude: 54.348,
         longitude: 18.653,
         imageUrl: "https://images.pexels.com/photos/34360421/pexels-photo-34360421.jpeg",
-        propertyType: "Apartment",
         amenities: ["WiFi", "Elevator", "Air Conditioning"],
     },
     {
@@ -103,7 +97,6 @@ export const demoProperties: Property[] = [
         latitude: 50.0647,
         longitude: 19.945,
         imageUrl: "https://images.pexels.com/photos/31656149/pexels-photo-31656149.jpeg",
-        propertyType: "Apartment",
         amenities: ["WiFi", "Air Conditioning", "Balcony"],
     },
     {
@@ -118,7 +111,6 @@ export const demoProperties: Property[] = [
         latitude: 51.1079,
         longitude: 17.0385,
         imageUrl: "https://images.pexels.com/photos/34360419/pexels-photo-34360419.jpeg",
-        propertyType: "Apartment",
         amenities: ["WiFi", "Parking", "Elevator"],
     },
     {
@@ -133,7 +125,6 @@ export const demoProperties: Property[] = [
         latitude: 54.4418,
         longitude: 18.56,
         imageUrl: "https://images.pexels.com/photos/27075286/pexels-photo-27075286.jpeg",
-        propertyType: "Apartment",
         amenities: ["WiFi", "Parking", "Elevator"],
     },
     {
@@ -148,7 +139,6 @@ export const demoProperties: Property[] = [
         latitude: 52.2297,
         longitude: 21.0122,
         imageUrl: "https://images.pexels.com/photos/439391/pexels-photo-439391.jpeg",
-        propertyType: "Apartment",
         amenities: ["WiFi", "Air Conditioning", "Gym", "Elevator"],
     },
 ];
