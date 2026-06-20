@@ -1,0 +1,82 @@
+flowchart TB
+  user["User / Web browser"]
+
+  subgraph runtime["KWATERA Docker Compose runtime"]
+    frontend["Frontend\nReact SPA served by Nginx\nhost :5173 → container :80"]
+    gateway["API Gateway\nSpring Cloud Gateway\n:8090"]
+
+    subgraph app["Application services"]
+      direction LR
+      auth["Auth Service\n:8081"]
+      property["Property Service\n:8083"]
+      reservation["Reservation Service\n:8080"]
+      billing["Billing Service\n:8086"]
+      pricing["AI Pricing Service\n:8087\nlocal CatBoost model"]
+      ocr["OCR Service\n:8085\nFastAPI + local model"]
+    end
+
+    subgraph platform["Platform services"]
+      config["Config Server\nSpring Cloud Config\n:8888"]
+      registry["Eureka Service Registry\n:8761"]
+    end
+
+    subgraph data["Data and infrastructure"]
+      postgres[("PostgreSQL\ncontainer :5432 / host :5433")]
+      storage[("Property image storage\nbackend-storage volume")]
+      kafka["Kafka broker\n:9092"]
+      mailpit["Mailpit\nSMTP :1025 / UI :8025"]
+      migrations["DB Migrations\nFlyway\n:8084"]
+    end
+  end
+
+  subgraph external["External systems"]
+    stripe["Stripe API\nHosted Checkout + webhooks"]
+    nbp["NBP exchange-rate API"]
+    nominatim["OpenStreetMap Nominatim"]
+    carto["CARTO tile CDN"]
+  end
+
+  user -->|"loads SPA"| frontend
+  user -->|"HTTP/JSON API"| gateway
+  frontend -->|"served application"| user
+
+  gateway -->|"routes API requests"| app
+
+  app -.->|"loads configuration"| config
+  app -.->|"registers / discovers services"| registry
+  gateway -.->|"configuration and discovery"| platform
+
+  app -->|"JDBC / JPA"| postgres
+  migrations -->|"Flyway migrations"| postgres
+  property -->|"read / write files"| storage
+
+  billing -->|"multipart HTTP for meter OCR"| ocr
+  billing -->|"publishes payment-status-changed"| kafka
+  kafka -->|"consumed by reservation-service"| reservation
+
+  billing -->|"SMTP"| mailpit
+  reservation -->|"SMTP"| mailpit
+
+  billing -->|"Checkout sessions / webhooks"| stripe
+  user -->|"hosted checkout redirect"| stripe
+
+  property -->|"EUR / USD rates"| nbp
+  reservation -->|"EUR / USD rates"| nbp
+  property -->|"address geocoding"| nominatim
+  user -->|"map tiles"| carto
+
+  classDef runtime fill:#f7f7f7,stroke:#555,color:#111;
+  classDef frontend fill:#e8f4ff,stroke:#2878b5,color:#111;
+  classDef gateway fill:#fff2cc,stroke:#b58b00,color:#111;
+  classDef app fill:#e9f7ef,stroke:#2e8b57,color:#111;
+  classDef platform fill:#f3e8ff,stroke:#7b3fb2,color:#111;
+  classDef data fill:#fdebd0,stroke:#b9770e,color:#111;
+  classDef external fill:#fce4ec,stroke:#ad1457,color:#111;
+
+  class user runtime;
+  class frontend frontend;
+  class gateway gateway;
+  class auth,property,reservation,billing,pricing,ocr app;
+  class config,registry platform;
+  class postgres,storage,kafka,mailpit,migrations data;
+  class stripe,nbp,nominatim,carto external;
