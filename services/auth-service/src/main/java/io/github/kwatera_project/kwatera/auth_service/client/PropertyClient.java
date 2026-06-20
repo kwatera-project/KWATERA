@@ -92,4 +92,23 @@ public class PropertyClient {
       return Collections.emptyList();
     }
   }
+
+  public List<Map<String, Object>> getPropertyUnits(UUID propertyId) {
+    if (propertyId == null) {
+      return Collections.emptyList();
+    }
+    try {
+      String url = propertyServiceUrl + "/" + propertyId + "/units";
+      ResponseEntity<List<Map<String, Object>>> response =
+          restTemplate.exchange(
+              url,
+              HttpMethod.GET,
+              null,
+              new ParameterizedTypeReference<List<Map<String, Object>>>() {});
+      return response.getBody() != null ? response.getBody() : Collections.emptyList();
+    } catch (Exception e) {
+      log.error("Failed to fetch units for property {}", propertyId, e);
+      return Collections.emptyList();
+    }
+  }
 }

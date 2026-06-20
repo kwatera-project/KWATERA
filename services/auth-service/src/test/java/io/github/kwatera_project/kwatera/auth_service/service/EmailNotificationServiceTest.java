@@ -6,9 +6,14 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import io.github.kwatera_project.kwatera.auth_service.client.PropertyClient;
+import io.github.kwatera_project.kwatera.auth_service.model.User;
+import io.github.kwatera_project.kwatera.auth_service.repository.UserRepository;
 import jakarta.mail.internet.MimeMessage;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +30,7 @@ class EmailNotificationServiceTest {
   @Mock private JavaMailSender mailSender;
   @Mock private TemplateEngine templateEngine;
   @Mock private PropertyClient propertyClient;
+  @Mock private UserRepository userRepository;
   @Mock private MimeMessage mimeMessage;
 
   private EmailNotificationService emailNotificationService;
@@ -36,6 +42,7 @@ class EmailNotificationServiceTest {
             mailSender,
             templateEngine,
             propertyClient,
+            userRepository,
             "no-reply@kwatera.local",
             "test@kwatera.local");
   }
@@ -99,11 +106,19 @@ class EmailNotificationServiceTest {
   void shouldSendWeeklyNewsletterEmail() {
     when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
     Map<String, Object> prop = new java.util.HashMap<>();
-    prop.put("id", "12345");
+    prop.put("id", "00000000-0000-0000-0000-000000000001");
     prop.put("title", "Luxury Villa");
     prop.put("description", "A beautiful villa");
+    prop.put("imageUrl", "http://image.url");
     when(propertyClient.getRandomProperties(3))
         .thenReturn(java.util.Collections.singletonList(prop));
+    when(userRepository.findByEmail("subscriber@example.com")).thenReturn(Optional.empty());
+
+    Map<String, Object> unit = new java.util.HashMap<>();
+    unit.put("pricePerNight", 350.0);
+    when(propertyClient.getPropertyUnits(UUID.fromString("00000000-0000-0000-0000-000000000001")))
+        .thenReturn(java.util.Collections.singletonList(unit));
+
     when(templateEngine.process(eq("weekly-newsletter-template"), any(Context.class)))
         .thenReturn("<html>Weekly Newsletter!</html>");
 
@@ -122,9 +137,49 @@ class EmailNotificationServiceTest {
     Map<?, ?> item = (Map<?, ?>) items.get(0);
     assertThat(item.get("title")).isEqualTo("Luxury Villa");
     assertThat(item.get("description")).isEqualTo("A beautiful villa");
-    assertThat(item.get("link")).isEqualTo("http://localhost:5173/property/12345");
+    assertThat(item.get("link"))
+        .isEqualTo("http://localhost:5173/property/00000000-0000-0000-0000-000000000001");
+    assertThat(item.get("imageUrl")).isEqualTo("http://image.url");
+    assertThat(item.get("pricePerNight")).isEqualTo(new BigDecimal("350.0"));
     assertThat(context.getVariable("unsubscribeLink"))
         .isEqualTo("http://localhost:8090/api/newsletter/unsubscribe?email=subscriber@example.com");
+  }
+
+  @Test
+  void shouldSendWeeklyNewsletterEmailWithUserFirstName() {
+    when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+    Map<String, Object> prop = new java.util.HashMap<>();
+    prop.put("id", "00000000-0000-0000-0000-000000000001");
+    prop.put("title", "Luxury Villa");
+    prop.put("description", "A beautiful villa");
+    prop.put("imageUrl", "http://image.url");
+    when(propertyClient.getRandomProperties(3))
+        .thenReturn(java.util.Collections.singletonList(prop));
+
+    User user = new User();
+    user.setFirstName("Alice");
+    when(userRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(user));
+
+    when(propertyClient.getPropertyUnits(UUID.fromString("00000000-0000-0000-0000-000000000001")))
+        .thenReturn(java.util.Collections.emptyList());
+
+    when(templateEngine.process(eq("weekly-newsletter-template"), any(Context.class)))
+        .thenReturn("<html>Weekly Newsletter!</html>");
+
+    emailNotificationService.sendWeeklyNewsletterEmail("alice@example.com");
+
+    verify(mailSender).send(mimeMessage);
+
+    ArgumentCaptor<Context> contextCaptor = ArgumentCaptor.forClass(Context.class);
+    verify(templateEngine).process(eq("weekly-newsletter-template"), contextCaptor.capture());
+
+    Context context = contextCaptor.getValue();
+    assertThat(context.getVariable("subject")).isEqualTo("Your Weekly KWATERA Recommendations");
+    assertThat(context.getVariable("greeting")).isEqualTo("Alice");
+    List<?> items = (List<?>) context.getVariable("featuredItems");
+    assertThat(items).hasSize(1);
+    Map<?, ?> item = (Map<?, ?>) items.get(0);
+    assertThat(item.get("pricePerNight")).isEqualTo(new BigDecimal("250"));
   }
 
   @Test

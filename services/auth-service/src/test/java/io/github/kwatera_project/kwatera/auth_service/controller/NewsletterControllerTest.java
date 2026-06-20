@@ -60,7 +60,7 @@ class NewsletterControllerTest {
   }
 
   @Test
-  void shouldResendVerificationWhenPending() throws Exception {
+  void shouldDoNothingWhenPending() throws Exception {
     SubscribeRequest request = new SubscribeRequest();
     request.setEmail("pending@example.com");
 
@@ -81,9 +81,9 @@ class NewsletterControllerTest {
         .andExpect(content().string("Please check your email to confirm subscription."));
 
     verify(subscriberRepository).findByEmail("pending@example.com");
-    verify(subscriberRepository).save(subscriber);
-    verify(emailNotificationService)
-        .sendNewsletterVerificationEmail(eq("pending@example.com"), anyString());
+    verify(subscriberRepository, never()).save(any(NewsletterSubscriber.class));
+    verify(emailNotificationService, never())
+        .sendNewsletterVerificationEmail(anyString(), anyString());
   }
 
   @Test

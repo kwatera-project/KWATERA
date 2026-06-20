@@ -28,16 +28,7 @@ public class NewsletterController {
     String email = request.getEmail().trim().toLowerCase();
     Optional<NewsletterSubscriber> existingOpt = subscriberRepository.findByEmail(email);
 
-    if (existingOpt.isPresent()) {
-      NewsletterSubscriber subscriber = existingOpt.get();
-      if ("PENDING".equals(subscriber.getStatus())) {
-        String token = UUID.randomUUID().toString();
-        subscriber.setToken(token);
-        subscriber.setSubscribedAt(LocalDateTime.now());
-        subscriberRepository.save(subscriber);
-        emailNotificationService.sendNewsletterVerificationEmail(email, token);
-      }
-    } else {
+    if (existingOpt.isEmpty()) {
       String token = UUID.randomUUID().toString();
       NewsletterSubscriber subscriber = new NewsletterSubscriber();
       subscriber.setEmail(email);

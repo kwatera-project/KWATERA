@@ -2,12 +2,15 @@ package io.github.kwatera_project.kwatera.auth_service.service;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.kwatera_project.kwatera.auth_service.client.PropertyClient;
+import io.github.kwatera_project.kwatera.auth_service.model.User;
+import io.github.kwatera_project.kwatera.auth_service.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +29,7 @@ public class EmailNotificationService {
   private final JavaMailSender mailSender;
   private final TemplateEngine templateEngine;
   private final PropertyClient propertyClient;
+  private final UserRepository userRepository;
   private final String fromAddress;
   private final String testRecipient;
 
@@ -34,11 +38,13 @@ public class EmailNotificationService {
       JavaMailSender mailSender,
       TemplateEngine templateEngine,
       PropertyClient propertyClient,
+      UserRepository userRepository,
       @Value("${kwatera.mail.from}") String fromAddress,
       @Value("${kwatera.mail.test-recipient}") String testRecipient) {
     this.mailSender = mailSender;
     this.templateEngine = templateEngine;
     this.propertyClient = propertyClient;
+    this.userRepository = userRepository;
     this.fromAddress = fromAddress;
     this.testRecipient = testRecipient;
   }
@@ -76,7 +82,16 @@ public class EmailNotificationService {
     String subject = "Your Weekly KWATERA Recommendations";
     Context context = new Context();
     context.setVariable("subject", subject);
-    context.setVariable("greeting", "Subscriber");
+    String greeting = "Subscriber";
+    if (userRepository != null) {
+      java.util.Optional<User> userOpt = userRepository.findByEmail(recipientEmail);
+      if (userOpt.isPresent()
+          && userOpt.get().getFirstName() != null
+          && !userOpt.get().getFirstName().isBlank()) {
+        greeting = userOpt.get().getFirstName();
+      }
+    }
+    context.setVariable("greeting", greeting);
     List<Map<String, Object>> properties = propertyClient.getRandomProperties(3);
     List<Map<String, Object>> featuredItems = new ArrayList<>();
     for (Map<String, Object> prop : properties) {
@@ -84,6 +99,34 @@ public class EmailNotificationService {
       item.put("title", prop.get("title"));
       item.put("description", prop.get("description"));
       item.put("link", "http://localhost:5173/property/" + prop.get("id"));
+      item.put("imageUrl", prop.get("imageUrl"));
+      UUID propertyId = null;
+      try {
+        propertyId = UUID.fromString((String) prop.get("id"));
+      } catch (Exception ignored) {
+      }
+      java.math.BigDecimal pricePerNight = null;
+      if (propertyId != null) {
+        List<Map<String, Object>> units = propertyClient.getPropertyUnits(propertyId);
+        if (units != null) {
+          for (Map<String, Object> unit : units) {
+            Object priceObj = unit.get("pricePerNight");
+            if (priceObj != null) {
+              try {
+                java.math.BigDecimal price = new java.math.BigDecimal(priceObj.toString());
+                if (pricePerNight == null || price.compareTo(pricePerNight) < 0) {
+                  pricePerNight = price;
+                }
+              } catch (Exception ignored) {
+              }
+            }
+          }
+        }
+      }
+      if (pricePerNight == null) {
+        pricePerNight = new java.math.BigDecimal("250");
+      }
+      item.put("pricePerNight", pricePerNight);
       featuredItems.add(item);
     }
     context.setVariable("featuredItems", featuredItems);
