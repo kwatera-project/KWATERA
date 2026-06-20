@@ -833,6 +833,193 @@ class ReservationServiceTest {
     assertEquals(1, reservedCount);
   }
 
+  @Test
+  void getOccupancy_resolvesGuestNameWithFirstAndLastName() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service =
+        reservationService(repository, restTemplate, mock(NbpExchangeRateClient.class));
+
+    UUID unitId = UUID.randomUUID();
+    LocalDate start = LocalDate.now();
+    LocalDate end = start.plusDays(7);
+    UUID guestId = UUID.randomUUID();
+
+    Reservation r = new Reservation();
+    r.setId(UUID.randomUUID());
+    r.setUnitId(unitId);
+    r.setUserId(guestId);
+    r.setStartDate(start);
+    r.setEndDate(end);
+    r.setStatus(ReservationStatus.CONFIRMED);
+
+    when(restTemplate.getForObject(contains("/units/ids"), eq(UUID[].class)))
+        .thenReturn(new UUID[] {unitId});
+    when(repository.findByUnitIdIn(List.of(unitId))).thenReturn(List.of(r));
+
+    java.util.Map<String, Object> userProfile = new java.util.HashMap<>();
+    userProfile.put("firstName", "John");
+    userProfile.put("lastName", "Doe");
+    ResponseEntity<java.util.Map> responseEntity = new ResponseEntity<>(userProfile, HttpStatus.OK);
+
+    when(restTemplate.exchange(
+            contains("/internal/"),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(java.util.Map.class),
+            eq(guestId)))
+        .thenReturn(responseEntity);
+
+    List<io.github.kwatera_project.kwatera.reservation_service.dto.OccupancyDto> result =
+        service.getOccupancy(start, end, UUID.randomUUID(), true);
+
+    assertEquals(1, result.size());
+    assertEquals("John Doe", result.get(0).getGuestName());
+  }
+
+  @Test
+  void getOccupancy_resolvesGuestNameWithOnlyFirstName() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service =
+        reservationService(repository, restTemplate, mock(NbpExchangeRateClient.class));
+
+    UUID unitId = UUID.randomUUID();
+    LocalDate start = LocalDate.now();
+    LocalDate end = start.plusDays(7);
+    UUID guestId = UUID.randomUUID();
+
+    Reservation r = new Reservation();
+    r.setId(UUID.randomUUID());
+    r.setUnitId(unitId);
+    r.setUserId(guestId);
+    r.setStartDate(start);
+    r.setEndDate(end);
+    r.setStatus(ReservationStatus.CONFIRMED);
+
+    when(restTemplate.getForObject(contains("/units/ids"), eq(UUID[].class)))
+        .thenReturn(new UUID[] {unitId});
+    when(repository.findByUnitIdIn(List.of(unitId))).thenReturn(List.of(r));
+
+    java.util.Map<String, Object> userProfile = new java.util.HashMap<>();
+    userProfile.put("firstName", "John");
+    ResponseEntity<java.util.Map> responseEntity = new ResponseEntity<>(userProfile, HttpStatus.OK);
+
+    when(restTemplate.exchange(
+            contains("/internal/"),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(java.util.Map.class),
+            eq(guestId)))
+        .thenReturn(responseEntity);
+
+    List<io.github.kwatera_project.kwatera.reservation_service.dto.OccupancyDto> result =
+        service.getOccupancy(start, end, UUID.randomUUID(), true);
+
+    assertEquals(1, result.size());
+    assertEquals("John", result.get(0).getGuestName());
+  }
+
+  @Test
+  void getOccupancy_resolvesGuestNameWithOnlyLastName() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service =
+        reservationService(repository, restTemplate, mock(NbpExchangeRateClient.class));
+
+    UUID unitId = UUID.randomUUID();
+    LocalDate start = LocalDate.now();
+    LocalDate end = start.plusDays(7);
+    UUID guestId = UUID.randomUUID();
+
+    Reservation r = new Reservation();
+    r.setId(UUID.randomUUID());
+    r.setUnitId(unitId);
+    r.setUserId(guestId);
+    r.setStartDate(start);
+    r.setEndDate(end);
+    r.setStatus(ReservationStatus.CONFIRMED);
+
+    when(restTemplate.getForObject(contains("/units/ids"), eq(UUID[].class)))
+        .thenReturn(new UUID[] {unitId});
+    when(repository.findByUnitIdIn(List.of(unitId))).thenReturn(List.of(r));
+
+    java.util.Map<String, Object> userProfile = new java.util.HashMap<>();
+    userProfile.put("lastName", "Doe");
+    ResponseEntity<java.util.Map> responseEntity = new ResponseEntity<>(userProfile, HttpStatus.OK);
+
+    when(restTemplate.exchange(
+            contains("/internal/"),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(java.util.Map.class),
+            eq(guestId)))
+        .thenReturn(responseEntity);
+
+    List<io.github.kwatera_project.kwatera.reservation_service.dto.OccupancyDto> result =
+        service.getOccupancy(start, end, UUID.randomUUID(), true);
+
+    assertEquals(1, result.size());
+    assertEquals("Doe", result.get(0).getGuestName());
+  }
+
+  @Test
+  void getOccupancy_deduplicatesAuthCallsForSameGuest() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    RestTemplate restTemplate = mock(RestTemplate.class);
+    ReservationService service =
+        reservationService(repository, restTemplate, mock(NbpExchangeRateClient.class));
+
+    UUID unitId1 = UUID.randomUUID();
+    UUID unitId2 = UUID.randomUUID();
+    LocalDate start = LocalDate.now();
+    LocalDate end = start.plusDays(7);
+    UUID guestId = UUID.randomUUID();
+
+    Reservation r1 = new Reservation();
+    r1.setId(UUID.randomUUID());
+    r1.setUnitId(unitId1);
+    r1.setUserId(guestId);
+    r1.setStartDate(start);
+    r1.setEndDate(end);
+    r1.setStatus(ReservationStatus.CONFIRMED);
+
+    Reservation r2 = new Reservation();
+    r2.setId(UUID.randomUUID());
+    r2.setUnitId(unitId2);
+    r2.setUserId(guestId);
+    r2.setStartDate(start);
+    r2.setEndDate(end);
+    r2.setStatus(ReservationStatus.CONFIRMED);
+
+    when(restTemplate.getForObject(contains("/units/ids"), eq(UUID[].class)))
+        .thenReturn(new UUID[] {unitId1, unitId2});
+    when(repository.findByUnitIdIn(List.of(unitId1, unitId2))).thenReturn(List.of(r1, r2));
+
+    java.util.Map<String, Object> userProfile = new java.util.HashMap<>();
+    userProfile.put("firstName", "John");
+    userProfile.put("lastName", "Doe");
+    ResponseEntity<java.util.Map> responseEntity = new ResponseEntity<>(userProfile, HttpStatus.OK);
+
+    when(restTemplate.exchange(
+            contains("/internal/"),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(java.util.Map.class),
+            eq(guestId)))
+        .thenReturn(responseEntity);
+
+    service.getOccupancy(start, end, UUID.randomUUID(), true);
+
+    verify(restTemplate, times(1))
+        .exchange(
+            contains("/internal/"),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(java.util.Map.class),
+            eq(guestId));
+  }
+
   // --------------- getOccupiedDates tests ---------------
 
   @Test

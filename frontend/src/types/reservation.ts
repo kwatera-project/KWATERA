@@ -39,3 +39,15 @@ export interface GuestReservation {
     convertedTotalPrice?: number;
     currencyInfo?: CurrencyMetadata;
 }
+
+export interface Occupancy {
+    reservationId: string;
+    unitId: string;
+    unitName?: string;
+    startDate: string;
+    endDate: string;
+    status: string;
+    guestName?: string;
+    totalPrice?: number;
+    guestEmail?: string;
+}

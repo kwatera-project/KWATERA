@@ -1,4 +1,4 @@
-import type { CurrencyMetadata, GuestReservation, ReservationDetails } from "../types/reservation";
+import type { CurrencyMetadata, GuestReservation, ReservationDetails, Occupancy } from "../types/reservation";
 import { demoProperties, demoUnitsByProperty } from "./demoProperties";
 
 const ownerName = "Piotr Wisniewski";
@@ -121,7 +121,7 @@ export const demoAdminReservations = demoReservations.map((item) => ({
     totalPrice: item.totalPrice,
 }));
 
-export const demoOccupancy = demoReservations
+export const demoOccupancy: Occupancy[] = demoReservations
     .filter((item) => item.status !== "CANCELLED")
     .map((item) => ({
         reservationId: item.id,
@@ -132,6 +132,7 @@ export const demoOccupancy = demoReservations
         status: item.status,
         guestName: item.guestName,
         totalPrice: item.totalPrice,
+        guestEmail: item.guestEmail,
     }));
 
 export const demoGuestReservations: GuestReservation[] = demoReservations
