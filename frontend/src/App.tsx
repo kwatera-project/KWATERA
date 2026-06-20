@@ -1,12 +1,12 @@
 import { lazy, Suspense } from "react";
 import './App.css'
+import { Toaster } from "react-hot-toast";
 import {Routes, Route, useLocation} from "react-router-dom"
 import Navbar from "./components/Navbar"
 import ProtectedRoute from "./components/ProtectedRoute"
 import {CurrencyProvider} from "./contexts/CurrencyContext";
 import DemoModeBanner from "./components/DemoModeBanner";
 import Footer from "./components/landing/Footer";
-import { Toaster } from "react-hot-toast";
 
 const FULL_SCREEN_ROUTES = ["/login", "/register", "/payment-cancel"];
 
@@ -58,7 +58,15 @@ function App() {
 
     return (
         <CurrencyProvider>
-            <Toaster position="top-right" />
+            <Toaster
+                position="top-center"
+                containerStyle={{
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    zIndex: 999999
+                }}
+            />
             <div className="min-h-screen flex flex-col bg-card">
                 <DemoModeBanner/>
                 <Navbar/>

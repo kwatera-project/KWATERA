@@ -25,3 +25,6 @@ kwatera:
     test-recipient: guest@kwatera.local
   security:
     internal-token: kwatera-internal-secret-token
+  urls:
+    public-gateway: http://localhost:8090
+    frontend-base: http://localhost:5173

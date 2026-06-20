@@ -108,4 +108,84 @@ class PropertyClientTest {
     assertTrue(emptyCounts.isEmpty());
     verifyNoInteractions(restTemplate);
   }
+
+  @Test
+  void shouldReturnPropertyUnits() {
+    UUID propertyId = UUID.randomUUID();
+    Map<String, Object> mockUnit = Map.of("pricePerNight", 350.0);
+    List<Map<String, Object>> mockResponse = List.of(mockUnit);
+
+    when(restTemplate.exchange(
+            eq("http://property-service/api/properties/" + propertyId + "/units"),
+            eq(HttpMethod.GET),
+            isNull(),
+            any(ParameterizedTypeReference.class)))
+        .thenReturn(new ResponseEntity<>(mockResponse, HttpStatus.OK));
+
+    List<Map<String, Object>> units = propertyClient.getPropertyUnits(propertyId);
+
+    assertEquals(1, units.size());
+    assertEquals(350.0, units.get(0).get("pricePerNight"));
+  }
+
+  @Test
+  void shouldReturnEmptyListForNullPropertyId() {
+    List<Map<String, Object>> units = propertyClient.getPropertyUnits(null);
+
+    assertTrue(units.isEmpty());
+    verifyNoInteractions(restTemplate);
+  }
+
+  @Test
+  void shouldReturnEmptyListOnException() {
+    UUID propertyId = UUID.randomUUID();
+
+    when(restTemplate.exchange(
+            anyString(), eq(HttpMethod.GET), isNull(), any(ParameterizedTypeReference.class)))
+        .thenThrow(new RestClientException("Failed"));
+
+    List<Map<String, Object>> units = propertyClient.getPropertyUnits(propertyId);
+
+    assertTrue(units.isEmpty());
+  }
+
+  @Test
+  void shouldReturnRandomProperties() {
+    Map<String, Object> prop = Map.of("title", "Luxury Villa");
+    List<Map<String, Object>> mockResponse = List.of(prop);
+
+    when(restTemplate.exchange(
+            eq("http://property-service/api/properties"),
+            eq(HttpMethod.GET),
+            isNull(),
+            any(ParameterizedTypeReference.class)))
+        .thenReturn(new ResponseEntity<>(mockResponse, HttpStatus.OK));
+
+    List<Map<String, Object>> result = propertyClient.getRandomProperties(3);
+
+    assertEquals(1, result.size());
+    assertEquals("Luxury Villa", result.get(0).get("title"));
+  }
+
+  @Test
+  void shouldReturnEmptyListOnRandomPropertiesException() {
+    when(restTemplate.exchange(
+            anyString(), eq(HttpMethod.GET), isNull(), any(ParameterizedTypeReference.class)))
+        .thenThrow(new RestClientException("Failed"));
+
+    List<Map<String, Object>> result = propertyClient.getRandomProperties(3);
+
+    assertTrue(result.isEmpty());
+  }
+
+  @Test
+  void shouldReturnEmptyListWhenRandomPropertiesIsNull() {
+    when(restTemplate.exchange(
+            anyString(), eq(HttpMethod.GET), isNull(), any(ParameterizedTypeReference.class)))
+        .thenReturn(new ResponseEntity<>((List<Map<String, Object>>) null, HttpStatus.OK));
+
+    List<Map<String, Object>> result = propertyClient.getRandomProperties(3);
+
+    assertTrue(result.isEmpty());
+  }
 }
