@@ -1,6 +1,5 @@
 package io.github.kwatera_project.kwatera.property_service.dto;
 
-import io.github.kwatera_project.kwatera.property_service.model.PropertyType;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -28,5 +27,4 @@ public class PropertyDto {
   private String street;
   private String streetNumber;
   private List<String> amenities;
-  private PropertyType propertyType;
 }

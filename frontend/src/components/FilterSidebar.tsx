@@ -3,7 +3,7 @@ import { Minus, Plus, SlidersHorizontal, X } from "lucide-react";
 import {
     COMMON_AMENITIES,
     EMPTY_FILTERS,
-    PROPERTY_TYPES,
+    UNIT_TYPES,
     type FilterState,
 } from "../types/filters";
 import { useTranslation } from "react-i18next";
@@ -126,14 +126,14 @@ function SidebarContent({
 
     const activeCount =
         filters.selectedAmenities.length +
-        filters.propertyTypes.length +
+        filters.unitTypes.length +
         (filters.minPrice !== "" ? 1 : 0) +
         (filters.maxPrice !== "" ? 1 : 0) +
         (filters.guests > 1 ? 1 : 0) +
-        (filters.bedrooms > 0 ? 1 : 0) +
-        (filters.beds > 0 ? 1 : 0);
+        (filters.bedrooms > 1 ? 1 : 0) +
+        (filters.beds > 1 ? 1 : 0);
 
-    const toggle = (key: "selectedAmenities" | "propertyTypes", value: string) => {
+    const toggle = (key: "selectedAmenities" | "unitTypes", value: string) => {
         const arr = filters[key] as string[];
         const updated = arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
         onFiltersChange({ ...filters, [key]: updated });
@@ -181,14 +181,14 @@ function SidebarContent({
             </div>
 
             <div className={isMobile ? "flex-1 overflow-y-auto" : "flex-1 overflow-visible"}>
-                <Section title={t('filters.propertyType')} compact={compact}>
+                <Section title={t('filters.unitType')} compact={compact}>
                     <div className={compact ? "space-y-1.5" : "space-y-2"}>
-                        {PROPERTY_TYPES.map((type) => (
+                        {UNIT_TYPES.map((type) => (
                             <CheckRow
                                 key={type}
-                                label={t(`propertyTypes.${type}`, { defaultValue: type })}
-                                checked={filters.propertyTypes.includes(type)}
-                                onChange={() => toggle("propertyTypes", type)}
+                                label={t(`unitTypes.${type}`, { defaultValue: type })}
+                                checked={filters.unitTypes.includes(type)}
+                                onChange={() => toggle("unitTypes", type)}
                                 compact={compact}
                             />
                         ))}
@@ -207,14 +207,14 @@ function SidebarContent({
                         <Stepper
                             label={t('filters.bedrooms')}
                             value={filters.bedrooms}
-                            min={0}
+                            min={1}
                             onChange={(v) => onFiltersChange({ ...filters, bedrooms: v })}
                             compact={compact}
                         />
                         <Stepper
                             label={t('filters.beds')}
                             value={filters.beds}
-                            min={0}
+                            min={1}
                             onChange={(v) => onFiltersChange({ ...filters, beds: v })}
                             compact={compact}
                         />

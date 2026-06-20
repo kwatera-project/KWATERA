@@ -11,7 +11,6 @@ export interface PropertyFormData {
     street: string;
     streetNumber: string;
     amenities?: string[];
-    propertyType?: string;
 }
 
 interface PropertyFormProps {
@@ -29,8 +28,7 @@ export default function PropertyForm({
         if (initialValues) {
             return {
                 ...initialValues,
-                amenities: initialValues.amenities ?? [],
-                propertyType: initialValues.propertyType ?? "",
+                amenities: initialValues.amenities ?? []
             };
         }
         return {
@@ -41,8 +39,7 @@ export default function PropertyForm({
             postalCode: "",
             street: "",
             streetNumber: "",
-            amenities: [],
-            propertyType: "",
+            amenities: []
         };
     });
 
@@ -90,40 +87,6 @@ export default function PropertyForm({
                 />
             </div>
 
-            <div className="border-t border-[#DACDCA]/50 my-6 pt-4 space-y-3">
-                <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">{t('propertyForm.propertyType')}</span>
-                <div className="flex flex-wrap gap-2">
-                    {(["Apartment", "House", "Villa", "Studio", "Room"] as const).map((type) => {
-                        const selected = form.propertyType === type;
-                        return (
-                            <button
-                                key={type}
-                                type="button"
-                                onClick={() => setForm(prev => ({ ...prev, propertyType: selected ? "" : type }))}
-                                className={`px-4 py-2 rounded-full text-sm font-semibold border-2 transition-all cursor-pointer ${
-                                    selected
-                                        ? "bg-[#42211D] border-[#42211D] text-white"
-                                        : "bg-white border-[#DACDCA] text-[#3A3A3A] hover:border-[#42211D]/50"
-                                }`}
-                            >
-                                {t(`propertyTypes.${type}`, { defaultValue: type })}
-                            </button>
-                        );
-                    })}
-                </div>
-                {form.propertyType && (
-                    <p className="text-xs text-[#7A7A7A] font-medium">
-                        {t('propertyForm.selected')}: <span className="font-bold text-[#42211D]">{t(`propertyTypes.${form.propertyType}`, { defaultValue: form.propertyType })}</span>
-                        <button
-                            type="button"
-                            onClick={() => setForm(prev => ({ ...prev, propertyType: "" }))}
-                            className="ml-2 text-[#7A7A7A] hover:text-[#42211D] underline cursor-pointer"
-                        >
-                            {t('common.clear')}
-                        </button>
-                    </p>
-                )}
-            </div>
 
             <div className="border-t border-[#DACDCA]/50 my-6 pt-4 space-y-4">
                 <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider mb-2">{t('propertyForm.locationDetails')}</span>

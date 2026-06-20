@@ -72,8 +72,7 @@ class OwnerPropertyControllerTest {
             "00-001",
             "Prosta",
             "1",
-            List.of(),
-            null);
+            List.of());
 
     when(authentication.getPrincipal()).thenReturn(mockOwnerId.toString());
     when(propertyService.getPropertiesByOwner(mockOwnerId)).thenReturn(List.of(dto));

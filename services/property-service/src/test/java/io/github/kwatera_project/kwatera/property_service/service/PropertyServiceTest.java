@@ -1111,52 +1111,6 @@ class PropertyServiceTest {
   }
 
   @Test
-  void createProperty_shouldSetPropertyType_whenProvided() {
-    UUID ownerId = UUID.randomUUID();
-
-    PropertyCreateRequest request = mock(PropertyCreateRequest.class);
-    when(request.street()).thenReturn("Main");
-    when(request.streetNumber()).thenReturn("1");
-    when(request.postalCode()).thenReturn("00-001");
-    when(request.city()).thenReturn("Warsaw");
-    when(request.country()).thenReturn("PL");
-    when(request.title()).thenReturn("Villa Test");
-    when(request.propertyType()).thenReturn(PropertyType.VILLA);
-
-    when(geocodingService.getCoordinates(any(), any(), any(), any(), any()))
-        .thenReturn(new Coordinates(new BigDecimal("10.0"), new BigDecimal("20.0")));
-    when(propertyRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-    PropertyDto result = propertyService.createProperty(ownerId, request);
-
-    assertNotNull(result);
-    assertEquals(PropertyType.VILLA, result.getPropertyType());
-  }
-
-  @Test
-  void createProperty_shouldLeavePropertyTypeNull_whenNotProvided() {
-    UUID ownerId = UUID.randomUUID();
-
-    PropertyCreateRequest request = mock(PropertyCreateRequest.class);
-    when(request.street()).thenReturn("Main");
-    when(request.streetNumber()).thenReturn("1");
-    when(request.postalCode()).thenReturn("00-001");
-    when(request.city()).thenReturn("Warsaw");
-    when(request.country()).thenReturn("PL");
-    when(request.title()).thenReturn("Test");
-    when(request.propertyType()).thenReturn(null);
-
-    when(geocodingService.getCoordinates(any(), any(), any(), any(), any()))
-        .thenReturn(new Coordinates(new BigDecimal("10.0"), new BigDecimal("20.0")));
-    when(propertyRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-    PropertyDto result = propertyService.createProperty(ownerId, request);
-
-    assertNotNull(result);
-    assertNull(result.getPropertyType());
-  }
-
-  @Test
   void createUnit_shouldSetBedroomsAndBeds_whenProvided() {
     UUID ownerId = UUID.randomUUID();
     UUID propertyId = UUID.randomUUID();
@@ -1240,51 +1194,6 @@ class PropertyServiceTest {
     assertEquals(2, unit.getBedrooms());
     assertEquals(4, unit.getBeds());
     verify(unitRepository).save(unit);
-  }
-
-  @Test
-  void updateProperty_shouldApplyPropertyType_whenPresent() {
-    UUID ownerId = UUID.randomUUID();
-    UUID propertyId = UUID.randomUUID();
-
-    Property property = new Property();
-    property.setOwnerId(ownerId);
-
-    PropertyUpdateRequest request = mock(PropertyUpdateRequest.class);
-    when(request.title()).thenReturn(Optional.empty());
-    when(request.description()).thenReturn(Optional.empty());
-    when(request.city()).thenReturn(Optional.empty());
-    when(request.country()).thenReturn(Optional.empty());
-    when(request.postalCode()).thenReturn(Optional.empty());
-    when(request.street()).thenReturn(Optional.empty());
-    when(request.streetNumber()).thenReturn(Optional.empty());
-    when(request.amenities()).thenReturn(Optional.empty());
-    when(request.propertyType()).thenReturn(Optional.of(PropertyType.APARTMENT));
-
-    when(propertyRepository.findById(propertyId)).thenReturn(Optional.of(property));
-    when(propertyRepository.save(any())).thenReturn(property);
-
-    PropertyDto result = propertyService.updateProperty(ownerId, propertyId, request);
-
-    assertNotNull(result);
-    assertEquals(PropertyType.APARTMENT, property.getPropertyType());
-    assertEquals(PropertyType.APARTMENT, result.getPropertyType());
-  }
-
-  @Test
-  void getAll_shouldIncludePropertyType_inMappedDto() {
-    Property property = new Property();
-    property.setId(UUID.randomUUID());
-    property.setTitle("Apartment 1");
-    property.setPropertyType(PropertyType.APARTMENT);
-
-    when(propertyRepository.findByBoundingBoxAndAmenities(any(), any(), any(), any(), any(), any()))
-        .thenReturn(List.of(property));
-
-    var result = propertyService.getAll(null);
-
-    assertEquals(1, result.size());
-    assertEquals(PropertyType.APARTMENT, result.get(0).getPropertyType());
   }
 
   @Test

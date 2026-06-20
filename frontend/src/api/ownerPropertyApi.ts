@@ -34,7 +34,7 @@ export async function createProperty(data: PropertyCreateRequest) {
     }
 
     const token = localStorage.getItem("token");
-    const body = { ...data, propertyType: data.propertyType || undefined };
+    const body = { ...data };
 
     const res = await fetch(
         `${API_URL}/property`,
@@ -67,7 +67,7 @@ export async function updateProperty(
     }
 
     const token = localStorage.getItem("token");
-    const body = { ...data, propertyType: data.propertyType || undefined };
+    const body = { ...data};
 
     const res = await fetch(
         `${API_URL}/property/${propertyId}`,

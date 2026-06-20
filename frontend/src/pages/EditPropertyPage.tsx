@@ -25,8 +25,7 @@ export default function EditPropertyPage() {
                     postalCode: data.postalCode,
                     street: data.street,
                     streetNumber: data.streetNumber,
-                    amenities: data.amenities || [],
-                    propertyType: data.propertyType ?? "",
+                    amenities: data.amenities || []
                 });
             })
             .finally(() => setLoading(false));
