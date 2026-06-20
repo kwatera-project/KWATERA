@@ -10,6 +10,10 @@
 --
 -- Existing reservations from earlier migrations are treated as occupied even when cancelled.
 -- This keeps the occupancy calendar visually clean and avoids relying on generated UUIDs.
+--
+-- MediaReadingService considers WATER consumption normal when it is between 20% and
+-- 300% of capacity * stay_nights * 0.1 m3. This seed uses 85%-115% of that expected
+-- value for every non-cancelled stay, keeping the normal path safely auto-approved.
 
 CREATE TEMP TABLE seed_196_reservations ON COMMIT DROP AS
 WITH inventory(property_title, unit_name, market, unit_order) AS (
@@ -156,15 +160,16 @@ with_utility AS (
     SELECT wg.*,
            utility.price_per_unit AS water_unit_price,
            CASE
-               WHEN wg.status = 'COMPLETED'
-                    AND wg.nights >= 5
-                    AND (wg.slot_no + wg.unit_order) % 3 = 0
-                    AND utility.price_per_unit IS NOT NULL
-               THEN round(
-                   wg.nights * (0.18 + wg.capacity * 0.03),
+               -- Cancelled reservations represent pre-stay cancellations: no occupancy,
+               -- no meter movement and a financially closed zero settlement.
+               WHEN wg.status = 'CANCELLED' THEN 0.00::numeric
+               ELSE round(
+                   wg.capacity
+                   * wg.nights
+                   * 0.10
+                   * (0.85 + ((wg.slot_no + wg.unit_order) % 7) * 0.05),
                    2
                )
-               ELSE NULL
            END AS water_consumption
     FROM with_guest wg
     LEFT JOIN LATERAL (
@@ -199,6 +204,7 @@ SELECT md5(
        city,
        unit_id,
        unit_name,
+       capacity,
        unit_order,
        market,
        slot_no,
@@ -228,12 +234,39 @@ FROM non_conflicting;
 DO $$
 DECLARE
     seeded_count integer;
+    missing_tariffs integer;
+    invalid_water_rows integer;
 BEGIN
     SELECT count(*) INTO seeded_count FROM seed_196_reservations;
     IF seeded_count NOT BETWEEN 150 AND 220 THEN
         RAISE EXCEPTION
             'Issue #196 seed expected 150-220 non-conflicting reservations, got %',
             seeded_count;
+    END IF;
+
+    SELECT count(*) INTO missing_tariffs
+    FROM seed_196_reservations
+    WHERE water_unit_price IS NULL;
+
+    IF missing_tariffs > 0 THEN
+        RAISE EXCEPTION
+            'Issue #196 seed expected a WATER tariff for every reservation, missing %',
+            missing_tariffs;
+    END IF;
+
+    SELECT count(*) INTO invalid_water_rows
+    FROM seed_196_reservations
+    WHERE (status = 'CANCELLED' AND water_consumption <> 0)
+       OR (status <> 'CANCELLED' AND (
+              water_consumption IS NULL
+              OR water_consumption < capacity * nights * 0.10 * 0.20
+              OR water_consumption > capacity * nights * 0.10 * 3.00
+          ));
+
+    IF invalid_water_rows > 0 THEN
+        RAISE EXCEPTION
+            'Issue #196 seed generated % WATER rows outside MediaReadingService approval rules',
+            invalid_water_rows;
     END IF;
 END $$;
 
@@ -331,7 +364,9 @@ SELECT sr.*,
        CASE WHEN sr.status = 'CONFIRMED'
             THEN round(sr.accommodation_amount * 0.20, 2)
             ELSE 0.00::numeric END::numeric(12, 2) AS deposit_amount,
-       CASE WHEN sr.water_consumption IS NOT NULL
+       -- DRAFT readings are captured for the media/OCR flow but are not billed until
+       -- the reservation is confirmed. Cancelled pre-stay reservations remain zeroed.
+       CASE WHEN sr.status IN ('COMPLETED', 'CONFIRMED')
             THEN round(sr.water_consumption * sr.water_unit_price, 2)
             ELSE 0.00::numeric END::numeric(12, 2) AS utilities_amount
 FROM seed_196_reservations sr;
@@ -342,7 +377,10 @@ ALTER TABLE seed_196_financials
     ADD COLUMN balance_due numeric(12, 2);
 
 UPDATE seed_196_financials
-SET total_amount = accommodation_amount + utilities_amount + deposit_amount,
+SET total_amount = CASE
+        WHEN status = 'CANCELLED' THEN 0.00
+        ELSE accommodation_amount + utilities_amount + deposit_amount
+    END,
     amount_paid = CASE
         WHEN status = 'COMPLETED'
             THEN accommodation_amount + utilities_amount + deposit_amount
@@ -353,7 +391,7 @@ SET total_amount = accommodation_amount + utilities_amount + deposit_amount,
     balance_due = CASE
         WHEN status = 'COMPLETED' THEN 0.00
         WHEN status = 'CONFIRMED' THEN accommodation_amount + utilities_amount
-        WHEN status = 'PENDING'   THEN accommodation_amount + utilities_amount + deposit_amount
+        WHEN status = 'PENDING'   THEN accommodation_amount
         ELSE 0.00
     END;
 
@@ -377,7 +415,7 @@ INSERT INTO settlements (
 SELECT settlement_id,
        reservation_id,
        settlement_status,
-       accommodation_amount,
+       CASE WHEN status = 'CANCELLED' THEN 0.00 ELSE accommodation_amount END,
        utilities_amount,
        deposit_amount,
        0.00,
@@ -387,7 +425,6 @@ SELECT settlement_id,
        CASE WHEN settlement_status = 'DRAFT' THEN NULL ELSE created_at END,
        CASE
            WHEN settlement_status = 'PAID' THEN end_date + TIME '14:00'
-           WHEN settlement_status = 'PARTIALLY_PAID' THEN created_at + INTERVAL '1 hour'
            ELSE NULL
        END,
        created_at,
@@ -407,6 +444,7 @@ SELECT md5('issue-196|item|accommodation|' || reservation_id)::uuid,
        accommodation_amount,
        created_at
 FROM seed_196_financials
+WHERE settlement_status IN ('PAID', 'PARTIALLY_PAID')
 
 UNION ALL
 
@@ -432,7 +470,7 @@ SELECT md5('issue-196|item|water|' || reservation_id)::uuid,
        utilities_amount,
        end_date + TIME '11:00'
 FROM seed_196_financials
-WHERE water_consumption IS NOT NULL;
+WHERE settlement_status IN ('PAID', 'PARTIALLY_PAID');
 
 -- Successful transaction totals equal amount_paid. Failed attempts never affect amount_paid.
 INSERT INTO payment_transactions (
@@ -483,7 +521,6 @@ SELECT md5('issue-196|payment|water|' || reservation_id)::uuid,
        end_date + TIME '14:00'
 FROM seed_196_financials
 WHERE status = 'COMPLETED'
-  AND water_consumption IS NOT NULL
 
 UNION ALL
 
@@ -525,24 +562,20 @@ FROM seed_196_financials
 WHERE status IN ('PENDING', 'CANCELLED')
   AND (slot_no + unit_order) % 2 = 0;
 
--- Selected longer completed stays include realistic water meter/OCR flows.
+-- Every non-cancelled reservation gets the full WATER meter/OCR flow. Cancelled rows
+-- are intentionally pre-stay cancellations with zero consumption and no meter event.
 CREATE TEMP TABLE seed_196_readings ON COMMIT DROP AS
 SELECT sf.*,
        md5('issue-196|reading|water|' || reservation_id)::uuid AS media_reading_id,
        (120 + unit_order * 17 + slot_no * 2)::numeric(12, 6) AS initial_reading,
        (120 + unit_order * 17 + slot_no * 2 + water_consumption)::numeric(12, 6)
            AS final_reading,
-       CASE WHEN (slot_no + unit_order) % 4 = 0
-            THEN 'MANUALLY_APPROVED'
-            ELSE 'AUTO_APPROVED'
-       END AS approved_status,
        (0.91 + ((slot_no + unit_order) % 7) * 0.01)::numeric(12, 6)
            AS initial_confidence,
        (0.90 + ((slot_no + unit_order + 3) % 8) * 0.01)::numeric(12, 6)
            AS final_confidence
 FROM seed_196_financials sf
-WHERE status = 'COMPLETED'
-  AND water_consumption IS NOT NULL;
+WHERE status <> 'CANCELLED';
 
 INSERT INTO media_readings (
     id,
@@ -568,8 +601,8 @@ SELECT media_reading_id,
        final_reading,
        final_confidence,
        water_unit_price,
-       approved_status,
-       approved_status,
+       'AUTO_APPROVED',
+       'AUTO_APPROVED',
        'OCR',
        'OCR',
        start_date + TIME '15:00',
@@ -591,7 +624,7 @@ SELECT md5('issue-196|attempt|initial-approved|' || reservation_id)::uuid,
        NULL::bytea,
        initial_reading::text,
        initial_confidence::numeric(5, 4),
-       approved_status,
+       'AUTO_APPROVED',
        'INITIAL',
        start_date + TIME '15:00'
 FROM seed_196_readings
@@ -603,7 +636,7 @@ SELECT md5('issue-196|attempt|final-approved|' || reservation_id)::uuid,
        NULL::bytea,
        final_reading::text,
        final_confidence::numeric(5, 4),
-       approved_status,
+       'AUTO_APPROVED',
        'FINAL',
        end_date + TIME '11:00'
 FROM seed_196_readings
@@ -613,8 +646,8 @@ UNION ALL
 SELECT md5('issue-196|attempt|initial-reupload|' || reservation_id)::uuid,
        media_reading_id,
        NULL::bytea,
-       round(initial_reading + 10, 3)::text,
-       0.4200,
+       initial_reading::text,
+       0.6200,
        'REQUEST_REUPLOAD',
        'INITIAL',
        start_date + TIME '14:50'
