@@ -1,8 +1,20 @@
 export const COMMON_AMENITIES = [
-    "WiFi", "Parking", "Pet Friendly", "TV", "Kitchen", "Pool",
-    "Gym", "Breakfast", "Fireplace", "BBQ", "Hot Tub", "Shared Kitchen",
-    "Sauna", "Kayaks", "Air Conditioning", "Elevator", "River View",
-    "Sea View", "Historic View", "Terrace", "Balcony"
+    "WiFi",
+    "Parking",
+    "Fireplace",
+    "BBQ",
+    "Hot Tub",
+    "Terrace",
+    "Sauna",
+    "Kayaks",
+    "Elevator",
+    "Air Conditioning",
+    "Balcony",
+    "Gym",
+    "Shared Kitchen",
+    "River View",
+    "Sea View",
+    "Historic View"
 ];
 
 export const UNIT_TYPES = ["Entire apartment", "Entire cottage", "Private room in home"
