@@ -752,7 +752,7 @@
     "deleteConfirm": "Are you sure you want to delete this unit?",
     "deleteHasReservations": "Unit has reservations and cannot be deleted",
     "deleteFailed": "Failed to delete unit",
-    "priceUpdated": "Price updated successfully!",
+    "priceUpdated": "AI price successfully applied!",
     "priceUpdateFailed": "Failed to update price. Please try again.",
     "unitType": "Unit Type",
     "unitNumberShort": "Unit Number",
@@ -765,7 +765,10 @@
     "calculating": "Calculating...",
     "applying": "Applying...",
     "applyAiPrice": "Apply AI Price",
-    "unavailable": "Unavailable"
+    "unavailable": "Unavailable",
+    "priceUpdatedDesc": "The suggested AI price has been successfully applied to this accommodation unit.",
+    "priceUpdateFailedDesc": "We encountered an error while attempting to update the price. Please try again.",
+    "ok": "OK"
   },
 
   "paymentCancel": {

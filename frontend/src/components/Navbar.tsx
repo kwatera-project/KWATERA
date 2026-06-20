@@ -88,7 +88,6 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
     }, []);
 
 
-    // Auto-close all dropdowns when the route changes
     useEffect(() => {
         const timer = setTimeout(() => {
             setIsProfileDropdownOpen(false);
@@ -200,7 +199,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                         )}
                     </div>
 
-                    <div className="relative lg:hidden" ref={mobilePreferencesRef}>
+                    <div className="md:relative lg:hidden" ref={mobilePreferencesRef}>
                         <button
                             type="button"
                             onClick={() => {
@@ -216,7 +215,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                         </button>
 
                         {isMobilePreferencesOpen && (
-                            <div className="absolute top-full right-0 mt-3 w-64 bg-solid-white rounded-2xl shadow-2xl z-[21000] border border-[#DACDCA]/40 p-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div className="absolute top-full right-4 md:right-0 mt-3 w-64 bg-solid-white rounded-2xl shadow-2xl z-[21000] border border-[#DACDCA]/40 p-4 animate-in fade-in slide-in-from-top-2 duration-200">
                                 <div className="flex flex-col gap-2">
                                     <span className="text-xs font-bold uppercase tracking-wider text-stone-400">{t('navbar.language')}</span>
                                     <div className="flex gap-2">
@@ -229,7 +228,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                                                     localStorage.setItem('language', code);
                                                     setCurrentLang(code);
                                                 }}
-                                                className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all ${
+                                                className={`flex-1 px-4 py-2 rounded-xl border text-sm font-medium transition-all ${
                                                     currentLang === code
                                                         ? 'bg-[rgb(var(--color-burgundy))] border-[rgb(var(--color-burgundy))] text-white shadow-sm'
                                                         : 'bg-stone-100 border-transparent text-stone-600 hover:bg-stone-200 opacity-80 hover:opacity-100'
@@ -249,7 +248,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                                                 key={curr}
                                                 type="button"
                                                 onClick={() => setCurrency(curr)}
-                                                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                                                className={`flex-1 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
                                                     currency === curr
                                                         ? 'bg-[rgb(var(--color-burgundy))] text-white shadow-sm'
                                                         : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
