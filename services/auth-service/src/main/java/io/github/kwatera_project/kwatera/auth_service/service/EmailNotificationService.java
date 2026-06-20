@@ -1,8 +1,13 @@
 package io.github.kwatera_project.kwatera.auth_service.service;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.github.kwatera_project.kwatera.auth_service.client.PropertyClient;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +25,7 @@ public class EmailNotificationService {
 
   private final JavaMailSender mailSender;
   private final TemplateEngine templateEngine;
+  private final PropertyClient propertyClient;
   private final String fromAddress;
   private final String testRecipient;
 
@@ -27,10 +33,12 @@ public class EmailNotificationService {
   public EmailNotificationService(
       JavaMailSender mailSender,
       TemplateEngine templateEngine,
+      PropertyClient propertyClient,
       @Value("${kwatera.mail.from}") String fromAddress,
       @Value("${kwatera.mail.test-recipient}") String testRecipient) {
     this.mailSender = mailSender;
     this.templateEngine = templateEngine;
+    this.propertyClient = propertyClient;
     this.fromAddress = fromAddress;
     this.testRecipient = testRecipient;
   }
@@ -61,6 +69,26 @@ public class EmailNotificationService {
     String confirmLink = "http://localhost:8090/api/newsletter/confirm?token=" + token;
     context.setVariable("confirmLink", confirmLink);
     String htmlBody = templateEngine.process("confirm-newsletter-template", context);
+    send(recipientEmail, subject, htmlBody);
+  }
+
+  public void sendWeeklyNewsletterEmail(String recipientEmail) {
+    String subject = "Your Weekly KWATERA Recommendations";
+    Context context = new Context();
+    context.setVariable("subject", subject);
+    context.setVariable("greeting", "Subscriber");
+    List<Map<String, Object>> properties = propertyClient.getRandomProperties(3);
+    List<Map<String, Object>> featuredItems = new ArrayList<>();
+    for (Map<String, Object> prop : properties) {
+      Map<String, Object> item = new HashMap<>();
+      item.put("title", prop.get("title"));
+      item.put("description", prop.get("description"));
+      item.put("link", "http://localhost:5173/property/" + prop.get("id"));
+      featuredItems.add(item);
+    }
+    context.setVariable("featuredItems", featuredItems);
+    context.setVariable("unsubscribeLink", "http://localhost:8090/api/newsletter/unsubscribe?email=" + recipientEmail);
+    String htmlBody = templateEngine.process("weekly-newsletter-template", context);
     send(recipientEmail, subject, htmlBody);
   }
 

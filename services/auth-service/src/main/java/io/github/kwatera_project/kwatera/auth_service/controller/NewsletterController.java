@@ -61,6 +61,7 @@ public class NewsletterController {
         subscriber.setConfirmedAt(LocalDateTime.now());
         subscriberRepository.save(subscriber);
         emailNotificationService.sendNewsletterWelcomeEmail(subscriber.getEmail());
+        emailNotificationService.sendWeeklyNewsletterEmail(subscriber.getEmail());
       }
     }
     return ResponseEntity.status(HttpStatus.FOUND)

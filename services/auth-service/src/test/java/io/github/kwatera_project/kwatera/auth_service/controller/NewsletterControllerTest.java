@@ -130,6 +130,7 @@ class NewsletterControllerTest {
     verify(subscriberRepository).findByToken("valid-token");
     verify(subscriberRepository).save(subscriber);
     verify(emailNotificationService).sendNewsletterWelcomeEmail("confirm@example.com");
+    verify(emailNotificationService).sendWeeklyNewsletterEmail("confirm@example.com");
   }
 
   @Test

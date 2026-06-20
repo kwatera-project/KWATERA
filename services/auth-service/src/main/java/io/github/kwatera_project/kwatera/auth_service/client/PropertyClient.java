@@ -71,4 +71,25 @@ public class PropertyClient {
       return Collections.emptyMap();
     }
   }
+
+  public List<Map<String, Object>> getRandomProperties(int count) {
+    try {
+      ResponseEntity<List<Map<String, Object>>> response =
+          restTemplate.exchange(
+              propertyServiceUrl,
+              HttpMethod.GET,
+              null,
+              new ParameterizedTypeReference<List<Map<String, Object>>>() {});
+      List<Map<String, Object>> list = response.getBody();
+      if (list == null || list.isEmpty()) {
+        return Collections.emptyList();
+      }
+      List<Map<String, Object>> mutableList = new java.util.ArrayList<>(list);
+      Collections.shuffle(mutableList);
+      return mutableList.stream().limit(count).collect(Collectors.toList());
+    } catch (Exception e) {
+      log.error("Failed to fetch random properties from property-service", e);
+      return Collections.emptyList();
+    }
+  }
 }

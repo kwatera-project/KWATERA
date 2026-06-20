@@ -5,7 +5,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import io.github.kwatera_project.kwatera.auth_service.client.PropertyClient;
 import jakarta.mail.internet.MimeMessage;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,6 +24,7 @@ class EmailNotificationServiceTest {
 
   @Mock private JavaMailSender mailSender;
   @Mock private TemplateEngine templateEngine;
+  @Mock private PropertyClient propertyClient;
   @Mock private MimeMessage mimeMessage;
 
   private EmailNotificationService emailNotificationService;
@@ -29,7 +33,7 @@ class EmailNotificationServiceTest {
   void setUp() {
     emailNotificationService =
         new EmailNotificationService(
-            mailSender, templateEngine, "no-reply@kwatera.local", "test@kwatera.local");
+            mailSender, templateEngine, propertyClient, "no-reply@kwatera.local", "test@kwatera.local");
   }
 
   @Test
@@ -85,6 +89,36 @@ class EmailNotificationServiceTest {
     assertThat(context.getVariable("subject")).isEqualTo("Confirm your KWATERA subscription");
     assertThat(context.getVariable("confirmLink"))
         .isEqualTo("http://localhost:8090/api/newsletter/confirm?token=test-token");
+  }
+
+  @Test
+  void shouldSendWeeklyNewsletterEmail() {
+    when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+    Map<String, Object> prop = new java.util.HashMap<>();
+    prop.put("id", "12345");
+    prop.put("title", "Luxury Villa");
+    prop.put("description", "A beautiful villa");
+    when(propertyClient.getRandomProperties(3)).thenReturn(java.util.Collections.singletonList(prop));
+    when(templateEngine.process(eq("weekly-newsletter-template"), any(Context.class)))
+        .thenReturn("<html>Weekly Newsletter!</html>");
+
+    emailNotificationService.sendWeeklyNewsletterEmail("subscriber@example.com");
+
+    verify(mailSender).send(mimeMessage);
+
+    ArgumentCaptor<Context> contextCaptor = ArgumentCaptor.forClass(Context.class);
+    verify(templateEngine).process(eq("weekly-newsletter-template"), contextCaptor.capture());
+
+    Context context = contextCaptor.getValue();
+    assertThat(context.getVariable("subject")).isEqualTo("Your Weekly KWATERA Recommendations");
+    assertThat(context.getVariable("greeting")).isEqualTo("Subscriber");
+    List<?> items = (List<?>) context.getVariable("featuredItems");
+    assertThat(items).hasSize(1);
+    Map<?, ?> item = (Map<?, ?>) items.get(0);
+    assertThat(item.get("title")).isEqualTo("Luxury Villa");
+    assertThat(item.get("description")).isEqualTo("A beautiful villa");
+    assertThat(item.get("link")).isEqualTo("http://localhost:5173/property/12345");
+    assertThat(context.getVariable("unsubscribeLink")).isEqualTo("http://localhost:8090/api/newsletter/unsubscribe?email=subscriber@example.com");
   }
 
   @Test
