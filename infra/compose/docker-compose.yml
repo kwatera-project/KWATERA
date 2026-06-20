@@ -117,6 +117,10 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       SPRING_MAIL_HOST: mailpit
       SPRING_MAIL_PORT: 1025
+      SPRING_MAIL_USERNAME: ""
+      SPRING_MAIL_PASSWORD: ""
+      KWATERA_MAIL_FROM: no-reply@kwatera.local
+      KWATERA_MAIL_TEST_RECIPIENT: guest@kwatera.local
     depends_on:
       config-server:
         condition: service_healthy
