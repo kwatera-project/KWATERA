@@ -34,7 +34,15 @@ class AdminOccupancyControllerTest {
     LocalDate end = start.plusDays(7);
 
     OccupancyDto dto =
-        new OccupancyDto(UUID.randomUUID(), UUID.randomUUID(), "Unit A", start, end, "CONFIRMED");
+        new OccupancyDto(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            "Unit A",
+            start,
+            end,
+            "CONFIRMED",
+            "guest@example.com",
+            "Guest " + ownerId);
     when(service.getOccupancy(start, end, ownerId, true)).thenReturn(List.of(dto));
 
     Authentication auth = buildAuth("ROLE_ADMIN", ownerId.toString());
@@ -54,7 +62,15 @@ class AdminOccupancyControllerTest {
     LocalDate end = start.plusDays(3);
 
     OccupancyDto dto =
-        new OccupancyDto(UUID.randomUUID(), UUID.randomUUID(), "Unit B", start, end, "PENDING");
+        new OccupancyDto(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            "Unit B",
+            start,
+            end,
+            "PENDING",
+            "guest@example.com",
+            "Guest " + ownerId);
     when(service.getOccupancy(start, end, ownerId, false)).thenReturn(List.of(dto));
 
     Authentication auth = buildAuth("ROLE_OWNER", ownerId.toString());
