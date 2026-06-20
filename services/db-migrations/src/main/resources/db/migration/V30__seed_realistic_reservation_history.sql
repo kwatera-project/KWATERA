@@ -38,61 +38,99 @@ WITH inventory(property_title, unit_name, market, unit_order) AS (
         ('Business Class Apartment',   'Executive Apartment',         'CITY',     18),
         ('Business Class Apartment',   'Executive Plus Apartment',    'CITY',     19)
 ),
-schedule(market, slot_no, base_start, nights, price_multiplier) AS (
+months AS (
+    SELECT month_start::date,
+           row_number() OVER (ORDER BY month_start) AS month_no,
+           extract(month FROM month_start)::integer AS calendar_month
+    FROM generate_series(
+        DATE '2025-06-01',
+        DATE '2026-12-01',
+        INTERVAL '1 month'
+    ) month_start
+),
+slot_template(market, slot_in_month, start_day) AS (
     VALUES
-        -- Baltic coast: dense summer turns, shoulder-season city breaks.
-        ('SEASIDE',  1, DATE '2025-06-20',  7, 1.18::numeric),
-        ('SEASIDE',  2, DATE '2025-07-03', 10, 1.35::numeric),
-        ('SEASIDE',  3, DATE '2025-07-20',  9, 1.35::numeric),
-        ('SEASIDE',  4, DATE '2025-08-05', 10, 1.35::numeric),
-        ('SEASIDE',  5, DATE '2025-08-21',  8, 1.32::numeric),
-        ('SEASIDE',  6, DATE '2025-09-05',  6, 1.18::numeric),
-        ('SEASIDE',  7, DATE '2025-11-14',  3, 0.88::numeric),
-        ('SEASIDE',  8, DATE '2026-05-22',  4, 1.05::numeric),
-        ('SEASIDE',  9, DATE '2026-06-19',  8, 1.18::numeric),
-        ('SEASIDE', 10, DATE '2026-07-08', 12, 1.35::numeric),
-        ('SEASIDE', 11, DATE '2026-08-03', 12, 1.35::numeric),
-        ('SEASIDE', 12, DATE '2026-09-02',  7, 1.18::numeric),
-
-        -- Masurian lake: highly seasonal, with long summer family stays.
-        ('LAKE',  1, DATE '2025-06-14',  7, 1.15::numeric),
-        ('LAKE',  2, DATE '2025-07-02', 10, 1.30::numeric),
-        ('LAKE',  3, DATE '2025-07-18', 11, 1.30::numeric),
-        ('LAKE',  4, DATE '2025-08-05', 12, 1.30::numeric),
-        ('LAKE',  5, DATE '2025-08-22',  8, 1.28::numeric),
-        ('LAKE',  6, DATE '2025-09-06',  7, 1.15::numeric),
-        ('LAKE',  7, DATE '2026-05-29',  6, 1.05::numeric),
-        ('LAKE',  8, DATE '2026-06-18',  9, 1.15::numeric),
-        ('LAKE',  9, DATE '2026-07-08', 12, 1.30::numeric),
-        ('LAKE', 10, DATE '2026-07-25', 10, 1.30::numeric),
-        ('LAKE', 11, DATE '2026-08-12', 12, 1.30::numeric),
-        ('LAKE', 12, DATE '2026-09-05',  7, 1.15::numeric),
-
-        -- Mountains: summer hiking plus Christmas, New Year and winter holidays.
-        ('MOUNTAIN',  1, DATE '2025-07-05',  8, 1.18::numeric),
-        ('MOUNTAIN',  2, DATE '2025-08-02', 10, 1.18::numeric),
-        ('MOUNTAIN',  3, DATE '2025-12-19',  8, 1.28::numeric),
-        ('MOUNTAIN',  4, DATE '2026-01-09',  7, 1.28::numeric),
-        ('MOUNTAIN',  5, DATE '2026-02-07',  7, 1.28::numeric),
-        ('MOUNTAIN',  6, DATE '2026-04-17',  4, 0.95::numeric),
-        ('MOUNTAIN',  7, DATE '2026-07-04',  9, 1.18::numeric),
-        ('MOUNTAIN',  8, DATE '2026-08-10',  8, 1.18::numeric),
-        ('MOUNTAIN',  9, DATE '2026-10-09',  4, 0.95::numeric),
-        ('MOUNTAIN', 10, DATE '2026-11-20',  4, 1.05::numeric),
-        ('MOUNTAIN', 11, DATE '2026-12-18',  8, 1.28::numeric),
-
-        -- Cities: short weekends and occasional business-like mid-week stays.
-        ('CITY',  1, DATE '2025-06-12', 3, 1.03::numeric),
-        ('CITY',  2, DATE '2025-08-08', 3, 1.08::numeric),
-        ('CITY',  3, DATE '2025-10-06', 3, 1.00::numeric),
-        ('CITY',  4, DATE '2025-12-05', 3, 1.08::numeric),
-        ('CITY',  5, DATE '2026-02-13', 3, 1.00::numeric),
-        ('CITY',  6, DATE '2026-04-20', 3, 1.00::numeric),
-        ('CITY',  7, DATE '2026-06-05', 3, 1.03::numeric),
-        ('CITY',  8, DATE '2026-08-14', 4, 1.08::numeric),
-        ('CITY',  9, DATE '2026-09-21', 3, 1.03::numeric),
-        ('CITY', 10, DATE '2026-11-06', 3, 1.00::numeric),
-        ('CITY', 11, DATE '2026-12-11', 4, 1.08::numeric)
+        ('CITY',      1,  3),
+        ('CITY',      2, 15),
+        ('MOUNTAIN',  1,  2),
+        ('MOUNTAIN',  2, 12),
+        ('MOUNTAIN',  3, 22),
+        ('SEASIDE',   1,  1),
+        ('SEASIDE',   2, 11),
+        ('SEASIDE',   3, 21),
+        ('LAKE',      1,  1),
+        ('LAKE',      2, 11),
+        ('LAKE',      3, 21)
+),
+schedule(market, slot_no, base_start, nights, price_multiplier) AS (
+    SELECT st.market,
+           (m.month_no * 10 + st.slot_in_month)::integer,
+           (m.month_start + (st.start_day - 1))::date,
+           CASE st.market
+               WHEN 'CITY' THEN
+                   CASE WHEN st.slot_in_month = 1 THEN 3 ELSE 4 END
+               WHEN 'MOUNTAIN' THEN
+                   CASE WHEN m.calendar_month IN (1, 2, 7, 8, 12) THEN 6 ELSE 4 END
+               WHEN 'SEASIDE' THEN
+                   CASE WHEN m.calendar_month IN (6, 7, 8) THEN 7 ELSE 4 END
+               WHEN 'LAKE' THEN
+                   CASE WHEN m.calendar_month IN (6, 7, 8) THEN 7 ELSE 4 END
+           END,
+           CASE st.market
+               WHEN 'CITY' THEN
+                   CASE
+                       WHEN m.calendar_month IN (6, 8, 12) THEN 1.08
+                       WHEN m.calendar_month IN (4, 5, 9, 10) THEN 1.03
+                       ELSE 1.00
+                   END
+               WHEN 'MOUNTAIN' THEN
+                   CASE
+                       WHEN m.calendar_month IN (1, 2, 12) THEN 1.28
+                       WHEN m.calendar_month IN (7, 8) THEN 1.18
+                       WHEN m.calendar_month IN (4, 5, 9, 10) THEN 1.00
+                       ELSE 0.92
+                   END
+               WHEN 'SEASIDE' THEN
+                   CASE
+                       WHEN m.calendar_month IN (7, 8) THEN 1.35
+                       WHEN m.calendar_month IN (6, 9) THEN 1.18
+                       WHEN m.calendar_month = 5 THEN 1.05
+                       ELSE 0.88
+                   END
+               WHEN 'LAKE' THEN
+                   CASE
+                       WHEN m.calendar_month IN (7, 8) THEN 1.30
+                       WHEN m.calendar_month IN (6, 9) THEN 1.15
+                       WHEN m.calendar_month IN (4, 5, 10) THEN 1.00
+                       ELSE 0.88
+                   END
+           END::numeric
+    FROM months m
+    CROSS JOIN slot_template st
+    WHERE
+        -- Stable year-round city demand: two short stays every month.
+        (st.market = 'CITY' AND st.slot_in_month <= 2)
+        OR
+        -- Mountain peaks get three turns; quieter months still receive one.
+        (st.market = 'MOUNTAIN' AND st.slot_in_month <=
+            CASE WHEN m.calendar_month IN (1, 2, 7, 8, 12) THEN 3 ELSE 1 END)
+        OR
+        -- Baltic peak season is dense, shoulder season moderate, off-season sparse.
+        (st.market = 'SEASIDE' AND st.slot_in_month <=
+            CASE
+                WHEN m.calendar_month IN (6, 7, 8) THEN 3
+                WHEN m.calendar_month IN (5, 9) THEN 2
+                ELSE 1
+            END)
+        OR
+        -- Masuria is strongly seasonal but keeps occasional spring/autumn/winter stays.
+        (st.market = 'LAKE' AND st.slot_in_month <=
+            CASE
+                WHEN m.calendar_month IN (6, 7, 8) THEN 3
+                WHEN m.calendar_month IN (5, 9) THEN 2
+                WHEN m.calendar_month IN (3, 4, 10, 12) THEN 1
+                ELSE 0
+            END)
 ),
 guest_pool AS (
     SELECT id,
@@ -236,12 +274,45 @@ DECLARE
     seeded_count integer;
     missing_tariffs integer;
     invalid_water_rows integer;
+    underused_owners integer;
+    active_overlap_pairs integer;
 BEGIN
     SELECT count(*) INTO seeded_count FROM seed_196_reservations;
-    IF seeded_count NOT BETWEEN 150 AND 220 THEN
+    IF seeded_count NOT BETWEEN 500 AND 800 THEN
         RAISE EXCEPTION
-            'Issue #196 seed expected 150-220 non-conflicting reservations, got %',
+            'Issue #196 seed expected 500-800 non-conflicting reservations, got %',
             seeded_count;
+    END IF;
+
+    SELECT count(*) INTO underused_owners
+    FROM (
+        SELECT p.owner_id
+        FROM properties p
+        LEFT JOIN seed_196_reservations sr ON sr.owner_id = p.owner_id
+        GROUP BY p.owner_id
+        HAVING count(sr.reservation_id) < 25
+    ) owner_counts;
+
+    IF underused_owners > 0 THEN
+        RAISE EXCEPTION
+            'Issue #196 seed left % property owner(s) below 25 reservations',
+            underused_owners;
+    END IF;
+
+    SELECT count(*) INTO active_overlap_pairs
+    FROM seed_196_reservations first_reservation
+    JOIN seed_196_reservations second_reservation
+      ON second_reservation.unit_id = first_reservation.unit_id
+     AND second_reservation.reservation_id > first_reservation.reservation_id
+     AND first_reservation.start_date < second_reservation.end_date
+     AND first_reservation.end_date > second_reservation.start_date
+    WHERE first_reservation.status <> 'CANCELLED'
+      AND second_reservation.status <> 'CANCELLED';
+
+    IF active_overlap_pairs > 0 THEN
+        RAISE EXCEPTION
+            'Issue #196 seed generated % overlapping active reservation pair(s)',
+            active_overlap_pairs;
     END IF;
 
     SELECT count(*) INTO missing_tariffs
@@ -653,3 +724,118 @@ SELECT md5('issue-196|attempt|initial-reupload|' || reservation_id)::uuid,
        start_date + TIME '14:50'
 FROM seed_196_readings
 WHERE (slot_no + unit_order) % 5 = 0;
+
+-- Fail the migration if any downstream demo fact stops reconciling.
+DO $$
+DECLARE
+    price_errors integer;
+    missing_readings integer;
+    invalid_readings integer;
+    missing_upload_pairs integer;
+    settlement_errors integer;
+    settlement_item_errors integer;
+    payment_errors integer;
+BEGIN
+    SELECT count(*) INTO price_errors
+    FROM seed_196_reservations
+    WHERE accommodation_amount <> nights * price_per_night_snapshot;
+
+    SELECT count(*) INTO missing_readings
+    FROM seed_196_reservations sr
+    WHERE sr.status <> 'CANCELLED'
+      AND NOT EXISTS (
+          SELECT 1
+          FROM settlements s
+          JOIN media_readings mr ON mr.settlement_id = s.id
+          WHERE s.reservation_id = sr.reservation_id
+            AND mr.utility_type = 'WATER'
+      );
+
+    SELECT count(*) INTO invalid_readings
+    FROM seed_196_reservations sr
+    JOIN settlements s ON s.reservation_id = sr.reservation_id
+    JOIN media_readings mr
+      ON mr.settlement_id = s.id
+     AND mr.utility_type = 'WATER'
+    WHERE sr.status = 'CANCELLED'
+       OR mr.final_reading < mr.initial_reading
+       OR mr.consumption_difference <> mr.final_reading - mr.initial_reading
+       OR mr.calculated_cost <> round(mr.consumption_difference * mr.unit_price, 2)
+       OR mr.consumption_difference < sr.capacity * sr.nights * 0.10 * 0.20
+       OR mr.consumption_difference > sr.capacity * sr.nights * 0.10 * 3.00;
+
+    SELECT count(*) INTO missing_upload_pairs
+    FROM seed_196_readings sr
+    WHERE NOT EXISTS (
+              SELECT 1
+              FROM media_reading_upload_attempts attempt
+              WHERE attempt.media_reading_id = sr.media_reading_id
+                AND attempt.reading_type = 'INITIAL'
+                AND attempt.status = 'AUTO_APPROVED'
+          )
+       OR NOT EXISTS (
+              SELECT 1
+              FROM media_reading_upload_attempts attempt
+              WHERE attempt.media_reading_id = sr.media_reading_id
+                AND attempt.reading_type = 'FINAL'
+                AND attempt.status = 'AUTO_APPROVED'
+          );
+
+    SELECT count(*) INTO settlement_errors
+    FROM seed_196_financials sf
+    JOIN settlements s ON s.reservation_id = sf.reservation_id
+    WHERE s.total_amount <>
+              s.accommodation_amount + s.utilities_amount + s.deposit_amount - s.discount_amount
+       OR s.balance_due <> s.total_amount - s.amount_paid
+       OR (s.status = 'PARTIALLY_PAID' AND s.paid_at IS NOT NULL)
+       OR (s.status = 'CANCELLED' AND (
+              s.accommodation_amount <> 0
+              OR s.utilities_amount <> 0
+              OR s.deposit_amount <> 0
+              OR s.total_amount <> 0
+              OR s.amount_paid <> 0
+              OR s.balance_due <> 0
+          ));
+
+    SELECT count(*) INTO settlement_item_errors
+    FROM seed_196_financials sf
+    JOIN settlements s ON s.reservation_id = sf.reservation_id
+    LEFT JOIN (
+        SELECT settlement_id, sum(amount) AS item_total
+        FROM settlement_items
+        GROUP BY settlement_id
+    ) item_totals ON item_totals.settlement_id = s.id
+    WHERE (s.status IN ('PAID', 'PARTIALLY_PAID')
+           AND coalesce(item_totals.item_total, 0) <> s.total_amount)
+       OR (s.status IN ('DRAFT', 'CANCELLED')
+           AND coalesce(item_totals.item_total, 0) <> 0);
+
+    SELECT count(*) INTO payment_errors
+    FROM seed_196_financials sf
+    JOIN settlements s ON s.reservation_id = sf.reservation_id
+    LEFT JOIN (
+        SELECT settlement_id,
+               coalesce(sum(amount) FILTER (WHERE status = 'SUCCESS'), 0) AS paid_total
+        FROM payment_transactions
+        GROUP BY settlement_id
+    ) payment_totals ON payment_totals.settlement_id = s.id
+    WHERE coalesce(payment_totals.paid_total, 0) <> s.amount_paid;
+
+    IF price_errors > 0
+       OR missing_readings > 0
+       OR invalid_readings > 0
+       OR missing_upload_pairs > 0
+       OR settlement_errors > 0
+       OR settlement_item_errors > 0
+       OR payment_errors > 0 THEN
+        RAISE EXCEPTION
+            'Issue #196 reconciliation failed: prices=%, missing_readings=%, invalid_readings=%, missing_upload_pairs=%, settlements=%, items=%, payments=%',
+            price_errors,
+            missing_readings,
+            invalid_readings,
+            missing_upload_pairs,
+            settlement_errors,
+            settlement_item_errors,
+            payment_errors;
+    END IF;
+END $$;
