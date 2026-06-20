@@ -58,7 +58,15 @@ function App() {
 
     return (
         <CurrencyProvider>
-            <Toaster />
+            <Toaster
+                position="top-center"
+                containerStyle={{
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    zIndex: 999999
+                }}
+            />
             <div className="min-h-screen flex flex-col bg-card">
                 <DemoModeBanner/>
                 <Navbar/>
