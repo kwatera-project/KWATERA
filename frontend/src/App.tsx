@@ -7,7 +7,6 @@ import ProtectedRoute from "./components/ProtectedRoute"
 import {CurrencyProvider} from "./contexts/CurrencyContext";
 import DemoModeBanner from "./components/DemoModeBanner";
 import Footer from "./components/landing/Footer";
-import { Toaster } from "react-hot-toast";
 
 const FULL_SCREEN_ROUTES = ["/login", "/register", "/payment-cancel"];
 

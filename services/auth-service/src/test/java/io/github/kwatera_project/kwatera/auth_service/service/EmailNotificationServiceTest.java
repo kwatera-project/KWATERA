@@ -246,10 +246,9 @@ class EmailNotificationServiceTest {
     prop2.put("id", "00000000-0000-0000-0000-000000000002");
     prop2.put("title", "Null Units Villa");
 
-    when(propertyClient.getRandomProperties(3))
-        .thenReturn(java.util.Arrays.asList(prop1, prop2));
+    when(propertyClient.getRandomProperties(3)).thenReturn(java.util.Arrays.asList(prop1, prop2));
     when(userRepository.findByEmail("any@example.com")).thenReturn(Optional.empty());
-    
+
     when(propertyClient.getPropertyUnits(UUID.fromString("00000000-0000-0000-0000-000000000002")))
         .thenReturn(null);
 
@@ -262,10 +261,10 @@ class EmailNotificationServiceTest {
     verify(templateEngine).process(eq("weekly-newsletter-template"), contextCaptor.capture());
     List<?> items = (List<?>) contextCaptor.getValue().getVariable("featuredItems");
     assertThat(items).hasSize(2);
-    
+
     Map<?, ?> item1 = (Map<?, ?>) items.get(0);
     assertThat(item1.get("pricePerNight")).isEqualTo(new BigDecimal("250"));
-    
+
     Map<?, ?> item2 = (Map<?, ?>) items.get(1);
     assertThat(item2.get("pricePerNight")).isEqualTo(new BigDecimal("250"));
   }

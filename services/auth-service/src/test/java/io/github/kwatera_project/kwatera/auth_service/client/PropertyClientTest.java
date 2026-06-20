@@ -141,10 +141,7 @@ class PropertyClientTest {
     UUID propertyId = UUID.randomUUID();
 
     when(restTemplate.exchange(
-            anyString(),
-            eq(HttpMethod.GET),
-            isNull(),
-            any(ParameterizedTypeReference.class)))
+            anyString(), eq(HttpMethod.GET), isNull(), any(ParameterizedTypeReference.class)))
         .thenThrow(new RestClientException("Failed"));
 
     List<Map<String, Object>> units = propertyClient.getPropertyUnits(propertyId);
@@ -173,10 +170,7 @@ class PropertyClientTest {
   @Test
   void shouldReturnEmptyListOnRandomPropertiesException() {
     when(restTemplate.exchange(
-            anyString(),
-            eq(HttpMethod.GET),
-            isNull(),
-            any(ParameterizedTypeReference.class)))
+            anyString(), eq(HttpMethod.GET), isNull(), any(ParameterizedTypeReference.class)))
         .thenThrow(new RestClientException("Failed"));
 
     List<Map<String, Object>> result = propertyClient.getRandomProperties(3);
@@ -187,10 +181,7 @@ class PropertyClientTest {
   @Test
   void shouldReturnEmptyListWhenRandomPropertiesIsNull() {
     when(restTemplate.exchange(
-            anyString(),
-            eq(HttpMethod.GET),
-            isNull(),
-            any(ParameterizedTypeReference.class)))
+            anyString(), eq(HttpMethod.GET), isNull(), any(ParameterizedTypeReference.class)))
         .thenReturn(new ResponseEntity<>((List<Map<String, Object>>) null, HttpStatus.OK));
 
     List<Map<String, Object>> result = propertyClient.getRandomProperties(3);
