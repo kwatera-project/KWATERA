@@ -353,7 +353,7 @@
     "postalCode": "Postal Code",
     "street": "Street",
     "streetNumber": "Street Number",
-    "propertyType": "Property Type",
+    "unitType": "Unit Type",
     "selected": "Selected",
     "amenitiesTags": "Amenities & Tags"
   },
@@ -421,7 +421,7 @@
     "close": "Close filters",
     "hide": "Hide filters",
     "show": "Show filters",
-    "propertyType": "Property Type",
+    "unitType": "Unit Type",
     "capacity": "Capacity",
     "guests": "Guests",
     "bedrooms": "Bedrooms",
@@ -451,11 +451,23 @@
     "Parking": "Parking",
     "Pet Friendly": "Pet Friendly",
     "TV": "TV",
-    "AC": "Air conditioning",
+    "Air Conditioning": "Air conditioning",
     "Kitchen": "Kitchen",
     "Pool": "Pool",
     "Gym": "Gym",
-    "Breakfast": "Breakfast"
+    "Breakfast": "Breakfast",
+    "Fireplace": "Fireplace",
+    "BBQ": "BBQ",
+    "Hot Tub": "Hot Tub",
+    "Shared Kitchen": "Shared Kitchen",
+    "Sauna": "Sauna",
+    "Kayaks": "Kayaks",
+    "Elevator": "Elevator",
+    "River View": "River View",
+    "Sea View": "Sea View",
+    "Historic View": "Historic View",
+    "Terrace": "Terrace",
+    "Balcony": "Balcony"
   },
 
   "adminMeterReadings": {
@@ -729,6 +741,7 @@
     "viewFullDetails": "View Full Details",
     "close": "Close"
   },
+
   "ownerProperties": {
     "title": "My Properties",
     "subtitle": "Manage and configure your rental accommodations",

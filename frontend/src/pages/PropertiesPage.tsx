@@ -80,6 +80,7 @@ export default function PropertiesPage() {
     const { currency } = useCurrency();
     const [propertyPrices, setPropertyPrices] = useState<Record<string, number>>({});
     const [unitCapacities, setUnitCapacities] = useState<Record<string, { bedrooms: number; beds: number }>>({});
+    const [unitTypesByProperty, setUnitTypesByProperty] = useState<Record<string, string[]>>({});
 
     const searchValues = useMemo(() => ({
         city: searchParams.get("city") ?? "",
@@ -131,6 +132,14 @@ export default function PropertiesPage() {
             getUnits(property.id, currency)
                 .then((units: Unit[]) => {
                     if (units && units.length > 0) {
+
+                        const types = Array.from(new Set(units.map(u => u.unitType)));
+
+                        setUnitTypesByProperty(prev => ({
+                            ...prev,
+                            [property.id]: types,
+                        }));
+
                         const prices = units
                             .map((u) =>
                                 u.convertedPricePerNight && currency !== "PLN"
@@ -252,14 +261,20 @@ export default function PropertiesPage() {
         effectiveGuests,
     ]);
 
+
     const displayProperties = useMemo(() => {
         let result = filteredProperties;
 
-        if (debouncedFilters.propertyTypes.length > 0) {
-            result = result.filter((p) =>
-                p.propertyType !== undefined &&
-                debouncedFilters.propertyTypes.includes(p.propertyType)
-            );
+        if (debouncedFilters.unitTypes.length > 0) {
+            result = result.filter((p) => {
+                const unitTypes = unitTypesByProperty[p.id];
+
+                if (!unitTypes) return true;
+
+                return unitTypes.some(type =>
+                    debouncedFilters.unitTypes.includes(type)
+                );
+            });
         }
 
         const min = debouncedFilters.minPrice !== "" ? Number(debouncedFilters.minPrice) : null;
@@ -311,14 +326,14 @@ export default function PropertiesPage() {
     const activeFilters = useMemo((): ActiveFilter[] => {
         const result: ActiveFilter[] = [];
 
-        filters.propertyTypes.forEach((type) =>
+        filters.unitTypes.forEach((type) =>
             result.push({
                 id: `type-${type}`,
-                label: t(`propertyTypes.${type}`, { defaultValue: type }),
+                label: t(`unitTypes.${type}`, { defaultValue: type }),
                 onRemove: () =>
                     setFilters((f) => ({
                         ...f,
-                        propertyTypes: f.propertyTypes.filter((t) => t !== type),
+                        unitTypes: f.unitTypes.filter((t) => t !== type),
                     })),
             })
         );
@@ -395,7 +410,7 @@ export default function PropertiesPage() {
 
     const activeFilterCount =
         filters.selectedAmenities.length +
-        filters.propertyTypes.length +
+        filters.unitTypes.length +
         (filters.minPrice !== "" ? 1 : 0) +
         (filters.maxPrice !== "" ? 1 : 0) +
         (filters.guests > 1 ? 1 : 0) +

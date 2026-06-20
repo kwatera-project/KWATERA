@@ -191,8 +191,7 @@ public class PropertyService {
         property.getPostalCode(),
         property.getStreet(),
         property.getStreetNumber(),
-        property.getAmenities(),
-        property.getPropertyType());
+        property.getAmenities());
   }
 
   private UnitDto mapToDto(Unit unit, String currency) {
@@ -330,7 +329,6 @@ public class PropertyService {
     applyIfPresent(request.street(), property::setStreet);
     applyIfPresent(request.streetNumber(), property::setStreetNumber);
     applyIfPresent(request.amenities(), property::setAmenities);
-    applyIfPresent(request.propertyType(), property::setPropertyType);
 
     if (addressChanged) {
       Coordinates coordinates =
@@ -415,9 +413,6 @@ public class PropertyService {
     newProperty.setStreetNumber(request.streetNumber());
     if (request.amenities() != null) {
       newProperty.setAmenities(request.amenities());
-    }
-    if (request.propertyType() != null) {
-      newProperty.setPropertyType(request.propertyType());
     }
 
     Coordinates coordinates =

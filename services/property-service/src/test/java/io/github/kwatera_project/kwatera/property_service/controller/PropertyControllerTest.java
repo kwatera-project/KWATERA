@@ -36,8 +36,7 @@ class PropertyControllerTest {
             "",
             "",
             "",
-            List.of(),
-            null);
+            List.of());
 
     when(service.getAll(any())).thenReturn(List.of(dto));
 
@@ -63,8 +62,7 @@ class PropertyControllerTest {
             "",
             "",
             "",
-            List.of(),
-            null);
+            List.of());
 
     BigDecimal minLat = BigDecimal.valueOf(50);
     BigDecimal maxLat = BigDecimal.valueOf(53);
@@ -100,8 +98,7 @@ class PropertyControllerTest {
             "",
             "",
             "",
-            List.of(),
-            null);
+            List.of());
 
     when(service.getById(id)).thenReturn(dto);
 

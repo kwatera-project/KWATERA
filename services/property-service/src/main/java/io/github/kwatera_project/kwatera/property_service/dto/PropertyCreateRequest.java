@@ -1,6 +1,5 @@
 package io.github.kwatera_project.kwatera.property_service.dto;
 
-import io.github.kwatera_project.kwatera.property_service.model.PropertyType;
 import java.util.List;
 
 public record PropertyCreateRequest(
@@ -11,8 +10,7 @@ public record PropertyCreateRequest(
     String postalCode,
     String street,
     String streetNumber,
-    List<String> amenities,
-    PropertyType propertyType) {
+    List<String> amenities) {
 
   public PropertyCreateRequest {
     amenities = amenities != null ? List.copyOf(amenities) : null;

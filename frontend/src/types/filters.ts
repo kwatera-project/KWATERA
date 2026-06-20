@@ -1,14 +1,18 @@
 export const COMMON_AMENITIES = [
-    "WiFi", "Parking", "Pet Friendly", "TV", "AC", "Kitchen", "Pool", "Gym", "Breakfast",
+    "WiFi", "Parking", "Pet Friendly", "TV", "Kitchen", "Pool",
+    "Gym", "Breakfast", "Fireplace", "BBQ", "Hot Tub", "Shared Kitchen",
+    "Sauna", "Kayaks", "Air Conditioning", "Elevator", "River View",
+    "Sea View", "Historic View", "Terrace", "Balcony"
 ];
 
-export const PROPERTY_TYPES = ["Apartment", "House", "Villa", "Studio", "Room"];
+export const UNIT_TYPES = ["Entire apartment", "Entire cottage", "Private room in home"
+];
 
 export interface FilterState {
     selectedAmenities: string[];
     minPrice: string;
     maxPrice: string;
-    propertyTypes: string[];
+    unitTypes: string[];
     guests: number;
     bedrooms: number;
     beds: number;
@@ -18,7 +22,7 @@ export const EMPTY_FILTERS: FilterState = {
     selectedAmenities: [],
     minPrice: "",
     maxPrice: "",
-    propertyTypes: [],
+    unitTypes: [],
     guests: 1,
     bedrooms: 0,
     beds: 0,
