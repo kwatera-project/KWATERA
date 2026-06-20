@@ -140,8 +140,19 @@ public class ReservationService {
     java.util.Set<UUID> unitsWithReservations = new java.util.HashSet<>();
     List<OccupancyDto> result = new java.util.ArrayList<>();
 
+    java.util.Map<UUID, String> guestNames = new java.util.HashMap<>();
+    for (Reservation r : reservations) {
+      if (r.getStatus() != ReservationStatus.BLOCKED && r.getUserId() != null) {
+        guestNames.computeIfAbsent(r.getUserId(), this::fetchGuestName);
+      }
+    }
+
     for (Reservation r : reservations) {
       unitsWithReservations.add(r.getUnitId());
+      String guestName = null;
+      if (r.getStatus() != ReservationStatus.BLOCKED && r.getUserId() != null) {
+        guestName = guestNames.get(r.getUserId());
+      }
       result.add(
           new OccupancyDto(
               r.getId(),
@@ -150,7 +161,9 @@ public class ReservationService {
                   r.getUnitId(), "Room " + r.getUnitId().toString().substring(0, 8)),
               r.getStartDate(),
               r.getEndDate(),
-              r.getStatus().name()));
+              r.getStatus().name(),
+              r.getGuestEmail(),
+              guestName));
     }
 
     for (UUID unitId : allUnitIds) {
@@ -162,7 +175,9 @@ public class ReservationService {
                 unitNames.getOrDefault(unitId, "Room " + unitId.toString().substring(0, 8)),
                 null,
                 null,
-                "FREE"));
+                "FREE",
+                null,
+                null));
       }
     }
 
@@ -443,7 +458,7 @@ public class ReservationService {
     dto.setConvertedTotalPrice(convertedTotalPrice);
     dto.setCurrencyInfo(currencyInfo);
 
-    dto.setGuestName("Guest " + reservation.getUserId().toString().substring(0, 8));
+    dto.setGuestName(fetchGuestName(reservation.getUserId()));
     dto.setUnitName("Unknown Room");
     dto.setCity("Unknown City");
 
@@ -758,5 +773,35 @@ public class ReservationService {
         + oldStatus
         + ", newStatus="
         + newStatus;
+  }
+
+  private String fetchGuestName(UUID userId) {
+    if (userId == null) {
+      return null;
+    }
+    try {
+      String url = authServiceUrl + "/internal/{userId}";
+      HttpHeaders headers = new HttpHeaders();
+      headers.set("X-Internal-Token", internalToken);
+      HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+      ResponseEntity<java.util.Map> response =
+          restOperations().exchange(url, HttpMethod.GET, entity, java.util.Map.class, userId);
+
+      if (response.getBody() != null) {
+        String firstName = (String) response.getBody().get("firstName");
+        String lastName = (String) response.getBody().get("lastName");
+        if (firstName != null && lastName != null) {
+          return firstName + " " + lastName;
+        } else if (firstName != null) {
+          return firstName;
+        } else if (lastName != null) {
+          return lastName;
+        }
+      }
+    } catch (Exception e) {
+      log.warn("Failed to fetch guest details for user {}: {}", userId, e.getMessage());
+    }
+    return "Guest " + userId.toString().substring(0, 8);
   }
 }

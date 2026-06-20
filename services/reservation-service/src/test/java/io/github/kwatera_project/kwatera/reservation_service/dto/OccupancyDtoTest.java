@@ -16,7 +16,15 @@ class OccupancyDtoTest {
     LocalDate end = LocalDate.of(2026, 6, 7);
 
     OccupancyDto dto =
-        new OccupancyDto(reservationId, unitId, "Suite 101", start, end, "CONFIRMED");
+        new OccupancyDto(
+            reservationId,
+            unitId,
+            "Suite 101",
+            start,
+            end,
+            "CONFIRMED",
+            "guest@example.com",
+            "Guest Name");
 
     assertEquals(reservationId, dto.getReservationId());
     assertEquals(unitId, dto.getUnitId());
@@ -24,6 +32,8 @@ class OccupancyDtoTest {
     assertEquals(start, dto.getStartDate());
     assertEquals(end, dto.getEndDate());
     assertEquals("CONFIRMED", dto.getStatus());
+    assertEquals("guest@example.com", dto.getGuestEmail());
+    assertEquals("Guest Name", dto.getGuestName());
   }
 
   @Test
@@ -40,6 +50,8 @@ class OccupancyDtoTest {
     dto.setStartDate(start);
     dto.setEndDate(end);
     dto.setStatus("PENDING");
+    dto.setGuestEmail("guest@example.com");
+    dto.setGuestName("Guest Name");
 
     assertEquals(reservationId, dto.getReservationId());
     assertEquals(unitId, dto.getUnitId());
@@ -47,5 +59,7 @@ class OccupancyDtoTest {
     assertEquals(start, dto.getStartDate());
     assertEquals(end, dto.getEndDate());
     assertEquals("PENDING", dto.getStatus());
+    assertEquals("guest@example.com", dto.getGuestEmail());
+    assertEquals("Guest Name", dto.getGuestName());
   }
 }

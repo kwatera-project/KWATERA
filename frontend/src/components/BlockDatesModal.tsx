@@ -28,6 +28,7 @@ interface Occupancy {
     status: string;
     guestName?: string;
     totalPrice?: number;
+    guestEmail?: string;
 }
 
 const getOccupiedRange = (startDateStr: string, endDateStr: string) => {
