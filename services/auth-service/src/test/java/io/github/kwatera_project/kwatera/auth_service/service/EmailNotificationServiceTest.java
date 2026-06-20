@@ -183,6 +183,131 @@ class EmailNotificationServiceTest {
   }
 
   @Test
+  void shouldSendWeeklyNewsletterWithFallbackWhenUserFirstNameIsBlank() {
+    when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+    Map<String, Object> prop = new java.util.HashMap<>();
+    prop.put("id", "00000000-0000-0000-0000-000000000001");
+    prop.put("title", "Luxury Villa");
+    prop.put("description", "A beautiful villa");
+    when(propertyClient.getRandomProperties(3))
+        .thenReturn(java.util.Collections.singletonList(prop));
+
+    User user = new User();
+    user.setFirstName("   ");
+    when(userRepository.findByEmail("blank@example.com")).thenReturn(Optional.of(user));
+
+    when(templateEngine.process(eq("weekly-newsletter-template"), any(Context.class)))
+        .thenReturn("<html>Weekly Newsletter!</html>");
+
+    emailNotificationService.sendWeeklyNewsletterEmail("blank@example.com");
+
+    ArgumentCaptor<Context> contextCaptor = ArgumentCaptor.forClass(Context.class);
+    verify(templateEngine).process(eq("weekly-newsletter-template"), contextCaptor.capture());
+    assertThat(contextCaptor.getValue().getVariable("greeting")).isEqualTo("Subscriber");
+  }
+
+  @Test
+  void shouldSendWeeklyNewsletterWithFallbackWhenRepositoryIsNull() {
+    EmailNotificationService serviceWithNullRepo =
+        new EmailNotificationService(
+            mailSender,
+            templateEngine,
+            propertyClient,
+            null,
+            "no-reply@kwatera.local",
+            "test@kwatera.local");
+
+    when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+    Map<String, Object> prop = new java.util.HashMap<>();
+    prop.put("id", "00000000-0000-0000-0000-000000000001");
+    prop.put("title", "Luxury Villa");
+    prop.put("description", "A beautiful villa");
+    when(propertyClient.getRandomProperties(3))
+        .thenReturn(java.util.Collections.singletonList(prop));
+
+    when(templateEngine.process(eq("weekly-newsletter-template"), any(Context.class)))
+        .thenReturn("<html>Weekly Newsletter!</html>");
+
+    serviceWithNullRepo.sendWeeklyNewsletterEmail("norepo@example.com");
+
+    ArgumentCaptor<Context> contextCaptor = ArgumentCaptor.forClass(Context.class);
+    verify(templateEngine).process(eq("weekly-newsletter-template"), contextCaptor.capture());
+    assertThat(contextCaptor.getValue().getVariable("greeting")).isEqualTo("Subscriber");
+  }
+
+  @Test
+  void shouldHandleInvalidPropertyIdAndNullUnits() {
+    when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+    Map<String, Object> prop1 = new java.util.HashMap<>();
+    prop1.put("id", "invalid-uuid");
+    prop1.put("title", "Invalid Villa");
+
+    Map<String, Object> prop2 = new java.util.HashMap<>();
+    prop2.put("id", "00000000-0000-0000-0000-000000000002");
+    prop2.put("title", "Null Units Villa");
+
+    when(propertyClient.getRandomProperties(3))
+        .thenReturn(java.util.Arrays.asList(prop1, prop2));
+    when(userRepository.findByEmail("any@example.com")).thenReturn(Optional.empty());
+    
+    when(propertyClient.getPropertyUnits(UUID.fromString("00000000-0000-0000-0000-000000000002")))
+        .thenReturn(null);
+
+    when(templateEngine.process(eq("weekly-newsletter-template"), any(Context.class)))
+        .thenReturn("<html>Weekly Newsletter!</html>");
+
+    emailNotificationService.sendWeeklyNewsletterEmail("any@example.com");
+
+    ArgumentCaptor<Context> contextCaptor = ArgumentCaptor.forClass(Context.class);
+    verify(templateEngine).process(eq("weekly-newsletter-template"), contextCaptor.capture());
+    List<?> items = (List<?>) contextCaptor.getValue().getVariable("featuredItems");
+    assertThat(items).hasSize(2);
+    
+    Map<?, ?> item1 = (Map<?, ?>) items.get(0);
+    assertThat(item1.get("pricePerNight")).isEqualTo(new BigDecimal("250"));
+    
+    Map<?, ?> item2 = (Map<?, ?>) items.get(1);
+    assertThat(item2.get("pricePerNight")).isEqualTo(new BigDecimal("250"));
+  }
+
+  @Test
+  void shouldHandleMultipleUnitsSelectingMinPriceAndInvalidPrices() {
+    when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+    Map<String, Object> prop = new java.util.HashMap<>();
+    prop.put("id", "00000000-0000-0000-0000-000000000001");
+    prop.put("title", "Luxury Villa");
+    when(propertyClient.getRandomProperties(3))
+        .thenReturn(java.util.Collections.singletonList(prop));
+    when(userRepository.findByEmail("any@example.com")).thenReturn(Optional.empty());
+
+    Map<String, Object> unit1 = new java.util.HashMap<>();
+    unit1.put("pricePerNight", "invalid-price-format");
+
+    Map<String, Object> unit2 = new java.util.HashMap<>();
+    unit2.put("pricePerNight", 450.0);
+
+    Map<String, Object> unit3 = new java.util.HashMap<>();
+    unit3.put("pricePerNight", 150.0);
+
+    Map<String, Object> unit4 = new java.util.HashMap<>();
+    unit4.put("pricePerNight", null);
+
+    when(propertyClient.getPropertyUnits(UUID.fromString("00000000-0000-0000-0000-000000000001")))
+        .thenReturn(java.util.Arrays.asList(unit1, unit2, unit3, unit4));
+
+    when(templateEngine.process(eq("weekly-newsletter-template"), any(Context.class)))
+        .thenReturn("<html>Weekly Newsletter!</html>");
+
+    emailNotificationService.sendWeeklyNewsletterEmail("any@example.com");
+
+    ArgumentCaptor<Context> contextCaptor = ArgumentCaptor.forClass(Context.class);
+    verify(templateEngine).process(eq("weekly-newsletter-template"), contextCaptor.capture());
+    List<?> items = (List<?>) contextCaptor.getValue().getVariable("featuredItems");
+    Map<?, ?> item = (Map<?, ?>) items.get(0);
+    assertThat(item.get("pricePerNight")).isEqualTo(new BigDecimal("150.0"));
+  }
+
+  @Test
   void shouldNotThrowWhenMailSendingFails() {
     when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
     when(templateEngine.process(eq("thank-you-signup"), any(Context.class)))
