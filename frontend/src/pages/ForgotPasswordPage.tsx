@@ -39,8 +39,8 @@ export default function ForgotPasswordPage() {
 
                         {submitted ? (
                             <div className="space-y-4">
-                                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-sm font-medium">
-                                    {t("forgotPassword.successMessage")}
+                                <div className="p-4 rounded-lg text-sm font-medium bg-emerald-50 text-emerald-700 text-center">
+                                    ✔ {t("forgotPassword.successMessage")}
                                 </div>
                                 <div className="text-center">
                                     <Link to="/login" className="text-[#42211D] font-bold hover:underline">
