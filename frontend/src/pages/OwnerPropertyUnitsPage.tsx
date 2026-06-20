@@ -4,8 +4,8 @@ import { getProperty } from "../api/propertyApi.ts";
 import type { Property, Unit } from "../types/property";
 import {deleteUnit, getPropertyUnits, updateUnit} from "../api/ownerUnitApi.ts";
 import { getPredictedPrice } from "../api/predictionApi.ts";
-import { Wand2 } from "lucide-react";
-import {useTranslation} from "react-i18next"
+import {useTranslation} from "react-i18next";
+import { toast } from "react-hot-toast";
 
 export default function OwnerPropertyUnitsPage() {
     const { propertyId } = useParams();
@@ -35,11 +35,11 @@ export default function OwnerPropertyUnitsPage() {
             const err = error as { status?: number; message?: string };
 
             if (err.status === 409) {
-                alert(t('ownerUnits.deleteHasReservations'));
+                toast.error(t('ownerUnits.deleteHasReservations'));
                 return;
             }
 
-            alert(t('ownerUnits.deleteFailed'));
+            toast.error(t('ownerUnits.deleteFailed'));
         }
     };
 
@@ -89,6 +89,7 @@ function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: stri
     const [loadingPrediction, setLoadingPrediction] = useState(true);
     const [currentPrice, setCurrentPrice] = useState<number>(unit.pricePerNight);
     const [isUpdatingPrice, setIsUpdatingPrice] = useState(false);
+    const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; type: "success" | "error"; title: string; description: string } | null>(null);
     const {t} = useTranslation();
     useEffect(() => {
         getPredictedPrice(propertyId, unit.id, undefined)
@@ -111,10 +112,20 @@ function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: stri
             await updateUnit(propertyId, unit.id, { pricePerNight: predictedPrice });
 
             setCurrentPrice(predictedPrice);
-            alert(t('ownerUnits.priceUpdated'));
+            setModalConfig({
+                isOpen: true,
+                type: "success",
+                title: t('ownerUnits.priceUpdated'),
+                description: t('ownerUnits.priceUpdatedDesc')
+            });
         } catch (error) {
             console.error("Failed to update price:", error);
-            alert(t('ownerUnits.priceUpdateFailed'));
+            setModalConfig({
+                isOpen: true,
+                type: "error",
+                title: t('ownerUnits.priceUpdateFailed'),
+                description: t('ownerUnits.priceUpdateFailedDesc')
+            });
         } finally {
             setIsUpdatingPrice(false);
         }
@@ -168,15 +179,15 @@ function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: stri
                                             <button
                                                 onClick={handleApplySuggestedPrice}
                                                 disabled={isUpdatingPrice}
-                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-md border border-indigo-200 hover:bg-indigo-100 transition-colors disabled:opacity-50"
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 text-xs font-bold rounded-md shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                             >
                                                 {isUpdatingPrice ? (
-                                                    t('ownerUnits.applying')
-                                                ) : (
                                                     <>
-                                                        <Wand2 className="w-3.5 h-3.5" />
-                                                        {t('ownerUnits.applyAiPrice')}
+                                                        <span className="w-2.5 h-2.5 rounded-full border border-gray-300 border-t-gray-700 animate-spin inline-block shrink-0" />
+                                                        <span>{t('ownerUnits.applying')}</span>
                                                     </>
+                                                ) : (
+                                                    <span>{t('ownerUnits.applyAiPrice')}</span>
                                                 )}
                                             </button>
                                         )}
@@ -209,6 +220,39 @@ function UnitCard({ unit, propertyId, onDelete }: { unit: Unit, propertyId: stri
                     {t('editPropertyImages.delete')}
                 </button>
             </div>
+
+            {modalConfig?.isOpen && (
+                <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onClick={() => setModalConfig(null)} />
+                    <div className="relative bg-white rounded-2xl shadow-2xl border border-brand-accent w-full max-w-sm overflow-hidden flex flex-col z-[9999] animate-in fade-in zoom-in-95 duration-200 p-6 text-center">
+                        {modalConfig.type === "success" ? (
+                            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-50 border border-green-200 mb-4">
+                                <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+                        ) : (
+                            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-50 border border-red-200 mb-4">
+                                <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </div>
+                        )}
+                        <h3 className="text-lg font-black text-[#1A1A1A] tracking-tight">{modalConfig.title}</h3>
+                        <p className="text-sm text-gray-500 mt-2">
+                            {modalConfig.description}
+                        </p>
+                        <div className="mt-6">
+                            <button
+                                onClick={() => setModalConfig(null)}
+                                className="w-full px-4 py-2 bg-[#42211D] hover:bg-[#5c2e29] text-white font-bold text-sm rounded-lg shadow-sm transition-colors cursor-pointer"
+                            >
+                                {t('ownerUnits.ok')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
