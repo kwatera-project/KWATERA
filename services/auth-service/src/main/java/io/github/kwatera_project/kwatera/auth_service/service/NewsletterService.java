@@ -115,13 +115,6 @@ public class NewsletterService {
           || a.contains("beach")
           || a.contains("lake")) {
         sea++;
-      } else if (c.contains("kraków")
-          || c.contains("wrocław")
-          || c.contains("warszawa")
-          || a.contains("elevator")
-          || a.contains("gym")
-          || a.contains("air conditioning")) {
-        city++;
       } else {
         city++;
       }
