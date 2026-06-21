@@ -67,6 +67,16 @@ public class EmailNotificationService {
     send(recipientEmail, subject, htmlBody);
   }
 
+  public void sendPasswordResetEmail(String recipientEmail, String resetUrl) {
+    String subject = "Password Reset Request";
+    Context context = new Context();
+    context.setVariable("subject", subject);
+    context.setVariable("resetUrl", resetUrl);
+
+    String htmlBody = templateEngine.process("password-reset-template", context);
+    send(recipientEmail, subject, htmlBody);
+  }
+
   public void sendNewsletterWelcomeEmail(String recipientEmail) {
     String subject = "Welcome to KWATERA Newsletter!";
     Context context = new Context();

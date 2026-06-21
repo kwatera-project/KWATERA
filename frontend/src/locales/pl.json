@@ -24,12 +24,34 @@
     "email": "Adres e-mail",
     "emailPlaceholder": "nazwa@przyklad.pl",
     "password": "Hasło",
+    "forgotPassword": "Zapomniałeś hasła?",
     "submit": "Zaloguj się",
     "noAccount": "Nie masz konta?",
     "signUp": "Zarejestruj się",
     "serverError": "Błąd połączenia z serwerem",
     "loginFailed": "Logowanie nie powiodło się",
     "imageAlt": "Wnętrze"
+  },
+  "forgotPassword": {
+    "title": "Odzyskiwanie hasła",
+    "subtitle": "Wpisz swój adres e-mail, a wyślemy Ci link do zresetowania hasła.",
+    "emailLabel": "Adres e-mail",
+    "emailPlaceholder": "nazwa@przyklad.pl",
+    "submit": "Wyślij link do resetowania",
+    "backToLogin": "Powrót do logowania",
+    "successMessage": "Link do resetowania został wysłany! Sprawdź swoją skrzynkę e-mail.",
+    "errorMessage": "Nie udało się wysłać linku. Spróbuj ponownie."
+  },
+  "resetPassword": {
+    "title": "Resetowanie hasła",
+    "subtitle": "Wybierz nowe bezpieczne hasło dla swojego konta.",
+    "newPassword": "Nowe hasło",
+    "confirmPassword": "Potwierdź hasło",
+    "submit": "Zresetuj hasło",
+    "successMessage": "Hasło zostało zaktualizowane pomyślnie! Możesz się teraz zalogować.",
+    "errorMessage": "Nie udało się zresetować hasła. Link mógł wygasnąć lub być niepoprawny.",
+    "validationError": "Hasła nie pasują do siebie.",
+    "passwordLengthError": "Hasło musi mieć co najmniej 8 znaków."
   },
 
   "register": {
