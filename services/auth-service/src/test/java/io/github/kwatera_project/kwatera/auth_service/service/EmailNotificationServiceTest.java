@@ -375,4 +375,16 @@ class EmailNotificationServiceTest {
     assertThat(context.getVariable("resetUrl")).isEqualTo("http://reset-url");
     assertThat(context.getVariable("subject")).isEqualTo("Password Reset Request");
   }
+
+  @Test
+  void shouldSendPersonalizedNewsletter() {
+    when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+    emailNotificationService.sendPersonalizedNewsletter(
+        "user@example.com",
+        "Your Personalized KWATERA Recommendations",
+        "<html>personalized</html>");
+
+    verify(mailSender).send(mimeMessage);
+  }
 }
