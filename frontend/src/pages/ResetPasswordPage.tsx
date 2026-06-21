@@ -54,7 +54,7 @@ export default function ResetPasswordPage() {
 
                         {!token ? (
                             <div className="space-y-4">
-                                <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm font-medium">
+                                <div className="p-4 rounded-lg text-sm font-medium bg-red-50 text-red-700 text-center">
                                     {t("resetPassword.errorMessage")}
                                 </div>
                                 <div className="text-center">
