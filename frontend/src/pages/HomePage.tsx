@@ -7,7 +7,6 @@ import ExploreSection from '../components/landing/ExploreSection';
 import BlogSection from '../components/landing/BlogSection';
 import NewsletterSection from '../components/landing/NewsletterSection';
 import TrustBadges from '../components/landing/TrustBadges';
-import { useTranslation } from "react-i18next";
 
 interface PropertyData {
     id: string;
