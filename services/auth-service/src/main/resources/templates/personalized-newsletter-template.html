@@ -9,8 +9,11 @@
         <p style="margin: 0 0 24px 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;">
             Hello <span th:text="${greeting}" style="font-weight: 600; color: #42211D;">Traveler</span>,
         </p>
-        <p th:text="${personalizedGreeting}" style="margin: 0 0 24px 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;">
+        <p th:text="${personalizedGreeting}" style="margin: 0 0 16px 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;">
             Based on your travel history, here are some places we think you'll love.
+        </p>
+        <p th:text="${propertiesRationale}" style="margin: 0 0 24px 0; font-size: 14px; color: #42211D; line-height: 1.6; background-color: #F5F1F0; border-left: 3px solid #42211D; padding: 10px 14px; border-radius: 0 6px 6px 0;">
+            These properties were selected based on your travel preferences.
         </p>
         <div style="margin-bottom: 24px;">
             <div th:each="item : ${featuredItems}" style="margin-bottom: 20px; border: 1px solid #DACDCA; border-radius: 8px; overflow: hidden; background-color: #ffffff; display: flex; flex-direction: row; min-height: 140px;">
