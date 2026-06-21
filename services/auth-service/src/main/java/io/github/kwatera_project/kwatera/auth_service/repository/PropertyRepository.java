@@ -13,21 +13,23 @@ public interface PropertyRepository extends JpaRepository<Property, UUID> {
 
   @Query(
       value =
-          "SELECT p.id, p.title, p.city, p.country, MIN(u.price_per_night) as price, p.image_url, p.description "
+          "SELECT p.id, p.title, p.city, p.country, MIN(u.price_per_night) as price, pi.url as image_url, p.description "
               + "FROM properties p "
               + "JOIN units u ON p.id = u.property_id "
+              + "LEFT JOIN property_images pi ON p.id = pi.property_id AND pi.is_main = true "
               + "WHERE LOWER(p.city) IN (:cities) "
-              + "GROUP BY p.id, p.title, p.city, p.country, p.image_url, p.description "
+              + "GROUP BY p.id, p.title, p.city, p.country, pi.url, p.description "
               + "LIMIT 3",
       nativeQuery = true)
   List<Object[]> findTop3PropertiesByCities(@Param("cities") List<String> cities);
 
   @Query(
       value =
-          "SELECT p.id, p.title, p.city, p.country, MIN(u.price_per_night) as price, p.image_url, p.description "
+          "SELECT p.id, p.title, p.city, p.country, MIN(u.price_per_night) as price, pi.url as image_url, p.description "
               + "FROM properties p "
               + "JOIN units u ON p.id = u.property_id "
-              + "GROUP BY p.id, p.title, p.city, p.country, p.image_url, p.description "
+              + "LEFT JOIN property_images pi ON p.id = pi.property_id AND pi.is_main = true "
+              + "GROUP BY p.id, p.title, p.city, p.country, pi.url, p.description "
               + "LIMIT 3",
       nativeQuery = true)
   List<Object[]> findTop3DefaultProperties();

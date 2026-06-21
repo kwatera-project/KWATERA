@@ -16,8 +16,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class Property {
 
-  @Id
-  private UUID id;
+  @Id private UUID id;
 
   @Column(nullable = false)
   private String title;
@@ -29,7 +28,4 @@ public class Property {
 
   @Column(nullable = false)
   private String country;
-
-  @Column(name = "image_url", nullable = false)
-  private String imageUrl;
 }
