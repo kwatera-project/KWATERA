@@ -1,5 +1,6 @@
 package io.github.kwatera_project.kwatera.auth_service.service;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.kwatera_project.kwatera.auth_service.model.User;
 import io.github.kwatera_project.kwatera.auth_service.repository.PropertyRepository;
 import io.github.kwatera_project.kwatera.auth_service.repository.UserRepository;
@@ -9,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Value;
