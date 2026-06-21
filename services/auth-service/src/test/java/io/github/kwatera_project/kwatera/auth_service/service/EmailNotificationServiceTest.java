@@ -357,4 +357,22 @@ class EmailNotificationServiceTest {
     org.junit.jupiter.api.Assertions.assertDoesNotThrow(
         () -> emailNotificationService.sendThankYouEmail("user@example.com", "Alice"));
   }
+
+  @Test
+  void shouldSendPasswordResetEmail() {
+    when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+    when(templateEngine.process(eq("password-reset-template"), any(Context.class)))
+        .thenReturn("<html>Reset!</html>");
+
+    emailNotificationService.sendPasswordResetEmail("user@example.com", "http://reset-url");
+
+    verify(mailSender).send(mimeMessage);
+
+    ArgumentCaptor<Context> contextCaptor = ArgumentCaptor.forClass(Context.class);
+    verify(templateEngine).process(eq("password-reset-template"), contextCaptor.capture());
+
+    Context context = contextCaptor.getValue();
+    assertThat(context.getVariable("resetUrl")).isEqualTo("http://reset-url");
+    assertThat(context.getVariable("subject")).isEqualTo("Password Reset Request");
+  }
 }
