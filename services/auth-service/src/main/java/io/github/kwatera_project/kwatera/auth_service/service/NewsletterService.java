@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,6 +30,7 @@ public class NewsletterService {
   private final String frontendBaseUrl;
   private final String publicGatewayUrl;
 
+  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public NewsletterService(
       ChatClient.Builder chatClientBuilder,
       UserRepository userRepository,
