@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:replace="~{base-layout :: layout(~{::content})}">
+    <div th:fragment="content">
+        <h2 style="margin: 0 0 16px 0; font-size: 22px; font-weight: 700; color: #1A1A1A; letter-spacing: -0.02em;">
+            Your Personalized Picks
+        </h2>
+        <p style="margin: 0 0 24px 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;">
+            Hello <span th:text="${greeting}" style="font-weight: 600; color: #42211D;">Traveler</span>,
+        </p>
+        <p th:text="${personalizedGreeting}" style="margin: 0 0 24px 0; font-size: 15px; color: #7A7A7A; line-height: 1.6;">
+            Based on your travel history, here are some places we think you'll love.
+        </p>
+        <div style="margin-bottom: 24px;">
+            <div th:each="item : ${featuredItems}" style="margin-bottom: 20px; border: 1px solid #DACDCA; border-radius: 8px; overflow: hidden; background-color: #ffffff; display: flex; flex-direction: row; min-height: 140px;">
+                <div th:if="${item.imageUrl != null}" style="width: 140px; min-width: 140px; overflow: hidden; background-color: #F5F1F0;">
+                    <img th:src="${item.imageUrl}" alt="Property" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
+                </div>
+                <div style="padding: 15px; flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <h3 th:text="${item.title}" style="margin: 0 0 4px 0; font-size: 18px; font-weight: 700; color: #42211D;">Property Title</h3>
+                        <p th:text="${item.description}" style="margin: 0 0 8px 0; font-size: 13px; color: #7A7A7A; line-height: 1.4;">Description...</p>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+                        <span style="font-size: 14px; font-weight: 700; color: #1A1A1A;">
+                            <span th:text="${item.pricePerNight}">250</span> PLN <span style="font-size: 12px; font-weight: 400; color: #7A7A7A;">/ night</span>
+                        </span>
+                        <a th:href="${item.link}" style="font-size: 13px; font-weight: 600; color: #42211D; text-decoration: none;">View Details →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p style="margin: 0 0 24px 0; font-size: 13px; color: #7A7A7A; line-height: 1.6; text-align: center;">
+            If you wish to stop receiving these emails, you can unsubscribe at any time.
+        </p>
+        <div style="text-align: center;">
+            <a th:href="${unsubscribeLink}" style="font-size: 13px; color: #7A7A7A; text-decoration: underline;">
+                Unsubscribe from newsletter
+            </a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

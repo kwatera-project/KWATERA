@@ -3,12 +3,19 @@ package io.github.kwatera_project.kwatera.auth_service.service;
 import io.github.kwatera_project.kwatera.auth_service.model.User;
 import io.github.kwatera_project.kwatera.auth_service.repository.PropertyRepository;
 import io.github.kwatera_project.kwatera.auth_service.repository.UserRepository;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
 @Service
 @Slf4j
@@ -18,70 +25,107 @@ public class NewsletterService {
   private final UserRepository userRepository;
   private final PropertyRepository propertyRepository;
   private final EmailNotificationService emailNotificationService;
+  private final TemplateEngine templateEngine;
+  private final String frontendBaseUrl;
+  private final String publicGatewayUrl;
 
   public NewsletterService(
       ChatClient.Builder chatClientBuilder,
       UserRepository userRepository,
       PropertyRepository propertyRepository,
-      EmailNotificationService emailNotificationService) {
+      EmailNotificationService emailNotificationService,
+      TemplateEngine templateEngine,
+      @Value("${kwatera.urls.frontend-base}") String frontendBaseUrl,
+      @Value("${kwatera.urls.public-gateway}") String publicGatewayUrl) {
     this.chatClient = chatClientBuilder.build();
     this.userRepository = userRepository;
     this.propertyRepository = propertyRepository;
     this.emailNotificationService = emailNotificationService;
+    this.templateEngine = templateEngine;
+    this.frontendBaseUrl = frontendBaseUrl;
+    this.publicGatewayUrl = publicGatewayUrl;
   }
 
   @Async
   public CompletableFuture<Void> sendPersonalizedNewsletterAsync(String email) {
     try {
       User user = userRepository.findByEmail(email).orElse(null);
-      String firstName =
-          (user != null && user.getFirstName() != null) ? user.getFirstName() : "Traveler";
+      String firstName = (user != null && user.getFirstName() != null) ? user.getFirstName() : "Traveler";
       String preference = analyzePreference(user);
       List<Object[]> recommendations = fetchRecommendations(preference);
 
-      StringBuilder propertiesText = new StringBuilder();
-      for (Object[] prop : recommendations) {
-        propertiesText.append("Title: ").append(prop[1]).append("\n");
-        propertiesText
-            .append("Location: ")
-            .append(prop[2])
-            .append(", ")
-            .append(prop[3])
-            .append("\n");
-        propertiesText.append("Price: ").append(prop[4]).append(" PLN / night\n");
-        propertiesText.append("Description: ").append(prop[6]).append("\n");
-        propertiesText.append("Image URL: ").append(prop[5]).append("\n\n");
-      }
+      String personalizedGreeting = generateGreeting(firstName, preference);
 
-      String systemPrompt =
-          "You are a friendly travel advisor at KWATERA. "
-              + "Write a short personalized greeting acknowledging the user's travel preference. "
-              + "Format the 3 recommended properties nicely into a clean HTML structure suitable for an email. "
-              + "Do not wrap your response in markdown code blocks like ```html. Return only the raw HTML code.";
+      List<Map<String, Object>> featuredItems = buildFeaturedItems(recommendations);
 
-      String userPrompt =
-          "User name: "
-              + firstName
-              + "\n"
-              + "Preference: "
-              + preference
-              + "\n"
-              + "Recommended Properties:\n"
-              + propertiesText.toString();
+      Context context = new Context();
+      context.setVariable("subject", "Your Personalized KWATERA Recommendations");
+      context.setVariable("greeting", firstName);
+      context.setVariable("personalizedGreeting", personalizedGreeting);
+      context.setVariable("featuredItems", featuredItems);
+      context.setVariable(
+          "unsubscribeLink",
+          publicGatewayUrl + "/api/newsletter/unsubscribe?email=" + email);
 
-      String htmlBody = chatClient.prompt().system(systemPrompt).user(userPrompt).call().content();
+      String htmlBody = templateEngine.process("personalized-newsletter-template", context);
 
       emailNotificationService.sendPersonalizedNewsletter(
-          email, "Your Personalized KWATERA Recommendations", htmlBody);
+          email,
+          "Your Personalized KWATERA Recommendations",
+          htmlBody);
     } catch (Exception e) {
-      log.error("Failed to generate personalized email for " + email, e);
+      log.error("Failed to generate personalized email for {}", email, e);
       try {
         emailNotificationService.sendWeeklyNewsletterEmail(email);
       } catch (Exception ex) {
-        log.error("Failed to send fallback newsletter email to " + email, ex);
+        log.error("Failed to send fallback newsletter email to {}", email, ex);
       }
     }
     return CompletableFuture.completedFuture(null);
+  }
+
+  private String generateGreeting(String firstName, String preference) {
+    String prompt = switch (preference) {
+      case "MOUNTAINS" -> "Write one short, warm sentence (max 20 words) for a newsletter greeting "
+          + "for " + firstName + " who loves mountain getaways. Do not include any HTML.";
+      case "SEA" -> "Write one short, warm sentence (max 20 words) for a newsletter greeting "
+          + "for " + firstName + " who loves seaside and lake destinations. Do not include any HTML.";
+      case "CITY" -> "Write one short, warm sentence (max 20 words) for a newsletter greeting "
+          + "for " + firstName + " who enjoys city breaks. Do not include any HTML.";
+      default -> "Write one short, warm sentence (max 20 words) for a newsletter greeting "
+          + "for " + firstName + " who is just starting to explore travel. Do not include any HTML.";
+    };
+    try {
+      return chatClient.prompt()
+          .user(prompt)
+          .call()
+          .content();
+    } catch (Exception e) {
+      log.warn("LLM greeting generation failed, using default", e);
+      return "Here are this week's handpicked properties just for you.";
+    }
+  }
+
+  private List<Map<String, Object>> buildFeaturedItems(List<Object[]> recommendations) {
+    List<Map<String, Object>> items = new ArrayList<>();
+    for (Object[] prop : recommendations) {
+      Map<String, Object> item = new HashMap<>();
+      item.put("title", prop[1]);
+      item.put("description", prop[6]);
+      item.put("imageUrl", prop[5]);
+      item.put("link", frontendBaseUrl + "/property/" + prop[0]);
+      BigDecimal price = null;
+      if (prop[4] != null) {
+        try {
+          price = new BigDecimal(prop[4].toString());
+        } catch (NumberFormatException ignored) {
+          // fall through to default
+        }
+      }
+      item.put("pricePerNight", price != null ? price : new BigDecimal("250"));
+      items.add(item);
+    }
+    return items;
   }
 
   private String analyzePreference(User user) {
@@ -100,30 +144,23 @@ public class NewsletterService {
       String c = row[0] != null ? row[0].toString().toLowerCase() : "";
       String a = row[1] != null ? row[1].toString().toLowerCase() : "";
 
-      if (c.contains("szczyrk")
-          || c.contains("kościelisko")
-          || c.contains("wetlina")
-          || c.contains("karpacz")
-          || a.contains("fireplace")
-          || a.contains("sauna")
-          || a.contains("hot tub")) {
+      if (c.contains("szczyrk") || c.contains("kościelisko") || c.contains("wetlina") || c.contains("karpacz")
+          || a.contains("fireplace") || a.contains("sauna") || a.contains("hot tub")) {
         mountains++;
-      } else if (c.contains("gdańsk")
-          || c.contains("sopot")
-          || c.contains("mikołajki")
-          || a.contains("kayaks")
-          || a.contains("beach")
-          || a.contains("lake")) {
+      } else if (c.contains("gdańsk") || c.contains("sopot") || c.contains("mikołajki")
+          || a.contains("kayaks") || a.contains("beach") || a.contains("lake")) {
         sea++;
       } else {
         city++;
       }
     }
 
-    if (mountains >= sea && mountains >= city) {
+    if (mountains > sea && mountains > city) {
       return "MOUNTAINS";
-    } else if (sea >= mountains && sea >= city) {
+    } else if (sea > mountains && sea > city) {
       return "SEA";
+    } else if (city > mountains && city > sea) {
+      return "CITY";
     } else {
       return "CITY";
     }
@@ -132,14 +169,17 @@ public class NewsletterService {
   private List<Object[]> fetchRecommendations(String preference) {
     List<Object[]> list;
     if ("MOUNTAINS".equals(preference)) {
-      list =
-          propertyRepository.findTop3PropertiesByCities(
-              List.of("szczyrk", "kościelisko", "wetlina", "karpacz"));
+      list = propertyRepository.findTop3PropertiesByCities(
+          List.of("szczyrk", "kościelisko", "wetlina", "karpacz")
+      );
     } else if ("SEA".equals(preference)) {
-      list = propertyRepository.findTop3PropertiesByCities(List.of("gdańsk", "sopot", "mikołajki"));
+      list = propertyRepository.findTop3PropertiesByCities(
+          List.of("gdańsk", "sopot", "mikołajki")
+      );
     } else if ("CITY".equals(preference)) {
-      list =
-          propertyRepository.findTop3PropertiesByCities(List.of("kraków", "wrocław", "warszawa"));
+      list = propertyRepository.findTop3PropertiesByCities(
+          List.of("kraków", "wrocław", "warszawa")
+      );
     } else {
       list = propertyRepository.findTop3DefaultProperties();
     }
