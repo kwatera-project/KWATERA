@@ -14,6 +14,9 @@ spring:
   mail:
     host: localhost
     port: 1025
+  ai:
+    openai:
+      api-key: mock-key
 
 eureka:
   client:
