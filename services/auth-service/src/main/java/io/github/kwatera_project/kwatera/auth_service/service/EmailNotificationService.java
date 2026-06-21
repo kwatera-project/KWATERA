@@ -184,4 +184,8 @@ public class EmailNotificationService {
         testRecipient);
     return testRecipient;
   }
+
+  public void sendPersonalizedNewsletter(String recipientEmail, String subject, String htmlBody) {
+    send(recipientEmail, subject, htmlBody);
+  }
 }

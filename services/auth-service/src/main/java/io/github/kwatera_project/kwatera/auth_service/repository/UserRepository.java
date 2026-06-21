@@ -2,6 +2,7 @@ package io.github.kwatera_project.kwatera.auth_service.repository;
 
 import io.github.kwatera_project.kwatera.auth_service.model.Role;
 import io.github.kwatera_project.kwatera.auth_service.model.User;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -32,4 +33,13 @@ public interface UserRepository extends JpaRepository<User, UUID> {
           + " LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')))")
   Page<User> findAllFilteredAndSearched(
       @Param("role") Role role, @Param("search") String search, Pageable pageable);
+
+  @Query(
+      value =
+          "SELECT p.city, CAST(p.amenities AS VARCHAR) FROM reservations r "
+              + "JOIN units u ON r.unit_id = u.id "
+              + "JOIN properties p ON u.property_id = p.id "
+              + "WHERE r.user_id = :userId",
+      nativeQuery = true)
+  List<Object[]> findPropertyDetailsByUserId(@Param("userId") UUID userId);
 }
