@@ -14,6 +14,7 @@ import io.github.kwatera_project.kwatera.auth_service.model.Role;
 import io.github.kwatera_project.kwatera.auth_service.model.User;
 import io.github.kwatera_project.kwatera.auth_service.repository.UserRepository;
 import io.github.kwatera_project.kwatera.auth_service.service.JwtService;
+import io.github.kwatera_project.kwatera.auth_service.service.PasswordResetService;
 import io.github.kwatera_project.kwatera.auth_service.service.UserService;
 import java.util.Optional;
 import java.util.UUID;
@@ -49,6 +50,8 @@ class AuthControllerTest {
   @MockitoBean private JwtService jwtService;
 
   @MockitoBean private UserRepository userRepository;
+
+  @MockitoBean private PasswordResetService passwordResetService;
 
   @Autowired private ObjectMapper objectMapper;
 
@@ -214,5 +217,38 @@ class AuthControllerTest {
         .andExpect(jsonPath("$.error").value("Invalid credentials"));
 
     verify(jwtService, never()).generateToken(any());
+  }
+
+  @Test
+  void shouldRequestPasswordReset() throws Exception {
+    io.github.kwatera_project.kwatera.auth_service.dto.ForgotPasswordRequest request =
+        new io.github.kwatera_project.kwatera.auth_service.dto.ForgotPasswordRequest();
+    request.setEmail("test@test.com");
+
+    mockMvc
+        .perform(
+            post("/api/auth/forgot-password")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isOk());
+
+    verify(passwordResetService).initiatePasswordReset("test@test.com");
+  }
+
+  @Test
+  void shouldResetPassword() throws Exception {
+    io.github.kwatera_project.kwatera.auth_service.dto.ResetPasswordRequest request =
+        new io.github.kwatera_project.kwatera.auth_service.dto.ResetPasswordRequest();
+    request.setToken("valid-token");
+    request.setNewPassword("new-secure-password");
+
+    mockMvc
+        .perform(
+            post("/api/auth/reset-password")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isOk());
+
+    verify(passwordResetService).resetPassword("valid-token", "new-secure-password");
   }
 }
