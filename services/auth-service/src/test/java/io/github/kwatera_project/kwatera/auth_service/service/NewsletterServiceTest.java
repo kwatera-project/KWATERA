@@ -152,7 +152,8 @@ class NewsletterServiceTest {
     newsletterService.sendPersonalizedNewsletterAsync("marek@example.com").get();
 
     verify(propertyRepository).findTop3DefaultProperties();
-    verify(emailNotificationService).sendPersonalizedNewsletter(anyString(), anyString(), anyString());
+    verify(emailNotificationService)
+        .sendPersonalizedNewsletter(anyString(), anyString(), anyString());
   }
 
   // ---------------------------------------------------------------------------
@@ -244,8 +245,8 @@ class NewsletterServiceTest {
     when(userRepository.findByEmail("ela@example.com")).thenReturn(Optional.of(user));
     // 2 city entries → CITY wins
     List<Object[]> details = new ArrayList<>();
-    details.add(new Object[]{"Warszawa", "wifi", null, null, null, null, null});
-    details.add(new Object[]{"Wrocław", "gym", null, null, null, null, null});
+    details.add(new Object[] {"Warszawa", "wifi", null, null, null, null, null});
+    details.add(new Object[] {"Wrocław", "gym", null, null, null, null, null});
     when(userRepository.findPropertyDetailsByUserId(user.getId())).thenReturn(details);
     when(propertyRepository.findTop3PropertiesByCities(any()))
         .thenReturn(properties(buildProperty("8", "Loft", "200")));
@@ -265,8 +266,8 @@ class NewsletterServiceTest {
     User user = buildUser("Janek");
     when(userRepository.findByEmail("janek@example.com")).thenReturn(Optional.of(user));
     List<Object[]> details = new ArrayList<>();
-    details.add(new Object[]{"Karpacz", "sauna", null, null, null, null, null});
-    details.add(new Object[]{"Szczyrk", "fireplace", null, null, null, null, null});
+    details.add(new Object[] {"Karpacz", "sauna", null, null, null, null, null});
+    details.add(new Object[] {"Szczyrk", "fireplace", null, null, null, null, null});
     when(userRepository.findPropertyDetailsByUserId(user.getId())).thenReturn(details);
     when(propertyRepository.findTop3PropertiesByCities(any()))
         .thenReturn(properties(buildProperty("9", "Chata", "180")));
@@ -286,8 +287,8 @@ class NewsletterServiceTest {
     User user = buildUser("Magda");
     when(userRepository.findByEmail("magda@example.com")).thenReturn(Optional.of(user));
     List<Object[]> details = new ArrayList<>();
-    details.add(new Object[]{"Sopot", "beach", null, null, null, null, null});
-    details.add(new Object[]{"Gdańsk", "kayaks", null, null, null, null, null});
+    details.add(new Object[] {"Sopot", "beach", null, null, null, null, null});
+    details.add(new Object[] {"Gdańsk", "kayaks", null, null, null, null, null});
     when(userRepository.findPropertyDetailsByUserId(user.getId())).thenReturn(details);
     when(propertyRepository.findTop3PropertiesByCities(any()))
         .thenReturn(properties(buildProperty("11", "Apartament", "280")));
@@ -313,7 +314,7 @@ class NewsletterServiceTest {
     when(userRepository.findPropertyDetailsByUserId(user.getId()))
         .thenReturn(propertyDetails("Sopot", "kayaks"));
     List<Object[]> propsWithNullPrice = new ArrayList<>();
-    propsWithNullPrice.add(new Object[]{"9", "Willa Morska", null, null, null, null, "Opis"});
+    propsWithNullPrice.add(new Object[] {"9", "Willa Morska", null, null, null, null, "Opis"});
     when(propertyRepository.findTop3PropertiesByCities(any())).thenReturn(propsWithNullPrice);
     stubLlm("Odpocznij!");
     when(templateEngine.process(anyString(), any(Context.class))).thenReturn("<html/>");
@@ -342,7 +343,7 @@ class NewsletterServiceTest {
 
   /** [0]=id, [1]=title, [2]=city, [3]=address, [4]=price, [5]=imageUrl, [6]=description */
   private Object[] buildProperty(String id, String title, String price) {
-    return new Object[]{id, title, "Kraków", "ul. Testowa 1", price, "http://img/" + id, "Opis"};
+    return new Object[] {id, title, "Kraków", "ul. Testowa 1", price, "http://img/" + id, "Opis"};
   }
 
   private List<Object[]> properties(Object[] prop) {
@@ -353,7 +354,7 @@ class NewsletterServiceTest {
 
   private List<Object[]> propertyDetails(String city, String amenity) {
     List<Object[]> list = new ArrayList<>();
-    list.add(new Object[]{city, amenity, null, null, null, null, null});
+    list.add(new Object[] {city, amenity, null, null, null, null, null});
     return list;
   }
 
