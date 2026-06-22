@@ -152,34 +152,34 @@ class NewsletterControllerTest {
   }
 
   @Test
-  void shouldUnsubscribeEmail() throws Exception {
+  void shouldUnsubscribeByToken() throws Exception {
     NewsletterSubscriber subscriber = new NewsletterSubscriber();
     subscriber.setEmail("unsubscribe@example.com");
+    subscriber.setToken("unsub-token-123");
 
-    when(subscriberRepository.findByEmail("unsubscribe@example.com"))
-        .thenReturn(Optional.of(subscriber));
+    when(subscriberRepository.findByToken("unsub-token-123")).thenReturn(Optional.of(subscriber));
 
     mockMvc
-        .perform(get("/api/newsletter/unsubscribe?email=unsubscribe@example.com"))
+        .perform(get("/api/newsletter/unsubscribe?token=unsub-token-123"))
         .andExpect(status().isFound())
         .andExpect(
             header().string("Location", "http://localhost:5173/?newsletterUnsubscribed=true"));
 
-    verify(subscriberRepository).findByEmail("unsubscribe@example.com");
+    verify(subscriberRepository).findByToken("unsub-token-123");
     verify(subscriberRepository).delete(subscriber);
   }
 
   @Test
-  void shouldDoNothingOnUnsubscribeWhenNotFound() throws Exception {
-    when(subscriberRepository.findByEmail("notfound@example.com")).thenReturn(Optional.empty());
+  void shouldDoNothingOnUnsubscribeWhenTokenNotFound() throws Exception {
+    when(subscriberRepository.findByToken("unknown-token")).thenReturn(Optional.empty());
 
     mockMvc
-        .perform(get("/api/newsletter/unsubscribe?email=notfound@example.com"))
+        .perform(get("/api/newsletter/unsubscribe?token=unknown-token"))
         .andExpect(status().isFound())
         .andExpect(
             header().string("Location", "http://localhost:5173/?newsletterUnsubscribed=true"));
 
-    verify(subscriberRepository).findByEmail("notfound@example.com");
+    verify(subscriberRepository).findByToken("unknown-token");
     verify(subscriberRepository, never()).delete(any(NewsletterSubscriber.class));
   }
 }
