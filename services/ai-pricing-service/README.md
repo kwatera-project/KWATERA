@@ -2,7 +2,7 @@
 
 # AI Pricing Service
 
-The AI Pricing Service suggests nightly prices for accommodation units. It combines property and unit data with date-derived features and runs inference through a CatBoost model.
+The AI Pricing Service suggests the price per night for accommodation units. It combines property and unit data with date-derived features and runs inference through a CatBoost model.
 
 ## Main responsibilities
 

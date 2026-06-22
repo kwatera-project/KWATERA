@@ -25,6 +25,14 @@ The Billing Service manages settlements, payment checkout, invoices, payment sta
 
 The service requires PostgreSQL credentials, `JWT_SECRET`, and the three Stripe variables from `.env`. It calls `ocr-service:8085`, uses Kafka at `kafka:9092`, and sends development mail through Mailpit.
 
+For local Stripe payment status updates, forward Stripe webhooks through the API Gateway:
+
+```bash
+stripe listen --forward-to localhost:8090/api/billing/webhook
+```
+
+Set `STRIPE_WEBHOOK_SECRET` in `infra/compose/.env` to the signing secret printed by the Stripe CLI. Without forwarding, Stripe Checkout can open, but local payment status updates may remain pending.
+
 ## Local verification
 
 See the [root quality-check instructions](../../README.md#local-quality-checks).

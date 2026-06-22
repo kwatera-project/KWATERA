@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 . "$PSScriptRoot\common.ps1"
 
-Invoke-MavenInEachService `
+Invoke-MavenInEachModule `
     -Arguments @("spotless:check") `
     -Label "Spotless check"

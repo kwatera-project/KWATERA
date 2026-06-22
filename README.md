@@ -1,6 +1,6 @@
 # KWATERA
 
-**KWATERA** is a web-based system for holiday accommodation bookings, availability, utility settlements, payments, reporting, and administration. It also supports OCR-assisted meter readings and AI-assisted accommodation pricing.
+**KWATERA** is a web-based system for holiday accommodation bookings, availability, utility settlements, payments, reporting, and administration. It also supports OCR-assisted meter readings, AI-assisted accommodation pricing, and LLM-supported newsletter recommendations for rental destinations.
 
 > **[Open the GitHub Pages demo](https://kwatera-project.github.io/KWATERA/)**
 
@@ -32,7 +32,7 @@ For the normal full-stack startup, install:
 - Docker with Docker Compose support;
 - the two model assets described below.
 
-Docker Compose starts PostgreSQL, Kafka, and Mailpit, so a local PostgreSQL installation is not required. Java 25, Maven, Bun, and Python are only needed when developing or running quality checks outside Docker.
+Docker Compose starts PostgreSQL, Kafka, and Mailpit, so a local PostgreSQL installation is not required. Java 25, Maven, Bun, and Python 3.12 are only needed when developing or running quality checks outside Docker.
 
 ### Environment
 
@@ -135,7 +135,15 @@ All seeded users use the password `pass`.
 
 ## Local quality checks
 
-Run the checks relevant to your changes:
+On Windows PowerShell, run the repository's pre-PR quality gate with:
+
+```powershell
+.\scripts\quality\pre-PR-check.ps1
+```
+
+The script derives all nine Java modules from the root Maven reactor and runs Spotless, Maven verification, and SpotBugs for each one. It also runs the OCR dependency, Ruff, pytest coverage, and Docker image checks, followed by the frontend Bun install, lint, and build. SonarQube Cloud analysis remains in GitHub Actions because it requires repository credentials and cloud project context.
+
+Use the commands below when checking selected parts manually:
 
 ```bash
 mvn clean verify
@@ -152,15 +160,16 @@ bun run build
 cd services/ocr-service
 python -m pip install -r requirements-dev.txt
 ruff check .
-pytest -q
+ruff format --check .
+pytest --cov=app --cov-report=xml:coverage.xml --cov-report=term-missing -q
 ```
 
 ## Authors / Project Team
 
-- **Zuzanna Adamczyk — AI/OCR & Catalog Engineer.** Developed the OCR module for automated utility readings and the property catalog.
-- **Łukasz Jęcek — Tech Lead & System Architect.** Coordinated microservices architecture, CI/CD, system integration, and technical standards.
-- **Nadzeya Silchankava — Backend Domain & Payments Engineer.** Designed backend domain flows, billing, settlements, and Stripe payment integration.
-- **Alicja Świercz — Reservation Flow & UX Engineer.** Led reservation flow, frontend UX, dashboards, and checkout-related user flows.
+- **Zuzanna Adamczyk — AI/OCR & Catalog Engineer.** Developed the OCR module for automated utility readings and the property catalog. [GitHub](https://github.com/ZuzannaAdamczyk) · [LinkedIn](https://www.linkedin.com/in/zuzanna-adamczyk-26a56928a/)
+- **Łukasz Jęcek — Tech Lead & System Architect.** Coordinated microservices architecture, CI/CD, system integration, and technical standards. [GitHub](https://github.com/lukaszjecek) · [LinkedIn](https://www.linkedin.com/in/lukasz-jecek)
+- **Nadzeya Silchankava — Backend Domain & Payments Engineer.** Designed backend domain flows, billing, settlements, and Stripe payment integration. [GitHub](https://github.com/sinadzeya) · [LinkedIn](https://www.linkedin.com/in/nadzeya-silchankava/)
+- **Alicja Świercz — Reservation Flow & UX Engineer.** Led reservation flow, frontend UX, dashboards, and checkout-related user flows. [GitHub](https://github.com/alicjaswiers) · [LinkedIn](https://www.linkedin.com/in/alicjaswiers/)
 
 ## Additional documentation
 
