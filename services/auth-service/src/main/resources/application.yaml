@@ -18,6 +18,13 @@ spring:
     port: ${SPRING_MAIL_PORT:1025}
     username: ${SPRING_MAIL_USERNAME:}
     password: ${SPRING_MAIL_PASSWORD:}
+  ai:
+    openai:
+      api-key: ${SPRING_AI_OPENAI_API_KEY}
+      base-url: https://api.groq.com/openai/v1
+      chat:
+        options:
+          model: llama-3.1-8b-instant
 
 eureka:
   client:

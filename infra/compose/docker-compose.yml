@@ -121,6 +121,7 @@ services:
       SPRING_MAIL_PASSWORD: ""
       KWATERA_MAIL_FROM: no-reply@kwatera.local
       KWATERA_MAIL_TEST_RECIPIENT: guest@kwatera.local
+      SPRING_AI_OPENAI_API_KEY: ${SPRING_AI_OPENAI_API_KEY}
     depends_on:
       config-server:
         condition: service_healthy

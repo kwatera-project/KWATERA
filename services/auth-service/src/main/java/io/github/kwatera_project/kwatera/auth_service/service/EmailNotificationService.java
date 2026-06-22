@@ -3,9 +3,12 @@ package io.github.kwatera_project.kwatera.auth_service.service;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.kwatera_project.kwatera.auth_service.client.PropertyClient;
 import io.github.kwatera_project.kwatera.auth_service.model.User;
+import io.github.kwatera_project.kwatera.auth_service.repository.NewsletterSubscriberRepository;
 import io.github.kwatera_project.kwatera.auth_service.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +33,7 @@ public class EmailNotificationService {
   private final TemplateEngine templateEngine;
   private final PropertyClient propertyClient;
   private final UserRepository userRepository;
+  private final NewsletterSubscriberRepository subscriberRepository;
   private final String fromAddress;
   private final String testRecipient;
   private final String publicGatewayUrl;
@@ -41,6 +45,7 @@ public class EmailNotificationService {
       TemplateEngine templateEngine,
       PropertyClient propertyClient,
       UserRepository userRepository,
+      NewsletterSubscriberRepository subscriberRepository,
       @Value("${kwatera.mail.from}") String fromAddress,
       @Value("${kwatera.mail.test-recipient}") String testRecipient,
       @Value("${kwatera.urls.public-gateway}") String publicGatewayUrl,
@@ -49,6 +54,7 @@ public class EmailNotificationService {
     this.templateEngine = templateEngine;
     this.propertyClient = propertyClient;
     this.userRepository = userRepository;
+    this.subscriberRepository = subscriberRepository;
     this.fromAddress = fromAddress;
     this.testRecipient = testRecipient;
     this.publicGatewayUrl = publicGatewayUrl;
@@ -148,9 +154,16 @@ public class EmailNotificationService {
       featuredItems.add(item);
     }
     context.setVariable("featuredItems", featuredItems);
-    context.setVariable(
-        "unsubscribeLink",
-        publicGatewayUrl + "/api/newsletter/unsubscribe?email=" + recipientEmail);
+    String unsubscribeLink =
+        subscriberRepository
+            .findByEmail(recipientEmail)
+            .map(
+                s ->
+                    publicGatewayUrl
+                        + "/api/newsletter/unsubscribe?token="
+                        + URLEncoder.encode(s.getToken(), StandardCharsets.UTF_8))
+            .orElse(publicGatewayUrl + "/api/newsletter/unsubscribe");
+    context.setVariable("unsubscribeLink", unsubscribeLink);
     String htmlBody = templateEngine.process("weekly-newsletter-template", context);
     send(recipientEmail, subject, htmlBody);
   }
@@ -183,5 +196,9 @@ public class EmailNotificationService {
         subject,
         testRecipient);
     return testRecipient;
+  }
+
+  public void sendPersonalizedNewsletter(String recipientEmail, String subject, String htmlBody) {
+    send(recipientEmail, subject, htmlBody);
   }
 }

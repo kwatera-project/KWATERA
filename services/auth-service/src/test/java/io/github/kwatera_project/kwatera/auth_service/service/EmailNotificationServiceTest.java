@@ -6,7 +6,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import io.github.kwatera_project.kwatera.auth_service.client.PropertyClient;
+import io.github.kwatera_project.kwatera.auth_service.model.NewsletterSubscriber;
 import io.github.kwatera_project.kwatera.auth_service.model.User;
+import io.github.kwatera_project.kwatera.auth_service.repository.NewsletterSubscriberRepository;
 import io.github.kwatera_project.kwatera.auth_service.repository.UserRepository;
 import jakarta.mail.internet.MimeMessage;
 import java.math.BigDecimal;
@@ -31,6 +33,7 @@ class EmailNotificationServiceTest {
   @Mock private TemplateEngine templateEngine;
   @Mock private PropertyClient propertyClient;
   @Mock private UserRepository userRepository;
+  @Mock private NewsletterSubscriberRepository subscriberRepository;
   @Mock private MimeMessage mimeMessage;
 
   private EmailNotificationService emailNotificationService;
@@ -43,6 +46,7 @@ class EmailNotificationServiceTest {
             templateEngine,
             propertyClient,
             userRepository,
+            subscriberRepository,
             "no-reply@kwatera.local",
             "test@kwatera.local",
             "http://localhost:8090",
@@ -115,6 +119,7 @@ class EmailNotificationServiceTest {
     when(propertyClient.getRandomProperties(3))
         .thenReturn(java.util.Collections.singletonList(prop));
     when(userRepository.findByEmail("subscriber@example.com")).thenReturn(Optional.empty());
+    when(subscriberRepository.findByEmail("subscriber@example.com")).thenReturn(Optional.empty());
 
     Map<String, Object> unit = new java.util.HashMap<>();
     unit.put("pricePerNight", 350.0);
@@ -144,7 +149,7 @@ class EmailNotificationServiceTest {
     assertThat(item.get("imageUrl")).isEqualTo("http://image.url");
     assertThat(item.get("pricePerNight")).isEqualTo(new BigDecimal("350.0"));
     assertThat(context.getVariable("unsubscribeLink"))
-        .isEqualTo("http://localhost:8090/api/newsletter/unsubscribe?email=subscriber@example.com");
+        .isEqualTo("http://localhost:8090/api/newsletter/unsubscribe");
   }
 
   @Test
@@ -161,6 +166,9 @@ class EmailNotificationServiceTest {
     User user = new User();
     user.setFirstName("Alice");
     when(userRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(user));
+    NewsletterSubscriber sub = new NewsletterSubscriber();
+    sub.setToken("alice-token");
+    when(subscriberRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(sub));
 
     when(propertyClient.getPropertyUnits(UUID.fromString("00000000-0000-0000-0000-000000000001")))
         .thenReturn(java.util.Collections.emptyList());
@@ -197,6 +205,7 @@ class EmailNotificationServiceTest {
     User user = new User();
     user.setFirstName("   ");
     when(userRepository.findByEmail("blank@example.com")).thenReturn(Optional.of(user));
+    when(subscriberRepository.findByEmail("blank@example.com")).thenReturn(Optional.empty());
 
     when(templateEngine.process(eq("weekly-newsletter-template"), any(Context.class)))
         .thenReturn("<html>Weekly Newsletter!</html>");
@@ -216,6 +225,7 @@ class EmailNotificationServiceTest {
             templateEngine,
             propertyClient,
             null,
+            subscriberRepository,
             "no-reply@kwatera.local",
             "test@kwatera.local",
             "http://localhost:8090",
@@ -228,6 +238,7 @@ class EmailNotificationServiceTest {
     prop.put("description", "A beautiful villa");
     when(propertyClient.getRandomProperties(3))
         .thenReturn(java.util.Collections.singletonList(prop));
+    when(subscriberRepository.findByEmail("norepo@example.com")).thenReturn(Optional.empty());
 
     when(templateEngine.process(eq("weekly-newsletter-template"), any(Context.class)))
         .thenReturn("<html>Weekly Newsletter!</html>");
@@ -252,6 +263,7 @@ class EmailNotificationServiceTest {
 
     when(propertyClient.getRandomProperties(3)).thenReturn(java.util.Arrays.asList(prop1, prop2));
     when(userRepository.findByEmail("any@example.com")).thenReturn(Optional.empty());
+    when(subscriberRepository.findByEmail("any@example.com")).thenReturn(Optional.empty());
 
     when(propertyClient.getPropertyUnits(UUID.fromString("00000000-0000-0000-0000-000000000002")))
         .thenReturn(null);
@@ -282,6 +294,7 @@ class EmailNotificationServiceTest {
     when(propertyClient.getRandomProperties(3))
         .thenReturn(java.util.Collections.singletonList(prop));
     when(userRepository.findByEmail("any@example.com")).thenReturn(Optional.empty());
+    when(subscriberRepository.findByEmail("any@example.com")).thenReturn(Optional.empty());
 
     Map<String, Object> unit1 = new java.util.HashMap<>();
     unit1.put("pricePerNight", "invalid-price-format");
@@ -374,5 +387,17 @@ class EmailNotificationServiceTest {
     Context context = contextCaptor.getValue();
     assertThat(context.getVariable("resetUrl")).isEqualTo("http://reset-url");
     assertThat(context.getVariable("subject")).isEqualTo("Password Reset Request");
+  }
+
+  @Test
+  void shouldSendPersonalizedNewsletter() {
+    when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+    emailNotificationService.sendPersonalizedNewsletter(
+        "user@example.com",
+        "Your Personalized KWATERA Recommendations",
+        "<html>personalized</html>");
+
+    verify(mailSender).send(mimeMessage);
   }
 }
