@@ -8,9 +8,17 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+/**
+ * Read-only newsletter projection repository.
+ *
+ * <p>Auth-service has SELECT-only access to the {@code properties} table, which is owned by
+ * property-service. This repository is used exclusively to fetch preference-based property
+ * recommendations for the weekly personalised newsletter. Do not add write operations here.
+ */
 @Repository
 public interface PropertyRepository extends JpaRepository<Property, UUID> {
 
+  /** Returns up to 3 properties whose city matches the subscriber's travel-preference cities. */
   @Query(
       value =
           "SELECT p.id, p.title, p.city, p.country, MIN(u.price_per_night) as price, pi.url as image_url, p.description "
@@ -21,8 +29,11 @@ public interface PropertyRepository extends JpaRepository<Property, UUID> {
               + "GROUP BY p.id, p.title, p.city, p.country, pi.url, p.description "
               + "LIMIT 3",
       nativeQuery = true)
-  List<Object[]> findTop3PropertiesByCities(@Param("cities") List<String> cities);
+  List<Object[]> findRecommendedPropertiesByCities(@Param("cities") List<String> cities);
 
+  /**
+   * Returns up to 3 properties as a general recommendation fallback when no preference is known.
+   */
   @Query(
       value =
           "SELECT p.id, p.title, p.city, p.country, MIN(u.price_per_night) as price, pi.url as image_url, p.description "
@@ -32,5 +43,5 @@ public interface PropertyRepository extends JpaRepository<Property, UUID> {
               + "GROUP BY p.id, p.title, p.city, p.country, pi.url, p.description "
               + "LIMIT 3",
       nativeQuery = true)
-  List<Object[]> findTop3DefaultProperties();
+  List<Object[]> findDefaultRecommendedProperties();
 }

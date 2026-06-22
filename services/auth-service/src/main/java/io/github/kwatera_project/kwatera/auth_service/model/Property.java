@@ -9,6 +9,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Read-only newsletter property projection.
+ *
+ * <p>This entity maps the {@code properties} table owned by property-service. Auth-service has
+ * SELECT-only access to this table for the purpose of building personalised newsletter
+ * recommendations. Do not use this entity for any write operations; all property domain logic lives
+ * in property-service.
+ */
 @Entity
 @Table(name = "properties")
 @Getter

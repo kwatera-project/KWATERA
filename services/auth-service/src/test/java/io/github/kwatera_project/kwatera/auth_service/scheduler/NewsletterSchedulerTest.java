@@ -1,16 +1,19 @@
 package io.github.kwatera_project.kwatera.auth_service.scheduler;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 import io.github.kwatera_project.kwatera.auth_service.model.NewsletterSubscriber;
 import io.github.kwatera_project.kwatera.auth_service.repository.NewsletterSubscriberRepository;
 import io.github.kwatera_project.kwatera.auth_service.service.NewsletterService;
+import java.lang.reflect.Method;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.scheduling.annotation.Scheduled;
 
 @ExtendWith(MockitoExtension.class)
 class NewsletterSchedulerTest {
@@ -54,6 +57,15 @@ class NewsletterSchedulerTest {
 
     verify(subscriberRepository).findByStatus("CONFIRMED");
     verifyNoMoreInteractions(subscriberRepository);
+  }
+
+  @Test
+  void schedulerCronShouldRunFridayAt18Warsaw() throws NoSuchMethodException {
+    Method method = NewsletterScheduler.class.getMethod("sendWeeklyPersonalizedNewsletters");
+    Scheduled scheduled = method.getAnnotation(Scheduled.class);
+    assertThat(scheduled).isNotNull();
+    assertThat(scheduled.cron()).isEqualTo("0 0 18 * * FRI");
+    assertThat(scheduled.zone()).isEqualTo("Europe/Warsaw");
   }
 
   private NewsletterSubscriber buildSubscriber(String email) {

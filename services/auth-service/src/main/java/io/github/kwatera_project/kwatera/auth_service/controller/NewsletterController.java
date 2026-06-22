@@ -65,9 +65,8 @@ public class NewsletterController {
   }
 
   @GetMapping("/unsubscribe")
-  public ResponseEntity<Void> unsubscribe(@RequestParam("email") String email) {
-    Optional<NewsletterSubscriber> subscriberOpt =
-        subscriberRepository.findByEmail(email.trim().toLowerCase());
+  public ResponseEntity<Void> unsubscribe(@RequestParam("token") String token) {
+    Optional<NewsletterSubscriber> subscriberOpt = subscriberRepository.findByToken(token);
     subscriberOpt.ifPresent(subscriberRepository::delete);
     return ResponseEntity.status(HttpStatus.FOUND)
         .location(URI.create(frontendBaseUrl + "/?newsletterUnsubscribed=true"))

@@ -15,7 +15,7 @@ public class NewsletterScheduler {
   private final NewsletterSubscriberRepository subscriberRepository;
   private final NewsletterService newsletterService;
 
-  @Scheduled(cron = "0 0 18 * * FRI")
+  @Scheduled(cron = "0 0 18 * * FRI", zone = "Europe/Warsaw")
   public void sendWeeklyPersonalizedNewsletters() {
     List<NewsletterSubscriber> activeSubscribers = subscriberRepository.findByStatus("CONFIRMED");
     for (NewsletterSubscriber subscriber : activeSubscribers) {

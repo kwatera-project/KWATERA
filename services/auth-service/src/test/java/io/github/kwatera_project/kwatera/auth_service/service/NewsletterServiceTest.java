@@ -6,7 +6,9 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import io.github.kwatera_project.kwatera.auth_service.model.NewsletterSubscriber;
 import io.github.kwatera_project.kwatera.auth_service.model.User;
+import io.github.kwatera_project.kwatera.auth_service.repository.NewsletterSubscriberRepository;
 import io.github.kwatera_project.kwatera.auth_service.repository.PropertyRepository;
 import io.github.kwatera_project.kwatera.auth_service.repository.UserRepository;
 import java.math.BigDecimal;
@@ -35,6 +37,7 @@ class NewsletterServiceTest {
   @Mock private ChatClient.CallResponseSpec callResponseSpec;
   @Mock private UserRepository userRepository;
   @Mock private PropertyRepository propertyRepository;
+  @Mock private NewsletterSubscriberRepository subscriberRepository;
   @Mock private EmailNotificationService emailNotificationService;
   @Mock private TemplateEngine templateEngine;
 
@@ -51,6 +54,7 @@ class NewsletterServiceTest {
             chatClientBuilder,
             userRepository,
             propertyRepository,
+            subscriberRepository,
             emailNotificationService,
             templateEngine,
             FRONTEND_URL,
@@ -67,8 +71,9 @@ class NewsletterServiceTest {
     when(userRepository.findByEmail("anna@example.com")).thenReturn(Optional.of(user));
     when(userRepository.findPropertyDetailsByUserId(user.getId()))
         .thenReturn(propertyDetails("Szczyrk", "fireplace"));
-    when(propertyRepository.findTop3PropertiesByCities(any()))
+    when(propertyRepository.findRecommendedPropertiesByCities(any()))
         .thenReturn(properties(buildProperty("1", "Chata Górska", "200")));
+    stubSubscriber("anna@example.com", "token-anna");
     stubLlm("Góry czekają!");
     when(templateEngine.process(eq("personalized-newsletter-template"), any(Context.class)))
         .thenReturn("<html>personalized</html>");
@@ -90,8 +95,9 @@ class NewsletterServiceTest {
     when(userRepository.findByEmail("piotr@example.com")).thenReturn(Optional.of(user));
     when(userRepository.findPropertyDetailsByUserId(user.getId()))
         .thenReturn(propertyDetails("Sopot", "beach"));
-    when(propertyRepository.findTop3PropertiesByCities(any()))
+    when(propertyRepository.findRecommendedPropertiesByCities(any()))
         .thenReturn(properties(buildProperty("2", "Apartament Morski", "300")));
+    stubSubscriber("piotr@example.com", "token-piotr");
     stubLlm("Morze czeka!");
     when(templateEngine.process(eq("personalized-newsletter-template"), any(Context.class)))
         .thenReturn("<html>sea</html>");
@@ -108,8 +114,9 @@ class NewsletterServiceTest {
     when(userRepository.findByEmail("kasia@example.com")).thenReturn(Optional.of(user));
     when(userRepository.findPropertyDetailsByUserId(user.getId()))
         .thenReturn(propertyDetails("Kraków", "wifi"));
-    when(propertyRepository.findTop3PropertiesByCities(any()))
+    when(propertyRepository.findRecommendedPropertiesByCities(any()))
         .thenReturn(properties(buildProperty("3", "Loft w centrum", "180")));
+    stubSubscriber("kasia@example.com", "token-kasia");
     stubLlm("Miasto na wyciągnięcie ręki!");
     when(templateEngine.process(eq("personalized-newsletter-template"), any(Context.class)))
         .thenReturn("<html>city</html>");
@@ -123,7 +130,8 @@ class NewsletterServiceTest {
   @Test
   void shouldSendPersonalizedEmail_forNewUserFallbackToDefault() throws Exception {
     when(userRepository.findByEmail("new@example.com")).thenReturn(Optional.empty());
-    when(propertyRepository.findTop3DefaultProperties())
+    when(subscriberRepository.findByEmail("new@example.com")).thenReturn(Optional.empty());
+    when(propertyRepository.findDefaultRecommendedProperties())
         .thenReturn(properties(buildProperty("4", "Domek letniskowy", "150")));
     stubLlm("Witamy!");
     when(templateEngine.process(eq("personalized-newsletter-template"), any(Context.class)))
@@ -133,7 +141,7 @@ class NewsletterServiceTest {
 
     verify(emailNotificationService)
         .sendPersonalizedNewsletter(eq("new@example.com"), anyString(), eq("<html>new</html>"));
-    verify(propertyRepository).findTop3DefaultProperties();
+    verify(propertyRepository).findDefaultRecommendedProperties();
   }
 
   @Test
@@ -142,16 +150,17 @@ class NewsletterServiceTest {
     when(userRepository.findByEmail("marek@example.com")).thenReturn(Optional.of(user));
     when(userRepository.findPropertyDetailsByUserId(user.getId()))
         .thenReturn(propertyDetails("Kraków", "wifi"));
-    when(propertyRepository.findTop3PropertiesByCities(any())).thenReturn(new ArrayList<>());
-    when(propertyRepository.findTop3DefaultProperties())
+    when(propertyRepository.findRecommendedPropertiesByCities(any())).thenReturn(new ArrayList<>());
+    when(propertyRepository.findDefaultRecommendedProperties())
         .thenReturn(properties(buildProperty("5", "Dom nad jeziorem", "220")));
+    stubSubscriber("marek@example.com", "token-marek");
     stubLlm("Super oferty!");
     when(templateEngine.process(eq("personalized-newsletter-template"), any(Context.class)))
         .thenReturn("<html>fallback</html>");
 
     newsletterService.sendPersonalizedNewsletterAsync("marek@example.com").get();
 
-    verify(propertyRepository).findTop3DefaultProperties();
+    verify(propertyRepository).findDefaultRecommendedProperties();
     verify(emailNotificationService)
         .sendPersonalizedNewsletter(anyString(), anyString(), anyString());
   }
@@ -166,8 +175,9 @@ class NewsletterServiceTest {
     when(userRepository.findByEmail("ola@example.com")).thenReturn(Optional.of(user));
     when(userRepository.findPropertyDetailsByUserId(user.getId()))
         .thenReturn(propertyDetails("Karpacz", "sauna"));
-    when(propertyRepository.findTop3PropertiesByCities(any()))
+    when(propertyRepository.findRecommendedPropertiesByCities(any()))
         .thenReturn(properties(buildProperty("10", "Schronisko", "120")));
+    stubSubscriber("ola@example.com", "token-ola");
     stubLlm("Odpocznij w górach!");
     when(templateEngine.process(anyString(), any(Context.class))).thenReturn("<html/>");
 
@@ -180,11 +190,57 @@ class NewsletterServiceTest {
     assertThat(ctx.getVariable("greeting")).isEqualTo("Ola");
     assertThat(ctx.getVariable("personalizedGreeting")).isNotNull();
     assertThat(ctx.getVariable("propertiesRationale")).isNotNull();
-    assertThat(ctx.getVariable("unsubscribeLink"))
-        .isEqualTo(GATEWAY_URL + "/api/newsletter/unsubscribe?email=ola@example.com");
+    assertThat((String) ctx.getVariable("unsubscribeLink"))
+        .contains("token=")
+        .doesNotContain("email=")
+        .doesNotContain("ola@example.com");
     @SuppressWarnings("unchecked")
     List<?> items = (List<?>) ctx.getVariable("featuredItems");
     assertThat(items).hasSize(1);
+  }
+
+  @Test
+  void unsubscribeLinkShouldUseTokenNotEmail() throws Exception {
+    User user = buildUser("Tester");
+    when(userRepository.findByEmail("tester@example.com")).thenReturn(Optional.of(user));
+    when(userRepository.findPropertyDetailsByUserId(user.getId()))
+        .thenReturn(propertyDetails("Wrocław", "gym"));
+    when(propertyRepository.findRecommendedPropertiesByCities(any()))
+        .thenReturn(properties(buildProperty("20", "Studio", "160")));
+    stubSubscriber("tester@example.com", "abc-token-123");
+    stubLlm("Miłej podróży!");
+    when(templateEngine.process(anyString(), any(Context.class))).thenReturn("<html/>");
+
+    newsletterService.sendPersonalizedNewsletterAsync("tester@example.com").get();
+
+    ArgumentCaptor<Context> captor = ArgumentCaptor.forClass(Context.class);
+    verify(templateEngine).process(anyString(), captor.capture());
+    String link = (String) captor.getValue().getVariable("unsubscribeLink");
+    assertThat(link)
+        .contains("token=abc-token-123")
+        .doesNotContain("email=")
+        .doesNotContain("tester@example.com");
+  }
+
+  @Test
+  void unsubscribeLinkShouldUrlEncodeToken() throws Exception {
+    User user = buildUser("Encoded");
+    String rawToken = "tok en+with/special=chars";
+    when(userRepository.findByEmail("encoded@example.com")).thenReturn(Optional.of(user));
+    when(userRepository.findPropertyDetailsByUserId(user.getId()))
+        .thenReturn(propertyDetails("Gdańsk", "beach"));
+    when(propertyRepository.findRecommendedPropertiesByCities(any()))
+        .thenReturn(properties(buildProperty("21", "Plaża", "200")));
+    stubSubscriber("encoded@example.com", rawToken);
+    stubLlm("Zapraszamy!");
+    when(templateEngine.process(anyString(), any(Context.class))).thenReturn("<html/>");
+
+    newsletterService.sendPersonalizedNewsletterAsync("encoded@example.com").get();
+
+    ArgumentCaptor<Context> captor = ArgumentCaptor.forClass(Context.class);
+    verify(templateEngine).process(anyString(), captor.capture());
+    String link = (String) captor.getValue().getVariable("unsubscribeLink");
+    assertThat(link).doesNotContain(" ").contains("tok+en");
   }
 
   // ---------------------------------------------------------------------------
@@ -197,8 +253,9 @@ class NewsletterServiceTest {
     when(userRepository.findByEmail("bartek@example.com")).thenReturn(Optional.of(user));
     when(userRepository.findPropertyDetailsByUserId(user.getId()))
         .thenReturn(propertyDetails("Gdańsk", "beach"));
-    when(propertyRepository.findTop3PropertiesByCities(any()))
+    when(propertyRepository.findRecommendedPropertiesByCities(any()))
         .thenReturn(properties(buildProperty("6", "Apartament Morski", "250")));
+    stubSubscriber("bartek@example.com", "token-bartek");
     when(chatClient.prompt()).thenThrow(new RuntimeException("LLM unavailable"));
     when(templateEngine.process(anyString(), any(Context.class))).thenReturn("<html/>");
 
@@ -222,8 +279,9 @@ class NewsletterServiceTest {
     when(userRepository.findByEmail("tomek@example.com")).thenReturn(Optional.of(user));
     when(userRepository.findPropertyDetailsByUserId(user.getId()))
         .thenReturn(propertyDetails("Wrocław", "gym"));
-    when(propertyRepository.findTop3PropertiesByCities(any()))
+    when(propertyRepository.findRecommendedPropertiesByCities(any()))
         .thenReturn(properties(buildProperty("7", "Studio Miejskie", "160")));
+    stubSubscriber("tomek@example.com", "token-tomek");
     stubLlm("Odkryj miasto!");
     when(templateEngine.process(anyString(), any(Context.class)))
         .thenThrow(new RuntimeException("Template error"));
@@ -248,8 +306,9 @@ class NewsletterServiceTest {
     details.add(new Object[] {"Warszawa", "wifi", null, null, null, null, null});
     details.add(new Object[] {"Wrocław", "gym", null, null, null, null, null});
     when(userRepository.findPropertyDetailsByUserId(user.getId())).thenReturn(details);
-    when(propertyRepository.findTop3PropertiesByCities(any()))
+    when(propertyRepository.findRecommendedPropertiesByCities(any()))
         .thenReturn(properties(buildProperty("8", "Loft", "200")));
+    stubSubscriber("ela@example.com", "token-ela");
     stubLlm("Witaj!");
     when(templateEngine.process(anyString(), any(Context.class))).thenReturn("<html/>");
 
@@ -257,7 +316,7 @@ class NewsletterServiceTest {
 
     @SuppressWarnings("unchecked")
     ArgumentCaptor<List<String>> citiesCaptor = ArgumentCaptor.forClass(List.class);
-    verify(propertyRepository).findTop3PropertiesByCities(citiesCaptor.capture());
+    verify(propertyRepository).findRecommendedPropertiesByCities(citiesCaptor.capture());
     assertThat(citiesCaptor.getValue()).contains("kraków", "wrocław", "warszawa");
   }
 
@@ -269,8 +328,9 @@ class NewsletterServiceTest {
     details.add(new Object[] {"Karpacz", "sauna", null, null, null, null, null});
     details.add(new Object[] {"Szczyrk", "fireplace", null, null, null, null, null});
     when(userRepository.findPropertyDetailsByUserId(user.getId())).thenReturn(details);
-    when(propertyRepository.findTop3PropertiesByCities(any()))
+    when(propertyRepository.findRecommendedPropertiesByCities(any()))
         .thenReturn(properties(buildProperty("9", "Chata", "180")));
+    stubSubscriber("janek@example.com", "token-janek");
     stubLlm("Góry!");
     when(templateEngine.process(anyString(), any(Context.class))).thenReturn("<html/>");
 
@@ -278,7 +338,7 @@ class NewsletterServiceTest {
 
     @SuppressWarnings("unchecked")
     ArgumentCaptor<List<String>> citiesCaptor = ArgumentCaptor.forClass(List.class);
-    verify(propertyRepository).findTop3PropertiesByCities(citiesCaptor.capture());
+    verify(propertyRepository).findRecommendedPropertiesByCities(citiesCaptor.capture());
     assertThat(citiesCaptor.getValue()).contains("szczyrk", "kościelisko", "wetlina", "karpacz");
   }
 
@@ -290,8 +350,9 @@ class NewsletterServiceTest {
     details.add(new Object[] {"Sopot", "beach", null, null, null, null, null});
     details.add(new Object[] {"Gdańsk", "kayaks", null, null, null, null, null});
     when(userRepository.findPropertyDetailsByUserId(user.getId())).thenReturn(details);
-    when(propertyRepository.findTop3PropertiesByCities(any()))
+    when(propertyRepository.findRecommendedPropertiesByCities(any()))
         .thenReturn(properties(buildProperty("11", "Apartament", "280")));
+    stubSubscriber("magda@example.com", "token-magda");
     stubLlm("Morze!");
     when(templateEngine.process(anyString(), any(Context.class))).thenReturn("<html/>");
 
@@ -299,7 +360,7 @@ class NewsletterServiceTest {
 
     @SuppressWarnings("unchecked")
     ArgumentCaptor<List<String>> citiesCaptor = ArgumentCaptor.forClass(List.class);
-    verify(propertyRepository).findTop3PropertiesByCities(citiesCaptor.capture());
+    verify(propertyRepository).findRecommendedPropertiesByCities(citiesCaptor.capture());
     assertThat(citiesCaptor.getValue()).contains("gdańsk", "sopot", "mikołajki");
   }
 
@@ -315,7 +376,9 @@ class NewsletterServiceTest {
         .thenReturn(propertyDetails("Sopot", "kayaks"));
     List<Object[]> propsWithNullPrice = new ArrayList<>();
     propsWithNullPrice.add(new Object[] {"9", "Willa Morska", null, null, null, null, "Opis"});
-    when(propertyRepository.findTop3PropertiesByCities(any())).thenReturn(propsWithNullPrice);
+    when(propertyRepository.findRecommendedPropertiesByCities(any()))
+        .thenReturn(propsWithNullPrice);
+    stubSubscriber("zosia@example.com", "token-zosia");
     stubLlm("Odpocznij!");
     when(templateEngine.process(anyString(), any(Context.class))).thenReturn("<html/>");
 
@@ -363,5 +426,12 @@ class NewsletterServiceTest {
     when(requestSpec.user(anyString())).thenReturn(requestSpec);
     when(requestSpec.call()).thenReturn(callResponseSpec);
     when(callResponseSpec.content()).thenReturn(response);
+  }
+
+  private void stubSubscriber(String email, String token) {
+    NewsletterSubscriber subscriber = new NewsletterSubscriber();
+    subscriber.setEmail(email);
+    subscriber.setToken(token);
+    when(subscriberRepository.findByEmail(email)).thenReturn(Optional.of(subscriber));
   }
 }

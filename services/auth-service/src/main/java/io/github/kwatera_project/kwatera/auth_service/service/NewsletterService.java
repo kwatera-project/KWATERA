@@ -1,14 +1,19 @@
 package io.github.kwatera_project.kwatera.auth_service.service;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.github.kwatera_project.kwatera.auth_service.model.NewsletterSubscriber;
 import io.github.kwatera_project.kwatera.auth_service.model.User;
+import io.github.kwatera_project.kwatera.auth_service.repository.NewsletterSubscriberRepository;
 import io.github.kwatera_project.kwatera.auth_service.repository.PropertyRepository;
 import io.github.kwatera_project.kwatera.auth_service.repository.UserRepository;
 import java.math.BigDecimal;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -25,6 +30,7 @@ public class NewsletterService {
   private final ChatClient chatClient;
   private final UserRepository userRepository;
   private final PropertyRepository propertyRepository;
+  private final NewsletterSubscriberRepository subscriberRepository;
   private final EmailNotificationService emailNotificationService;
   private final TemplateEngine templateEngine;
   private final String frontendBaseUrl;
@@ -35,6 +41,7 @@ public class NewsletterService {
       ChatClient.Builder chatClientBuilder,
       UserRepository userRepository,
       PropertyRepository propertyRepository,
+      NewsletterSubscriberRepository subscriberRepository,
       EmailNotificationService emailNotificationService,
       TemplateEngine templateEngine,
       @Value("${kwatera.urls.frontend-base}") String frontendBaseUrl,
@@ -42,6 +49,7 @@ public class NewsletterService {
     this.chatClient = chatClientBuilder.build();
     this.userRepository = userRepository;
     this.propertyRepository = propertyRepository;
+    this.subscriberRepository = subscriberRepository;
     this.emailNotificationService = emailNotificationService;
     this.templateEngine = templateEngine;
     this.frontendBaseUrl = frontendBaseUrl;
@@ -68,8 +76,16 @@ public class NewsletterService {
       context.setVariable("personalizedGreeting", personalizedGreeting);
       context.setVariable("propertiesRationale", propertiesRationale);
       context.setVariable("featuredItems", featuredItems);
-      context.setVariable(
-          "unsubscribeLink", publicGatewayUrl + "/api/newsletter/unsubscribe?email=" + email);
+      Optional<NewsletterSubscriber> subscriberOpt = subscriberRepository.findByEmail(email);
+      String unsubscribeLink =
+          subscriberOpt
+              .map(
+                  s ->
+                      publicGatewayUrl
+                          + "/api/newsletter/unsubscribe?token="
+                          + URLEncoder.encode(s.getToken(), StandardCharsets.UTF_8))
+              .orElse(publicGatewayUrl + "/api/newsletter/unsubscribe");
+      context.setVariable("unsubscribeLink", unsubscribeLink);
 
       String htmlBody = templateEngine.process("personalized-newsletter-template", context);
 
@@ -221,19 +237,22 @@ public class NewsletterService {
     List<Object[]> list;
     if ("MOUNTAINS".equals(preference)) {
       list =
-          propertyRepository.findTop3PropertiesByCities(
+          propertyRepository.findRecommendedPropertiesByCities(
               List.of("szczyrk", "kościelisko", "wetlina", "karpacz"));
     } else if ("SEA".equals(preference)) {
-      list = propertyRepository.findTop3PropertiesByCities(List.of("gdańsk", "sopot", "mikołajki"));
+      list =
+          propertyRepository.findRecommendedPropertiesByCities(
+              List.of("gdańsk", "sopot", "mikołajki"));
     } else if ("CITY".equals(preference)) {
       list =
-          propertyRepository.findTop3PropertiesByCities(List.of("kraków", "wrocław", "warszawa"));
+          propertyRepository.findRecommendedPropertiesByCities(
+              List.of("kraków", "wrocław", "warszawa"));
     } else {
-      list = propertyRepository.findTop3DefaultProperties();
+      list = propertyRepository.findDefaultRecommendedProperties();
     }
 
     if (list == null || list.isEmpty()) {
-      list = propertyRepository.findTop3DefaultProperties();
+      list = propertyRepository.findDefaultRecommendedProperties();
     }
     return list;
   }
