@@ -1,141 +1,39 @@
-# KWATERA OCR Service
+[← Back to the project README](../../README.md)
 
-Python microservice skeleton for the KWATERA OCR module.
+# OCR Service
 
-The service provides water meter digit recognition using a YOLO-based OCR pipeline exposed through a FastAPI HTTP API.
+The OCR Service is a Python FastAPI application that reads digits from uploaded water meter images. It validates and preprocesses JPG, PNG, and HEIC/HEIF files before running a YOLO-based recognition pipeline.
 
-Current features:
+## Main responsibilities
 
-- FastAPI OCR API,
-- water meter digit detection using YOLO,
-- image preprocessing and validation,
-- support for JPG, PNG and HEIC/HEIF images,
-- Docker and Docker Compose support.
+- Accept water meter image uploads.
+- Validate and preprocess supported image formats.
+- Detect meter digits and return a reading with confidence.
+- Provide OCR results to the Billing Service.
 
+## Default port
 
+`8085`
 
-## Local setup
+## Useful local URLs
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements-dev.txt
-```
+- Health: [http://localhost:8085/health](http://localhost:8085/health)
+- FastAPI docs: [http://localhost:8085/docs](http://localhost:8085/docs)
 
-On Windows PowerShell:
+## Configuration notes
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements-dev.txt
-```
+Download the [OCR YOLO model release](https://github.com/kwatera-project/KWATERA/releases/tag/v1.0-ocr-yolo-model) and place the weights at:
 
-## Quality checks
-
-Run from `services/ocr-service`:
-
-```bash
-ruff check .
-ruff format --check .
-pytest -q
-```
-
-If formatting check fails, run:
-
-```bash
-ruff format .
-```
-
-## Run locally
-
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8085
-```
-
-Health endpoint:
-
-```txt
-GET /health
-```
-
-Expected response:
-
-```json
-{
-  "status": "UP",
-  "service": "ocr-service"
-}
-```
-
-Read Meter endpoint:
-
-```txt
-POST /ocr/read-meter
-```
-
-Example request: 
-
-curl -X POST "http://127.0.0.1:8085/ocr/read-meter" -F "file=@tests/test1.jpg"
-
-Expected response:
-
-```json
-{
-
-  "readingValue": "0836",
-  "confidence": 0.8400988936
-
-}
-```
-
-
-## Docker
-
-From repository root:
-
-```bash
-docker build -f services/ocr-service/Dockerfile -t kwatera-ocr-service:local .
-docker run --rm -p 8085:8085 kwatera-ocr-service:local
-```
-
-## Docker Compose
-
-From repository root:
-
-```bash
-docker compose -f infra/compose/docker-compose.yml up --build ocr-service
-```
-
-Then open:
-
-```txt
-http://localhost:8085/health
-```
-
-## YOLO model setup
-
-The OCR service requires the trained YOLO weights file:
-
-```txt
-digits.pt
-```
-
-Download the model from the GitHub release:
-
-```txt
-v1.0-ocr-yolo-model
-```
-
-Place the file in:
-
-```txt
+```text
 services/ocr-service/models/digits.pt
 ```
 
-During Docker image build, the local `services/ocr-service/models` directory is copied into the container as:
+The Docker image copies the directory to `/app/models`, and the service loads `models/digits.pt`.
 
-```txt
-/app/models
+## Local verification
+
+From this directory, after installing `requirements-dev.txt`:
+
+```bash
+pytest -q
 ```

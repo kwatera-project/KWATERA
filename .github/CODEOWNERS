@@ -17,8 +17,8 @@
 /services/service-registry/ @lukaszjecek @sinadzeya
 /services/api-gateway/ @lukaszjecek @sinadzeya
 
-# Authentication, authorization and security.
-/services/auth-service/ @sinadzeya @lukaszjecek
+# Authentication, authorization, account recovery and newsletters.
+/services/auth-service/ @sinadzeya @alicjaswiers @lukaszjecek
 
 # Database schema, migrations and seed data.
 /services/db-migrations/ @sinadzeya @lukaszjecek

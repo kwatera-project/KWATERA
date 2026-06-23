@@ -1,57 +1,30 @@
-## Running Tests
+[← Back to the project README](../../README.md)
 
-To execute tests using Docker:
+# Auth Service
 
-```bash
-docker run --rm -v "$(pwd):/app" -w /app maven:3.9.11-eclipse-temurin-21 mvn test -pl services/auth-service -Dtest=AuthControllerTest
-```
+The Auth Service manages users, authentication, profiles, password reset, newsletter subscriptions, and administrator user reporting. It issues and validates JWT-based authentication data used across the platform.
 
----
+## Main responsibilities
 
-## User Registration
+- Register and authenticate users.
+- Manage user profiles and role-aware administrator views.
+- Handle password-reset and newsletter email flows.
+- Integrate with the property service for selected user-related data.
 
-**Endpoint:**
+## Default port
 
-```
-POST http://localhost:8081/api/auth/register
-```
+`8081`
 
-**Request body:**
+## Useful local URLs
 
-```json
-{
-  "username": "user",
-  "email": "user@gmail.com",
-  "password": "password"
-}
-```
+- Health: [http://localhost:8081/actuator/health](http://localhost:8081/actuator/health)
+- Swagger UI: [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html)
+- Gateway paths: `http://localhost:8090/api/auth`, `/api/newsletter`, and `/api/admin/users`
 
----
+## Configuration notes
 
-## Check Users in Database
+The service requires PostgreSQL credentials and `JWT_SECRET`. Docker Compose also supplies Mailpit settings and `SPRING_AI_OPENAI_API_KEY` for its OpenAI-compatible Groq integration.
 
-To verify users stored in the database (make sure the database container is running):
+## Local verification
 
-```bash
-docker exec -it compose-postgres-1 psql -U user -d database -c "SELECT * FROM users;"
-```
-
----
-
-## Login
-
-Open in browser:
-
-```
-http://localhost:8081/login
-```
-
----
-
-## Get Current User Data
-
-After logging in, you can retrieve the currently authenticated user:
-
-```
-http://localhost:8081/api/user/me
-```
+See the [root quality-check instructions](../../README.md#local-quality-checks).
