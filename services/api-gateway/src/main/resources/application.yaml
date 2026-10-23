@@ -28,6 +28,11 @@ spring:
               predicates:
                 - Path=/api/v1/reservations,/api/v1/reservations/**
 
+            - id: reservation-service-conversations
+              uri: lb://reservation-service
+              predicates:
+                - Path=/api/v1/conversations,/api/v1/conversations/**
+
             - id: reservation-service-admin
               uri: lb://reservation-service
               predicates:

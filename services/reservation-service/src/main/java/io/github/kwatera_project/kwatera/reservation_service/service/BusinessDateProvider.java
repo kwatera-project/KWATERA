@@ -1,5 +1,6 @@
 package io.github.kwatera_project.kwatera.reservation_service.service;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,5 +18,9 @@ public class BusinessDateProvider {
 
   public LocalDate today() {
     return LocalDate.now(businessZone);
+  }
+
+  public LocalDate toLocalDate(Instant instant) {
+    return instant.atZone(businessZone).toLocalDate();
   }
 }

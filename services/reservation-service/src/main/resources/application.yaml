@@ -42,6 +42,8 @@ management:
 
 kwatera:
   business-zone: ${KWATERA_BUSINESS_ZONE:Europe/Warsaw}
+  conversation:
+    retention-days: ${KWATERA_CONVERSATION_RETENTION_DAYS:90}
   mail:
     from: ${KWATERA_MAIL_FROM:no-reply@kwatera.local}
     test-recipient: ${KWATERA_MAIL_TEST_RECIPIENT:guest@kwatera.local}

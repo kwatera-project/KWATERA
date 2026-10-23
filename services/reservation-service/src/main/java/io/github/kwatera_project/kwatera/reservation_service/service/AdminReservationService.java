@@ -8,6 +8,7 @@ import io.github.kwatera_project.kwatera.reservation_service.model.ReservationSt
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatusHistory;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationStatusHistoryRepository;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -141,6 +142,9 @@ public class AdminReservationService {
     }
 
     reservation.setStatus(newStatus);
+    if (newStatus == ReservationStatus.CANCELLED) {
+      reservation.setCancelledAt(Instant.now());
+    }
     reservationRepository.save(reservation);
 
     ReservationStatusHistory history = new ReservationStatusHistory();

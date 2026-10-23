@@ -37,6 +37,11 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.POST, "/api/v1/reservations")
                     .hasAnyAuthority("ROLE_GUEST", "ROLE_OWNER", "ROLE_ADMIN")
                     .requestMatchers(
+                        "/api/v1/conversations",
+                        "/api/v1/conversations/**",
+                        "/api/v1/reservations/*/conversation")
+                    .authenticated()
+                    .requestMatchers(
                         "/api/v1/admin/system-events", "/api/v1/admin/system-events/**")
                     .hasAuthority("ROLE_ADMIN")
                     .requestMatchers("/api/v1/admin/reservations", "/api/v1/admin/reservations/**")
