@@ -44,6 +44,12 @@ public class PropertyOwnershipClient {
     } catch (ResourceAccessException exception) {
       throw new ResponseStatusException(
           HttpStatus.SERVICE_UNAVAILABLE, "Property service is unavailable", exception);
+    } catch (IllegalStateException exception) {
+      if (isMissingPropertyServiceInstance(exception)) {
+        throw new ResponseStatusException(
+            HttpStatus.SERVICE_UNAVAILABLE, "Property service is unavailable", exception);
+      }
+      throw exception;
     } catch (ResponseStatusException exception) {
       throw exception;
     } catch (RestClientException exception) {
@@ -55,6 +61,10 @@ public class PropertyOwnershipClient {
   private ResponseStatusException inconsistentPropertyData() {
     return new ResponseStatusException(
         HttpStatus.BAD_GATEWAY, "Property service returned incomplete ownership data");
+  }
+
+  private boolean isMissingPropertyServiceInstance(IllegalStateException exception) {
+    return "No instances available for property-service".equals(exception.getMessage());
   }
 
   record UnitOwnershipResponse(UUID propertyId) {}

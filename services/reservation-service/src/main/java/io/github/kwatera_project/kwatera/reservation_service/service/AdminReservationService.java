@@ -2,6 +2,7 @@ package io.github.kwatera_project.kwatera.reservation_service.service;
 
 import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventService;
 import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventType;
+import io.github.kwatera_project.kwatera.reservation_service.conversation.repository.ConversationRepository;
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationOverviewDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
@@ -40,6 +41,8 @@ public class AdminReservationService {
 
   private final SystemEventService systemEventService;
 
+  private final ConversationRepository conversationRepository;
+
   @Autowired
   public AdminReservationService(
       ReservationRepository reservationRepository,
@@ -47,13 +50,15 @@ public class AdminReservationService {
       ReservationStatusValidator statusValidator,
       RestOperations restOperations,
       EmailNotificationService emailNotificationService,
-      SystemEventService systemEventService) {
+      SystemEventService systemEventService,
+      ConversationRepository conversationRepository) {
     this.reservationRepository = reservationRepository;
     this.statusHistoryRepository = statusHistoryRepository;
     this.statusValidator = statusValidator;
     this.restOperationsProvider = () -> restOperations;
     this.emailNotificationService = emailNotificationService;
     this.systemEventService = systemEventService;
+    this.conversationRepository = conversationRepository;
   }
 
   public List<ReservationOverviewDto> getReservationsOverview(
@@ -142,7 +147,7 @@ public class AdminReservationService {
     }
 
     reservation.setStatus(newStatus);
-    if (newStatus == ReservationStatus.CANCELLED) {
+    if (newStatus == ReservationStatus.CANCELLED && reservation.getCancelledAt() == null) {
       reservation.setCancelledAt(Instant.now());
     }
     reservationRepository.save(reservation);
@@ -232,7 +237,8 @@ public class AdminReservationService {
 
   public boolean hasReservationsForUnit(UUID unitId) {
     return reservationRepository.existsByUnitIdAndStatusIn(
-        unitId, List.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED));
+            unitId, List.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED))
+        || conversationRepository.countByReservationUnitId(unitId) > 0;
   }
 
   private void logStatusChange(

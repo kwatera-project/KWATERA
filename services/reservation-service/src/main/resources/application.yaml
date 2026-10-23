@@ -42,6 +42,9 @@ management:
 
 kwatera:
   business-zone: ${KWATERA_BUSINESS_ZONE:Europe/Warsaw}
+  http:
+    connect-timeout: ${KWATERA_HTTP_CONNECT_TIMEOUT:2s}
+    read-timeout: ${KWATERA_HTTP_READ_TIMEOUT:5s}
   conversation:
     retention-days: ${KWATERA_CONVERSATION_RETENTION_DAYS:90}
   mail:

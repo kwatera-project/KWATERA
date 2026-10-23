@@ -18,6 +18,7 @@ import io.github.kwatera_project.kwatera.reservation_service.event.SettlementEve
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
+import io.github.kwatera_project.kwatera.reservation_service.service.AdminReservationService;
 import io.github.kwatera_project.kwatera.reservation_service.service.BusinessDateProvider;
 import io.github.kwatera_project.kwatera.reservation_service.service.EmailNotificationService;
 import java.math.BigDecimal;
@@ -73,6 +74,7 @@ class ConversationIntegrationTest {
   @Autowired private ConversationRepository conversationRepository;
   @Autowired private ReservationRepository reservationRepository;
   @Autowired private MockMvc mockMvc;
+  @Autowired private AdminReservationService adminReservationService;
 
   @MockitoBean private PropertyOwnershipClient propertyOwnershipClient;
   @MockitoBean private RestOperations restOperations;
@@ -273,14 +275,41 @@ class ConversationIntegrationTest {
   }
 
   @Test
+  void endedReservationConversationShouldBlockUnitDeletionGuard() {
+    conversationService.getOrCreate(reservation.getId(), GUEST_ID);
+    reservation.setStatus(ReservationStatus.COMPLETED);
+    reservationRepository.saveAndFlush(reservation);
+
+    assertThat(adminReservationService.hasReservationsForUnit(UNIT_ID)).isTrue();
+  }
+
+  @Test
   void openApiShouldPublishAllConversationEndpoints() throws Exception {
     mockMvc
         .perform(get("/v3/api-docs"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.paths['/api/v1/conversations']").exists())
-        .andExpect(jsonPath("$.paths['/api/v1/conversations/{conversationId}']").exists())
+        .andExpect(jsonPath("$.components.securitySchemes.bearerAuth").exists())
+        .andExpect(jsonPath("$.paths['/api/v1/conversations'].get.responses['200']").exists())
+        .andExpect(jsonPath("$.paths['/api/v1/conversations'].get.responses['401']").exists())
+        .andExpect(jsonPath("$.paths['/api/v1/conversations'].get.security[0].bearerAuth").exists())
         .andExpect(
-            jsonPath("$.paths['/api/v1/reservations/{reservationId}/conversation']").exists());
+            jsonPath("$.paths['/api/v1/conversations/{conversationId}'].get.responses['409']")
+                .exists())
+        .andExpect(
+            jsonPath("$.paths['/api/v1/conversations/{conversationId}'].get.security[0].bearerAuth")
+                .exists())
+        .andExpect(
+            jsonPath(
+                    "$.paths['/api/v1/reservations/{reservationId}/conversation'].put.responses['502']")
+                .exists())
+        .andExpect(
+            jsonPath(
+                    "$.paths['/api/v1/reservations/{reservationId}/conversation'].put.responses['503']")
+                .exists())
+        .andExpect(
+            jsonPath(
+                    "$.paths['/api/v1/reservations/{reservationId}/conversation'].put.security[0].bearerAuth")
+                .exists());
   }
 
   private CompletableFuture<ConversationResponse> createAfter(CountDownLatch start) {

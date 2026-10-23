@@ -66,6 +66,35 @@ class PropertyOwnershipClientTest {
   }
 
   @Test
+  void shouldMapMissingLoadBalancerInstanceTo503() {
+    UUID unitId = UUID.randomUUID();
+    when(restOperations.getForObject(
+            "http://property-service/api/properties/units/{unitId}",
+            PropertyOwnershipClient.UnitOwnershipResponse.class,
+            unitId))
+        .thenThrow(new IllegalStateException("No instances available for property-service"));
+
+    assertThatThrownBy(() -> client.getOwnerIdForUnit(unitId))
+        .isInstanceOfSatisfying(
+            ResponseStatusException.class,
+            exception ->
+                assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE));
+  }
+
+  @Test
+  void shouldNotMaskUnrelatedIllegalStateException() {
+    UUID unitId = UUID.randomUUID();
+    IllegalStateException failure = new IllegalStateException("unrelated failure");
+    when(restOperations.getForObject(
+            "http://property-service/api/properties/units/{unitId}",
+            PropertyOwnershipClient.UnitOwnershipResponse.class,
+            unitId))
+        .thenThrow(failure);
+
+    assertThatThrownBy(() -> client.getOwnerIdForUnit(unitId)).isSameAs(failure);
+  }
+
+  @Test
   void shouldMapMissingCatalogDataTo502() {
     UUID unitId = UUID.randomUUID();
     HttpClientErrorException notFound =

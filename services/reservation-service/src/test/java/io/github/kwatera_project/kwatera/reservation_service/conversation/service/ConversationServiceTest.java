@@ -3,6 +3,7 @@ package io.github.kwatera_project.kwatera.reservation_service.conversation.servi
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -20,6 +21,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
@@ -53,6 +55,7 @@ class ConversationServiceTest {
     UUID unitId = UUID.randomUUID();
     Reservation reservation =
         reservation(reservationId, guestId, unitId, ReservationStatus.PENDING);
+    when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
     when(reservationRepository.findByIdForUpdate(reservationId))
         .thenReturn(Optional.of(reservation));
     when(conversationRepository.findByReservationId(reservationId)).thenReturn(Optional.empty());
@@ -73,6 +76,9 @@ class ConversationServiceTest {
     assertThat(response.ownerUserId()).isEqualTo(ownerId);
     assertThat(response.reservationId()).isEqualTo(reservationId);
     verify(lifecyclePolicy).requireAvailable(reservation, null);
+    InOrder callOrder = inOrder(propertyOwnershipClient, reservationRepository);
+    callOrder.verify(propertyOwnershipClient).getOwnerIdForUnit(unitId);
+    callOrder.verify(reservationRepository).findByIdForUpdate(reservationId);
   }
 
   @Test
@@ -83,8 +89,7 @@ class ConversationServiceTest {
     Reservation reservation =
         reservation(reservationId, guestId, UUID.randomUUID(), ReservationStatus.CONFIRMED);
     Conversation conversation = conversation(reservationId, guestId, originalOwnerId);
-    when(reservationRepository.findByIdForUpdate(reservationId))
-        .thenReturn(Optional.of(reservation));
+    when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
     when(conversationRepository.findByReservationId(reservationId))
         .thenReturn(Optional.of(conversation));
     when(lifecyclePolicy.retentionExpiresOn(any(), any())).thenReturn(Optional.empty());
@@ -103,8 +108,7 @@ class ConversationServiceTest {
             reservationId, UUID.randomUUID(), UUID.randomUUID(), ReservationStatus.CONFIRMED);
     Conversation conversation =
         conversation(reservationId, reservation.getUserId(), UUID.randomUUID());
-    when(reservationRepository.findByIdForUpdate(reservationId))
-        .thenReturn(Optional.of(reservation));
+    when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
     when(conversationRepository.findByReservationId(reservationId))
         .thenReturn(Optional.of(conversation));
 

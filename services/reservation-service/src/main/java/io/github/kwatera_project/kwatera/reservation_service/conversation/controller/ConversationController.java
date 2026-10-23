@@ -32,7 +32,9 @@ public class ConversationController {
     @ApiResponse(responseCode = "200", description = "Conversation returned"),
     @ApiResponse(responseCode = "401", description = "Authentication required"),
     @ApiResponse(responseCode = "404", description = "Conversation or reservation not found"),
-    @ApiResponse(responseCode = "409", description = "Conversation unavailable for lifecycle")
+    @ApiResponse(responseCode = "409", description = "Conversation unavailable for lifecycle"),
+    @ApiResponse(responseCode = "502", description = "Property data is inconsistent"),
+    @ApiResponse(responseCode = "503", description = "Property service is unavailable")
   })
   public ConversationResponse getOrCreate(
       @PathVariable("reservationId") UUID reservationId, Authentication authentication) {
@@ -42,6 +44,10 @@ public class ConversationController {
 
   @GetMapping("/api/v1/conversations")
   @Operation(summary = "List conversations accessible to the current user")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Conversations returned"),
+    @ApiResponse(responseCode = "401", description = "Authentication required")
+  })
   public List<ConversationResponse> list(Authentication authentication) {
     return conversationService.list(authenticationService.requireUserId(authentication));
   }

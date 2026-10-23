@@ -32,7 +32,7 @@ public class ConversationService {
   @Transactional
   public ConversationResponse getOrCreate(UUID reservationId, UUID currentUserId) {
     Reservation reservation =
-        reservationRepository.findByIdForUpdate(reservationId).orElseThrow(this::notFound);
+        reservationRepository.findById(reservationId).orElseThrow(this::notFound);
 
     Conversation conversation =
         conversationRepository.findByReservationId(reservationId).orElse(null);
@@ -42,17 +42,32 @@ public class ConversationService {
       return toResponse(conversation, reservation);
     }
 
-    UUID ownerId = propertyOwnershipClient.getOwnerIdForUnit(reservation.getUnitId());
-    participantAuthorizer.requireReservationParticipant(reservation, ownerId, currentUserId);
+    UUID unitId = reservation.getUnitId();
+    UUID ownerId = propertyOwnershipClient.getOwnerIdForUnit(unitId);
 
-    lifecyclePolicy.requireAvailable(reservation, null);
+    Reservation lockedReservation =
+        reservationRepository.findByIdForUpdate(reservationId).orElseThrow(this::notFound);
+    if (!unitId.equals(lockedReservation.getUnitId())) {
+      throw notFound();
+    }
+
+    conversation = conversationRepository.findByReservationId(reservationId).orElse(null);
+    if (conversation != null) {
+      participantAuthorizer.requireConversationParticipant(conversation, currentUserId);
+      lifecyclePolicy.requireAvailable(lockedReservation, conversation);
+      return toResponse(conversation, lockedReservation);
+    }
+
+    participantAuthorizer.requireReservationParticipant(lockedReservation, ownerId, currentUserId);
+
+    lifecyclePolicy.requireAvailable(lockedReservation, null);
 
     Conversation created = new Conversation();
-    created.setReservationId(reservation.getId());
-    created.setGuestUserId(reservation.getUserId());
+    created.setReservationId(lockedReservation.getId());
+    created.setGuestUserId(lockedReservation.getUserId());
     created.setOwnerUserId(ownerId);
     created = conversationRepository.saveAndFlush(created);
-    return toResponse(created, reservation);
+    return toResponse(created, lockedReservation);
   }
 
   @Transactional(readOnly = true)

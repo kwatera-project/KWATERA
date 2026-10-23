@@ -15,6 +15,12 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
   Optional<Conversation> findByReservationId(UUID reservationId);
 
   @Query(
+      "SELECT COUNT(c) FROM Conversation c "
+          + "WHERE c.reservationId IN "
+          + "(SELECT r.id FROM Reservation r WHERE r.unitId = :unitId)")
+  long countByReservationUnitId(@Param("unitId") UUID unitId);
+
+  @Query(
       "SELECT c FROM Conversation c WHERE c.id = :conversationId "
           + "AND (c.guestUserId = :userId OR c.ownerUserId = :userId)")
   Optional<Conversation> findAccessibleById(

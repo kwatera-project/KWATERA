@@ -560,6 +560,11 @@ public class ReservationService {
             .orElseThrow(() -> new RuntimeException(RESERVATION_NOT_FOUND));
     ReservationStatus oldStatus = reservation.getStatus();
 
+    if (settlementStatus == SettlementStatus.CANCELLED
+        && oldStatus == ReservationStatus.CANCELLED) {
+      return;
+    }
+
     switch (settlementStatus) {
       case PAID -> reservation.setStatus(ReservationStatus.COMPLETED);
 
@@ -567,7 +572,9 @@ public class ReservationService {
 
       case CANCELLED -> {
         reservation.setStatus(ReservationStatus.CANCELLED);
-        reservation.setCancelledAt(Instant.now());
+        if (reservation.getCancelledAt() == null) {
+          reservation.setCancelledAt(Instant.now());
+        }
       }
 
       case ISSUED, DRAFT -> {

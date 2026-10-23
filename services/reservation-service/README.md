@@ -34,9 +34,11 @@ All conversation endpoints require a JWT. The user id is taken from the authenti
 
 `PENDING` and `CONFIRMED` reservations remain available. `BLOCKED` reservations are rejected. `COMPLETED` and `CANCELLED` reservations remain available through the configured retention boundary (90 days by default), measured from the later of the lifecycle date and `last_message_at`. Expired conversations are omitted from lists and return `409 Conflict` when addressed directly. Missing and non-participant resources both return `404 Not Found` to prevent identifier probing.
 
+Migration `V35` reconstructs missing legacy cancellation timestamps only from explicit cancellation history or audit events. If no reliable cancellation evidence exists, `cancelled_at` remains `NULL` and conversation access is denied with `409 Conflict`; `updated_at` is intentionally not used as a substitute. Such a record may be repaired only when an externally verified cancellation timestamp is available.
+
 ## Configuration notes
 
-The service requires PostgreSQL credentials and `JWT_SECRET`. Kafka, Mailpit, cleanup schedules, and the `Europe/Warsaw` business time zone are configured for the Docker environment. Conversation retention can be overridden with `KWATERA_CONVERSATION_RETENTION_DAYS`.
+The service requires PostgreSQL credentials and `JWT_SECRET`. Kafka, Mailpit, cleanup schedules, and the `Europe/Warsaw` business time zone are configured for the Docker environment. Conversation retention can be overridden with `KWATERA_CONVERSATION_RETENTION_DAYS`. Shared service-to-service HTTP defaults are a 2-second connect timeout and a 5-second read timeout; use `KWATERA_HTTP_CONNECT_TIMEOUT` and `KWATERA_HTTP_READ_TIMEOUT` to override them.
 
 ## Local verification
 
