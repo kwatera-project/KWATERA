@@ -15,7 +15,6 @@ public class OpenApiConfig {
             new Info()
                 .title("KWATERA Review Service API")
                 .version("Stage 2")
-                .description(
-                    "Review API for the KWATERA prototype."));
+                .description("Review API for the KWATERA prototype."));
   }
 }

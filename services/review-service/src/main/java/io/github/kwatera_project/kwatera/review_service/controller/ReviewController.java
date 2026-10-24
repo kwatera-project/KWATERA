@@ -6,6 +6,8 @@ import io.github.kwatera_project.kwatera.review_service.dto.UpdateReviewRequest;
 import io.github.kwatera_project.kwatera.review_service.model.Review;
 import io.github.kwatera_project.kwatera.review_service.service.ReviewService;
 import jakarta.validation.Valid;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -14,119 +16,115 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
-import java.util.UUID;
-
 @CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api/reviews")
 @RequiredArgsConstructor
 public class ReviewController {
 
-    private final ReviewService reviewService;
+  private final ReviewService reviewService;
 
-    @Value("${kwatera.security.internal-token:kwatera-internal-secret-token}")
-    private String expectedInternalToken;
+  @Value("${kwatera.security.internal-token:kwatera-internal-secret-token}")
+  private String expectedInternalToken;
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public Review createReview(
-            @Valid @RequestBody CreateReviewRequest request,
-            Authentication authentication) {
+  @PostMapping
+  @ResponseStatus(HttpStatus.CREATED)
+  public Review createReview(
+      @Valid @RequestBody CreateReviewRequest request, Authentication authentication) {
 
-        UUID authorId = validateAndGetUserId(authentication);
+    UUID authorId = validateAndGetUserId(authentication);
 
-        boolean isGuest =
-                authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_GUEST"));
-        boolean isOwner =
-                authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_OWNER"));
+    boolean isGuest =
+        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_GUEST"));
+    boolean isOwner =
+        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_OWNER"));
 
-        if (!isGuest && !isOwner) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only guests and owners can write reviews");
-        }
-
-        return reviewService.createReview(authorId, request);
+    if (!isGuest && !isOwner) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Only guests and owners can write reviews");
     }
 
-    @GetMapping("/my")
-    public List<ReviewResponseDto> getMyReviews(Authentication authentication) {
-        UUID userId = validateAndGetUserId(authentication);
+    return reviewService.createReview(authorId, request);
+  }
 
-        boolean isGuest =
-                authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_GUEST"));
-        boolean isOwner =
-                authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_OWNER"));
+  @GetMapping("/my")
+  public List<ReviewResponseDto> getMyReviews(Authentication authentication) {
+    UUID userId = validateAndGetUserId(authentication);
 
-        if (!isGuest && !isOwner) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
-        }
+    boolean isGuest =
+        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_GUEST"));
+    boolean isOwner =
+        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_OWNER"));
 
-        return reviewService.getReviewsByAuthor(userId);
+    if (!isGuest && !isOwner) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
     }
 
-    @GetMapping("/{reviewId}")
-    public ReviewResponseDto getReviewDetails(@PathVariable("reviewId") UUID reviewId, Authentication authentication) {
-        return reviewService.getReviewDetails(reviewId);
+    return reviewService.getReviewsByAuthor(userId);
+  }
+
+  @GetMapping("/{reviewId}")
+  public ReviewResponseDto getReviewDetails(
+      @PathVariable("reviewId") UUID reviewId, Authentication authentication) {
+    return reviewService.getReviewDetails(reviewId);
+  }
+
+  @PutMapping("/{reviewId}")
+  public ReviewResponseDto updateReview(
+      @PathVariable("reviewId") UUID reviewId,
+      @Valid @RequestBody UpdateReviewRequest request,
+      Authentication authentication) {
+
+    UUID userId = validateAndGetUserId(authentication);
+    boolean isGuest =
+        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_GUEST"));
+    boolean isOwner =
+        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_OWNER"));
+
+    if (!isGuest && !isOwner) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Only guests and owners can update reviews");
     }
 
-    @PutMapping("/{reviewId}")
-    public ReviewResponseDto updateReview(
-            @PathVariable("reviewId") UUID reviewId,
-            @Valid @RequestBody UpdateReviewRequest request,
-            Authentication authentication) {
+    return reviewService.updateReview(reviewId, userId, request);
+  }
 
+  @DeleteMapping("/{reviewId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void deleteReview(@PathVariable("reviewId") UUID reviewId, Authentication authentication) {
 
-        UUID userId = validateAndGetUserId(authentication);
-        boolean isGuest =
-                authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_GUEST"));
-        boolean isOwner =
-                authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_OWNER"));
+    boolean isAdmin =
+        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
 
-        if (!isGuest && !isOwner) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only guests and owners can update reviews");
-        }
+    reviewService.deleteReview(reviewId, isAdmin);
+  }
 
-        return reviewService.updateReview(reviewId, userId, request);
+  @GetMapping("/internal/{reviewId}")
+  public ReviewResponseDto getReviewDetailsInternal(
+      @PathVariable("reviewId") UUID reviewId,
+      @RequestHeader(value = "X-Internal-Token", required = false) String internalToken) {
+
+    if (internalToken == null || !internalToken.equals(expectedInternalToken)) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "Access denied: Invalid internal token");
     }
+    return reviewService.getReviewDetailsInternal(reviewId);
+  }
 
-    @DeleteMapping("/{reviewId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteReview(
-            @PathVariable("reviewId") UUID reviewId,
-            Authentication authentication) {
-
-        boolean isAdmin =
-                authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
-
-        reviewService.deleteReview(reviewId, isAdmin);
+  private UUID validateAndGetUserId(Authentication authentication) {
+    if (authentication == null || !authentication.isAuthenticated()) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized: Token is missing");
     }
-
-    @GetMapping("/internal/{reviewId}")
-    public ReviewResponseDto getReviewDetailsInternal(
-            @PathVariable("reviewId") UUID reviewId,
-            @RequestHeader(value = "X-Internal-Token", required = false) String internalToken) {
-
-        if (internalToken == null || !internalToken.equals(expectedInternalToken)) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN, "Access denied: Invalid internal token");
-        }
-        return reviewService.getReviewDetailsInternal(reviewId);
+    Object details = authentication.getDetails();
+    if (!(details instanceof String) || ((String) details).trim().isEmpty()) {
+      throw new ResponseStatusException(
+          HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
     }
-
-    private UUID validateAndGetUserId(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized: Token is missing");
-        }
-        Object details = authentication.getDetails();
-        if (!(details instanceof String) || ((String) details).trim().isEmpty()) {
-            throw new ResponseStatusException(
-                    HttpStatus.UNAUTHORIZED, "Unauthorized: Token is incorrect");
-        }
-        try {
-            return UUID.fromString((String) details);
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(
-                    HttpStatus.UNAUTHORIZED, "Unauthorized: Invalid token format");
-        }
+    try {
+      return UUID.fromString((String) details);
+    } catch (IllegalArgumentException e) {
+      throw new ResponseStatusException(
+          HttpStatus.UNAUTHORIZED, "Unauthorized: Invalid token format");
     }
+  }
 }
