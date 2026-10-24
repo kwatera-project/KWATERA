@@ -26,6 +26,7 @@ but must **not** be used by application code.
 |---|---|
 | `/api/auth/**` | auth-service |
 | `/api/v1/reservations/**` | reservation-service |
+| `/api/v1/conversations/**` | reservation-service |
 | `/api/v1/admin/reservations/**` | reservation-service |
 | `/api/availability/**` | reservation-service |
 | `/api/properties/**` | property-service |

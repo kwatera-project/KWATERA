@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 
 import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventService;
 import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventType;
+import io.github.kwatera_project.kwatera.reservation_service.conversation.repository.ConversationRepository;
 import io.github.kwatera_project.kwatera.reservation_service.dto.ReservationOverviewDto;
 import io.github.kwatera_project.kwatera.reservation_service.model.Reservation;
 import io.github.kwatera_project.kwatera.reservation_service.model.ReservationStatus;
@@ -41,6 +42,8 @@ class AdminReservationServiceTest {
   @Mock private EmailNotificationService emailNotificationService;
 
   @Mock private SystemEventService systemEventService;
+
+  @Mock private ConversationRepository conversationRepository;
 
   @InjectMocks private AdminReservationService adminReservationService;
 
@@ -437,6 +440,18 @@ class AdminReservationServiceTest {
     verify(reservationRepository)
         .existsByUnitIdAndStatusIn(
             unitId, List.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED));
+    verify(conversationRepository).countByReservationUnitId(unitId);
+  }
+
+  @Test
+  void shouldReturnTrue_whenEndedReservationHasConversation() {
+    UUID unitId = UUID.randomUUID();
+    when(reservationRepository.existsByUnitIdAndStatusIn(
+            unitId, List.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED)))
+        .thenReturn(false);
+    when(conversationRepository.countByReservationUnitId(unitId)).thenReturn(1L);
+
+    assertTrue(adminReservationService.hasReservationsForUnit(unitId));
   }
 
   private Reservation createReservation() {

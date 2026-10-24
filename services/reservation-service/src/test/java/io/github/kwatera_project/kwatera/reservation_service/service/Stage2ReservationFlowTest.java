@@ -69,7 +69,10 @@ class Stage2ReservationFlowTest {
             statusValidator,
             restTemplate,
             emailNotificationService,
-            systemEventService);
+            systemEventService,
+            mock(
+                io.github.kwatera_project.kwatera.reservation_service.conversation.repository
+                    .ConversationRepository.class));
   }
 
   @Test
