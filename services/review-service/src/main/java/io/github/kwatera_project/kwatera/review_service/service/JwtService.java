@@ -46,7 +46,7 @@ public final class JwtService {
   public boolean isValid(String token) {
     try {
       return !isTokenExpired(token);
-    } catch (Exception e) {
+    } catch (Exception _) {
       return false;
     }
   }

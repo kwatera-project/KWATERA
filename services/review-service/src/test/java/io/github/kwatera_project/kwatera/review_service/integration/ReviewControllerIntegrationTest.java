@@ -39,6 +39,8 @@ class ReviewControllerIntegrationTest {
 
   @MockitoBean private JwtService jwtService;
 
+  private final String ROLE = "ROLE_GUEST";
+
   @BeforeEach
   void setUp() {
     reviewRepository.deleteAll();
@@ -47,13 +49,13 @@ class ReviewControllerIntegrationTest {
     when(jwtService.extractUsername("valid-test-token")).thenReturn("guest-user");
     when(jwtService.extractUserId("valid-test-token"))
         .thenReturn("123e4567-e89b-12d3-a456-426614174000");
-    when(jwtService.extractRoles("valid-test-token")).thenReturn(List.of("ROLE_GUEST"));
+    when(jwtService.extractRoles("valid-test-token")).thenReturn(List.of(ROLE));
   }
 
   @Test
   @WithMockUser(
       username = "guest-user",
-      authorities = {"ROLE_GUEST"})
+      authorities = {ROLE})
   void shouldCreateReviewSuccessfullyWhenRequestIsValid() throws Exception {
     CreateReviewRequest request = new CreateReviewRequest();
     request.setReservationId(UUID.randomUUID());
@@ -75,7 +77,7 @@ class ReviewControllerIntegrationTest {
   @Test
   @WithMockUser(
       username = "guest-user",
-      authorities = {"ROLE_GUEST"})
+      authorities = {ROLE})
   void shouldRejectReviewWhenRatingIsInvalid() throws Exception {
     CreateReviewRequest request = new CreateReviewRequest();
     request.setReservationId(UUID.randomUUID());
@@ -95,7 +97,7 @@ class ReviewControllerIntegrationTest {
   @Test
   @WithMockUser(
       username = "guest-user",
-      authorities = {"ROLE_GUEST"})
+      authorities = {ROLE})
   void shouldRejectReviewWhenReservationIdIsNull() throws Exception {
     CreateReviewRequest request = new CreateReviewRequest();
     request.setReservationId(null);

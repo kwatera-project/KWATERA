@@ -108,7 +108,7 @@ public class ReviewController {
       throw new ResponseStatusException(
           HttpStatus.FORBIDDEN, "Access denied: Invalid internal token");
     }
-    return reviewService.getReviewDetailsInternal(reviewId);
+    return reviewService.getReviewDetails(reviewId);
   }
 
   private UUID validateAndGetUserId(Authentication authentication) {
@@ -122,7 +122,7 @@ public class ReviewController {
     }
     try {
       return UUID.fromString((String) details);
-    } catch (IllegalArgumentException e) {
+    } catch (IllegalArgumentException _) {
       throw new ResponseStatusException(
           HttpStatus.UNAUTHORIZED, "Unauthorized: Invalid token format");
     }

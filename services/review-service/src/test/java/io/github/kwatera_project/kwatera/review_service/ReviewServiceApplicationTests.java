@@ -1,11 +1,20 @@
 package io.github.kwatera_project.kwatera.review_service;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
 
-@DataJpaTest
+import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
+
+@SpringBootTest
 class ReviewServiceApplicationTests {
 
-  @Test
-  void contextLoads() {}
+    @Autowired
+    private ApplicationContext applicationContext;
+
+    @Test
+    void contextLoads() {
+        assertNotNull(applicationContext, "The application context should not be null");
+    }
 }

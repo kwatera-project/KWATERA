@@ -117,21 +117,4 @@ public class ReviewService {
 
     reviewRepository.deleteById(reviewId);
   }
-
-  public ReviewResponseDto getReviewDetailsInternal(UUID reviewId) {
-    Review review =
-        reviewRepository
-            .findById(reviewId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, REVIEW_NOT_FOUND));
-
-    return ReviewResponseDto.builder()
-        .id(review.getId())
-        .reservationId(review.getReservationId())
-        .authorId(review.getAuthorId())
-        .rating(review.getRating())
-        .comment(review.getComment())
-        .createdAt(review.getCreatedAt())
-        .updatedAt(review.getUpdatedAt())
-        .build();
-  }
 }
