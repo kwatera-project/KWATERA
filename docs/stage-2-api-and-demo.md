@@ -22,13 +22,14 @@ but must **not** be used by application code.
 
 ### Routes exposed through the gateway
 
-| Path prefix | Downstream service |
-|---|---|
-| `/api/auth/**` | auth-service |
-| `/api/v1/reservations/**` | reservation-service |
+| Path prefix                     | Downstream service |
+|---------------------------------|---|
+| `/api/auth/**`                  | auth-service |
+| `/api/v1/reservations/**`       | reservation-service |
 | `/api/v1/admin/reservations/**` | reservation-service |
-| `/api/availability/**` | reservation-service |
-| `/api/properties/**` | property-service |
+| `/api/availability/**`          | reservation-service |
+| `/api/properties/**`            | property-service |
+| `/api/reviews/**`               | review-service |
 
 ## OpenAPI / Swagger UI
 

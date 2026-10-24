@@ -63,6 +63,11 @@ spring:
               predicates:
                 - Path=/api/predict/**
 
+            - id: review-service
+              uri: lb://review-service
+              predicates:
+                - Path=/api/reviews, Path=/api/reviews/**
+
 
 eureka:
   client:
