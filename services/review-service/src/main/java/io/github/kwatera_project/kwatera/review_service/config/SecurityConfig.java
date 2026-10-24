@@ -2,7 +2,6 @@ package io.github.kwatera_project.kwatera.review_service.config;
 
 import io.github.kwatera_project.kwatera.review_service.filter.JwtAuthFilter;
 import java.util.List;
-
 import org.apache.logging.log4j.internal.annotation.SuppressFBWarnings;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,18 +24,20 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final JwtAuthFilter jwtAuthFilter;
+  private final JwtAuthFilter jwtAuthFilter;
 
-    @SuppressFBWarnings(
-            value = "EI_EXPOSE_REP2",
-            justification = "Spring bean injected via constructor")
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
-        this.jwtAuthFilter = jwtAuthFilter;
-    }
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification = "Spring bean injected via constructor")
+  public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
+    this.jwtAuthFilter = jwtAuthFilter;
+  }
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) {
-    http.csrf(AbstractHttpConfigurer::disable) // NOSONAR: CSRF is disabled because the API is stateless and uses
+    http.csrf(
+            AbstractHttpConfigurer
+                ::disable) // NOSONAR: CSRF is disabled because the API is stateless and uses
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .authorizeHttpRequests(
             auth ->
