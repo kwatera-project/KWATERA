@@ -38,6 +38,9 @@
 # AI pricing and recommendation service.
 /services/ai-pricing-service/ @sinadzeya @lukaszjecek
 
+# Review service.
+/services/review-service/ @sinadzeya @ZuzannaAdamczyk @lukaszjecek
+
 # Frontend.
 /frontend/ @ZuzannaAdamczyk @alicjaswiers @sinadzeya @lukaszjecek
 
