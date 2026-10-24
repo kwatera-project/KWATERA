@@ -1,4 +1,4 @@
-package io.github.kwatera_project.kwatera.reservation_service.service;
+package io.github.kwatera_project.kwatera.review_service.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 
