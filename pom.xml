@@ -40,6 +40,7 @@
         <module>services/db-migrations</module>
         <module>services/billing-service</module>
         <module>services/ai-pricing-service</module>
+        <module>services/review-service</module>
     </modules>
 
     <dependencyManagement>

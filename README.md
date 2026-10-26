@@ -111,6 +111,7 @@ All seeded users use the password `pass`.
 | Reservation Swagger UI | [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html) |
 | Billing Swagger UI | [http://localhost:8086/swagger-ui.html](http://localhost:8086/swagger-ui.html) |
 | AI Pricing Swagger UI | [http://localhost:8087/swagger-ui.html](http://localhost:8087/swagger-ui.html) |
+| Review Swagger UI | [http://localhost:8089/swagger-ui.html](http://localhost:8089/swagger-ui.html) |
 | OCR FastAPI docs | [http://localhost:8085/docs](http://localhost:8085/docs) |
 | Auth health | [http://localhost:8081/actuator/health](http://localhost:8081/actuator/health) |
 | Property health | [http://localhost:8083/actuator/health](http://localhost:8083/actuator/health) |

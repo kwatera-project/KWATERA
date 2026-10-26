@@ -117,6 +117,10 @@ jobs:
           - service: ai-pricing-service
             sonar_enabled: true
             sonar_project_key: kwatera-project_KWATERA_ai-pricing-service
+          - service: review-service
+            sonar_enabled: true
+            sonar_project_key: kwatera-project_KWATERA_review-service
+
 
     defaults:
       run:

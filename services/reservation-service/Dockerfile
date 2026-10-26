@@ -12,6 +12,7 @@ COPY services/service-registry/pom.xml services/service-registry/pom.xml
 COPY services/db-migrations/pom.xml services/db-migrations/pom.xml
 COPY services/billing-service/pom.xml services/billing-service/pom.xml
 COPY services/ai-pricing-service/pom.xml services/ai-pricing-service/pom.xml
+COPY services/review-service/pom.xml services/review-service/pom.xml
 RUN --mount=type=cache,target=/root/.m2,sharing=locked mvn -B -ntp -pl services/reservation-service -am dependency:go-offline
 
 COPY . .
