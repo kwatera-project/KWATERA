@@ -32,7 +32,7 @@ class PostgreSqlConversationMigrationTest {
     flyway(MigrationVersion.fromVersion("34")).migrate();
     insertLegacyReservationsAndEvents();
 
-    var result = flyway(null).migrate();
+    var result = flyway(MigrationVersion.fromVersion("35")).migrate();
 
     assertThat(result.targetSchemaVersion).isEqualTo("35");
     assertThat(cancelledAt(EVIDENCED_CANCELLATION)).isEqualTo(FIRST_CANCELLATION);
