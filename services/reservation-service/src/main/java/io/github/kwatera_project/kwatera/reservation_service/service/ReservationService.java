@@ -10,6 +10,7 @@ import io.github.kwatera_project.kwatera.reservation_service.model.SettlementSta
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -353,6 +354,9 @@ public class ReservationService {
     reservation.setStartDate(request.getStartDate());
     reservation.setEndDate(request.getEndDate());
     reservation.setStatus(status);
+    if (status == ReservationStatus.CANCELLED) {
+      reservation.setCancelledAt(Instant.now());
+    }
     reservation.setGuestMessage(request.getGuestMessage());
 
     BigDecimal pricePerNight = fetchUnitPrice(request.getUnitId(), token);
@@ -556,12 +560,22 @@ public class ReservationService {
             .orElseThrow(() -> new RuntimeException(RESERVATION_NOT_FOUND));
     ReservationStatus oldStatus = reservation.getStatus();
 
+    if (settlementStatus == SettlementStatus.CANCELLED
+        && oldStatus == ReservationStatus.CANCELLED) {
+      return;
+    }
+
     switch (settlementStatus) {
       case PAID -> reservation.setStatus(ReservationStatus.COMPLETED);
 
       case PARTIALLY_PAID -> reservation.setStatus(ReservationStatus.CONFIRMED);
 
-      case CANCELLED -> reservation.setStatus(ReservationStatus.CANCELLED);
+      case CANCELLED -> {
+        reservation.setStatus(ReservationStatus.CANCELLED);
+        if (reservation.getCancelledAt() == null) {
+          reservation.setCancelledAt(Instant.now());
+        }
+      }
 
       case ISSUED, DRAFT -> {
         return;
@@ -662,6 +676,7 @@ public class ReservationService {
     for (Reservation reservation : expiredReservations) {
       ReservationStatus oldStatus = reservation.getStatus();
       reservation.setStatus(ReservationStatus.CANCELLED);
+      reservation.setCancelledAt(Instant.now());
       reservationRepository.save(reservation);
       logSystemEvent(
           SystemEventType.EXPIRED_RESERVATION_CANCELLED,
