@@ -52,6 +52,9 @@ public class Reservation {
   @LastModifiedDate
   private Instant updatedAt;
 
+  @Column(name = "cancelled_at")
+  private Instant cancelledAt;
+
   @Column(name = "price_per_night_snapshot", nullable = false)
   @Positive
   private BigDecimal pricePerNightSnapshot;

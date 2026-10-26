@@ -1146,6 +1146,47 @@ class ReservationServiceTest {
   }
 
   @Test
+  void shouldKeepOriginalCancellationTime_whenCancelledSettlementIsDeliveredAgain() {
+    ReservationRepository repository = mock(ReservationRepository.class);
+    EmailNotificationService emailNotificationService = mock(EmailNotificationService.class);
+    SystemEventService systemEventService = mock(SystemEventService.class);
+    ReservationService service =
+        new ReservationService(
+            repository,
+            mock(RestTemplate.class),
+            mock(NbpExchangeRateClient.class),
+            emailNotificationService,
+            new BusinessDateProvider("Europe/Warsaw"),
+            systemEventService);
+
+    UUID reservationId = UUID.randomUUID();
+    Reservation reservation = new Reservation();
+    reservation.setId(reservationId);
+    reservation.setStatus(ReservationStatus.CONFIRMED);
+    when(repository.findById(reservationId)).thenReturn(Optional.of(reservation));
+
+    service.handleSettlementStatusUpdate(reservationId, SettlementStatus.CANCELLED);
+    Instant firstCancellationTime = reservation.getCancelledAt();
+    service.handleSettlementStatusUpdate(reservationId, SettlementStatus.CANCELLED);
+
+    assertEquals(firstCancellationTime, reservation.getCancelledAt());
+    verify(repository, times(1)).save(reservation);
+    verify(systemEventService, times(1))
+        .logSafely(
+            eq(SystemEventType.RESERVATION_STATUS_CHANGED),
+            isNull(),
+            eq(SystemEventService.ENTITY_TYPE_RESERVATION),
+            eq(reservationId),
+            contains("newStatus=CANCELLED"));
+    verify(emailNotificationService, times(1))
+        .sendReservationStatusChanged(
+            reservation,
+            ReservationStatus.CONFIRMED,
+            ReservationStatus.CANCELLED,
+            reservation.getGuestEmail());
+  }
+
+  @Test
   void shouldThrowNotFound_whenUnitServiceReturnsNullBody() {
     // given
     ReservationRepository repo = mock(ReservationRepository.class);
