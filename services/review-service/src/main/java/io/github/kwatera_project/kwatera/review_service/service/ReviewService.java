@@ -1,5 +1,6 @@
 package io.github.kwatera_project.kwatera.review_service.service;
-
+import io.github.kwatera_project.kwatera.review_service.client.ReservationClient;
+import io.github.kwatera_project.kwatera.review_service.dto.ReservationDetailsDto;
 import io.github.kwatera_project.kwatera.review_service.dto.CreateReviewRequest;
 import io.github.kwatera_project.kwatera.review_service.dto.ReviewResponseDto;
 import io.github.kwatera_project.kwatera.review_service.dto.UpdateReviewRequest;
@@ -19,23 +20,48 @@ public class ReviewService {
   private static final String REVIEW_NOT_FOUND = "Review not found";
 
   private final ReviewRepository reviewRepository;
+  private final ReservationClient reservationClient;
 
-  @Autowired
-  public ReviewService(ReviewRepository reviewRepository) {
-    this.reviewRepository = reviewRepository;
-  }
+    @Autowired
+    public ReviewService(
+            ReviewRepository reviewRepository,
+            ReservationClient reservationClient) {
+        this.reviewRepository = reviewRepository;
+        this.reservationClient = reservationClient;
+    }
 
-  @Transactional
-  public Review createReview(UUID authorId, CreateReviewRequest request) {
+    @Transactional
+    public Review createReview(UUID authorId, CreateReviewRequest request) {
+        ReservationDetailsDto reservation =
+                reservationClient.getReservation(request.getReservationId());
 
-    Review review = new Review();
-    review.setAuthorId(authorId);
-    review.setReservationId(request.getReservationId());
-    review.setRating(request.getRating());
-    review.setComment(request.getComment());
+        if (!reservation.userId().equals(authorId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "You can only review your own reservation");
+        }
 
-    return reviewRepository.save(review);
-  }
+        if (!"COMPLETED".equals(reservation.status())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Only completed reservations can be reviewed");
+        }
+
+        if (reviewRepository.existsByReservationId(reservation.id())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "A review already exists for this reservation");
+        }
+
+        Review review = new Review();
+        review.setAuthorId(authorId);
+        review.setReservationId(reservation.id());
+        review.setUnitId(reservation.unitId());
+        review.setRating(request.getRating());
+        review.setComment(request.getComment());
+
+        return reviewRepository.saveAndFlush(review);
+    }
 
   public List<ReviewResponseDto> getReviewsByAuthor(UUID userId) {
     return reviewRepository.findReviewsByAuthorId(userId).stream()

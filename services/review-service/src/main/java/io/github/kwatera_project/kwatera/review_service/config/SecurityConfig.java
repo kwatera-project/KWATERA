@@ -44,7 +44,7 @@ public class SecurityConfig {
                 auth.requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/reviews")
-                    .hasAnyAuthority("ROLE_GUEST", "ROLE_OWNER", "ROLE_ADMIN")
+                    .hasAnyAuthority("ROLE_GUEST")
                     .anyRequest()
                     .permitAll())
         .sessionManagement(

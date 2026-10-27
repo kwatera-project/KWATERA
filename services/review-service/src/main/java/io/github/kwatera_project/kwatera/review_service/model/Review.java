@@ -11,7 +11,13 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
-@Table(name = "reviews")
+@Table(
+        name = "reviews",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uq_reviews_reservation",
+                        columnNames = "reservation_id")
+        })
 @Getter
 @Setter
 @NoArgsConstructor
@@ -23,6 +29,9 @@ public class Review {
 
   @Column(name = "reservation_id", nullable = false)
   private UUID reservationId;
+
+  @Column(name = "unit_id", nullable = false)
+  private UUID unitId;
 
   @Column(name = "author_id", nullable = false)
   private UUID authorId;
