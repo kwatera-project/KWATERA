@@ -4,7 +4,6 @@ import io.github.kwatera_project.kwatera.review_service.dto.ReviewPageDto;
 import io.github.kwatera_project.kwatera.review_service.service.ReviewQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,13 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/reviews")
-@ApiResponses({
-  @ApiResponse(responseCode = "200", description = "Reviews and rating summary"),
-  @ApiResponse(responseCode = "400", description = "Invalid identifier or pagination"),
-  @ApiResponse(responseCode = "404", description = "Accommodation not found"),
-  @ApiResponse(responseCode = "502", description = "Invalid property service response"),
-  @ApiResponse(responseCode = "503", description = "Property service unavailable")
-})
+@ApiResponse(responseCode = "200", description = "Reviews and rating summary")
+@ApiResponse(responseCode = "400", description = "Invalid identifier or pagination")
+@ApiResponse(responseCode = "404", description = "Accommodation not found")
+@ApiResponse(responseCode = "502", description = "Invalid property service response")
+@ApiResponse(responseCode = "503", description = "Property service unavailable")
 public class ReviewQueryController {
 
   private final ReviewQueryService reviewQueryService;

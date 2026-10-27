@@ -93,11 +93,11 @@ class ReviewServiceTest {
   @Test
   void createReview_ShouldReject_WhenReservationBelongsToAnotherGuest() {
     stubReservation(UUID.randomUUID(), "COMPLETED", TODAY);
+    CreateReviewRequest request = validRequest();
 
     ResponseStatusException exception =
         assertThrows(
-            ResponseStatusException.class,
-            () -> reviewService.createReview(authorId, validRequest()));
+            ResponseStatusException.class, () -> reviewService.createReview(authorId, request));
 
     assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
     verifyNoInteractions(reviewRepository);
@@ -107,11 +107,11 @@ class ReviewServiceTest {
   @ValueSource(strings = {"PENDING", "CONFIRMED", "CANCELLED", "BLOCKED"})
   void createReview_ShouldReject_WhenReservationIsNotCompleted(String status) {
     stubReservation(authorId, status, TODAY.minusDays(1));
+    CreateReviewRequest request = validRequest();
 
     ResponseStatusException exception =
         assertThrows(
-            ResponseStatusException.class,
-            () -> reviewService.createReview(authorId, validRequest()));
+            ResponseStatusException.class, () -> reviewService.createReview(authorId, request));
 
     assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
     verifyNoInteractions(reviewRepository);
@@ -131,11 +131,11 @@ class ReviewServiceTest {
   @Test
   void createReview_ShouldReject_WhenEndDateIsMissing() {
     stubReservation(authorId, "COMPLETED", null);
+    CreateReviewRequest request = validRequest();
 
     ResponseStatusException exception =
         assertThrows(
-            ResponseStatusException.class,
-            () -> reviewService.createReview(authorId, validRequest()));
+            ResponseStatusException.class, () -> reviewService.createReview(authorId, request));
 
     assertEquals(HttpStatus.BAD_GATEWAY, exception.getStatusCode());
     verifyNoInteractions(reviewRepository);
@@ -164,11 +164,11 @@ class ReviewServiceTest {
         new ResponseStatusException(status, "Reservation lookup failed");
 
     when(reservationClient.getReservation(reservationId)).thenThrow(clientException);
+    CreateReviewRequest request = validRequest();
 
     ResponseStatusException exception =
         assertThrows(
-            ResponseStatusException.class,
-            () -> reviewService.createReview(authorId, validRequest()));
+            ResponseStatusException.class, () -> reviewService.createReview(authorId, request));
 
     assertSame(clientException, exception);
     verifyNoInteractions(reviewRepository);
@@ -250,13 +250,14 @@ class ReviewServiceTest {
   void updateReview_ShouldThrowForbidden_WhenUserIsNotAuthor() {
     UpdateReviewRequest request = new UpdateReviewRequest();
     request.setRating(4);
+    UUID otherUserId = UUID.randomUUID();
 
     when(reviewRepository.findById(reviewId)).thenReturn(Optional.of(review));
 
     ResponseStatusException exception =
         assertThrows(
             ResponseStatusException.class,
-            () -> reviewService.updateReview(reviewId, UUID.randomUUID(), request));
+            () -> reviewService.updateReview(reviewId, otherUserId, request));
 
     assertEquals(HttpStatus.FORBIDDEN, exception.getStatusCode());
     verify(reviewRepository, never()).save(any(Review.class));
@@ -264,12 +265,14 @@ class ReviewServiceTest {
 
   @Test
   void updateReview_ShouldThrowNotFound_WhenReviewDoesNotExist() {
+    UpdateReviewRequest request = new UpdateReviewRequest();
+
     when(reviewRepository.findById(reviewId)).thenReturn(Optional.empty());
 
     ResponseStatusException exception =
         assertThrows(
             ResponseStatusException.class,
-            () -> reviewService.updateReview(reviewId, authorId, new UpdateReviewRequest()));
+            () -> reviewService.updateReview(reviewId, authorId, request));
 
     assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     verify(reviewRepository, never()).save(any(Review.class));
