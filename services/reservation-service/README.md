@@ -51,3 +51,7 @@ The service requires PostgreSQL credentials and `JWT_SECRET`. Kafka, Mailpit, cl
 ## Local verification
 
 See the [root quality-check instructions](../../README.md#local-quality-checks).
+
+## Real-time messaging
+
+See [WebSocket/STOMP integration](../../docs/messaging.md) for authentication, destinations, recovery, limitations and a runnable gateway smoke test.
