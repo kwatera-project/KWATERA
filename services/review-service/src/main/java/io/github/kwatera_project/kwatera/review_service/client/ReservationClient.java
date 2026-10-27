@@ -1,5 +1,6 @@
 package io.github.kwatera_project.kwatera.review_service.client;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.kwatera_project.kwatera.review_service.dto.ReservationDetailsDto;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +21,9 @@ public class ReservationClient {
   private final RestOperations restOperations;
   private final String internalToken;
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification = "RestOperations is a shared Spring-managed dependency")
   public ReservationClient(
       RestOperations restOperations,
       @Value("${kwatera.security.internal-token:kwatera-internal-secret-token}")

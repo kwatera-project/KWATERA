@@ -1,6 +1,7 @@
 package io.github.kwatera_project.kwatera.review_service.client;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -17,6 +18,9 @@ public class PropertyClient {
 
   private final RestOperations restOperations;
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification = "RestOperations is a shared Spring-managed dependency")
   public PropertyClient(RestOperations restOperations) {
     this.restOperations = restOperations;
   }

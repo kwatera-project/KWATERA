@@ -9,4 +9,9 @@ public record ReviewPageDto(
     int size,
     int totalPages,
     long reviewCount,
-    BigDecimal averageRating) {}
+    BigDecimal averageRating) {
+
+  public ReviewPageDto {
+    reviews = List.copyOf(reviews);
+  }
+}
