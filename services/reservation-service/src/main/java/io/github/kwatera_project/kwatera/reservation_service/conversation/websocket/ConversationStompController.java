@@ -12,6 +12,7 @@ import org.springframework.stereotype.Controller;
 @Controller
 @RequiredArgsConstructor
 public class ConversationStompController {
+  private static final String CONTENT_FIELD = "content";
   private final MessageService messages;
   private final ConversationAuthenticationService authentication;
 
@@ -23,11 +24,11 @@ public class ConversationStompController {
     var user = authentication.requireUserId(principal);
     if (!body.isObject()
         || body.size() != 1
-        || !body.has("content")
-        || !body.get("content").isString()) {
+        || !body.has(CONTENT_FIELD)
+        || !body.get(CONTENT_FIELD).isString()) {
       throw new MessagingFailure("INVALID_MESSAGE");
     }
-    messages.send(conversationId, user, body.get("content").asString());
+    messages.send(conversationId, user, body.get(CONTENT_FIELD).asString());
   }
 
   @MessageExceptionHandler

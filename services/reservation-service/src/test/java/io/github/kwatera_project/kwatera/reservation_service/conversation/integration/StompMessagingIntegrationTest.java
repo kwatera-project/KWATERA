@@ -2,6 +2,7 @@ package io.github.kwatera_project.kwatera.reservation_service.conversation.integ
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -41,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -132,11 +134,6 @@ class StompMessagingIntegrationTest {
                     .toLocalDate());
   }
 
-  @AfterEach
-  void cleanMessages() {
-    messageRepository.deleteAll();
-  }
-
   @Value("${local.server.port}")
   private int port;
 
@@ -150,13 +147,20 @@ class StompMessagingIntegrationTest {
   private final ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
 
   @AfterEach
-  void disconnect() {
-    connected.forEach(
-        session -> {
-          if (session.isConnected()) session.disconnect();
-        });
-    clients.forEach(WebSocketStompClient::stop);
-    scheduler.shutdown();
+  void cleanUp() {
+    // assertAll runs every cleanup step in order, aggregating failures instead of aborting early.
+    assertAll(
+        () ->
+            assertAll(
+                connected.stream()
+                    .<Executable>map(
+                        session ->
+                            () -> {
+                              if (session.isConnected()) session.disconnect();
+                            })),
+        () -> assertAll(clients.stream().<Executable>map(client -> client::stop)),
+        scheduler::shutdown,
+        messageRepository::deleteAll);
   }
 
   @Test

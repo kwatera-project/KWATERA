@@ -50,45 +50,78 @@ public class MessagingSessions implements ChannelInterceptor {
 
   @Override
   public Message<?> preSend(Message<?> message, MessageChannel channel) {
+    StompHeaderAccessor headers = requireHeaders(message);
+    List<String> credentials = extractAndRemoveCredentials(headers);
+    StompCommand command = headers.getCommand();
+    if (command == StompCommand.CONNECT) {
+      connect(headers, credentials);
+      return message;
+    }
+    if (isHousekeeping(headers)) return message;
+    SessionIdentity identity = requireSession(headers);
+    return switch (command) {
+      case SEND -> {
+        validateSend(headers);
+        yield message;
+      }
+      case SUBSCRIBE -> {
+        authorizeSubscription(headers, identity);
+        yield message;
+      }
+      case null, default -> throw new MessagingFailure("INVALID_DESTINATION");
+    };
+  }
+
+  private StompHeaderAccessor requireHeaders(Message<?> message) {
     StompHeaderAccessor headers =
         MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
     if (headers == null) throw new MessagingFailure("INVALID_DESTINATION");
+    return headers;
+  }
+
+  private List<String> extractAndRemoveCredentials(StompHeaderAccessor headers) {
     List<String> credentials = headers.getNativeHeader("Authorization");
     // Spring logs rejected frames. Remove credentials before any operation can throw.
     if (credentials != null) headers.removeNativeHeader("Authorization");
-    String sessionId = headers.getSessionId();
+    return credentials;
+  }
+
+  private void connect(StompHeaderAccessor headers, List<String> credentials) {
+    SessionIdentity identity = authenticate(credentials);
+    if (sessions.putIfAbsent(headers.getSessionId(), identity) != null)
+      throw new MessagingFailure("UNAUTHENTICATED");
+    headers.setUser(identity.authentication());
+  }
+
+  private boolean isHousekeeping(StompHeaderAccessor headers) {
     StompCommand command = headers.getCommand();
-    if (command == StompCommand.CONNECT) {
-      SessionIdentity identity = authenticate(credentials);
-      if (sessions.putIfAbsent(sessionId, identity) != null)
-        throw new MessagingFailure("UNAUTHENTICATED");
-      headers.setUser(identity.authentication());
-      return message;
-    }
     // Housekeeping cannot carry application data or create subscriptions.
-    if (command == StompCommand.DISCONNECT
+    return command == StompCommand.DISCONNECT
         || command == StompCommand.UNSUBSCRIBE
-        || (command == null && headers.getMessageType() == SimpMessageType.HEARTBEAT))
-      return message;
-    SessionIdentity identity = sessions.get(sessionId);
+        || (command == null && headers.getMessageType() == SimpMessageType.HEARTBEAT);
+  }
+
+  private SessionIdentity requireSession(StompHeaderAccessor headers) {
+    SessionIdentity identity = sessions.get(headers.getSessionId());
     if (identity == null || !identity.expiresAt().isAfter(clock.instant()))
       throw new MessagingFailure("UNAUTHENTICATED");
     headers.setUser(identity.authentication());
-    if (command == StompCommand.SEND) {
-      requireDestination(SEND, headers.getDestination());
-      if (headers.getContentType() == null
-          || !MimeTypeUtils.APPLICATION_JSON.isCompatibleWith(headers.getContentType())) {
-        throw new MessagingFailure("INVALID_MESSAGE");
-      }
-    } else if (command == StompCommand.SUBSCRIBE) {
-      if (!"/user/queue/messaging-errors".equals(headers.getDestination())) {
-        UUID conversationId = requireDestination(SUBSCRIBE, headers.getDestination());
-        conversations.get(conversationId, UUID.fromString(identity.authentication().getName()));
-      }
-    } else {
-      throw new MessagingFailure("INVALID_DESTINATION");
+    return identity;
+  }
+
+  private void validateSend(StompHeaderAccessor headers) {
+    requireDestination(SEND, headers.getDestination());
+    if (headers.getContentType() == null
+        || !MimeTypeUtils.APPLICATION_JSON.isCompatibleWith(headers.getContentType())) {
+      throw new MessagingFailure("INVALID_MESSAGE");
     }
-    return message;
+  }
+
+  private void authorizeSubscription(StompHeaderAccessor headers, SessionIdentity identity) {
+    if (!"/user/queue/messaging-errors".equals(headers.getDestination())) {
+      UUID conversationId = requireDestination(SUBSCRIBE, headers.getDestination());
+      conversations.get(conversationId, UUID.fromString(identity.authentication().getName()));
+    }
   }
 
   private SessionIdentity authenticate(List<String> values) {
@@ -102,7 +135,7 @@ public class MessagingSessions implements ChannelInterceptor {
       var authentication = new UsernamePasswordAuthenticationToken(userId, null, List.of());
       authentication.setDetails(userId);
       return new SessionIdentity(authentication, expiration);
-    } catch (RuntimeException failure) {
+    } catch (RuntimeException _) {
       throw new MessagingFailure("UNAUTHENTICATED");
     }
   }

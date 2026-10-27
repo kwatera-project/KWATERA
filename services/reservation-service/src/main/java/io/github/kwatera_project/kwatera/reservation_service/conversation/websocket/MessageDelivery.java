@@ -24,7 +24,7 @@ public class MessageDelivery {
                     user.toString(),
                     "/queue/conversations/" + event.message().conversationId() + "/messages",
                     event.message());
-              } catch (RuntimeException failure) {
+              } catch (RuntimeException _) {
                 // The transaction has committed. History is the recovery mechanism; never log
                 // content.
                 log.warn("Live delivery failed for persisted message {}", event.message().id());

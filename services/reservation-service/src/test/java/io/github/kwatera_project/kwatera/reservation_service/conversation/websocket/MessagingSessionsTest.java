@@ -81,10 +81,11 @@ class MessagingSessionsTest {
 
   @Test
   void noSendOrSubscribeBeforeConnect() {
-    for (var command : List.of(StompCommand.SEND, StompCommand.SUBSCRIBE))
-      assertThatThrownBy(
-              () -> sessions.preSend(frame(command, "/user/queue/messaging-errors"), channel))
+    for (var command : List.of(StompCommand.SEND, StompCommand.SUBSCRIBE)) {
+      var preparedFrame = frame(command, "/user/queue/messaging-errors");
+      assertThatThrownBy(() -> sessions.preSend(preparedFrame, channel))
           .isInstanceOf(MessagingFailure.class);
+    }
   }
 
   @Test
@@ -97,12 +98,9 @@ class MessagingSessionsTest {
     var other = UUID.randomUUID();
     when(conversations.get(other, user))
         .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND));
-    assertThatThrownBy(
-            () ->
-                sessions.preSend(
-                    frame(
-                        StompCommand.SUBSCRIBE, "/user/queue/conversations/" + other + "/messages"),
-                    channel))
+    var preparedFrame =
+        frame(StompCommand.SUBSCRIBE, "/user/queue/conversations/" + other + "/messages");
+    assertThatThrownBy(() -> sessions.preSend(preparedFrame, channel))
         .isInstanceOf(ResponseStatusException.class);
   }
 
@@ -121,9 +119,11 @@ class MessagingSessionsTest {
       })
   void rejectsAllNonContractSubscriptionsAndSends(String destination) {
     connect();
-    for (var command : List.of(StompCommand.SEND, StompCommand.SUBSCRIBE))
-      assertThatThrownBy(() -> sessions.preSend(frame(command, destination), channel))
+    for (var command : List.of(StompCommand.SEND, StompCommand.SUBSCRIBE)) {
+      var preparedFrame = frame(command, destination);
+      assertThatThrownBy(() -> sessions.preSend(preparedFrame, channel))
           .isInstanceOf(MessagingFailure.class);
+    }
     verifyNoInteractions(conversations);
   }
 
@@ -136,10 +136,52 @@ class MessagingSessionsTest {
     assertThat(sessions.outbound().preSend(outbound, channel)).isNotNull();
     when(clock.instant()).thenReturn(Instant.now().plusSeconds(1200));
     assertThat(sessions.outbound().preSend(outbound, channel)).isNull();
-    for (var command : List.of(StompCommand.SEND, StompCommand.SUBSCRIBE))
-      assertThatThrownBy(
-              () -> sessions.preSend(frame(command, "/user/queue/messaging-errors"), channel))
+    for (var command : List.of(StompCommand.SEND, StompCommand.SUBSCRIBE)) {
+      var preparedFrame = frame(command, "/user/queue/messaging-errors");
+      assertThatThrownBy(() -> sessions.preSend(preparedFrame, channel))
           .isInstanceOf(MessagingFailure.class);
+    }
     sessions.preSend(frame(StompCommand.DISCONNECT, null), channel);
+  }
+
+  @Test
+  void nullCommandHeartbeatsRemainAllowedBeforeAuthenticationAndAfterExpiration() {
+    var heartbeat = nullCommandFrame(SimpMessageType.HEARTBEAT);
+    assertThat(sessions.preSend(heartbeat, channel)).isSameAs(heartbeat);
+    connect();
+    when(clock.instant()).thenReturn(Instant.now().plusSeconds(1200));
+    var expiredHeartbeat = nullCommandFrame(SimpMessageType.HEARTBEAT);
+    assertThat(sessions.preSend(expiredHeartbeat, channel)).isSameAs(expiredHeartbeat);
+    verifyNoInteractions(conversations);
+  }
+
+  @Test
+  void nullCommandApplicationMessagesAreDeniedBeforeAuthenticationAndAfterExpiration() {
+    var unauthenticated = nullCommandFrame(SimpMessageType.MESSAGE);
+    assertThatThrownBy(() -> sessions.preSend(unauthenticated, channel))
+        .isInstanceOf(MessagingFailure.class)
+        .extracting(failure -> ((MessagingFailure) failure).error().code())
+        .isEqualTo("UNAUTHENTICATED");
+    connect();
+    var authenticated = nullCommandFrame(SimpMessageType.MESSAGE);
+    assertThatThrownBy(() -> sessions.preSend(authenticated, channel))
+        .isInstanceOf(MessagingFailure.class)
+        .extracting(failure -> ((MessagingFailure) failure).error().code())
+        .isEqualTo("INVALID_DESTINATION");
+    when(clock.instant()).thenReturn(Instant.now().plusSeconds(1200));
+    var expired = nullCommandFrame(SimpMessageType.MESSAGE);
+    assertThatThrownBy(() -> sessions.preSend(expired, channel))
+        .isInstanceOf(MessagingFailure.class)
+        .extracting(failure -> ((MessagingFailure) failure).error().code())
+        .isEqualTo("UNAUTHENTICATED");
+    verifyNoInteractions(conversations);
+  }
+
+  private Message<byte[]> nullCommandFrame(SimpMessageType type) {
+    var headers = StompHeaderAccessor.createForHeartbeat();
+    headers.setSessionId("session");
+    headers.setHeader(SimpMessageHeaderAccessor.MESSAGE_TYPE_HEADER, type);
+    headers.setLeaveMutable(true);
+    return MessageBuilder.createMessage(new byte[0], headers.getMessageHeaders());
   }
 }
