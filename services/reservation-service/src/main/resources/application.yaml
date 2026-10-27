@@ -41,6 +41,8 @@ management:
         include: health,info
 
 kwatera:
+  messaging:
+    allowed-origins: ${KWATERA_MESSAGING_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174}
   business-zone: ${KWATERA_BUSINESS_ZONE:Europe/Warsaw}
   http:
     connect-timeout: ${KWATERA_HTTP_CONNECT_TIMEOUT:2s}

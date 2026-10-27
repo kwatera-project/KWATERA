@@ -6,10 +6,12 @@ import io.github.kwatera_project.kwatera.reservation_service.conversation.model.
 import io.github.kwatera_project.kwatera.reservation_service.conversation.model.Message;
 import io.github.kwatera_project.kwatera.reservation_service.conversation.repository.ConversationRepository;
 import io.github.kwatera_project.kwatera.reservation_service.conversation.repository.MessageRepository;
+import io.github.kwatera_project.kwatera.reservation_service.conversation.websocket.MessageCreated;
 import io.github.kwatera_project.kwatera.reservation_service.repository.ReservationRepository;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Limit;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,7 @@ public class MessageService {
   private final MessageRepository messages;
   private final ConversationParticipantAuthorizer authorizer;
   private final ConversationLifecyclePolicy lifecycle;
+  private final ApplicationEventPublisher events;
 
   @Transactional
   public MessageResponse send(UUID conversationId, UUID currentUserId, String content) {
@@ -40,7 +43,10 @@ public class MessageService {
         || message.getCreatedAt().isAfter(conversation.getLastMessageAt())) {
       conversation.setLastMessageAt(message.getCreatedAt());
     }
-    return response(message);
+    MessageResponse result = response(message);
+    events.publishEvent(
+        new MessageCreated(result, conversation.getGuestUserId(), conversation.getOwnerUserId()));
+    return result;
   }
 
   @Transactional(readOnly = true)

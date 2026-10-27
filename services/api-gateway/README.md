@@ -25,3 +25,7 @@ The service loads configuration from Config Server and discovers routes through 
 ## Local verification
 
 See the [root quality-check instructions](../../README.md#local-quality-checks).
+
+## Conversation WebSocket route
+
+Native STOMP uses /ws/conversations via lb:ws://reservation-service. See [messaging integration](../../docs/messaging.md) for browser authentication, origins, recovery and smoke testing.

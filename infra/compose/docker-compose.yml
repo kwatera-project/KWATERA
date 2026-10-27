@@ -51,6 +51,7 @@ services:
       SPRING_MAIL_USERNAME: ""
       SPRING_MAIL_PASSWORD: ""
       KWATERA_MAIL_FROM: no-reply@kwatera.local
+      KWATERA_MESSAGING_ALLOWED_ORIGINS: ${KWATERA_MESSAGING_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:5174}
       KWATERA_MAIL_TEST_RECIPIENT: guest@kwatera.local
     depends_on:
       config-server:

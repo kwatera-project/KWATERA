@@ -28,6 +28,7 @@
 
 # Reservation domain and owner/admin reservation flow.
 /services/reservation-service/ @alicjaswiers @lukaszjecek
+/services/reservation-service/src/main/java/io/github/kwatera_project/kwatera/reservation_service/conversation/websocket/ @alicjaswiers @lukaszjecek
 
 # Billing and settlement domain.
 /services/billing-service/ @sinadzeya @lukaszjecek

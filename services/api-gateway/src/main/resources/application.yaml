@@ -13,6 +13,11 @@ spring:
           default-filters:
             - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin RETAIN_FIRST
           routes:
+            - id: reservation-service-websocket
+              uri: lb:ws://reservation-service
+              predicates:
+                - Path=/ws/conversations
+
             - id: auth-service
               uri: lb://auth-service
               predicates:
