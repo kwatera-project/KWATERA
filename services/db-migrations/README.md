@@ -25,3 +25,7 @@ The service requires the PostgreSQL datasource variables supplied by Docker Comp
 ## Local verification
 
 See the [root quality-check instructions](../../README.md#local-quality-checks).
+
+Migration `V38__create_conversation_messages.sql` adds persistent reservation-conversation messages, a conversation foreign key, required fields, the 1–4,000-character content constraint and a `(conversation_id, created_at DESC, id DESC)` history index. Timestamps use microsecond precision and time zones. Sender IDs deliberately have no cross-service user foreign key. Applied migrations remain unchanged.
+
+`MessageMigrationTest` checks the new SQL and constraints on H2 in PostgreSQL mode. `PostgreSqlConversationMigrationTest` also migrates through V38 and runs the same assertions on PostgreSQL 16 with Testcontainers; it requires Docker and is skipped when Docker is unavailable.

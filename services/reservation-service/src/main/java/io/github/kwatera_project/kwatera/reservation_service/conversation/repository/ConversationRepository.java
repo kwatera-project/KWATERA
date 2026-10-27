@@ -1,16 +1,25 @@
 package io.github.kwatera_project.kwatera.reservation_service.conversation.repository;
 
 import io.github.kwatera_project.kwatera.reservation_service.conversation.model.Conversation;
+import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ConversationRepository extends JpaRepository<Conversation, UUID> {
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query(
+      "SELECT c FROM Conversation c WHERE c.id = :conversationId "
+          + "AND (c.guestUserId = :userId OR c.ownerUserId = :userId)")
+  Optional<Conversation> findAccessibleForUpdate(
+      @Param("conversationId") UUID conversationId, @Param("userId") UUID userId);
 
   Optional<Conversation> findByReservationId(UUID reservationId);
 

@@ -44,6 +44,14 @@ class PostgreSqlConversationMigrationTest {
         .isInstanceOf(SQLException.class);
     assertThatThrownBy(() -> deleteReservation(EVIDENCED_CANCELLATION))
         .isInstanceOf(SQLException.class);
+
+    assertThat(flyway(MigrationVersion.fromVersion("38")).migrate().targetSchemaVersion)
+        .isEqualTo("38");
+    try (var connection =
+        DriverManager.getConnection(
+            POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())) {
+      MessageMigrationTest.verifyConstraintsAndOrdering(connection, conversationId);
+    }
   }
 
   private Flyway flyway(MigrationVersion target) {
