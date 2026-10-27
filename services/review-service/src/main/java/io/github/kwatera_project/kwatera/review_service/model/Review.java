@@ -12,12 +12,10 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Table(
-        name = "reviews",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "uq_reviews_reservation",
-                        columnNames = "reservation_id")
-        })
+    name = "reviews",
+    uniqueConstraints = {
+      @UniqueConstraint(name = "uq_reviews_reservation", columnNames = "reservation_id")
+    })
 @Getter
 @Setter
 @NoArgsConstructor

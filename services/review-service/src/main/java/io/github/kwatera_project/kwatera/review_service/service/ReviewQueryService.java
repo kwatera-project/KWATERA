@@ -21,77 +21,60 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class ReviewQueryService {
 
-    private final ReviewRepository reviewRepository;
-    private final PropertyClient propertyClient;
+  private final ReviewRepository reviewRepository;
+  private final PropertyClient propertyClient;
 
-    public ReviewQueryService(
-            ReviewRepository reviewRepository,
-            PropertyClient propertyClient) {
-        this.reviewRepository = reviewRepository;
-        this.propertyClient = propertyClient;
+  public ReviewQueryService(ReviewRepository reviewRepository, PropertyClient propertyClient) {
+    this.reviewRepository = reviewRepository;
+    this.propertyClient = propertyClient;
+  }
+
+  @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+  public ReviewPageDto getForUnit(UUID unitId, int page, int size) {
+    validatePage(page, size);
+    propertyClient.requireUnit(unitId);
+
+    return getForUnits(List.of(unitId), page, size);
+  }
+
+  @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+  public ReviewPageDto getForProperty(UUID propertyId, int page, int size) {
+    validatePage(page, size);
+
+    List<UUID> unitIds = propertyClient.getUnitIdsForProperty(propertyId);
+
+    return getForUnits(unitIds, page, size);
+  }
+
+  private ReviewPageDto getForUnits(List<UUID> unitIds, int page, int size) {
+
+    if (unitIds.isEmpty()) {
+      return new ReviewPageDto(List.of(), page, size, 0, 0, null);
     }
 
-    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
-    public ReviewPageDto getForUnit(UUID unitId, int page, int size) {
-        validatePage(page, size);
-        propertyClient.requireUnit(unitId);
+    PageRequest pageable =
+        PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
 
-        return getForUnits(List.of(unitId), page, size);
+    Page<Review> result = reviewRepository.findByUnitIdIn(unitIds, pageable);
+
+    Double average = reviewRepository.averageRatingForUnits(unitIds);
+
+    BigDecimal roundedAverage =
+        average == null ? null : BigDecimal.valueOf(average).setScale(2, RoundingMode.HALF_UP);
+
+    return new ReviewPageDto(
+        result.getContent().stream().map(PublicReviewDto::from).toList(),
+        page,
+        size,
+        result.getTotalPages(),
+        result.getTotalElements(),
+        roundedAverage);
+  }
+
+  private void validatePage(int page, int size) {
+    if (page < 0 || size < 1 || size > 100) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Page must be at least 0 and size must be between 1 and 100");
     }
-
-    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
-    public ReviewPageDto getForProperty(UUID propertyId, int page, int size) {
-        validatePage(page, size);
-
-        List<UUID> unitIds =
-                propertyClient.getUnitIdsForProperty(propertyId);
-
-        return getForUnits(unitIds, page, size);
-    }
-
-    private ReviewPageDto getForUnits(
-            List<UUID> unitIds, int page, int size) {
-
-        if (unitIds.isEmpty()) {
-            return new ReviewPageDto(List.of(), page, size, 0, 0, null);
-        }
-
-        PageRequest pageable =
-                PageRequest.of(
-                        page,
-                        size,
-                        Sort.by(
-                                Sort.Order.desc("createdAt"),
-                                Sort.Order.desc("id")));
-
-        Page<Review> result =
-                reviewRepository.findByUnitIdIn(unitIds, pageable);
-
-        Double average =
-                reviewRepository.averageRatingForUnits(unitIds);
-
-        BigDecimal roundedAverage =
-                average == null
-                        ? null
-                        : BigDecimal.valueOf(average)
-                        .setScale(2, RoundingMode.HALF_UP);
-
-        return new ReviewPageDto(
-                result.getContent().stream()
-                        .map(PublicReviewDto::from)
-                        .toList(),
-                page,
-                size,
-                result.getTotalPages(),
-                result.getTotalElements(),
-                roundedAverage);
-    }
-
-    private void validatePage(int page, int size) {
-        if (page < 0 || size < 1 || size > 100) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Page must be at least 0 and size must be between 1 and 100");
-        }
-    }
+  }
 }

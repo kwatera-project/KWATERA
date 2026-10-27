@@ -15,102 +15,78 @@ import org.springframework.web.server.ResponseStatusException;
 @Component
 public class PropertyClient {
 
-    private final RestOperations restOperations;
+  private final RestOperations restOperations;
 
-    public PropertyClient(RestOperations restOperations) {
-        this.restOperations = restOperations;
+  public PropertyClient(RestOperations restOperations) {
+    this.restOperations = restOperations;
+  }
+
+  public void requireUnit(UUID unitId) {
+    UnitReference unit =
+        get("http://property-service/api/properties/units/{id}", UnitReference.class, unitId);
+
+    if (unit == null || !unitId.equals(unit.id())) {
+      throw invalidResponse();
+    }
+  }
+
+  public List<UUID> getUnitIdsForProperty(UUID propertyId) {
+    PropertyReference property =
+        get("http://property-service/api/properties/{id}", PropertyReference.class, propertyId);
+
+    if (property == null || !propertyId.equals(property.id())) {
+      throw invalidResponse();
     }
 
-    public void requireUnit(UUID unitId) {
-        UnitReference unit =
-                get(
-                        "http://property-service/api/properties/units/{id}",
-                        UnitReference.class,
-                        unitId);
+    UnitReference[] units =
+        get("http://property-service/api/properties/{id}/units", UnitReference[].class, propertyId);
 
-        if (unit == null || !unitId.equals(unit.id())) {
-            throw invalidResponse();
-        }
+    if (units == null) {
+      throw invalidResponse();
     }
 
-    public List<UUID> getUnitIdsForProperty(UUID propertyId) {
-        PropertyReference property =
-                get(
-                        "http://property-service/api/properties/{id}",
-                        PropertyReference.class,
-                        propertyId);
-
-        if (property == null || !propertyId.equals(property.id())) {
-            throw invalidResponse();
-        }
-
-        UnitReference[] units =
-                get(
-                        "http://property-service/api/properties/{id}/units",
-                        UnitReference[].class,
-                        propertyId);
-
-        if (units == null) {
-            throw invalidResponse();
-        }
-
-        for (UnitReference unit : units) {
-            if (unit == null
-                    || unit.id() == null
-                    || !propertyId.equals(unit.propertyId())) {
-                throw invalidResponse();
-            }
-        }
-
-        return Arrays.stream(units)
-                .map(UnitReference::id)
-                .distinct()
-                .toList();
+    for (UnitReference unit : units) {
+      if (unit == null || unit.id() == null || !propertyId.equals(unit.propertyId())) {
+        throw invalidResponse();
+      }
     }
 
-    private <T> T get(String url, Class<T> responseType, UUID id) {
-        try {
-            return restOperations.getForObject(url, responseType, id);
+    return Arrays.stream(units).map(UnitReference::id).distinct().toList();
+  }
 
-        } catch (HttpClientErrorException.NotFound exception) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Accommodation not found",
-                    exception);
+  private <T> T get(String url, Class<T> responseType, UUID id) {
+    try {
+      return restOperations.getForObject(url, responseType, id);
 
-        } catch (ResourceAccessException exception) {
-            throw new ResponseStatusException(
-                    HttpStatus.SERVICE_UNAVAILABLE,
-                    "Property service is unavailable",
-                    exception);
+    } catch (HttpClientErrorException.NotFound exception) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Accommodation not found", exception);
 
-        } catch (RestClientException exception) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_GATEWAY,
-                    "Property service returned an invalid response",
-                    exception);
+    } catch (ResourceAccessException exception) {
+      throw new ResponseStatusException(
+          HttpStatus.SERVICE_UNAVAILABLE, "Property service is unavailable", exception);
 
-        } catch (IllegalStateException exception) {
-            if ("No instances available for property-service".equals(exception.getMessage())) {
-                throw new ResponseStatusException(
-                        HttpStatus.SERVICE_UNAVAILABLE,
-                        "Property service is unavailable",
-                        exception);
-            }
+    } catch (RestClientException exception) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_GATEWAY, "Property service returned an invalid response", exception);
 
-            throw exception;
-        }
+    } catch (IllegalStateException exception) {
+      if ("No instances available for property-service".equals(exception.getMessage())) {
+        throw new ResponseStatusException(
+            HttpStatus.SERVICE_UNAVAILABLE, "Property service is unavailable", exception);
+      }
+
+      throw exception;
     }
+  }
 
-    private ResponseStatusException invalidResponse() {
-        return new ResponseStatusException(
-                HttpStatus.BAD_GATEWAY,
-                "Property service returned incomplete or inconsistent data");
-    }
+  private ResponseStatusException invalidResponse() {
+    return new ResponseStatusException(
+        HttpStatus.BAD_GATEWAY, "Property service returned incomplete or inconsistent data");
+  }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public record UnitReference(UUID id, UUID propertyId) {}
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public record UnitReference(UUID id, UUID propertyId) {}
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public record PropertyReference(UUID id) {}
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  public record PropertyReference(UUID id) {}
 }

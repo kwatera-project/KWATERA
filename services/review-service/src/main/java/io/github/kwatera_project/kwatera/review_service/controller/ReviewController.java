@@ -34,15 +34,12 @@ public class ReviewController {
 
     UUID authorId = validateAndGetUserId(authentication);
 
-      boolean isGuest =
-              authentication.getAuthorities()
-                      .contains(new SimpleGrantedAuthority("ROLE_GUEST"));
+    boolean isGuest =
+        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_GUEST"));
 
-      if (!isGuest) {
-          throw new ResponseStatusException(
-                  HttpStatus.FORBIDDEN,
-                  "Only guests can write reviews");
-      }
+    if (!isGuest) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only guests can write reviews");
+    }
 
     return reviewService.createReview(authorId, request);
   }

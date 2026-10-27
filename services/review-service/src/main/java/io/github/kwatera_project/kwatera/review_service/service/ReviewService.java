@@ -1,11 +1,14 @@
 package io.github.kwatera_project.kwatera.review_service.service;
+
 import io.github.kwatera_project.kwatera.review_service.client.ReservationClient;
-import io.github.kwatera_project.kwatera.review_service.dto.ReservationDetailsDto;
 import io.github.kwatera_project.kwatera.review_service.dto.CreateReviewRequest;
+import io.github.kwatera_project.kwatera.review_service.dto.ReservationDetailsDto;
 import io.github.kwatera_project.kwatera.review_service.dto.ReviewResponseDto;
 import io.github.kwatera_project.kwatera.review_service.dto.UpdateReviewRequest;
 import io.github.kwatera_project.kwatera.review_service.model.Review;
 import io.github.kwatera_project.kwatera.review_service.repository.ReviewRepository;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,46 +25,52 @@ public class ReviewService {
   private final ReviewRepository reviewRepository;
   private final ReservationClient reservationClient;
 
-    @Autowired
-    public ReviewService(
-            ReviewRepository reviewRepository,
-            ReservationClient reservationClient) {
-        this.reviewRepository = reviewRepository;
-        this.reservationClient = reservationClient;
+  @Autowired
+  public ReviewService(ReviewRepository reviewRepository, ReservationClient reservationClient) {
+    this.reviewRepository = reviewRepository;
+    this.reservationClient = reservationClient;
+  }
+
+  @Transactional
+  public Review createReview(UUID authorId, CreateReviewRequest request) {
+    ReservationDetailsDto reservation =
+        reservationClient.getReservation(request.getReservationId());
+
+    if (!reservation.userId().equals(authorId)) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN, "You can only review your own reservation");
     }
 
-    @Transactional
-    public Review createReview(UUID authorId, CreateReviewRequest request) {
-        ReservationDetailsDto reservation =
-                reservationClient.getReservation(request.getReservationId());
-
-        if (!reservation.userId().equals(authorId)) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "You can only review your own reservation");
-        }
-
-        if (!"COMPLETED".equals(reservation.status())) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Only completed reservations can be reviewed");
-        }
-
-        if (reviewRepository.existsByReservationId(reservation.id())) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "A review already exists for this reservation");
-        }
-
-        Review review = new Review();
-        review.setAuthorId(authorId);
-        review.setReservationId(reservation.id());
-        review.setUnitId(reservation.unitId());
-        review.setRating(request.getRating());
-        review.setComment(request.getComment());
-
-        return reviewRepository.saveAndFlush(review);
+    if (!"COMPLETED".equals(reservation.status())) {
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT, "Only completed reservations can be reviewed");
     }
+    if (reservation.endDate() == null) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_GATEWAY, "Reservation service returned no end date");
+    }
+
+    LocalDate today = LocalDate.now(ZoneId.of("Europe/Warsaw"));
+
+    if (today.isBefore(reservation.endDate())) {
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT, "Reviews can be submitted from the last day of the stay");
+    }
+
+    if (reviewRepository.existsByReservationId(reservation.id())) {
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT, "A review already exists for this reservation");
+    }
+
+    Review review = new Review();
+    review.setAuthorId(authorId);
+    review.setReservationId(reservation.id());
+    review.setUnitId(reservation.unitId());
+    review.setRating(request.getRating());
+    review.setComment(request.getComment());
+
+    return reviewRepository.saveAndFlush(review);
+  }
 
   public List<ReviewResponseDto> getReviewsByAuthor(UUID userId) {
     return reviewRepository.findReviewsByAuthorId(userId).stream()

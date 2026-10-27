@@ -6,9 +6,4 @@ import java.util.UUID;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ReservationDetailsDto(
-        UUID id,
-        UUID userId,
-        UUID unitId,
-        String status,
-        LocalDate endDate
-) {}
+    UUID id, UUID userId, UUID unitId, String status, LocalDate endDate) {}
