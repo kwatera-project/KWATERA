@@ -28,3 +28,7 @@ management:
       exposure:
         include: health,info
 
+kwatera:
+  security:
+    internal-token: ${KWATERA_INTERNAL_TOKEN:kwatera-internal-secret-token}
+

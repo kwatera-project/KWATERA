@@ -36,12 +36,9 @@ public class ReviewController {
 
     boolean isGuest =
         authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_GUEST"));
-    boolean isOwner =
-        authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_OWNER"));
 
-    if (!isGuest && !isOwner) {
-      throw new ResponseStatusException(
-          HttpStatus.FORBIDDEN, "Only guests and owners can write reviews");
+    if (!isGuest) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only guests can write reviews");
     }
 
     return reviewService.createReview(authorId, request);
