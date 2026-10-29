@@ -23,6 +23,7 @@ const AdminReservationList = lazy(() => import("./components/AdminReservationLis
 const OccupancyCalendarPage = lazy(() => import("./pages/OccupancyCalendarPage"));
 const MyReservationsPage = lazy(() => import("./pages/MyReservationsPage"));
 const ReservationDetailsPage = lazy(() => import("./pages/ReservationDetailsPage"));
+const ConversationPage = lazy(() => import("./pages/ConversationPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const PropertiesPage = lazy(() => import("./pages/PropertiesPage.tsx"));
 const PropertyDetailsPage = lazy(() => import("./pages/PropertyDetailsPage"));
@@ -136,6 +137,14 @@ function App() {
                                 element={
                                     <ProtectedRoute allowedRoles={[]}>
                                         <ReservationDetailsPage/>
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/conversations/:conversationId"
+                                element={
+                                    <ProtectedRoute>
+                                        <ConversationPage/>
                                     </ProtectedRoute>
                                 }
                             />
