@@ -43,6 +43,7 @@
     "myAccount": "My Account",
     "myProfile": "My Profile",
     "myReservations": "My Reservations",
+    "myReviews": "My Reviews",
     "reservations": "Reservations",
     "dashboard": "Dashboard",
     "manageProperties": "Manage Properties",
@@ -773,7 +774,52 @@
     "browseCatalog": "Browse Catalog",
     "reservationId": "Reservation ID:",
     "viewBill": "View Bill",
-    "waterMeter": "Water Meter"
+    "waterMeter": "Water Meter",
+    "leaveReview": "Leave Review",
+    "showReview": "Edit Review"
+  },
+
+  "createReview": {
+    "title": "Write a review",
+    "subtitle": "Share your experience about this stay",
+    "back": "Back to reservation",
+    "submit": "Publish review",
+    "missingReservationId": "Reservation ID is missing.",
+    "failed": "Failed to create review. Please try again."
+  },
+
+  "reviewForm": {
+    "ratingLabel": "Rating",
+    "commentLabel": "Comment",
+    "commentPlaceholder": "Write your feedback here..."
+  },
+
+  "singleReview": {
+    "title": "Edit review",
+    "subtitle": "Update your rating or comment for this stay",
+    "back": "Back",
+    "submit": "Save changes",
+    "loading": "Loading review...",
+    "loadError": "Failed to load review details.",
+    "notFound": "Review not found.",
+    "updateSuccess": "Review updated successfully!",
+    "updateFailed": "Failed to update review.",
+    "deleteConfirm": "Are you sure you want to delete this review?",
+    "deleteFailed": "Failed to delete review.",
+    "viewReservation": "View Reservation"
+  },
+
+  "myReviews": {
+    "title": "My Reviews",
+    "subtitle": "Manage all the reviews you have submitted for your stays",
+    "loading": "Loading your reviews...",
+    "loadError": "Failed to load your reviews.",
+    "noReviews": "You haven't written any reviews yet.",
+    "noComment": "No comment provided.",
+    "editReview": "Edit Review",
+    "reviewName": "Review",
+    "commentLabel": "Comment",
+    "ratingName": "Rating"
   },
 
   "occupancy": {
@@ -938,7 +984,7 @@
     "title": "Reservation Dashboard",
     "stayInfo": "Stay & Property Info",
     "propertyUnit": "Property / Unit Name",
-    "nameUnavailable": "Property name not available",
+    "showReservation": "Show reservation",
     "city": "City:",
     "unitId": "Unit ID UUID:",
     "bookedOn": "Booked On",

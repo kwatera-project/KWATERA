@@ -43,6 +43,7 @@
     "myAccount": "Moje konto",
     "myProfile": "Mój profil",
     "myReservations": "Moje rezerwacje",
+    "myReviews": "Moje opinie",
     "reservations": "Rezerwacje",
     "dashboard": "Panel",
     "manageProperties": "Zarządzaj nieruchomościami",
@@ -848,7 +849,52 @@
     "browseCatalog": "Przeglądaj katalog",
     "reservationId": "ID rezerwacji:",
     "viewBill": "Pokaż rachunek",
-    "waterMeter": "Licznik wody"
+    "waterMeter": "Licznik wody",
+    "leaveReview": "Dodaj opinię",
+    "showReview": "Edytuj opinię"
+  },
+
+  "createReview": {
+    "title": "Napisz opinię",
+    "subtitle": "Podziel się wrażeniami z pobytu",
+    "back": "Powrót do rezerwacji",
+    "submit": "Opublikuj opinię",
+    "missingReservationId": "Brak identyfikatora rezerwacji.",
+    "failed": "Nie udało się dodać opinii. Spróbuj ponownie."
+  },
+
+  "reviewForm": {
+    "ratingLabel": "Ocena",
+    "commentLabel": "Komentarz",
+    "commentPlaceholder": "Napisz swoją opinię tutaj..."
+  },
+
+  "singleReview": {
+    "title": "Edytuj opinię",
+    "subtitle": "Zaktualizuj swoją ocenę lub komentarz z pobytu",
+    "back": "Powrót",
+    "submit": "Zapisz zmiany",
+    "loading": "Ładowanie opinii...",
+    "loadError": "Nie udało się pobrać szczegółów opinii.",
+    "notFound": "Nie znaleziono opinii.",
+    "updateSuccess": "Pomyślnie zaktualizowano opinię!",
+    "updateFailed": "Nie udało się zaktualizować opinii.",
+    "deleteConfirm": "Czy na pewno chcesz usunąć tę opinię?",
+    "deleteFailed": "Nie udało się usunąć opinii.",
+    "viewReservation": "Zobacz rezerwację"
+  },
+
+  "myReviews": {
+    "title": "Moje opinie",
+    "subtitle": "Zarządzaj wszystkimi opiniami wystawionymi za swoje pobyty",
+    "loading": "Ładowanie Twoich opinii...",
+    "loadError": "Nie udało się załadować Twoich opinii.",
+    "noReviews": "Nie napisano jeszcze żadnych opinii.",
+    "noComment": "Brak komentarza.",
+    "editReview": "Edytuj opinię",
+    "reviewName": "Opinia",
+    "commentLabel": "Komentarz",
+    "ratingName": "Ocena"
   },
 
   "paymentCancel": {
@@ -946,7 +992,7 @@
     "title": "Panel rezerwacji",
     "stayInfo": "Pobyt i nieruchomość",
     "propertyUnit": "Nieruchomość / lokal",
-    "nameUnavailable": "Nazwa nieruchomości niedostępna",
+    "showReservation": "Pokaż rezerwację",
     "city": "Miasto:",
     "unitId": "UUID lokalu:",
     "bookedOn": "Data rezerwacji",
