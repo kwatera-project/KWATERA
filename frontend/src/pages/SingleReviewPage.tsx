@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getReviewDetails, updateReview } from "../api/reviewApi";
+import { getReviewDetails, updateReview } from "../api/reviewApi.ts";
 import ReviewForm, { type ReviewFormData } from "../contexts/ReviewForm";
 import type { ReviewResponseDto } from "../types/review";
 import { useTranslation } from "react-i18next";

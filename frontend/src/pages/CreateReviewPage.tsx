@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { createReview } from "../api/reviewApi";
+import { createReview } from "../api/reviewApi.ts";
 import ReviewForm, { type ReviewFormData } from "../contexts/ReviewForm";
 import { useTranslation } from "react-i18next";
 

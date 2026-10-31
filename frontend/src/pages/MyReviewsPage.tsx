@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getMyReviews } from "../api/reviewApi";
+import { getMyReviews } from "../api/reviewApi.ts";
 import type { ReviewResponseDto } from "../types/review";
 import { useTranslation } from "react-i18next";
 import { Star, MessageSquare, Edit3, Info } from "lucide-react";
