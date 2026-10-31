@@ -817,7 +817,9 @@
     "noReviews": "You haven't written any reviews yet.",
     "noComment": "No comment provided.",
     "editReview": "Edit Review",
-    "reviewName": "Review"
+    "reviewName": "Review",
+    "commentLabel": "Comment",
+    "ratingName": "Rating"
   },
 
   "occupancy": {

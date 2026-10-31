@@ -96,19 +96,15 @@ export default function MyReviewsPage() {
                                     )}
 
                                     <div className="space-y-1">
-                                        <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">Rating</span>
+                                        <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
+                                             {t('myReviews.ratingName')}
+                                        </span>
                                         <div className="flex items-center gap-2 text-sm text-[#42211D]">
                                             <Star size={16} className="text-amber-500 fill-amber-500 shrink-0" />
                                             <span className="text-lg font-black tracking-tight whitespace-nowrap">
                                                 {review.rating} / 5
                                             </span>
                                         </div>
-                                    </div>
-
-                                    <div className="sm:col-span-2 pt-2 border-t border-gray-100">
-                                        <p className="text-sm font-medium text-[#1A1A1A] leading-relaxed">
-                                            {review.comment || t('myReviews.noComment')}
-                                        </p>
                                     </div>
                                 </div>
 
@@ -131,6 +127,15 @@ export default function MyReviewsPage() {
                                         </Link>
                                     </div>
                                 </div>
+                            </div>
+
+                            <div className="mt-6 pt-4 border-t border-gray-100 space-y-1">
+                                <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">
+                                    {t('myReviews.commentLabel')}
+                                </span>
+                                <p className="text-sm font-medium text-[#1A1A1A] leading-relaxed">
+                                    {review.comment || t('myReviews.noComment')}
+                                </p>
                             </div>
                         </div>
                     ))}

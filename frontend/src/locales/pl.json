@@ -892,7 +892,9 @@
     "noReviews": "Nie napisano jeszcze żadnych opinii.",
     "noComment": "Brak komentarza.",
     "editReview": "Edytuj opinię",
-    "reviewName": "Opinia"
+    "reviewName": "Opinia",
+    "commentLabel": "Komentarz",
+    "ratingName": "Ocena"
   },
 
   "paymentCancel": {
