@@ -1,6 +1,7 @@
 package io.github.kwatera_project.kwatera.review_service.dto;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,4 +20,7 @@ public class ReviewResponseDto {
   private String comment;
   private Instant createdAt;
   private Instant updatedAt;
+  private String unitName;
+  private LocalDate startDate;
+  private LocalDate endDate;
 }
