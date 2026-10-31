@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { getMyReviews } from "../api/reviewApi";
 import type { ReviewResponseDto } from "../types/review";
 import { useTranslation } from "react-i18next";
-import { Star, MessageSquare, Edit3, Calendar, Info } from "lucide-react";
+import { Star, MessageSquare, Edit3, Info } from "lucide-react";
 
 export default function MyReviewsPage() {
     const { t } = useTranslation();
@@ -62,7 +62,7 @@ export default function MyReviewsPage() {
                 </div>
             ) : (
                 <div className="grid gap-6">
-                    {reviews.map((review: any) => (
+                    {reviews.map((review: ReviewResponseDto) => (
                         <div
                             key={review.id}
                             className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300"
@@ -85,15 +85,6 @@ export default function MyReviewsPage() {
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:px-4 items-center">
-                                    {review.startDate && review.endDate && (
-                                        <div className="space-y-1">
-                                            <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">{t('adminReservations.stayDates')}</span>
-                                            <div className="flex items-center gap-2 text-sm text-[#1A1A1A]">
-                                                <Calendar size={16} className="text-[#42211D] shrink-0" />
-                                                <span className="font-semibold text-gray-800 whitespace-nowrap">{review.startDate} &rarr; {review.endDate}</span>
-                                            </div>
-                                        </div>
-                                    )}
 
                                     <div className="space-y-1">
                                         <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">

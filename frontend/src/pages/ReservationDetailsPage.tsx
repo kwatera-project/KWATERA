@@ -19,6 +19,7 @@ import {
     getRatePerLiterTooltip,
 } from "../utils/waterBilling";
 import {getMyReviews} from "../api/reviewApi.ts";
+import type {ReviewResponseDto} from "../types/review.ts";
 
 export default function ReservationDetailsPage() {
     const { id } = useParams();
@@ -52,7 +53,7 @@ export default function ReservationDetailsPage() {
 
         getMyReviews()
             .then((reviews) => {
-                const existingReview = reviews.find((review: any) => review.reservationId === id);
+                const existingReview = reviews.find((review: ReviewResponseDto) => review.reservationId === id);
                 if (existingReview) {
                     setHasReview(true);
                     setReviewId(existingReview.id);
