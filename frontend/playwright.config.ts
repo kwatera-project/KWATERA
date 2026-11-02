@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 export default defineConfig({
     testDir: "./tests/e2e",
+    testIgnore: "**/*.demo.spec.ts",
     outputDir: join(tmpdir(), "kwatera-conversation-tests"),
     fullyParallel: true,
     workers: 2,

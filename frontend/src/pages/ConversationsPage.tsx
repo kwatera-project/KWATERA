@@ -8,16 +8,17 @@ import type { ConversationResponse } from "../types/conversation";
 import { decodeJwt } from "../utils/jwtUtils";
 import { conversationAccessError, conversationActivity, INBOX_PAGE_SIZE, sortConversations } from "../utils/conversationInbox";
 import { getLocaleCode } from "../utils/locale";
+import { useAuthToken } from "../hooks/useAuthToken";
 
 const button = "inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-brand-primary bg-brand-bg border border-brand-accent rounded-lg shadow-sm hover:bg-brand-accent/30 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary disabled:opacity-50 disabled:cursor-not-allowed";
 
 export default function ConversationsPage() {
-    const token = localStorage.getItem("token");
+    const token = useAuthToken();
     const [attempt, setAttempt] = useState(0);
-    return <Inbox key={`${token}:${attempt}`} userId={decodeJwt(token)?.userId} onRetry={() => setAttempt(value => value + 1)} />;
+    return <Inbox key={`${token}:${attempt}`} token={token} userId={decodeJwt(token)?.userId} onRetry={() => setAttempt(value => value + 1)} />;
 }
 
-function Inbox({ userId, onRetry }: { userId: string | undefined; onRetry: () => void }) {
+function Inbox({ token, userId, onRetry }: { token: string | null; userId: string | undefined; onRetry: () => void }) {
     const { t } = useTranslation();
     const [conversations, setConversations] = useState<ConversationResponse[]>([]);
     const [loading, setLoading] = useState(true);
@@ -26,23 +27,24 @@ function Inbox({ userId, onRetry }: { userId: string | undefined; onRetry: () =>
 
     useEffect(() => {
         let active = true;
+        const isCurrentSession = () => active && localStorage.getItem("token") === token;
         async function load() {
             try {
                 if (!userId) throw new ConversationApiError("Unauthorized", 401);
                 const items = await getConversations();
-                if (active) setConversations(sortConversations(items.filter(item => item.guestUserId === userId || item.ownerUserId === userId)));
+                if (isCurrentSession()) setConversations(sortConversations(items.filter(item => item.guestUserId === userId || item.ownerUserId === userId)));
             } catch (cause) {
-                if (active) {
+                if (isCurrentSession()) {
                     setConversations([]);
                     setError(cause instanceof ConversationApiError ? conversationAccessError(cause.status) ?? "load" : "load");
                 }
             } finally {
-                if (active) setLoading(false);
+                if (isCurrentSession()) setLoading(false);
             }
         }
         void load();
         return () => { active = false; };
-    }, [userId]);
+    }, [token, userId]);
 
     return (
         <div className="max-w-7xl mx-auto p-4 sm:p-8 min-h-screen text-brand-main space-y-6">
@@ -61,7 +63,7 @@ function Inbox({ userId, onRetry }: { userId: string | undefined; onRetry: () =>
                     <h2 className="text-lg font-bold">{t("inbox.empty")}</h2>
                     <p className="text-sm text-brand-muted">{t("inbox.emptyHint")}</p>
                 </div> : <>
-                    <InboxItems key={page} conversations={conversations.slice(page * INBOX_PAGE_SIZE, (page + 1) * INBOX_PAGE_SIZE)} />
+                    <InboxItems key={page} token={token} conversations={conversations.slice(page * INBOX_PAGE_SIZE, (page + 1) * INBOX_PAGE_SIZE)} />
                     {conversations.length > INBOX_PAGE_SIZE && <nav aria-label={t("inbox.pagination")} className="flex flex-wrap items-center justify-between gap-3">
                         <button type="button" className={button} disabled={page === 0} onClick={() => setPage(value => value - 1)}>{t("inbox.previous")}</button>
                         <p role="status" className="text-sm text-brand-muted">{t("inbox.page", { page: page + 1, total: Math.ceil(conversations.length / INBOX_PAGE_SIZE) })}</p>
@@ -72,17 +74,18 @@ function Inbox({ userId, onRetry }: { userId: string | undefined; onRetry: () =>
     );
 }
 
-function InboxItems({ conversations }: { conversations: ConversationResponse[] }) {
+function InboxItems({ token, conversations }: { token: string | null; conversations: ConversationResponse[] }) {
     const { t, i18n } = useTranslation();
     const [unitNames, setUnitNames] = useState<Record<string, string>>({});
 
     useEffect(() => {
         let active = true;
+        const isCurrentSession = () => active && localStorage.getItem("token") === token;
         async function enrich() {
             // Only the visible page, at most three requests in flight. A failed
             // optional context lookup must never hide an available conversation.
             const ids = [...new Set(conversations.map(item => item.reservationId))];
-            for (let offset = 0; offset < ids.length && active; offset += 3) {
+            for (let offset = 0; offset < ids.length && isCurrentSession(); offset += 3) {
                 const results = await Promise.all(ids.slice(offset, offset + 3).map(async id => {
                     try {
                         const details = await getReservationDetails(id);
@@ -91,12 +94,12 @@ function InboxItems({ conversations }: { conversations: ConversationResponse[] }
                         return [id, ""] as const;
                     }
                 }));
-                if (active) setUnitNames(previous => ({ ...previous, ...Object.fromEntries(results) }));
+                if (isCurrentSession()) setUnitNames(previous => ({ ...previous, ...Object.fromEntries(results) }));
             }
         }
         void enrich();
         return () => { active = false; };
-    }, [conversations]);
+    }, [token, conversations]);
 
     return <ul aria-label={t("inbox.title")} className="space-y-4">
         {conversations.map(conversation => {

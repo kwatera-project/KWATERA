@@ -5,7 +5,7 @@ import {getUserRoles, decodeJwt} from "../utils/jwtUtils.ts"
 import {useState, useEffect, useRef} from "react"
 import {useCurrency} from "../contexts/CurrencyContext"
 import {User, LogOut, LayoutDashboard, Calendar, Settings, Home, FileClock, Users, Globe2, Menu, X, MessageSquare} from 'lucide-react'
-import {canUseConversations} from "../utils/conversationInbox"
+import {useAuthToken} from "../hooks/useAuthToken"
 import {useTranslation} from "react-i18next"
 import i18n from "../i18n"
 import {IS_DEMO_MODE} from "../api/apiConfig.ts"
@@ -16,8 +16,7 @@ interface NavbarProps {
 
 export default function Navbar({isSubpage}: NavbarProps = {}) {
     const {t} = useTranslation();
-    const [, setAuthVersion] = useState(0);
-    const token = localStorage.getItem("token");
+    const token = useAuthToken();
     const userRoles = getUserRoles(token);
     const isLoggedIn = !!token;
     const payload = token ? decodeJwt(token) : null;
@@ -62,16 +61,6 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
         handleScroll();
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
-    useEffect(() => {
-        const handleDemoAuth = () => setAuthVersion((value) => value + 1);
-        window.addEventListener("kwatera-demo-auth", handleDemoAuth);
-        window.addEventListener("storage", handleDemoAuth);
-        return () => {
-            window.removeEventListener("kwatera-demo-auth", handleDemoAuth);
-            window.removeEventListener("storage", handleDemoAuth);
-        };
     }, []);
 
     useEffect(() => {
@@ -305,7 +294,7 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                                         </Link>
                                     )}
 
-                                    {canUseConversations(userRoles) && (
+                                    {!IS_DEMO_MODE && (
                                         <Link to="/conversations"
                                               className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
                                             <MessageSquare size={16}/>

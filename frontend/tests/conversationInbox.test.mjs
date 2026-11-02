@@ -1,12 +1,33 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { canUseConversations, conversationAccessError, conversationActivity, sortConversations } from "../src/utils/conversationInbox.ts";
+import { canOpenReservationConversation, conversationAccessError, conversationActivity, sortConversations } from "../src/utils/conversationInbox.ts";
 
-test("only guest and owner roles enable conversation navigation, including mixed roles", () => {
-    for (const roles of [[], ["ROLE_ADMIN"], ["ROLE_USER"]]) assert.equal(canUseConversations(roles), false);
-    for (const roles of [["ROLE_GUEST"], ["ROLE_OWNER"], ["ROLE_ADMIN", "ROLE_OWNER"], ["ROLE_ADMIN", "ROLE_GUEST"]]) {
-        assert.equal(canUseConversations(roles), true);
+test("admin reservation actions require known participation, including mixed roles", () => {
+    for (const roles of [["ROLE_ADMIN"], ["ROLE_ADMIN", "ROLE_OWNER"], ["ROLE_ADMIN", "ROLE_GUEST"]]) {
+        assert.equal(canOpenReservationConversation(roles, "admin", "other"), false);
+        assert.equal(canOpenReservationConversation(roles, "admin"), false);
+        assert.equal(canOpenReservationConversation(roles, "admin", "admin"), true);
     }
+    assert.equal(canOpenReservationConversation(["ROLE_ADMIN"], undefined, "admin"), false);
+    assert.equal(canOpenReservationConversation([], "user"), false);
+    for (const roles of [["ROLE_GUEST"], ["ROLE_OWNER"]]) assert.equal(canOpenReservationConversation(roles, "user"), true);
+});
+
+test("inbox sorting preserves backend sub-millisecond precision before UUID ordering", () => {
+    const earlier = { id: "a", lastMessageAt: "2026-10-30T10:00:00.123001Z", createdAt: "2026-09-01T00:00:00Z" };
+    const later = { ...earlier, id: "z", lastMessageAt: "2026-10-30T10:00:00.123002Z" };
+    assert.deepEqual(sortConversations([earlier, later]), [later, earlier]);
+    const createdLater = { ...later, id: "zz", lastMessageAt: null, createdAt: "2026-10-30T10:00:00.123002001Z" };
+    assert.deepEqual(sortConversations([earlier, later, createdLater]), [createdLater, later, earlier]);
+});
+
+test("fraction padding and timezone offsets keep equal activity instants tied", () => {
+    const rows = [
+        { id: "c", lastMessageAt: "2026-10-30T11:00:00.100000+01:00" },
+        { id: "b", lastMessageAt: "2026-10-30T10:00:00.1Z" },
+        { id: "a", lastMessageAt: "2026-10-30T10:00:00.100Z" },
+    ];
+    assert.deepEqual(sortConversations(rows).map(row => row.id), ["a", "b", "c"]);
 });
 
 test("inbox and entry failures distinguish session, access, lifecycle and retryable errors", () => {

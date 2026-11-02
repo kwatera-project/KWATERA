@@ -3,16 +3,28 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Loader2, MessageSquare } from "lucide-react";
 import { ConversationApiError, getOrCreateConversation } from "../api/conversationApi";
-import { getUserRoles } from "../utils/jwtUtils";
-import { canUseConversations, conversationAccessError } from "../utils/conversationInbox";
+import { decodeJwt, getUserRoles } from "../utils/jwtUtils";
+import { canOpenReservationConversation, conversationAccessError } from "../utils/conversationInbox";
+import { IS_DEMO_MODE } from "../api/apiConfig";
+import { useAuthToken } from "../hooks/useAuthToken";
 
-export default function ReservationConversationButton({ reservationId, status }: {
+export default function ReservationConversationButton({ reservationId, status, guestUserId }: {
+    reservationId: string;
+    status: string;
+    guestUserId?: string;
+}) {
+    const token = useAuthToken();
+    if (IS_DEMO_MODE || !token || !canOpenReservationConversation(getUserRoles(token), decodeJwt(token)?.userId, guestUserId)) return null;
+    return <ConversationAction key={`${token}:${reservationId}`} token={token} reservationId={reservationId} status={status} />;
+}
+
+function ConversationAction({ token, reservationId, status }: {
+    token: string;
     reservationId: string;
     status: string;
 }) {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const token = localStorage.getItem("token");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const busy = useRef(false);
@@ -22,8 +34,6 @@ export default function ReservationConversationButton({ reservationId, status }:
         alive.current = true;
         return () => { alive.current = false; };
     }, []);
-
-    if (!token || !canUseConversations(getUserRoles(token))) return null;
 
     // Terminal statuses may still be available within retention; the backend decides.
     const unavailable = !["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"].includes(status);

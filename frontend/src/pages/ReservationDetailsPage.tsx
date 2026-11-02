@@ -151,7 +151,7 @@ export default function ReservationDetailsPage() {
                 </Link>
             </div>
 
-            <ReservationConversationButton key={reservation.id} reservationId={reservation.id} status={reservation.status} />
+            <ReservationConversationButton key={reservation.id} reservationId={reservation.id} status={reservation.status} guestUserId={reservation.userId} />
 
             {/* Grid Layout Dashboard */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

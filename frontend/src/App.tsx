@@ -7,7 +7,6 @@ import ProtectedRoute from "./components/ProtectedRoute"
 import {CurrencyProvider} from "./contexts/CurrencyContext";
 import DemoModeBanner from "./components/DemoModeBanner";
 import Footer from "./components/landing/Footer";
-import { CONVERSATION_ROLES } from "./utils/conversationInbox";
 
 const FULL_SCREEN_ROUTES = ["/login", "/register", "/payment-cancel", "/forgot-password", "/reset-password"];
 
@@ -145,7 +144,7 @@ function App() {
                             <Route
                                 path="/conversations"
                                 element={
-                                    <ProtectedRoute allowedRoles={CONVERSATION_ROLES}>
+                                    <ProtectedRoute>
                                         <ConversationsPage/>
                                     </ProtectedRoute>
                                 }
@@ -153,7 +152,7 @@ function App() {
                             <Route
                                 path="/conversations/:conversationId"
                                 element={
-                                    <ProtectedRoute allowedRoles={CONVERSATION_ROLES}>
+                                    <ProtectedRoute>
                                         <ConversationPage/>
                                     </ProtectedRoute>
                                 }

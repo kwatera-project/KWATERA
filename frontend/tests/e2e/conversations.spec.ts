@@ -17,9 +17,12 @@ async function respond(route: Route, json: unknown, status = 200) {
     await route.fulfill({ status, json });
 }
 
-async function setup(page: Page, roles: string[] = ["ROLE_GUEST"], language = "en") {
-    const userId = roles.includes("ROLE_OWNER") ? "owner" : "guest";
-    const token = `header.${Buffer.from(JSON.stringify({ userId, role: roles, firstName: "Test" })).toString("base64url")}.signature`;
+function authToken(roles: string[], userId: string, firstName = "Test") {
+    return `header.${Buffer.from(JSON.stringify({ userId, role: roles, firstName })).toString("base64url")}.signature`;
+}
+
+async function setup(page: Page, roles: string[] = ["ROLE_GUEST"], language = "en", userId = roles.includes("ROLE_OWNER") ? "owner" : roles.includes("ROLE_ADMIN") ? "admin" : "guest") {
+    const token = authToken(roles, userId);
     await page.addInitScript(({ token, language, loggedIn }) => {
         if (loggedIn) localStorage.setItem("token", token);
         else localStorage.removeItem("token");
@@ -48,7 +51,7 @@ async function screenshot(page: Page, name: string, project: string) {
 
 for (const [label, roles, visible] of [
     ["guest", ["ROLE_GUEST"], true], ["owner", ["ROLE_OWNER"], true],
-    ["administrator", ["ROLE_ADMIN"], false], ["signed out", [], false],
+    ["administrator", ["ROLE_ADMIN"], true], ["signed out", [], false],
     ["owner with administrator role", ["ROLE_ADMIN", "ROLE_OWNER"], true],
 ] as const) {
     test(`navigation visibility: ${label}`, async ({ page }) => {
@@ -173,20 +176,25 @@ for (const status of [401, 404, 409, 500]) {
     });
 }
 
-test("administrator-only reservations have no messaging actions and conversation routes are blocked", async ({ page }) => {
+test("unrelated administrator has no reservation actions and backend denies direct conversation access", async ({ page }) => {
     await setup(page, ["ROLE_ADMIN"]);
-    let calls = 0;
-    page.on("request", request => { if (/\/conversations|\/conversation$/.test(new URL(request.url()).pathname) && request.url().includes("/api/")) calls++; });
+    let entryCalls = 0;
+    page.on("request", request => { if (request.url().endsWith("/conversation")) entryCalls++; });
+    await page.route("**/api/v1/conversations", route => respond(route, []));
+    await page.route("**/api/v1/conversations/conversation-1", route => respond(route, {}, 404));
     for (const path of ["/admin/reservations", `/reservations/${reservation.id}`]) {
         await page.goto(path);
         await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
         await expect(page.getByRole("button", { name: "Open conversation" })).toHaveCount(0);
     }
-    for (const path of ["/conversations", "/conversations/conversation-1"]) {
-        await page.goto(path);
-        await expect(page).toHaveURL("/");
-    }
-    expect(calls).toBe(0);
+    await page.goto("/conversations");
+    await expect(page.getByRole("heading", { name: "No conversations yet" })).toBeVisible();
+    await page.goto("/conversations/conversation-1");
+    await expect(page).toHaveURL("/conversations/conversation-1");
+    await expect(page.getByRole("alert")).toContainText("do not have access");
+    await expect(page.getByText(reservation.unitName)).toHaveCount(0);
+    await expect(page.getByRole("textbox")).toHaveCount(0);
+    expect(entryCalls).toBe(0);
 });
 
 test("signed-out deep links go to login", async ({ page }) => {
@@ -253,4 +261,157 @@ test("expired direct conversation hides context and returns to inbox", async ({ 
     await expect(page.getByRole("textbox")).toHaveCount(0);
     await page.getByRole("link", { name: "Back to messages" }).click();
     await expect(page).toHaveURL("/conversations");
+});
+
+test.describe("review regressions", () => {
+    test("administrator participants can use the inbox, direct links and their own reservation action", async ({ page }) => {
+        await setup(page, ["ROLE_ADMIN"], "en", "guest");
+        await page.goto("/conversations");
+        await page.getByRole("link", { name: "Open conversation" }).click();
+        await expect(page.getByRole("heading", { name: "Reservation conversation" })).toBeVisible();
+        await page.goto("/conversations/conversation-1");
+        await expect(page.getByRole("textbox")).toBeVisible();
+        for (const path of ["/admin/reservations", `/reservations/${reservation.id}`]) {
+            await page.goto(path);
+            await page.getByRole("button", { name: "Open conversation", exact: true }).click();
+            await expect(page).toHaveURL("/conversations/conversation-1");
+        }
+    });
+
+    test("administrator owner snapshots retain conversation access without assuming current ownership", async ({ page }) => {
+        await setup(page, ["ROLE_ADMIN"], "en", "owner");
+        await page.goto("/conversations");
+        await page.getByRole("link", { name: "Open conversation" }).click();
+        await expect(page.getByRole("textbox")).toBeVisible();
+    });
+
+    test("mixed administrator roles do not expose actions for unrelated reservations", async ({ page }) => {
+        await setup(page, ["ROLE_ADMIN", "ROLE_OWNER"]);
+        await page.goto("/admin/reservations");
+        await expect(page.getByRole("link", { name: /^view details$/i })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Open conversation" })).toHaveCount(0);
+    });
+
+    test("cross-tab account changes clear loaded metadata and ignore old context responses", async ({ page, context }) => {
+        await setup(page);
+        let releaseOld!: () => void;
+        let releaseNew!: () => void;
+        const oldGate = new Promise<void>(resolve => { releaseOld = resolve; });
+        const newGate = new Promise<void>(resolve => { releaseNew = resolve; });
+        let oldContextStarted = false;
+        await page.route("**/api/v1/reservations/reservation-12345678", async route => {
+            oldContextStarted = true;
+            await oldGate;
+            await respond(route, { ...reservation, unitName: "Private old account context" });
+        });
+        const newToken = authToken(["ROLE_GUEST"], "new-guest");
+        await page.route("**/api/v1/conversations", async route => {
+            if (route.request().headers().authorization === `Bearer ${newToken}`) {
+                await newGate;
+                return respond(route, []);
+            }
+            return respond(route, [conversation]);
+        });
+        await page.goto("/conversations");
+        await expect(page.getByText("#RES-12345678")).toBeVisible();
+        await expect.poll(() => oldContextStarted).toBe(true);
+        const otherTab = await context.newPage();
+        await otherTab.goto("/about");
+        await otherTab.evaluate(token => localStorage.setItem("token", token), newToken);
+        await expect(page.getByText("#RES-12345678")).toHaveCount(0);
+        await expect(page.getByRole("status")).toHaveText("Loading conversations…");
+        releaseOld();
+        releaseNew();
+        await expect(page.getByRole("heading", { name: "No conversations yet" })).toBeVisible();
+        await expect(page.getByText("Private old account context")).toHaveCount(0);
+        await expect(page.getByRole("link", { name: "Open conversation" })).toHaveCount(0);
+        await otherTab.close();
+    });
+
+    test("in-flight inbox results from a previous token cannot overwrite a renewed session", async ({ page, context }) => {
+        await setup(page);
+        let releaseOld!: () => void;
+        const oldGate = new Promise<void>(resolve => { releaseOld = resolve; });
+        let oldStarted = false;
+        let oldFinished = false;
+        const newToken = authToken(["ROLE_GUEST"], "guest", "Renewed session");
+        await page.route("**/api/v1/conversations", async route => {
+            if (route.request().headers().authorization === `Bearer ${newToken}`) return respond(route, []);
+            oldStarted = true;
+            await oldGate;
+            await respond(route, [conversation]);
+            oldFinished = true;
+        });
+        await page.goto("/conversations");
+        await expect.poll(() => oldStarted).toBe(true);
+        const otherTab = await context.newPage();
+        await otherTab.goto("/about");
+        await otherTab.evaluate(token => localStorage.setItem("token", token), newToken);
+        await expect(page.getByRole("heading", { name: "No conversations yet" })).toBeVisible();
+        releaseOld();
+        await expect.poll(() => oldFinished).toBe(true);
+        await expect(page.getByRole("heading", { name: "No conversations yet" })).toBeVisible();
+        await expect(page.getByText("#RES-12345678")).toHaveCount(0);
+        await otherTab.close();
+    });
+
+    for (const clearAll of [false, true]) {
+        test(`cross-tab ${clearAll ? "storage clear" : "logout"} removes inbox data`, async ({ page, context }) => {
+            await setup(page);
+            await page.goto("/conversations");
+            await expect(page.getByRole("heading", { name: reservation.unitName })).toBeVisible();
+            const otherTab = await context.newPage();
+            await otherTab.goto("/about");
+            await otherTab.evaluate(clearAll => {
+                if (clearAll) localStorage.clear();
+                else localStorage.removeItem("token");
+            }, clearAll);
+            await expect(page).toHaveURL("/login");
+            await expect(page.getByText(reservation.unitName)).toHaveCount(0);
+            await expect(page.getByText("#RES-12345678")).toHaveCount(0);
+            await otherTab.close();
+        });
+    }
+
+    for (const [language, currency, price] of [["en", "USD", 987654321.99], ["pl", "EUR", 1234567.89], ["pl", "PLN", 9999.99]] as const) {
+        test(`reservation card layout: ${language} ${currency}`, async ({ page }, info) => {
+            await setup(page, ["ROLE_GUEST"], language);
+            const errors: string[] = [];
+            page.on("pageerror", error => errors.push(error.message));
+            page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
+            await page.route("**/api/v1/reservations/my", route => respond(route, [{
+                ...reservation, convertedTotalPrice: price,
+                currencyInfo: { displayCurrency: currency, baseCurrency: "PLN", exchangeRate: 1, rateEffectiveDate: "2026-10-01" },
+            }]));
+            await page.route("**/api/billing/settlements/*", route => respond(route, { settlement: { id: "settlement", invoiceRequested: true, status: "PAID" }, items: [] }));
+            await page.goto("/my-reservations");
+            await expect(page).toHaveTitle(/KWATERA/);
+            const card = page.getByRole("article");
+            await expect(card.getByRole("heading", { name: reservation.unitName })).toBeVisible();
+            const dates = card.locator("time").first().locator("..");
+            const total = card.getByText(`${price.toFixed(2)} ${currency}`, { exact: true });
+            const status = card.getByText(language === "en" ? "Confirmed" : "Potwierdzona", { exact: true });
+            const actions = card.getByRole("link", { name: language === "en" ? "View Details" : "Szczegóły", exact: true }).locator("..");
+            for (const width of [320, 390, 768, 1024, 1280, 1440]) {
+                await page.setViewportSize({ width, height: 1000 });
+                await expect(dates).toBeVisible();
+                await expect(total).toBeVisible();
+                await expect(card.getByRole("button", { name: language === "en" ? "Open conversation" : "Otwórz rozmowę", exact: true })).toBeVisible();
+                const bounds = await Promise.all([dates, total, status, actions].map(locator => locator.boundingBox()));
+                for (let a = 0; a < bounds.length; a++) {
+                    for (let b = a + 1; b < bounds.length; b++) {
+                        const first = bounds[a]!;
+                        const second = bounds[b]!;
+                        expect(first.x + first.width <= second.x + 1 || second.x + second.width <= first.x + 1 || first.y + first.height <= second.y + 1 || second.y + second.height <= first.y + 1, `overlap at ${width}px between blocks ${a} and ${b}`).toBe(true);
+                    }
+                }
+                expect(await card.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+                expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `page overflow at ${width}px`).toBe(true);
+                expect(await total.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+                if (width === 320 || width === 1024 || width === 1280) await screenshot(page, `reservation-${language}-${currency}-${width}`, info.project.name);
+            }
+            await expect(page.locator("vite-error-overlay")).toHaveCount(0);
+            expect(errors).toEqual([]);
+        });
+    }
 });

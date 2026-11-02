@@ -6,12 +6,13 @@ import { useConversation } from "../hooks/useConversation";
 import { decodeJwt } from "../utils/jwtUtils";
 import { getLocaleCode } from "../utils/locale";
 import { MESSAGE_LIMIT, normalizeMessage } from "../utils/conversationMessages";
+import { useAuthToken } from "../hooks/useAuthToken";
 
 const secondaryButton = "inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-brand-primary bg-brand-bg border border-brand-accent rounded-lg shadow-sm hover:bg-brand-accent/30 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary disabled:opacity-50 disabled:cursor-not-allowed";
 
 export default function ConversationPage() {
     const { conversationId = "" } = useParams();
-    const token = localStorage.getItem("token");
+    const token = useAuthToken();
     const userId = decodeJwt(token)?.userId;
     const [attempt, setAttempt] = useState(0);
 

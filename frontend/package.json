@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "test:unit": "node --test tests/*.test.mjs",
     "test:conversations": "npm run build && playwright test",
+    "test:conversations:demo": "playwright test --config playwright.demo.config.ts",
     "preview": "vite preview"
   },
   "dependencies": {

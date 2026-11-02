@@ -1,10 +1,15 @@
 import type { ConversationResponse } from "../types/conversation";
 
-export const CONVERSATION_ROLES = ["ROLE_GUEST", "ROLE_OWNER"];
 export const INBOX_PAGE_SIZE = 10;
 
-export function canUseConversations(roles: string[]): boolean {
-    return roles.some(role => CONVERSATION_ROLES.includes(role));
+export function canOpenReservationConversation(roles: string[], userId: string | undefined, guestUserId?: string): boolean {
+    if (!userId) return false;
+    if (userId === guestUserId) return true;
+    // Admin reservation views include unrelated bookings. Only offer an action
+    // when the available context proves participation; the inbox covers owners
+    // snapshotted in a conversation, whose IDs are absent from reservation DTOs.
+    if (roles.includes("ROLE_ADMIN")) return false;
+    return roles.includes("ROLE_GUEST") || roles.includes("ROLE_OWNER");
 }
 
 export function conversationAccessError(status: number | null) {
@@ -25,7 +30,13 @@ export function sortConversations(conversations: ConversationResponse[]): Conver
     return [...conversations].sort((a, b) => {
         const aTime = conversationActivity(a);
         const bTime = conversationActivity(b);
-        return (bTime ? Date.parse(bTime) : -Infinity) - (aTime ? Date.parse(aTime) : -Infinity)
-            || a.id.localeCompare(b.id);
+        const milliseconds = (bTime ? Date.parse(bTime) : -Infinity) - (aTime ? Date.parse(aTime) : -Infinity);
+        if (milliseconds) return milliseconds;
+        // Date.parse truncates ISO instants to milliseconds. Compare the padded
+        // fraction before the UUID tie break to retain backend sub-ms precision.
+        const fraction = (time: string | null) => (time?.match(/\.(\d+)/)?.[1] ?? "").padEnd(9, "0");
+        const aFraction = fraction(aTime);
+        const bFraction = fraction(bTime);
+        return (aFraction < bFraction ? 1 : aFraction > bFraction ? -1 : 0) || a.id.localeCompare(b.id);
     });
 }
