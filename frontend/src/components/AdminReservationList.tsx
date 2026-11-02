@@ -7,6 +7,7 @@ import { ChevronDown } from 'lucide-react';
 import { useTranslation } from "react-i18next";
 import SharedDatePicker from "./SharedDatePicker";
 import { format } from "date-fns";
+import ReservationConversationButton from "./ReservationConversationButton";
 
 const parseDateString = (str: string): Date | null => {
     if (!str) return null;
@@ -279,6 +280,8 @@ export default function AdminReservationList() {
                                             >
                                                 {t('common.viewDetails')}
                                             </Link>
+
+                                            <ReservationConversationButton reservationId={res.id} status={res.status} />
 
                                             {isMeterReadingsEnabled ? (
                                                 <Link

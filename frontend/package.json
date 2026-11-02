@@ -8,6 +8,8 @@
     "dev:demo": "vite --mode demo",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test:unit": "node --test tests/*.test.mjs",
+    "test:conversations": "npm run build && playwright test",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -39,6 +41,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.64.1",
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
     "@types/react-datepicker": "^7.0.0",

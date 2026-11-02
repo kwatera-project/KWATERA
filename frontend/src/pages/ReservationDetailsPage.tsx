@@ -9,6 +9,7 @@ import { getUserRoles } from "../utils/jwtUtils";
 import { Home, Calendar, User, CreditCard, Clock } from "lucide-react";
 import { useTranslation } from "react-i18next"
 import { getLocaleCode } from "../utils/locale";
+import ReservationConversationButton from "../components/ReservationConversationButton";
 import {
     calculateStayNights,
     calculateWaterUsageRange,
@@ -149,6 +150,8 @@ export default function ReservationDetailsPage() {
                     {t('myReservations.viewBill')}
                 </Link>
             </div>
+
+            <ReservationConversationButton key={reservation.id} reservationId={reservation.id} status={reservation.status} />
 
             {/* Grid Layout Dashboard */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

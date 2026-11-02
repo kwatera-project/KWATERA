@@ -7,6 +7,7 @@ import ProtectedRoute from "./components/ProtectedRoute"
 import {CurrencyProvider} from "./contexts/CurrencyContext";
 import DemoModeBanner from "./components/DemoModeBanner";
 import Footer from "./components/landing/Footer";
+import { CONVERSATION_ROLES } from "./utils/conversationInbox";
 
 const FULL_SCREEN_ROUTES = ["/login", "/register", "/payment-cancel", "/forgot-password", "/reset-password"];
 
@@ -24,6 +25,7 @@ const OccupancyCalendarPage = lazy(() => import("./pages/OccupancyCalendarPage")
 const MyReservationsPage = lazy(() => import("./pages/MyReservationsPage"));
 const ReservationDetailsPage = lazy(() => import("./pages/ReservationDetailsPage"));
 const ConversationPage = lazy(() => import("./pages/ConversationPage"));
+const ConversationsPage = lazy(() => import("./pages/ConversationsPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const PropertiesPage = lazy(() => import("./pages/PropertiesPage.tsx"));
 const PropertyDetailsPage = lazy(() => import("./pages/PropertyDetailsPage"));
@@ -141,9 +143,17 @@ function App() {
                                 }
                             />
                             <Route
+                                path="/conversations"
+                                element={
+                                    <ProtectedRoute allowedRoles={CONVERSATION_ROLES}>
+                                        <ConversationsPage/>
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
                                 path="/conversations/:conversationId"
                                 element={
-                                    <ProtectedRoute>
+                                    <ProtectedRoute allowedRoles={CONVERSATION_ROLES}>
                                         <ConversationPage/>
                                     </ProtectedRoute>
                                 }

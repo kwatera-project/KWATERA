@@ -4,7 +4,8 @@ import {useLogout} from "./Logout.tsx"
 import {getUserRoles, decodeJwt} from "../utils/jwtUtils.ts"
 import {useState, useEffect, useRef} from "react"
 import {useCurrency} from "../contexts/CurrencyContext"
-import {User, LogOut, LayoutDashboard, Calendar, Settings, Home, FileClock, Users, Globe2, Menu, X} from 'lucide-react'
+import {User, LogOut, LayoutDashboard, Calendar, Settings, Home, FileClock, Users, Globe2, Menu, X, MessageSquare} from 'lucide-react'
+import {canUseConversations} from "../utils/conversationInbox"
 import {useTranslation} from "react-i18next"
 import i18n from "../i18n"
 import {IS_DEMO_MODE} from "../api/apiConfig.ts"
@@ -270,6 +271,8 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                         <div className="relative" ref={profileDropdownRef}>
                             <button
                                 onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                                aria-label={t('navbar.myAccount')}
+                                aria-expanded={isProfileDropdownOpen}
                                 className={`flex items-center gap-2 rounded-full transition-all duration-300 focus:outline-none pl-1.5 pr-4 py-1.5 border ${isNavbarWhite ? 'bg-transparent border-stone-300 text-stone-800 hover:bg-stone-100/50' : 'bg-[rgb(var(--color-burgundy))] border-transparent text-white hover:bg-[rgb(var(--color-burgundy-hover))] shadow-md active:scale-95'}`}
                             >
                             <div className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 ${isNavbarWhite ? 'bg-stone-100 text-stone-800 border border-stone-200' : 'bg-white/20 text-white'}`}>
@@ -299,6 +302,14 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                                               className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
                                             <Calendar size={16}/>
                                             {t('navbar.myReservations')}
+                                        </Link>
+                                    )}
+
+                                    {canUseConversations(userRoles) && (
+                                        <Link to="/conversations"
+                                              className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
+                                            <MessageSquare size={16}/>
+                                            {t('inbox.title')}
                                         </Link>
                                     )}
 

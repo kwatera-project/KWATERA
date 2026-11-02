@@ -6,6 +6,7 @@ import type {GuestReservation} from '../types/reservation';
 import type {SettlementDetails} from '../types/settlement';
 import { Home, Calendar, CreditCard, Info, Receipt, Droplet, FileText } from 'lucide-react';
 import {useTranslation} from "react-i18next"
+import ReservationConversationButton from "../components/ReservationConversationButton";
 
 export default function MyReservationsPage() {
     const [reservations, setReservations] = useState<GuestReservation[]>([]);
@@ -132,6 +133,8 @@ export default function MyReservationsPage() {
                                                 <Info size={14} />
                                                 {t('common.viewDetails')}
                                             </Link>
+
+                                            <ReservationConversationButton reservationId={res.id} status={res.status} />
 
                                             {isBillEnabled ? (
                                                 <Link
