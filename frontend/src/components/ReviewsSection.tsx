@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import { Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { getReviewsForProperty, getReviewsForUnit } from "../api/reviewAPI";
+import { getReviewsForProperty, getReviewsForUnit } from "../api/reviewApi";
 import type { ReviewPageDto } from "../types/review";
 import { getLocaleCode } from "../utils/locale";
 
