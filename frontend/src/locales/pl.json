@@ -1,4 +1,27 @@
 {
+  "inbox": {
+    "title": "Wiadomości",
+    "subtitle": "Dostępne rozmowy o Twoich rezerwacjach, od ostatniej aktywności.",
+    "back": "Powrót do wiadomości",
+    "loading": "Wczytywanie rozmów…",
+    "empty": "Nie ma jeszcze rozmów",
+    "emptyHint": "Otwórz rozmowę z poziomu rezerwacji. Tutaj pojawiają się tylko rozmowy dostępne w ramach statusu rezerwacji i okresu przechowywania wiadomości.",
+    "open": "Otwórz rozmowę",
+    "opening": "Otwieranie rozmowy…",
+    "lastActivity": "Ostatnia aktywność",
+    "dateUnavailable": "Data niedostępna",
+    "pagination": "Strony rozmów",
+    "previous": "Poprzednia",
+    "next": "Następna",
+    "page": "Strona {{page}} z {{total}}",
+    "errors": {
+      "load": "Nie udało się wczytać rozmów. Spróbuj ponownie.",
+      "open": "Nie udało się otworzyć rozmowy. Spróbuj ponownie.",
+      "unauthenticated": "Twoja sesja jest niedostępna lub wygasła. Zaloguj się, aby otworzyć wiadomości.",
+      "inaccessible": "Nie znaleziono rozmowy lub nie masz do niej dostępu.",
+      "unavailable": "Wiadomości są niedostępne ze względu na status rezerwacji lub okres przechowywania wiadomości."
+    }
+  },
   "chat": {
     "title": "Rozmowa o rezerwacji",
     "subtitle": "Wiadomości między gościem a właścicielem obiektu.",

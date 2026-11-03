@@ -30,11 +30,34 @@ Run `bun run lint` and `bun run build` before submitting frontend changes.
 
 ## Reservation conversations
 
-Authenticated guests and owners can open `/conversations/:conversationId` directly
-using an existing conversation ID. The screen links back to the reservation details;
-inbox navigation and reservation entry buttons are tracked separately in #238.
-Only the reservation's conversation participants have access, including for accounts
-with administrator roles.
+Authenticated users can open **Messages / Wiadomości** from the profile
+dropdown on desktop and mobile. `/conversations` lists the current participant's
+available conversations, sorted by `lastMessageAt` with `createdAt` as a fallback,
+preserving backend sub-millisecond precision. Cross-tab token changes or logout
+immediately invalidate the inbox and prevent earlier session requests from updating it.
+Each item shows its reservation ID, status, last activity and available unit name.
+Optional unit names are loaded only for the visible page of ten conversations, with
+at most three concurrent lookups per page; lookup failures use a fallback label.
+The existing list API has no pagination, so the conversation metadata itself is
+fetched in one request. No message previews or unread counts are inferred.
+
+**Open conversation / Otwórz rozmowę** in My Reservations, owner reservation management
+and reservation details calls the existing idempotent reservation conversation API.
+Repeated clicks are blocked while a request is pending. Blocked reservations have a
+disabled action; the backend decides availability for other statuses, including
+retention for cancelled and completed reservations. Access and lifecycle failures
+are shown without conversation details and failed requests can be retried.
+
+`/conversations/:conversationId` continues to support direct links. The conversation
+screen links to both the inbox and reservation details, including an inbox exit for
+inaccessible conversations. Both conversation routes require authentication and use
+backend participant authorization, including for users whose only role is administrator.
+Administrator roles (including mixed roles) do not enable actions for unrelated
+reservations. Their reservation action is shown only when the available reservation
+guest ID matches their user ID. An owner snapshotted in a conversation can still
+open it through the inbox or a direct link without assuming current unit ownership.
+Static demo mode hides messaging navigation and reservation actions because GitHub
+Pages has no conversation backend; it does not simulate conversations.
 
 History and sending use the gateway REST API. **Refresh** retrieves newer messages
 (including intervening pages); **Load older messages** follows the backend cursor.
@@ -52,3 +75,40 @@ An unrelated account must see no reservation context or history; a signed-out vi
 must redirect to login. Run the focused ordering/normalization regression checks with
 `bun test tests/conversationMessages.test.mjs`; these use the runtime's built-in test
 support without adding a test framework or dependencies.
+
+Inbox/navigation regression checks are in `tests/conversationInbox.test.mjs` and
+`tests/e2e/conversations.spec.ts`. Run:
+
+```bash
+bun run test:unit
+bunx playwright install chromium
+bun run test:conversations
+bun run test:conversations:demo
+```
+
+The unit script uses Node's built-in TypeScript support (Node 22.18+ or 24+).
+The browser script builds the production frontend, serves it at
+`http://127.0.0.1:4173`, and runs desktop (1440×1000) and mobile (390×844) Chromium
+checks. API responses and JWTs are controlled fixtures; this verifies UI behavior,
+not live backend integration. Coverage includes role visibility and route guards,
+loading/empty/error states, retries, activity ordering, bounded context enrichment,
+conversation reuse and duplicate-click prevention at all three reservation entry
+points, access/lifecycle failures, Polish/English and navigation between contexts.
+The focused `review regressions` group covers cross-tab session invalidation,
+administrator participants, and reservation card geometry at 320, 390, 768, 1024,
+1280 and 1440 pixels with English/Polish labels and USD/EUR/PLN totals. It can be
+run after building with `bunx playwright test --grep 'review regressions'`.
+The demo script uses a separate Vite demo server at `http://127.0.0.1:4174`
+and verifies messaging stays hidden on navigation and reservation surfaces.
+Test artifacts go to the system temporary directory. Optionally set
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an existing Chromium executable and
+`KWATERA_SCREENSHOT_DIR` to an existing directory for screenshots.
+
+For real integration verification, use a running gateway with actual guest and owner
+accounts for the same reservation: open the conversation from each reservation
+view, verify both obtain the same conversation ID, then open it from each inbox.
+An unrelated user, including an unrelated administrator, must not gain access;
+an administrator who is an actual participant must retain access.
+Check cancelled/completed reservations within and beyond the configured retention
+boundary; unavailable conversations should disappear from the inbox and direct
+links should show a localized error. No live transport is implemented here (#237).

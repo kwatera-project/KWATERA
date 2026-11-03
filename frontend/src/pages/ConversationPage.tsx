@@ -6,12 +6,13 @@ import { useConversation } from "../hooks/useConversation";
 import { decodeJwt } from "../utils/jwtUtils";
 import { getLocaleCode } from "../utils/locale";
 import { MESSAGE_LIMIT, normalizeMessage } from "../utils/conversationMessages";
+import { useAuthToken } from "../hooks/useAuthToken";
 
 const secondaryButton = "inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-brand-primary bg-brand-bg border border-brand-accent rounded-lg shadow-sm hover:bg-brand-accent/30 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary disabled:opacity-50 disabled:cursor-not-allowed";
 
 export default function ConversationPage() {
     const { conversationId = "" } = useParams();
-    const token = localStorage.getItem("token");
+    const token = useAuthToken();
     const userId = decodeJwt(token)?.userId;
     const [attempt, setAttempt] = useState(0);
 
@@ -92,6 +93,7 @@ function ConversationScreen({ conversationId, userId, onRetry }: {
             <div className="bg-white border border-brand-accent rounded-xl shadow-sm p-5 md:p-6 space-y-4">
                 <h1 className="text-3xl font-black tracking-tight">{t("chat.title")}</h1>
                 <p role="alert" className="text-sm text-red-700">{t(`chat.errors.${chat.fatalError ?? "load"}`)}</p>
+                <Link to="/conversations" className={secondaryButton}><ArrowLeft size={16} aria-hidden="true" />{t("inbox.back")}</Link>
                 {chat.fatalError === "unauthenticated" ? (
                     <Link to="/login" className={secondaryButton}>{t("chat.login")}</Link>
                 ) : <button type="button" onClick={onRetry} className={secondaryButton}>{t("chat.retry")}</button>}
@@ -105,9 +107,14 @@ function ConversationScreen({ conversationId, userId, onRetry }: {
 
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-8 text-brand-main space-y-6 min-w-0">
-            <Link to={`/reservations/${conversation.reservationId}`} className={`${secondaryButton} w-fit`}>
-                <ArrowLeft size={16} aria-hidden="true" />{t("chat.backToReservation")}
-            </Link>
+            <div className="flex flex-wrap gap-3">
+                <Link to="/conversations" className={secondaryButton}>
+                    <ArrowLeft size={16} aria-hidden="true" />{t("inbox.back")}
+                </Link>
+                <Link to={`/reservations/${conversation.reservationId}`} className={secondaryButton}>
+                    <Calendar size={16} aria-hidden="true" />{t("chat.backToReservation")}
+                </Link>
+            </div>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-accent pb-6">
                 <div className="min-w-0 space-y-1.5">
                     <h1 className="text-3xl font-black tracking-tight">{t("chat.title")}</h1>

@@ -1,4 +1,27 @@
 {
+  "inbox": {
+    "title": "Messages",
+    "subtitle": "Your available reservation conversations, with the most recent activity first.",
+    "back": "Back to messages",
+    "loading": "Loading conversations…",
+    "empty": "No conversations yet",
+    "emptyHint": "Open a conversation from a reservation. Only conversations available within the reservation lifecycle and retention period appear here.",
+    "open": "Open conversation",
+    "opening": "Opening conversation…",
+    "lastActivity": "Last activity",
+    "dateUnavailable": "Date unavailable",
+    "pagination": "Conversation pages",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {{page}} of {{total}}",
+    "errors": {
+      "load": "Conversations could not be loaded. Please try again.",
+      "open": "The conversation could not be opened. Please try again.",
+      "unauthenticated": "Your session is unavailable or has expired. Log in to access messages.",
+      "inaccessible": "The conversation could not be found or you do not have access to it.",
+      "unavailable": "Messaging is unavailable because of the reservation status or the message retention period."
+    }
+  },
   "chat": {
     "title": "Reservation conversation",
     "subtitle": "Messages between the guest and the accommodation owner.",
