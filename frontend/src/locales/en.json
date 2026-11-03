@@ -1161,13 +1161,24 @@
   "utilityTypes": {
     "WATER": "water",
     "ELECTRICITY": "electricity"
+  },
+  "reviews": {
+    "propertyTitle": "Property reviews",
+    "unitTitle": "Room reviews",
+    "noAverage": "No ratings yet",
+    "average": "{{value}} / 5",
+    "count_one": "{{count}} review",
+    "count_other": "{{count}} reviews",
+    "loading": "Loading reviews…",
+    "error": "Could not load reviews. Please try again.",
+    "retry": "Try again",
+    "emptyProperty": "This property has no reviews yet.",
+    "emptyUnit": "This room has no reviews yet.",
+    "emptyPage": "There are no reviews on this page. Go back to the previous page.",
+    "rating": "Rating: {{rating}} out of 5",
+    "pagination": "Review pages",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {{page}} of {{total}}"
   }
-
-
-
-
-
-
-
-
 }

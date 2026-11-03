@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import ReviewsSection from "../components/ReviewsSection";
 import { getProperty, getUnits, getPropertyImages } from "../api/propertyApi";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import type { Unit, Property } from "../types/property";
@@ -401,6 +402,8 @@ export default function PropertyDetailsPage() {
                 </div>
             </div>
 
+            <ReviewsSection kind="property" accommodationId={property.id} />
+
             <div className="space-y-6">
                 <h2 className="text-2xl font-bold text-brand-main tracking-tight">{t('propertyDetails.unitsAvailability')}</h2>
 
@@ -456,6 +459,7 @@ export default function PropertyDetailsPage() {
                                             </div>
                                         )}
                                     </div>
+                                    <ReviewsSection kind="unit" accommodationId={u.id} />
                                 </div>
 
                                 <div className="flex-1 flex flex-col items-stretch justify-between border-t lg:border-t-0 lg:border-l border-brand-accent pt-6 lg:pt-0 lg:pl-8">
