@@ -1,6 +1,7 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
 import { getUserRoles } from "../utils/jwtUtils";
+import { useAuthToken } from "../hooks/useAuthToken";
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
@@ -8,7 +9,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-    const token = localStorage.getItem("token");
+    const token = useAuthToken();
     const isAuthenticated = !!token;
     
     if (!isAuthenticated) return <Navigate to="/login" replace />;

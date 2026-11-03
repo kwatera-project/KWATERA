@@ -7,6 +7,7 @@ import { ChevronDown } from 'lucide-react';
 import { useTranslation } from "react-i18next";
 import SharedDatePicker from "./SharedDatePicker";
 import { format } from "date-fns";
+import ReservationConversationButton from "./ReservationConversationButton";
 
 const parseDateString = (str: string): Date | null => {
     if (!str) return null;
@@ -35,6 +36,7 @@ export default function AdminReservationList() {
     const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
     const [settlementIds, setSettlementIds] = useState<Record<string, string>>({});
     const [unitIds, setUnitIds] = useState<Record<string, string>>({});
+    const [guestUserIds, setGuestUserIds] = useState<Record<string, string>>({});
     const { t } = useTranslation();
 
     const fetchReservations = useCallback(() => {
@@ -51,6 +53,7 @@ export default function AdminReservationList() {
                     try {
                         const resData = await getReservationDetails(res.id);
                         setUnitIds(prev => ({ ...prev, [res.id]: resData.unitId }));
+                        setGuestUserIds(prev => ({ ...prev, [res.id]: resData.userId }));
                     } catch (err) {
                         console.error("Failed to load reservation details", err);
                     }
@@ -279,6 +282,8 @@ export default function AdminReservationList() {
                                             >
                                                 {t('common.viewDetails')}
                                             </Link>
+
+                                            <ReservationConversationButton reservationId={res.id} status={res.status} guestUserId={guestUserIds[res.id]} />
 
                                             {isMeterReadingsEnabled ? (
                                                 <Link

@@ -6,6 +6,7 @@ import type {GuestReservation} from '../types/reservation';
 import type {SettlementDetails} from '../types/settlement';
 import { Home, Calendar, CreditCard, Info, Receipt, Droplet, FileText } from 'lucide-react';
 import {useTranslation} from "react-i18next"
+import ReservationConversationButton from "../components/ReservationConversationButton";
 
 export default function MyReservationsPage() {
     const [reservations, setReservations] = useState<GuestReservation[]>([]);
@@ -74,15 +75,15 @@ export default function MyReservationsPage() {
                         const showInvoice = !!settlements[res.id]?.invoiceRequested && (res.status === "COMPLETED" || settlements[res.id]?.status === "PAID");
 
                         return (
-                            <div key={res.id} className="bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300">
-                                <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_auto] gap-6 items-center">
-                                    <div className="space-y-2.5">
+                            <article key={res.id} aria-labelledby={`reservation-${res.id}`} className="min-w-0 bg-white border border-[#DACDCA] rounded-xl shadow-sm p-6 hover:shadow-md transition-all duration-300">
+                                <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-6 items-center">
+                                    <div className="min-w-0 space-y-2.5">
                                         <div className="flex items-center gap-3">
-                                            <div className="p-2.5 bg-[#F7F7F7] border border-[#DACDCA] rounded-xl text-[#42211D]">
+                                            <div className="shrink-0 p-2.5 bg-[#F7F7F7] border border-[#DACDCA] rounded-xl text-[#42211D]">
                                                 <Home size={20} />
                                             </div>
-                                            <div>
-                                                <h2 className="text-lg font-black text-[#1A1A1A] tracking-tight">
+                                            <div className="min-w-0 break-words">
+                                                <h2 id={`reservation-${res.id}`} className="text-lg font-black text-[#1A1A1A] tracking-tight">
                                                     {unitNames[res.id] || `Unit: ...${res.unitId.slice(-8)}`}
                                                 </h2>
                                                 <div className="text-sm text-gray-500 mt-1" title={res.id}>
@@ -92,21 +93,23 @@ export default function MyReservationsPage() {
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:px-4">
-                                        <div className="space-y-1">
+                                    <div className="min-w-0 grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-6">
+                                        <div className="min-w-0 space-y-1">
                                             <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">{t('adminReservations.stayDates')}</span>
                                             <div className="flex items-center gap-2 text-sm text-[#1A1A1A]">
                                                 <Calendar size={16} className="text-[#42211D] shrink-0" />
-                                                <span className="font-semibold text-gray-800 whitespace-nowrap">{res.startDate} &rarr; {res.endDate}</span>
+                                                <span className="flex flex-wrap gap-x-1 font-semibold text-gray-800">
+                                                    <time dateTime={res.startDate}>{res.startDate}</time><span aria-hidden="true">&rarr;</span><time dateTime={res.endDate}>{res.endDate}</time>
+                                                </span>
                                             </div>
                                         </div>
 
                                         {res.convertedTotalPrice && res.currencyInfo && (
-                                            <div className="space-y-1">
+                                            <div className="min-w-0 space-y-1">
                                                 <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider">{t('checkout.totalPrice')}</span>
                                                 <div className="flex items-center gap-2 text-sm text-[#42211D]">
                                                     <CreditCard size={16} className="shrink-0" />
-                                                    <span className="text-lg font-black tracking-tight whitespace-nowrap">
+                                                    <span className="min-w-0 text-lg font-black tracking-tight break-words">
                                                         {res.convertedTotalPrice.toFixed(2)} {res.currencyInfo.displayCurrency}
                                                     </span>
                                                 </div>
@@ -114,7 +117,7 @@ export default function MyReservationsPage() {
                                         )}
                                     </div>
 
-                                    <div className="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end justify-between lg:justify-center gap-4 w-full lg:w-auto border-t lg:border-t-0 pt-4 lg:pt-0 border-[#DACDCA]">
+                                    <div className="col-span-full min-w-0 flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center justify-between gap-4 w-full border-t pt-4 border-[#DACDCA]">
                                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border tracking-wider uppercase ${
                                             res.status === 'CONFIRMED' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
                                             res.status === 'PENDING' ? 'bg-amber-50 border-amber-200 text-amber-800' :
@@ -124,7 +127,7 @@ export default function MyReservationsPage() {
                                             {t(`statuses.${res.status}`)}
                                         </span>
 
-                                        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-start sm:justify-end">
+                                        <div className="min-w-0 flex flex-wrap items-center gap-2.5 w-full sm:w-auto sm:flex-1 justify-start sm:justify-end">
                                             <Link
                                                 to={`/reservations/${res.id}`}
                                                 className="px-4 py-2 text-xs font-bold text-white bg-[#42211D] hover:bg-[#321815] rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1.5 shrink-0"
@@ -132,6 +135,8 @@ export default function MyReservationsPage() {
                                                 <Info size={14} />
                                                 {t('common.viewDetails')}
                                             </Link>
+
+                                            <ReservationConversationButton reservationId={res.id} status={res.status} />
 
                                             {isBillEnabled ? (
                                                 <Link
@@ -181,7 +186,7 @@ export default function MyReservationsPage() {
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </article>
                         );
                     })}
                 </div>
