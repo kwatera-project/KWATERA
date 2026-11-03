@@ -6,7 +6,7 @@ import WaterRateTooltip from "../components/WaterRateTooltip";
 import type { ReservationDetails } from "../types/reservation";
 import type { UnitSettlementItem } from "../types/property";
 import { getUserRoles } from "../utils/jwtUtils";
-import { Home, Calendar, User, CreditCard, Clock } from "lucide-react";
+import { Home, Calendar, User, CreditCard, Clock, Star } from "lucide-react";
 import { useTranslation } from "react-i18next"
 import { getLocaleCode } from "../utils/locale";
 import {
@@ -18,6 +18,8 @@ import {
     formatWaterRate,
     getRatePerLiterTooltip,
 } from "../utils/waterBilling";
+import {getMyReviews} from "../api/reviewApi.ts";
+import type {ReviewResponseDto} from "../types/review.ts";
 
 export default function ReservationDetailsPage() {
     const { id } = useParams();
@@ -25,6 +27,8 @@ export default function ReservationDetailsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const {t, i18n} = useTranslation();
+    const [hasReview, setHasReview] = useState(false);
+    const [reviewId, setReviewId] = useState<string | null>(null);
     const [waterContext, setWaterContext] = useState<{
         unitId?: string;
         items: UnitSettlementItem[];
@@ -43,6 +47,26 @@ export default function ReservationDetailsPage() {
             })
             .finally(() => setLoading(false));
     }, [id, t]);
+
+    useEffect(() => {
+        if (!id) return;
+
+        getMyReviews()
+            .then((reviews) => {
+                const existingReview = reviews.find((review: ReviewResponseDto) => review.reservationId === id);
+                if (existingReview) {
+                    setHasReview(true);
+                    setReviewId(existingReview.id);
+                } else {
+                    setHasReview(false);
+                    setReviewId(null);
+                }
+            })
+            .catch(() => {
+                setHasReview(false);
+                setReviewId(null);
+            });
+    }, [id]);
 
     useEffect(() => {
         if (!reservation?.unitId) return;
@@ -97,6 +121,15 @@ export default function ReservationDetailsPage() {
         }
         : null;
 
+    const todayStr = new Date().toISOString().split("T")[0];
+    const canLeaveReview = !isAdminOrOwner && reservation.status === "COMPLETED" && todayStr >= reservation.endDate;
+    const reviewLinkPath = hasReview && reviewId
+        ? `/reviews/${reviewId}`
+        : `/reviews/new/${reservation.id}`;
+    const reviewButtonLabel = hasReview
+        ? t('myReservations.showReview')
+        : t('myReservations.leaveReview');
+
     const formatGuestName = (name: string) => {
         if (!name) return "";
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -142,12 +175,24 @@ export default function ReservationDetailsPage() {
                         {t('myReservations.reservationId')} <span className="font-mono font-bold text-gray-800 bg-[#F7F7F7] px-2 py-0.5 border border-[#DACDCA] rounded">#RES-{reservation.id.slice(-8)}</span>
                     </p>
                 </div>
-                <Link
-                    to={`/settlements/${reservation.id}`}
-                    className="px-5 py-2.5 bg-brand-primary text-white hover:bg-brand-primary-hover text-sm rounded-lg transition-all border border-brand-accent shadow-sm flex items-center justify-center gap-2 active:scale-95 shrink-0"
-                >
-                    {t('myReservations.viewBill')}
-                </Link>
+                <div className="flex items-center gap-3">
+                    {canLeaveReview && (
+                        <Link
+                            to={reviewLinkPath}
+                            className="flex items-center justify-center gap-2 px-4 py-2 border border-stone-300 bg-white text-stone-700 hover:bg-stone-50 text-sm font-bold rounded-md shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                            <Star size={16} fill="currentColor" />
+                            <span>{reviewButtonLabel}</span>
+                        </Link>
+                    )}
+
+                    <Link
+                        to={`/settlements/${reservation.id}`}
+                        className="px-5 py-2.5 bg-brand-primary text-white hover:bg-brand-primary-hover text-sm rounded-lg transition-all border border-brand-accent shadow-sm flex items-center justify-center gap-2 active:scale-95 shrink-0"
+                    >
+                        {t('myReservations.viewBill')}
+                    </Link>
+                </div>
             </div>
 
             {/* Grid Layout Dashboard */}
@@ -160,7 +205,7 @@ export default function ReservationDetailsPage() {
                             <Home size={18} className="text-[#42211D]" />
                             <h2 className="text-lg font-bold text-[#1A1A1A] tracking-tight">{t('reservationDetails.stayInfo')}</h2>
                         </div>
-                        
+
                         <div className="space-y-4">
                             <div>
                                 <span className="block text-xs font-bold text-[#7A7A7A] uppercase tracking-wider mb-1">{t('reservationDetails.propertyUnit')}</span>
