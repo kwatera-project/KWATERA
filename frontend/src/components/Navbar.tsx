@@ -4,7 +4,7 @@ import {useLogout} from "./Logout.tsx"
 import {getUserRoles, decodeJwt} from "../utils/jwtUtils.ts"
 import {useState, useEffect, useRef} from "react"
 import {useCurrency} from "../contexts/CurrencyContext"
-import {User, LogOut, LayoutDashboard, Calendar, Settings, Home, FileClock, Users, Globe2, Menu, X} from 'lucide-react'
+import {User, LogOut, LayoutDashboard, Calendar, Settings, Home, FileClock, Users, Globe2, Menu, X, Star} from 'lucide-react'
 import {useTranslation} from "react-i18next"
 import i18n from "../i18n"
 import {IS_DEMO_MODE} from "../api/apiConfig.ts"
@@ -295,11 +295,17 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                                     </Link>
 
                                     {(!userRoles.includes("ROLE_ADMIN") && !userRoles.includes("ROLE_OWNER")) && (
-                                        <Link to="/my-reservations"
-                                              className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
+                                        <>
+                                            <Link to="/my-reservations"
+                                                className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
                                             <Calendar size={16}/>
                                             {t('navbar.myReservations')}
-                                        </Link>
+                                            </Link><Link to="/my-reviews"
+                                                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
+                                                <Star size={16}/>
+                                                {t('navbar.myReviews')}
+                                            </Link>
+                                        </>
                                     )}
 
                                     {(userRoles.includes("ROLE_ADMIN") || userRoles.includes("ROLE_OWNER")) && (

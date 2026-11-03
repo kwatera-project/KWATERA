@@ -40,6 +40,9 @@ const CreateUnitPage = lazy(() => import("./pages/CreateUnitPage.tsx"));
 const EditUnitPage = lazy(() => import("./pages/EditUnitPage.tsx"));
 const EditPropertyImages = lazy(() => import("./pages/EditPropertyImages.tsx"));
 const EditUnitImages = lazy(() => import("./pages/EditUnitImages.tsx"));
+const CreateReview = lazy(() => import("./pages/CreateReviewPage.tsx"));
+const SingleReviewPage = lazy(() => import("./pages/SingleReviewPage.tsx"));
+const MyReviewsPage = lazy(() => import("./pages/MyReviewsPage.tsx"));
 
 function LoadingFallback() {
     return (
@@ -129,6 +132,30 @@ function App() {
                                 element={
                                     <ProtectedRoute allowedRoles={['ROLE_GUEST']}>
                                         <MyReservationsPage/>
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/my-reviews"
+                                element={
+                                    <ProtectedRoute allowedRoles={['ROLE_GUEST']}>
+                                        <MyReviewsPage/>
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/reviews/new/:reservationId"
+                                element={
+                                    <ProtectedRoute allowedRoles={['ROLE_GUEST']}>
+                                        <CreateReview/>
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/reviews/:reviewId"
+                                element={
+                                    <ProtectedRoute allowedRoles={['ROLE_GUEST']}>
+                                        <SingleReviewPage/>
                                     </ProtectedRoute>
                                 }
                             />
