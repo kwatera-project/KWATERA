@@ -1238,9 +1238,26 @@
   "utilityTypes": {
     "WATER": "wody",
     "ELECTRICITY": "energii elektrycznej"
+  },
+  "reviews": {
+    "propertyTitle": "Opinie o obiekcie",
+    "unitTitle": "Opinie o pokoju",
+    "noAverage": "Brak ocen",
+    "average": "{{value}} / 5",
+    "count_one": "{{count}} opinia",
+    "count_few": "{{count}} opinie",
+    "count_many": "{{count}} opinii",
+    "count_other": "{{count}} opinii",
+    "loading": "Ładowanie opinii…",
+    "error": "Nie udało się pobrać opinii. Spróbuj ponownie.",
+    "retry": "Spróbuj ponownie",
+    "emptyProperty": "Ten obiekt nie ma jeszcze opinii.",
+    "emptyUnit": "Ten pokój nie ma jeszcze opinii.",
+    "emptyPage": "Na tej stronie nie ma opinii. Wróć do poprzedniej strony.",
+    "rating": "Ocena: {{rating}} na 5",
+    "pagination": "Strony opinii",
+    "previous": "Poprzednia",
+    "next": "Następna",
+    "page": "Strona {{page}} z {{total}}"
   }
-
-
-
-
 }

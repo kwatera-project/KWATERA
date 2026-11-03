@@ -34,5 +34,5 @@ export interface ReviewPageDto {
     size: number;
     totalPages: number;
     reviewCount: number;
-    averageRating: number;
+    averageRating: number | null;
 }
