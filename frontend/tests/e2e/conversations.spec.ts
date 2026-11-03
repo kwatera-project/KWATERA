@@ -22,6 +22,8 @@ function authToken(roles: string[], userId: string, firstName = "Test") {
 }
 
 async function setup(page: Page, roles: string[] = ["ROLE_GUEST"], language = "en", userId = roles.includes("ROLE_OWNER") ? "owner" : roles.includes("ROLE_ADMIN") ? "admin" : "guest") {
+    // Inbox/navigation regressions exercise the REST fallback; live STOMP has its own broker fixture.
+    await page.routeWebSocket("**/ws/conversations", socket => socket.close({ code: 1011, reason: "Test live transport unavailable" }));
     const token = authToken(roles, userId);
     await page.addInitScript(({ token, language, loggedIn }) => {
         if (loggedIn) localStorage.setItem("token", token);

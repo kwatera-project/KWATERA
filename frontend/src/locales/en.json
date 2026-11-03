@@ -25,6 +25,15 @@
   "chat": {
     "title": "Reservation conversation",
     "subtitle": "Messages between the guest and the accommodation owner.",
+    "connection": {
+      "connecting": "Connecting live delivery. History and sending remain available.",
+      "connected": "Live delivery connected.",
+      "disconnected": "Live delivery disconnected. Reconnecting automatically; you can still refresh history and send messages.",
+      "reconnecting": "Reconnecting live delivery. You can still refresh history and send messages.",
+      "authenticationError": "Your session has expired. Log in again to access messages.",
+      "subscriptionError": "Live subscription was rejected. Check your access and try again; history and sending remain available if authorized.",
+      "transportError": "Live connection failed. Reconnecting automatically; you can still refresh history and send messages."
+    },
     "backToReservation": "Back to reservation",
     "history": "Messages",
     "loading": "Loading conversation…",

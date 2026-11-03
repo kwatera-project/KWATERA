@@ -64,22 +64,25 @@ export async function getConversations(): Promise<ConversationResponse[]> {
     return request("/api/v1/conversations", "Failed to fetch conversations");
 }
 
-export async function getConversation(conversationId: string): Promise<ConversationResponse> {
+export async function getConversation(conversationId: string, signal?: AbortSignal): Promise<ConversationResponse> {
     return request(
         `/api/v1/conversations/${encodeURIComponent(conversationId)}`,
         "Failed to fetch conversation",
+        { signal },
     );
 }
 
 export async function sendMessage(
     conversationId: string,
     data: SendMessageRequest,
+    signal?: AbortSignal,
 ): Promise<MessageResponse> {
     return request(
         `/api/v1/conversations/${encodeURIComponent(conversationId)}/messages`,
         "Failed to send message",
         {
             method: "POST",
+            signal,
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ content: data.content }),
         },
@@ -89,6 +92,7 @@ export async function sendMessage(
 export async function getMessageHistory(
     conversationId: string,
     params: MessageHistoryParams = {},
+    signal?: AbortSignal,
 ): Promise<MessageHistoryResponse> {
     const query = new URLSearchParams();
     if (params.limit !== undefined) {
@@ -101,5 +105,6 @@ export async function getMessageHistory(
     return request(
         `/api/v1/conversations/${encodeURIComponent(conversationId)}/messages${query.size ? `?${query}` : ""}`,
         "Failed to fetch message history",
+        { signal },
     );
 }

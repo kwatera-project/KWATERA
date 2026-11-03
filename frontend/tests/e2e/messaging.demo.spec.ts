@@ -8,6 +8,8 @@ for (const role of ["ROLE_GUEST", "ROLE_OWNER", "ROLE_ADMIN"]) {
             localStorage.setItem("language", "en");
         }, token);
         let messagingRequests = 0;
+        let sockets = 0;
+        page.on("websocket", socket => { if (new URL(socket.url()).pathname === "/ws/conversations") sockets++; });
         page.on("request", request => {
             if (/\/api\/v1\/(conversations|reservations\/[^/]+\/conversation)/.test(request.url())) messagingRequests++;
         });
@@ -24,5 +26,6 @@ for (const role of ["ROLE_GUEST", "ROLE_OWNER", "ROLE_ADMIN"]) {
         await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
         await expect(page.getByRole("button", { name: "Open conversation", exact: true })).toHaveCount(0);
         expect(messagingRequests).toBe(0);
+        expect(sockets).toBe(0);
     });
 }

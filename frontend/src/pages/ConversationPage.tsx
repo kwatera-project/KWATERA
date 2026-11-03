@@ -17,16 +17,17 @@ export default function ConversationPage() {
     const [attempt, setAttempt] = useState(0);
 
     return <ConversationScreen key={`${conversationId}:${token}:${attempt}`} conversationId={conversationId}
-        userId={userId} onRetry={() => setAttempt(value => value + 1)} />;
+        userId={userId} token={token} onRetry={() => setAttempt(value => value + 1)} />;
 }
 
-function ConversationScreen({ conversationId, userId, onRetry }: {
+function ConversationScreen({ conversationId, userId, token, onRetry }: {
     conversationId: string;
     userId: string | undefined;
+    token: string | null;
     onRetry: () => void;
 }) {
     const { t, i18n } = useTranslation();
-    const chat = useConversation(conversationId, userId);
+    const chat = useConversation(conversationId, userId, token);
     const [draft, setDraft] = useState("");
     const [validation, setValidation] = useState<"blank" | null>(null);
     const [announcement, setAnnouncement] = useState("");
@@ -49,7 +50,10 @@ function ConversationScreen({ conversationId, userId, onRetry }: {
             history.scrollTop = previous.top + (previous.prepend ? history.scrollHeight - previous.height : 0);
         }
         initializedScroll.current = true;
-        scrollPosition.current = null;
+        scrollPosition.current = {
+            height: history.scrollHeight, top: history.scrollTop,
+            bottom: history.scrollHeight - history.scrollTop - history.clientHeight < 48, prepend: false,
+        };
     }, [chat.messages]);
 
     async function loadHistory(action: "older" | "refresh") {
@@ -119,6 +123,12 @@ function ConversationScreen({ conversationId, userId, onRetry }: {
                 <div className="min-w-0 space-y-1.5">
                     <h1 className="text-3xl font-black tracking-tight">{t("chat.title")}</h1>
                     <p className="text-sm text-brand-muted">{t("chat.subtitle")}</p>
+                    <p role="status" aria-live="polite" data-testid="connection-status"
+                        className={`text-xs flex items-start gap-2 ${chat.connectionStatus === "connected" ? "text-brand-primary" : "text-brand-muted"}`}>
+                        <span aria-hidden="true" className={`mt-1 h-2 w-2 shrink-0 rounded-full ${chat.connectionStatus === "connected" ? "bg-green-600" : "bg-amber-600"}`} />
+                        {t(`chat.connection.${chat.connectionStatus}`)}
+                        {chat.connectionStatus === "subscriptionError" && <button type="button" onClick={onRetry} className="underline font-bold shrink-0">{t("chat.retry")}</button>}
+                    </p>
                 </div>
                 <button type="button" onClick={() => void loadHistory("refresh")} disabled={busy} className={`${secondaryButton} shrink-0`}>
                     <RefreshCw size={16} aria-hidden="true" className={chat.operation === "refresh" ? "animate-spin motion-reduce:animate-none" : ""} />
