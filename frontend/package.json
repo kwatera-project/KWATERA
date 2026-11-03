@@ -14,6 +14,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@stomp/stompjs": "^7.5.0",
     "@tailwindcss/vite": "^4.2.2",
     "@types/leaflet": "^1.9.21",
     "date-fns": "^4.2.1",

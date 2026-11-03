@@ -23,6 +23,7 @@ export default function LoginForm() {
             if (response.ok) {
                 const data = await response.json()
                 localStorage.setItem("token", data.token)
+                window.dispatchEvent(new Event("kwatera-auth"))
                 navigate("/")
             } else {
                 const errorData = await response.json().catch(() => ({ error: t('login.loginFailed') }))

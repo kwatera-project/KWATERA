@@ -5,6 +5,7 @@ export function useLogout() {
 
     return () => {
         localStorage.removeItem("token")
+        window.dispatchEvent(new Event("kwatera-auth"))
         navigate("/login")
     }
 }

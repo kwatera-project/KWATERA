@@ -52,6 +52,7 @@ export default function RegisterForm() {
                 })
                 const loginData = await loginRes.json()
                 localStorage.setItem("token", loginData.token)
+                window.dispatchEvent(new Event("kwatera-auth"))
                 navigate("/")
             } else {
                 const errorData = await response.json().catch(() => ({ error: t('register.registrationFailed') }))

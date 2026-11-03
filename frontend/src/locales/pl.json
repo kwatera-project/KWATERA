@@ -23,6 +23,15 @@
     }
   },
   "chat": {
+    "connection": {
+      "connecting": "Łączenie odbioru na żywo. Historia i wysyłanie są nadal dostępne.",
+      "connected": "Odbiór wiadomości na żywo połączony.",
+      "disconnected": "Odbiór na żywo rozłączony. Połączenie zostanie automatycznie wznowione; możesz odświeżać historię i wysyłać wiadomości.",
+      "reconnecting": "Wznawianie odbioru na żywo. Możesz odświeżać historię i wysyłać wiadomości.",
+      "authenticationError": "Sesja wygasła. Zaloguj się ponownie, aby uzyskać dostęp do wiadomości.",
+      "subscriptionError": "Subskrypcja na żywo została odrzucona. Sprawdź dostęp i spróbuj ponownie; historia i wysyłanie są nadal dostępne przy odpowiednich uprawnieniach.",
+      "transportError": "Błąd połączenia na żywo. Trwa automatyczne ponawianie; możesz odświeżać historię i wysyłać wiadomości."
+    },
     "title": "Rozmowa o rezerwacji",
     "subtitle": "Wiadomości między gościem a właścicielem obiektu.",
     "backToReservation": "Powrót do rezerwacji",
@@ -1015,6 +1024,7 @@
     "title": "Panel rezerwacji",
     "stayInfo": "Pobyt i nieruchomość",
     "propertyUnit": "Nieruchomość / lokal",
+    "nameUnavailable": "Nazwa obiektu niedostępna",
     "showReservation": "Pokaż rezerwację",
     "city": "Miasto:",
     "unitId": "UUID lokalu:",

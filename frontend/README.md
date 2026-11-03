@@ -59,17 +59,40 @@ open it through the inbox or a direct link without assuming current unit ownersh
 Static demo mode hides messaging navigation and reservation actions because GitHub
 Pages has no conversation backend; it does not simulate conversations.
 
-History and sending use the gateway REST API. **Refresh** retrieves newer messages
-(including intervening pages); **Load older messages** follows the backend cursor.
-There is no polling or live delivery. Desktop Enter sends and Shift+Enter inserts a
+Sending uses the gateway REST API; persisted messages arrive live through native
+WebSocket/STOMP 1.2 at `/ws/conversations`. The URL follows `VITE_API_BASE_URL`,
+converting HTTP/HTTPS to WS/WSS. JWTs are sent only in CONNECT headers, never URLs.
+The active conversation and private error queue are the only subscriptions.
+History loading starts after the unique message subscription receipt, buffers live
+deliveries and merges by persisted ID. If transport is unavailable or silent, REST
+history starts within two seconds so the chat remains usable. REST sending is
+available during an outage; failed or uncertain POSTs are never automatically retried.
+
+The localized status shows connection, reconnection and actionable failures.
+STOMP owns exponential transport retries (1 second initially, capped at 30 seconds).
+After subscription readiness, recovery traverses REST cursor pages to the last
+completed REST snapshot or the end, retaining overlapping live messages. Authentication
+and permanent subscription failures stop automatic retries; JWT expiry clears
+protected conversation data and requires login. Session changes and navigation abort
+conversation requests and dispose subscriptions, socket and timers. Static demo
+mode does not create a live connection. This follows [the backend contract](../docs/messaging.md);
+delivery is best effort and REST history remains the recovery source.
+
+**Refresh** retrieves newer messages (including intervening pages);
+**Load older messages** follows the backend cursor. Desktop Enter sends and Shift+Enter inserts a
 line break; touch devices use the Send button. Messages accept 1–4000 UTF-16 code
 units after the same edge-whitespace normalization as the backend. Failed sends
 retain the draft; after an ambiguous network failure, refresh before retrying to
 check whether the server persisted the message.
 
 For manual verification with a running gateway, open the same authorized conversation
-as each participant, send multiline text, refresh the other session, and load older
-history. Check blank/overlong validation, failed-send draft retention, request retries,
+as each participant and send multiline text. Both sessions should receive the same
+persisted message once without refreshing. Disconnect one session, send enough messages
+to span multiple history pages, and reconnect; verify complete, ordered recovery and
+manual refresh/older-history pagination. Use an explicitly allowed frontend origin:
+the backend defaults to `http://localhost:5173` and `http://localhost:5174`; align
+`KWATERA_MESSAGING_ALLOWED_ORIGINS` and HTTP CORS for other origins, without disabling
+origin validation. Check blank/overlong validation, failed-send draft retention, request retries,
 and unavailable/missing conversations in both Polish and English on desktop and mobile.
 An unrelated account must see no reservation context or history; a signed-out visit
 must redirect to login. Run the focused ordering/normalization regression checks with
@@ -87,6 +110,15 @@ bun run test:conversations:demo
 ```
 
 The unit script uses Node's built-in TypeScript support (Node 22.18+ or 24+).
+`conversationSession.test.mjs` and `conversationSocket.test.mjs` add deterministic
+API/client mocks for receipt readiness, buffered initialization, REST/live overlap,
+multi-page recovery, cursor preservation, transport fallback, failures, expiry and
+session teardown. `tests/e2e/conversationLive.spec.ts` uses the actual STOMP library
+against a Playwright-controlled WebSocket broker and mocked REST. It verifies
+protocol headers/receipts, delivery, reconnection, history overlap, REST sending
+during outages, access errors, account/conversation changes and scroll preservation.
+These are frontend integration tests, not real backend delivery tests.
+
 The browser script builds the production frontend, serves it at
 `http://127.0.0.1:4173`, and runs desktop (1440×1000) and mobile (390×844) Chromium
 checks. API responses and JWTs are controlled fixtures; this verifies UI behavior,
@@ -111,4 +143,5 @@ An unrelated user, including an unrelated administrator, must not gain access;
 an administrator who is an actual participant must retain access.
 Check cancelled/completed reservations within and beyond the configured retention
 boundary; unavailable conversations should disappear from the inbox and direct
-links should show a localized error. No live transport is implemented here (#237).
+links should show a localized error. For an independent deployed-backend smoke test,
+follow `scripts/messaging-smoke.ps1` and the instructions in `docs/messaging.md`.

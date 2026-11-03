@@ -2,14 +2,17 @@ package io.github.kwatera_project.kwatera.reservation_service.conversation.webso
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.web.socket.config.annotation.*;
 import org.springframework.web.socket.messaging.StompSubProtocolErrorHandler;
 
@@ -19,14 +22,17 @@ public final class ConversationWebSocketConfig implements WebSocketMessageBroker
   private final MessagingSessions sessions;
   private final String[] origins;
   private final SubscriptionReceipts receipts;
+  private final TaskScheduler heartbeatScheduler;
 
   public ConversationWebSocketConfig(
       MessagingSessions sessions,
       SubscriptionReceipts receipts,
+      @Lazy @Qualifier("messageBrokerTaskScheduler") TaskScheduler heartbeatScheduler,
       @Value("${kwatera.messaging.allowed-origins:http://localhost:5173,http://localhost:5174}")
           String origins) {
     this.sessions = sessions;
     this.receipts = receipts;
+    this.heartbeatScheduler = heartbeatScheduler;
     this.origins = Arrays.stream(origins.split(",", -1)).map(String::strip).toArray(String[]::new);
     if (this.origins.length == 0
         || Arrays.stream(this.origins)
@@ -67,7 +73,10 @@ public final class ConversationWebSocketConfig implements WebSocketMessageBroker
   public void configureMessageBroker(MessageBrokerRegistry registry) {
     registry.setApplicationDestinationPrefixes("/app");
     registry.setUserDestinationPrefix("/user");
-    registry.enableSimpleBroker("/queue");
+    registry
+        .enableSimpleBroker("/queue")
+        .setHeartbeatValue(new long[] {10000, 10000})
+        .setTaskScheduler(heartbeatScheduler);
     registry.configureBrokerChannel().interceptors(receipts);
     registry.setPreservePublishOrder(true);
   }

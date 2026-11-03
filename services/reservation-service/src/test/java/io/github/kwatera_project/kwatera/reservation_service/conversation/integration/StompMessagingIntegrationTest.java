@@ -164,6 +164,37 @@ class StompMessagingIntegrationTest {
   }
 
   @Test
+  void brokerNegotiatesHeartbeatsAndSendsThemWhileIdle() throws Exception {
+    var frames = new LinkedBlockingQueue<String>();
+    var socket =
+        new StandardWebSocketClient()
+            .execute(
+                new org.springframework.web.socket.handler.TextWebSocketHandler() {
+                  @Override
+                  protected void handleTextMessage(
+                      org.springframework.web.socket.WebSocketSession session,
+                      org.springframework.web.socket.TextMessage message) {
+                    frames.add(message.getPayload());
+                  }
+                },
+                "ws://localhost:" + port + "/ws/conversations")
+            .get(5, TimeUnit.SECONDS);
+    try {
+      socket.sendMessage(
+          new org.springframework.web.socket.TextMessage(
+              "CONNECT\naccept-version:1.2\nhost:localhost\nheart-beat:10000,10000\nAuthorization:Bearer "
+                  + token(GUEST_ID, Instant.now().plusSeconds(600))
+                  + "\n\n\u0000"));
+      assertThat(frames.poll(5, TimeUnit.SECONDS))
+          .startsWith("CONNECTED")
+          .contains("heart-beat:10000,10000");
+      assertThat(frames.poll(25, TimeUnit.SECONDS)).as("idle broker heartbeat").isEqualTo("\n");
+    } finally {
+      socket.close();
+    }
+  }
+
+  @Test
   void participantsExchangePersistedMessagesAndRecoverThroughRest() throws Exception {
     UUID id = conversationService.getOrCreate(reservation.getId(), GUEST_ID).id();
     var guest = connect(token(GUEST_ID, Instant.now().plusSeconds(600)));
