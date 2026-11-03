@@ -116,6 +116,91 @@ test("readiness during fallback loading triggers another snapshot after that req
     assert.deepEqual(h.state.messages.map(m => m.id), ["01", "02", "03"]);
 });
 
+test("readiness queued during a failing fallback still starts a fresh history snapshot", async t => {
+    const fallback = deferred(); let calls = 0;
+    const h = harness(t, { getHistory: async () => ++calls === 1 ? fallback.promise : page([message("02"), message("01")]) });
+    await h.session.start(); h.socket.onStatus("transportError");
+    h.socket.onReady(); h.socket.onMessage(message("03"));
+    fallback.reject(new Error("Earlier fallback failed")); await flush();
+    assert.equal(calls, 2);
+    assert.equal(h.state.fatalError, null);
+    assert.deepEqual(h.state.messages.map(m => m.id), ["01", "02", "03"]);
+});
+
+test("an older history snapshot cannot erase a concurrently failing POST warning", async t => {
+    const snapshot = deferred(), post = deferred(); let histories = 0, sends = 0;
+    const h = harness(t, {
+        getHistory: async () => ++histories === 1 ? page([message("01")], "older") : snapshot.promise,
+        sendMessage: async () => ++sends === 1 ? post.promise : message("02"),
+    });
+    await h.session.start(); h.socket.onReady(); await flush();
+    h.socket.onReady();
+    const sending = h.session.send("uncertain");
+    post.reject(new Error("POST outcome unknown")); assert.equal(await sending, false);
+    assert.equal(h.state.operationError, "send");
+    snapshot.resolve(page([message("01")], "older")); await flush();
+    assert.equal(h.state.operationError, "send");
+    await h.session.loadHistory("older");
+    assert.equal(h.state.operationError, "send");
+    await h.session.loadHistory("refresh");
+    assert.equal(h.state.operationError, "send");
+    assert.equal(sends, 1);
+    assert.equal(await h.session.send("explicit new send"), true);
+    assert.equal(h.state.operationError, null);
+});
+
+test("a failed recovery cannot replace a send-validation error", async t => {
+    const recovery = deferred(); let histories = 0;
+    const h = harness(t, { getHistory: async () => ++histories === 1 ? page([message("01")]) : recovery.promise });
+    await h.session.start(); h.socket.onReady(); await flush();
+    h.socket.onReady(); h.socket.onError("INVALID_MESSAGE");
+    recovery.reject(new Error("History unavailable")); await flush();
+    assert.equal(h.state.operationError, "invalidMessage");
+});
+
+test("session expiry survives a permanently stopped subscription and aborts pending REST work", async t => {
+    t.mock.timers.enable({ apis: ["setTimeout", "Date"] });
+    const pending = deferred(), context = deferred(); let histories = 0, contexts = 0, signal, contextSignal;
+    const h = harness(t, { expiresAt: Date.now() + 5000,
+        getReservation: async (_id, requestSignal) => { contextSignal = requestSignal; return ++contexts === 1 ? { unitName: "Stay" } : context.promise; },
+        getHistory: async (_id, _params, requestSignal) => { signal = requestSignal; return ++histories === 1 ? page([message("01")]) : pending.promise; } });
+    await h.session.start(); h.socket.onReady(); await flush();
+    h.socket.onStatus("subscriptionError"); h.socket.onError("INVALID_DESTINATION");
+    const refreshing = h.session.loadHistory("refresh");
+    const retryingContext = h.session.retryContext();
+    t.mock.timers.tick(5000);
+    assert.equal(h.state.fatalError, "unauthenticated");
+    assert.deepEqual(h.state.messages, []);
+    assert.equal(h.state.conversation, null); assert.equal(h.state.reservation, null);
+    assert.equal(signal.aborted, true);
+    assert.equal(contextSignal.aborted, true);
+    assert.equal(await h.session.send("blocked"), false);
+    pending.resolve(page([message("09")])); await refreshing;
+    context.resolve({ unitName: "Stale private context" }); await retryingContext;
+    assert.deepEqual(h.state.messages, []);
+    assert.equal(h.state.reservation, null);
+    assert.equal(histories, 2);
+});
+
+test("already expired sessions do not start metadata requests or a socket", async t => {
+    let requests = 0;
+    const h = harness(t, { expiresAt: Date.now() - 1, getConversation: async () => { requests++; return conversation; } });
+    await h.session.start();
+    assert.equal(requests, 0); assert.equal(h.socket, undefined);
+    assert.equal(h.state.fatalError, "unauthenticated");
+});
+
+test("expiry is enforced at operation boundaries even before a delayed timer runs", async t => {
+    t.mock.timers.enable({ apis: ["setTimeout", "Date"] });
+    const h = harness(t, { expiresAt: Date.now() + 5000 });
+    await h.session.start(); h.socket.onReady(); await flush();
+    t.mock.timers.setTime(Date.now() + 5000);
+    assert.equal(h.socket.isCurrent(), false);
+    assert.equal(h.state.fatalError, "unauthenticated");
+    assert.equal(await h.session.send("blocked after resume"), false);
+    assert.deepEqual(h.state.messages, []);
+});
+
 for (const [code, fatalError] of [["UNAUTHENTICATED", "unauthenticated"], ["CONVERSATION_NOT_FOUND", "inaccessible"], ["CONVERSATION_UNAVAILABLE", "unavailable"]]) {
     test(`${code} clears messages and metadata, aborts requests and stops the session`, async t => {
         const h = harness(t);

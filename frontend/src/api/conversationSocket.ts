@@ -17,7 +17,6 @@ interface SocketOptions {
     url: string;
     conversationId: string;
     token: string;
-    expiresAt?: number;
     isCurrent: () => boolean;
     onStatus: (status: ConnectionStatus) => void;
     onReady: () => void;
@@ -33,13 +32,12 @@ function errorCode(frame: IFrame): string {
     return frame.headers.message || "INVALID_DESTINATION";
 }
 
-// STOMP owns reconnection. This adapter only manages readiness, expiry and session guards.
+// STOMP owns heartbeat monitoring and reconnection. The session owns JWT expiry.
 export function connectConversationSocket(options: SocketOptions, client: Client = new Client()) {
     let stopped = false;
     let attempted = false;
     let generation = 0;
     let receiptTimer: ReturnType<typeof setTimeout> | undefined;
-    let expiryTimer: ReturnType<typeof setTimeout> | undefined;
     const subscriptions: ReturnType<Client["subscribe"]>[] = [];
     const current = () => !stopped && options.isCurrent();
     const clearReceiptTimer = () => clearTimeout(receiptTimer);
@@ -49,7 +47,11 @@ export function connectConversationSocket(options: SocketOptions, client: Client
         stopped = true;
         generation++;
         clearReceiptTimer();
-        clearTimeout(expiryTimer);
+        if (typeof window !== "undefined") {
+            window.removeEventListener("online", reconnect);
+            window.removeEventListener("pageshow", onPageShow);
+            document.removeEventListener("visibilitychange", onVisible);
+        }
         if (client.connected) subscriptions.forEach(subscription => {
             try { subscription.unsubscribe(); }
             catch { /* A transport closing concurrently must not prevent the remaining cleanup. */ }
@@ -70,13 +72,18 @@ export function connectConversationSocket(options: SocketOptions, client: Client
         options.onError(code);
     }
 
-    function checkExpiry() {
-        clearTimeout(expiryTimer);
-        if (!current()) return;
-        if (options.expiresAt === undefined) return;
-        const remaining = options.expiresAt - Date.now();
-        if (remaining <= 0) fail("UNAUTHENTICATED");
-        else expiryTimer = setTimeout(checkExpiry, Math.min(remaining, 2_147_483_647));
+    function reconnect() {
+        // A resumed browser or restored network can leave an apparently open stale socket.
+        // Discard it; the client's existing backoff and subscription recovery do the rest.
+        if (current() && client.connected) client.forceDisconnect();
+    }
+
+    function onVisible() {
+        if (document.visibilityState === "visible") reconnect();
+    }
+
+    function onPageShow(event: PageTransitionEvent) {
+        if (event.persisted) reconnect();
     }
 
     client.configure({
@@ -94,8 +101,6 @@ export function connectConversationSocket(options: SocketOptions, client: Client
         logRawCommunication: false,
         beforeConnect: () => {
             if (!current()) { stop(); return; }
-            checkExpiry();
-            if (!current()) return;
             options.onStatus(attempted ? "reconnecting" : "connecting");
             attempted = true;
         },
@@ -146,7 +151,11 @@ export function connectConversationSocket(options: SocketOptions, client: Client
             if (current()) options.onStatus("disconnected");
         },
     });
-    checkExpiry();
+    if (typeof window !== "undefined") {
+        window.addEventListener("online", reconnect);
+        window.addEventListener("pageshow", onPageShow);
+        document.addEventListener("visibilitychange", onVisible);
+    }
     if (current()) client.activate();
     return stop;
 }

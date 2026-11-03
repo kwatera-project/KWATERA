@@ -17,11 +17,11 @@ export function useConversation(conversationId: string, userId: string | undefin
         const exp = decodeJwt(token)?.exp;
         const session = createConversationSession({
             conversationId, userId, isCurrent, onChange: setState,
+            expiresAt: typeof exp === "number" ? exp * 1000 : undefined,
             getConversation, getHistory: getMessageHistory, sendMessage, getReservation: getReservationDetails,
             connect: callbacks => connectConversationSocket({
                 url: conversationSocketUrl(GATEWAY_BASE_URL, window.location.origin),
-                conversationId, token: token ?? "", isCurrent,
-                expiresAt: typeof exp === "number" ? exp * 1000 : undefined,
+                conversationId, token: token ?? "",
                 ...callbacks,
             }),
         });

@@ -109,6 +109,16 @@ queues, offline delivery, replay, exactly-once guarantee, outbox or cross-proces
 guarantees. Multiple sessions of one user each receive the message. Run one reservation
 service instance; Eureka load balancing does not make this broker multi-instance safe.
 
+The broker uses Spring's managed `messageBrokerTaskScheduler` to advertise STOMP
+heartbeats (`10000,10000` milliseconds). Without a scheduler the simple broker
+advertises `0,0`, disabling negotiated client liveness checks. The frontend uses
+STOMP's heartbeat watchdog and its existing reconnect/backoff mechanism for silent
+transport failures. Returning to a visible page, restoring a cached page, or an
+online event discards an apparently open socket so subscription readiness and REST
+recovery run again. Disconnected clients retain their existing bounded backoff.
+JWT expiry is enforced by the conversation session, including during REST fallback
+after a permanent subscription failure, and is rechecked when browser timers resume.
+
 Gateway configuration uses Spring Cloud 2025.1.1 / Gateway 5.0.1's
 `spring.cloud.gateway.server.webflux.routes`, URI `lb:ws://reservation-service`, exact
 path `/ws/conversations`, with no rewrite. Existing REST routes stay unchanged.

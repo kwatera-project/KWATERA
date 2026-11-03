@@ -1024,6 +1024,7 @@
     "title": "Panel rezerwacji",
     "stayInfo": "Pobyt i nieruchomość",
     "propertyUnit": "Nieruchomość / lokal",
+    "nameUnavailable": "Nazwa obiektu niedostępna",
     "showReservation": "Pokaż rezerwację",
     "city": "Miasto:",
     "unitId": "UUID lokalu:",

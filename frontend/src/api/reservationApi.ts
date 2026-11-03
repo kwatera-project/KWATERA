@@ -186,7 +186,7 @@ export async function createManualReservation(
     return res.json();
 }
 
-export async function getReservationDetails(id: string) {
+export async function getReservationDetails(id: string, signal?: AbortSignal) {
     const token = localStorage.getItem("token");
 
     if (!token) {
@@ -201,6 +201,7 @@ export async function getReservationDetails(id: string) {
     }
 
     const res = await fetch(`${API_URL}/${id}`, {
+        signal,
         headers: {
             "Authorization": `Bearer ${token}`
         }

@@ -12,7 +12,7 @@ const token = (userId = "guest") => `header.${Buffer.from(JSON.stringify({ userI
 const frame = (command: string, headers: Record<string, string>, body = "") => `${command}\n${Object.entries(headers).map(([key, value]) => `${key}:${value}`).join("\n")}\n\n${body}\0`;
 const flushPage = (page: Page) => page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => resolve())));
 
-async function setup(page: Page, options: { manualReceipt?: boolean; rejectTransport?: boolean; language?: string; userId?: string } = {}) {
+async function setup(page: Page, options: { manualReceipt?: boolean; rejectTransport?: boolean; heartbeat?: boolean; language?: string; userId?: string } = {}) {
     const jwt = token(options.userId);
     await page.addInitScript(({ jwt, language }) => { localStorage.setItem("token", jwt); localStorage.setItem("language", language); }, { jwt, language: options.language ?? "en" });
     await page.route("**/api/**", async route => {
@@ -39,7 +39,7 @@ async function setup(page: Page, options: { manualReceipt?: boolean; rejectTrans
             commands.push({ command, headers, url: ws.url() });
             if (command === "CONNECT") {
                 if (options.rejectTransport) ws.close({ code: 1011, reason: "Test transport failure" });
-                else ws.send(frame("CONNECTED", { version: "1.2", "heart-beat": "0,0" }));
+                else ws.send(frame("CONNECTED", { version: "1.2", "heart-beat": options.heartbeat ? "10000,10000" : "0,0" }));
             }
             if (command === "SUBSCRIBE") {
                 socket.subscriptions.set(headers.destination, headers.id);
@@ -165,6 +165,49 @@ test("transport reconnect recovers multiple opaque-cursor pages and concurrent l
     expect(cursors).toEqual([null, "opaque +/==", "last=="]);
     await expect(list.locator("article > p:nth-child(2)")).toHaveText(Array.from({ length: 6 }, (_, i) => `Message ${i + 1}`));
     expect(broker.sockets[0].receipt).not.toBe(broker.sockets[1].receipt);
+});
+
+test("negotiated heartbeats detect silent transport loss and recover missed history", async ({ page }) => {
+    await page.clock.install();
+    // Advertise the real broker's heartbeat settings, then silently drop all subsequent traffic.
+    // There is deliberately no server ERROR/close event to trigger reconnection.
+    const broker = await setup(page, { heartbeat: true }); let histories = 0;
+    await page.route("**/api/v1/conversations/*/messages*", route => route.fulfill({
+        json: historyPage(++histories === 1 ? [message(1)] : [message(2, "Missed during silent outage"), message(1)]),
+    }));
+    await page.goto(`/conversations/${conversationId}`); await broker.subscribed();
+    await expect(page.getByText("Message 1", { exact: true })).toBeVisible();
+    expect(broker.commands.find(c => c.command === "CONNECT")?.headers["heart-beat"]).toBe("10000,10000");
+    await page.clock.runFor(30_001);
+    await broker.subscribed(2);
+    await expect(page.getByText("Missed during silent outage", { exact: true })).toHaveCount(1);
+    await expect(page.getByTestId("connection-status")).toHaveText("Live delivery connected.");
+    expect(histories).toBe(2);
+});
+
+test("network restoration and browser resume recover through the existing client and clean up listeners", async ({ page }) => {
+    const broker = await setup(page);
+    await page.goto(`/conversations/${conversationId}`); await broker.subscribed();
+    await expect(page.getByRole("textbox")).toBeVisible();
+    for (const [index, event] of ["online", "visibilitychange", "pageshow"].entries()) {
+        await page.evaluate(event => {
+            if (event === "visibilitychange") document.dispatchEvent(new Event(event));
+            else if (event === "pageshow") window.dispatchEvent(new PageTransitionEvent(event, { persisted: true }));
+            else window.dispatchEvent(new Event(event));
+        }, event);
+        await broker.subscribed(index + 2);
+        await expect(page.getByTestId("connection-status")).toHaveText("Live delivery connected.");
+    }
+    await page.getByRole("link", { name: "Back to messages" }).click();
+    await expect.poll(() => broker.sockets.at(-1)?.closed).toBe(true);
+    await page.clock.install();
+    await page.evaluate(() => {
+        window.dispatchEvent(new Event("online"));
+        document.dispatchEvent(new Event("visibilitychange"));
+        window.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
+    });
+    await page.clock.fastForward(60_000);
+    expect(broker.sockets).toHaveLength(4);
 });
 
 test("REST sending and manual refresh work throughout a transport outage", async ({ page }) => {

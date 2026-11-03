@@ -27,13 +27,15 @@ export const emptyConversation: ConversationState = {
 interface SessionOptions {
     conversationId: string;
     userId: string | undefined;
+    expiresAt?: number;
     isCurrent: () => boolean;
     onChange: (state: ConversationState) => void;
     getConversation: (id: string, signal: AbortSignal) => Promise<ConversationResponse>;
-    getReservation: (id: string) => Promise<ReservationDetails>;
+    getReservation: (id: string, signal: AbortSignal) => Promise<ReservationDetails>;
     getHistory: (id: string, params: MessageHistoryParams, signal: AbortSignal) => Promise<MessageHistoryResponse>;
     sendMessage: (id: string, data: SendMessageRequest, signal: AbortSignal) => Promise<MessageResponse>;
     connect: (callbacks: {
+        isCurrent: () => boolean;
         onStatus: (status: ConnectionStatus) => void;
         onReady: () => void;
         onMessage: (message: MessageResponse) => void;
@@ -55,8 +57,17 @@ export function createConversationSession(options: SessionOptions) {
     let active = true;
     let stopSocket = () => {};
     let fallbackTimer: ReturnType<typeof setTimeout> | undefined;
+    let expiryTimer: ReturnType<typeof setTimeout> | undefined;
     const requests = new AbortController();
-    const current = () => active && options.isCurrent();
+    const current = () => {
+        if (!active || !options.isCurrent()) return false;
+        // Also check at operation/callback boundaries when browser suspension delays timers.
+        if (options.expiresAt !== undefined && options.expiresAt <= Date.now()) {
+            deny("unauthenticated");
+            return false;
+        }
+        return true;
+    };
     const history = (params: MessageHistoryParams = {}) => options.getHistory(options.conversationId, { limit: 50, ...params }, requests.signal);
     let anchor: string | null = null;
     let initialized = false;
@@ -74,22 +85,33 @@ export function createConversationSession(options: SessionOptions) {
     function stop() {
         active = false;
         clearTimeout(fallbackTimer);
+        clearTimeout(expiryTimer);
         stopSocket();
         requests.abort();
         buffered = [];
     }
 
     function deny(error: AccessError) {
-        update({ conversation: null, reservation: null, messages: [], nextCursor: null,
+        // Do not call current()/update() here: current() itself enforces expiration.
+        if (!active || !options.isCurrent()) return;
+        state = { ...state, conversation: null, reservation: null, messages: [], nextCursor: null,
             fatalError: error, loading: false, operation: null,
-            connectionStatus: error === "unauthenticated" ? "authenticationError" : "subscriptionError" });
+            connectionStatus: error === "unauthenticated" ? "authenticationError" : "subscriptionError" };
+        options.onChange(state);
         stop();
+    }
+
+    function scheduleExpiry() {
+        if (!current() || options.expiresAt === undefined) return;
+        expiryTimer = setTimeout(scheduleExpiry, Math.min(options.expiresAt - Date.now(), 2_147_483_647));
     }
 
     function failure(error: unknown, action: Operation) {
         const fatal = accessError(error);
         if (fatal) deny(fatal);
-        else update({ operationError: action === "send" && (error as { status?: number })?.status === 400 ? "invalidMessage" : action });
+        else if (action === "send" || (state.operationError !== "send" && state.operationError !== "invalidMessage")) {
+            update({ operationError: action === "send" && (error as { status?: number })?.status === 400 ? "invalidMessage" : action });
+        }
     }
 
     function merge(incoming: MessageResponse[]) {
@@ -122,7 +144,8 @@ export function createConversationSession(options: SessionOptions) {
                         : !page.hasMore ? null : state.nextCursor;
                     anchor = newestId;
                     initialized = true;
-                    update({ messages: merge([...incoming, ...buffered]), nextCursor, loading: false, fatalError: null, operationError: null });
+                    update({ messages: merge([...incoming, ...buffered]), nextCursor, loading: false, fatalError: null,
+                        operationError: state.operationError === "refresh" ? null : state.operationError });
                     buffered = [];
                 } catch (error) {
                     if (!current()) return;
@@ -133,7 +156,6 @@ export function createConversationSession(options: SessionOptions) {
                     } else failure(error, "refresh");
                     update({ messages: merge(buffered) });
                     buffered = [];
-                    syncAgain = false;
                 }
             } while (syncAgain && current());
         })().finally(() => { syncPromise = null; });
@@ -141,6 +163,8 @@ export function createConversationSession(options: SessionOptions) {
     }
 
     async function start() {
+        scheduleExpiry();
+        if (!current()) return;
         try {
             if (!options.userId) { deny("unauthenticated"); return; }
             const conversation = await options.getConversation(options.conversationId, requests.signal);
@@ -150,10 +174,11 @@ export function createConversationSession(options: SessionOptions) {
                 deny("inaccessible"); return;
             }
             update({ conversation });
-            void options.getReservation(conversation.reservationId).then(reservation => {
+            void options.getReservation(conversation.reservationId, requests.signal).then(reservation => {
                 update({ reservation });
             }).catch(() => { /* Optional context must not prevent messaging. */ });
             stopSocket = options.connect({
+                isCurrent: current,
                 onStatus: connectionStatus => {
                     update({ connectionStatus });
                     if (connectionStatus === "transportError" || connectionStatus === "disconnected") {
@@ -182,7 +207,7 @@ export function createConversationSession(options: SessionOptions) {
                     }
                 },
             });
-            // An already expired JWT can reject synchronously while creating the socket.
+            // Creating the socket can synchronously reject access.
             if (!current()) { stopSocket(); return; }
             fallbackTimer = setTimeout(() => { if (!initialized) void synchronize(); }, 2000);
         } catch (error) {
@@ -196,7 +221,7 @@ export function createConversationSession(options: SessionOptions) {
     async function loadHistory(action: "refresh" | "older") {
         if (!current() || busy || !state.conversation || (action === "older" && !state.nextCursor)) return;
         busy = true;
-        update({ operation: action, operationError: null });
+        update({ operation: action, operationError: state.operationError === action ? null : state.operationError });
         try {
             if (action === "refresh") await synchronize();
             else {
@@ -226,7 +251,7 @@ export function createConversationSession(options: SessionOptions) {
     async function retryContext() {
         if (!current() || !state.conversation || state.contextLoading) return;
         update({ contextLoading: true });
-        try { update({ reservation: await options.getReservation(state.conversation.reservationId) }); }
+        try { update({ reservation: await options.getReservation(state.conversation.reservationId, requests.signal) }); }
         catch { update({ reservation: null }); }
         finally { update({ contextLoading: false }); }
     }

@@ -93,14 +93,10 @@ test("private INVALID_MESSAGE is recoverable; private authentication failure end
     assert.deepEqual(h.errors, ["INVALID_MESSAGE", "UNAUTHENTICATED"]);
 });
 
-test("expiry suppresses idle delivery and never activates an already expired JWT", t => {
-    t.mock.timers.enable({ apis: ["setTimeout", "Date"] });
-    const h = harness(t, { expiresAt: Date.now() + 5000 });
-    h.config.beforeConnect(); h.config.onConnect();
-    t.mock.timers.tick(5000);
-    assert.equal(h.deactivated, 1); assert.deepEqual(h.errors, ["UNAUTHENTICATED"]);
-    const expired = harness(t, { expiresAt: Date.now() - 1 });
-    assert.equal(expired.activated, 0); assert.deepEqual(expired.errors, ["UNAUTHENTICATED"]);
+test("an invalidated or expired session cannot activate a socket", t => {
+    const h = harness(t, { isCurrent: () => false });
+    assert.equal(h.activated, 0);
+    assert.deepEqual(h.errors, []); // The conversation session owns expiration and its UI state.
 });
 
 test("receipt timeout forces transport recovery and teardown cancels all pending timers", t => {
