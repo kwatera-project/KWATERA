@@ -11,24 +11,32 @@ Java 25, Spring Boot 4.0.5 and Spring Cloud 2025.1.1 follow the parent reactor.
 [Spring AI 2.0.2 supports Boot 4.0.x](https://docs.spring.io/spring-ai/reference/getting-started.html).
 The module imports its own stable Spring AI BOM; it does not change auth-service's AI dependency.
 The official `spring-ai-ollama` module supplies `OllamaChatModel` and `OllamaApi`. Explicit Spring beans
-configure its HTTP transport and disable retries and startup model pulling. Controllers share one
-model bean; a separate short-timeout client checks model availability without inference.
+configure its HTTP transport and disable retries and startup model pulling. Operations share one transport/model bean with per-request model selection; a separate
+short-timeout client checks availability of both configured models without inference.
 
 Compose pins [Ollama 0.40.14](https://github.com/ollama/ollama/releases/tag/v0.40.14).
-The default model is
-[`qwen3:4b-instruct-2507-q4_K_M`](https://ollama.com/library/qwen3:4b-instruct-2507-q4_K_M):
-a compact instruction model with multilingual and structured JSON support, approximately 2.5 GB on
-disk. The instruction-only variant avoids spending the response budget on reasoning traces.
-This is a development compromise between CPU cost and quality. Budget roughly 5–6 GB RAM
-for Ollama, plus RAM for the Java services; CPU latency depends heavily on hardware and input size.
-No GPU, paid provider or API key is required. Larger models may improve translation quality.
-Language support and factual accuracy depend on the selected model; accepting a BCP 47 tag does
-not prove that the model can translate that language. Validate quality before relying on results.
-The default is intended for local development; evaluate representative language pairs and use a
-stronger model when production translation quality requires it.
-The live English-to-Polish example sometimes translated accommodation check-in as registration.
-Smoke tests establish working inference and JSON contracts, not linguistic acceptance. Production
-language-pair evaluation, especially hospitality terminology, remains necessary.
+Translation defaults to [`translategemma:4b`](https://ollama.com/library/translategemma:4b)
+(Q4_K_M, approximately 3.3 GB on disk). Summaries and source-language detection independently
+use `qwen3:4b-instruct-2507-q4_K_M` (approximately 2.5 GB on disk). Changing the translator does
+not change the summary model. The legacy `OLLAMA_MODEL` variable remains a fallback for the
+summary model only; use the explicit variables below when migrating an existing `.env`.
+
+The [30-message comparison and linguistic review](evaluation/REPORT.md) selected TranslateGemma
+for better meaning/terminology/naturalness and acceptable CPU cost. The installed full digests are:
+
+- TranslateGemma: `c49d986b0764f5881c476eb21435bb62b7abc62347aab3d4a6071e811be510a1`
+- Qwen: `0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0`
+
+Tags can move: compare `ollama list` / `/api/tags` against these evaluated digests after pulling.
+Provisioning does not automatically refresh or replace an installed model. No weights are tracked.
+The measured CPU allocation was approximately 2.84 GiB for TranslateGemma and 3.62 GiB for Qwen
+at context 8192; these are Ollama allocations, not peak process RAM. Budget additional RAM for both
+resident models, the runtime and other services. No GPU, paid provider or API key is required.
+
+Translations remain fallible: the selected run confused a security deposit with an advance payment,
+changed a quoted token and localized dates/numbers despite preserving their values. A syntactically
+valid BCP 47 tag does not prove language support. The assessment is model-assisted, not native-speaker
+acceptance. Review consequential messages against their originals; full limitations are in the report.
 
 ## Local Compose startup
 
@@ -36,6 +44,7 @@ Prerequisites: Docker Engine/Desktop running, Compose v2, enough disk/RAM, and i
 initial image/model downloads. Run these commands from the repository root (POSIX shell):
 
 ```sh
+# Only if .env does not exist yet:
 cp infra/compose/.env.example infra/compose/.env
 # Set KWATERA_INTERNAL_TOKEN in .env to a private random value of at least 32 characters.
 # Keep it outside version control. Other existing .env values apply to their respective services.
@@ -45,7 +54,8 @@ docker compose --env-file infra/compose/.env -f infra/compose/docker-compose.yml
 ```
 
 In PowerShell use `Copy-Item infra/compose/.env.example infra/compose/.env` for the first command.
-The provisioning step uses `ollama show` first and pulls only when missing. The named
+The provisioning step checks and provisions both explicit model tags, skipping a duplicate tag.
+It uses `ollama show` first and pulls only when missing. The named
 `ollama-models` volume survives container recreation. Provisioning times out after 15 minutes;
 repeat the command to resume a failed download. Startup does not wait for model provisioning.
 If provisioning fails, HTTP/liveness still start and inference returns a controlled error.
@@ -77,7 +87,9 @@ Environment variables override defaults in `application.yaml` and `config-repo/a
 | `CONFIG_SERVER_URL` | `http://localhost:8888` | Optional Config Server import; Compose supplies `http://config-server:8888` |
 | `EUREKA_DEFAULT_ZONE` | `http://localhost:8761/eureka/` | Compose supplies `http://service-registry:8761/eureka/` |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Compose supplies `http://ollama:11434` |
-| `OLLAMA_MODEL` | `qwen3:4b-instruct-2507-q4_K_M` | Explicit model size/instruction/quantization tag |
+| `OLLAMA_SUMMARY_MODEL` | `qwen3:4b-instruct-2507-q4_K_M` | Summary and source-detection model; falls back to legacy `OLLAMA_MODEL` |
+| `OLLAMA_TRANSLATION_MODEL` | `translategemma:4b` | Independent translation model |
+| `AI_TRANSLATION_FORMAT` | `TRANSLATE_GEMMA` | `TRANSLATE_GEMMA` single-user text prompt, or `JSON` for instruction models |
 | `AI_CONNECT_TIMEOUT` | `2s` | HTTP connection timeout |
 | `AI_REQUEST_TIMEOUT` | `120s` | Synchronous inference HTTP timeout; increase for slower CPUs |
 | `AI_READINESS_TIMEOUT` | `2s` | Inventory probe HTTP timeout |
@@ -88,7 +100,12 @@ Environment variables override defaults in `application.yaml` and `config-repo/a
 | `AI_MAX_REVIEW_CHARACTERS` | `2000` | Per-review length |
 | `AI_MAX_TOTAL_REVIEW_CHARACTERS` | `6000` | Sum of review lengths |
 | `AI_MAX_TRANSLATION_CHARACTERS` | `2000` | Message length |
-| `AI_MAX_RESPONSE_CHARACTERS` | `16000` | Maximum accepted model JSON length |
+| `AI_MAX_RESPONSE_CHARACTERS` | `16000` | Maximum accepted model output length |
+
+Both operations use seed 246, top_k 40 and top_p 0.9, matching the evaluation; temperature is
+configurable. `AI_REQUEST_TIMEOUT` bounds each HTTP inference call. TranslateGemma auto mode
+makes two sequential calls (detection then translation), so allow up to twice that timeout in a
+caller, plus transport overhead; explicit source tags avoid detection. There are no automatic retries.
 
 Lengths count Java UTF-16 code units. Choose limits appropriate to the model's tokenizer/context
 window and output budget, particularly for non-Latin text. The service does not chunk/truncate input
@@ -133,22 +150,34 @@ risk but cannot establish semantic correctness; consumers should preserve access
 ```
 
 ```json
-{"translatedText":"Cześć, o której godzinie mogę się zameldować?","sourceLanguage":"en","targetLanguage":"pl","model":"qwen3:4b-instruct-2507-q4_K_M"}
+{"translatedText":"Cześć, o której godzinie mogę się zameldować?","sourceLanguage":"en","targetLanguage":"pl","model":"translategemma:4b"}
 ```
 
 `text` and `targetLanguage` are required. Languages use syntactically valid BCP 47 tags, for
 example `ja`, `ar`, `pt-BR` or `zh-Hant-TW`; there is no Polish/English allowlist. Undefined/private-only
-tags and `auto` targets are rejected. Omit `sourceLanguage`, use null, or set it to `auto` to ask
-the model to detect the language. In that case the response reports `sourceLanguage: "auto"`,
+tags and `auto` targets are rejected. Omit `sourceLanguage`, use null, or set it to `auto` to request
+language detection. With `TRANSLATE_GEMMA`, the summary model first returns a strictly validated
+BCP 47 tag in JSON; an unusable/undetermined result is a controlled 502. That concrete tag is sent
+to the translator. Detection is probabilistic, especially on short/mixed-language messages. With
+`JSON`, the instruction model detects and translates in one call. In both modes the response reports `sourceLanguage: "auto"`,
 describing the requested mode rather than claiming a reliable detected language. Tags are
 canonicalized. Exactly matching canonical source/target tags return the original text unchanged
 without inference; different regional tags still call the model. The `model` field always reports
-the configured model, including for this bypass. Translation prompting requests preservation of
-tone, paragraph structure, URLs, references and numbers, with no additional commentary.
+the configured translation model, including for this bypass. The intended translation preserves
+meaning, tone and message data; the evaluation records where the models fail to do so.
 
-Both operations constrain output using an Ollama JSON schema and validate the response again.
-Malformed, empty, wrong-type, extra-field and token-truncated output is rejected, never returned
-as a successful inference. Example texts above illustrate the contract; model wording varies.
+Summaries, detection and `JSON` translation use an Ollama JSON schema and application validation
+(single nonempty string field; no extra fields). TranslateGemma follows the
+[official Ollama format](https://ollama.com/library/translategemma:4b): one user message with source/
+target names and codes and two blank lines before the original text. It has no system message or
+JSON output constraint. This differs from the structured processor input described by the
+[Google model card](https://huggingface.co/google/translategemma-4b-it).
+The service validates plain text for nonempty/size/control-character/truncation errors and wraps
+it in the existing JSON DTO. It does not strip comments, replace words or repair terminology.
+Protocol validation cannot establish semantic correctness or detect all unsolicited commentary.
+The card describes a 2K training context; runtime context 8192 and input limits are retained,
+without claiming validated long-input translation quality. Examples illustrate the contract;
+wording varies (the measured greeting was “Dzień dobry”, an acceptable tone variant).
 
 For a standalone JVM listening on localhost with Ollama available there:
 
@@ -230,7 +259,8 @@ For 503/model missing, rerun the provisioning command. For 504 on CPU, increase 
 timeouts or select a smaller model. For 502, inspect the model's structured-output support and
 output-token budget; the service deliberately does not return a fake success. For poor language
 quality, choose a stronger multilingual model and evaluate representative examples. To change
-models, set `OLLAMA_MODEL` in `.env`, rerun `ollama-init`, then recreate `ai-service` with `up -d`.
+models, set `OLLAMA_TRANSLATION_MODEL` and its matching `AI_TRANSLATION_FORMAT`, or independently
+`OLLAMA_SUMMARY_MODEL`, rerun `ollama-init`, then recreate `ai-service` with `up -d`.
 No weights are committed and there is no automatic pull on Java startup. Tags pin the selected
 variant; upstream registries can still update tags, so production deployments should record and
 validate the model digest shown by `ollama list`.
@@ -248,3 +278,27 @@ docker compose --env-file infra/compose/.env -f infra/compose/docker-compose.yml
 These live smoke checks require a running Docker daemon and downloaded model; they are separate
 from deterministic Maven tests. Do not treat mocked tests as evidence of model quality, live
 Eureka registration or real CPU inference performance.
+
+## Repeatable live quality and recovery checks
+
+See [evaluation instructions](evaluation/README.md), [cases](evaluation/cases.json) and
+[reviewed results](evaluation/REPORT.md). Run outside normal CI, with no concurrent inference:
+
+```sh
+python services/ai-service/evaluation/evaluate.py --output services/ai-service/evaluation/local-results.json
+python services/ai-service/evaluation/smoke.py --outage --output services/ai-service/evaluation/local-smoke.json
+```
+
+The second command calls both secured endpoints, explicit/auto/same-language translations, and
+briefly stops **only Ollama**, restoring it in a `finally` block and checking recovery. Run it in a
+local development environment. It reads the existing token inside the AI container without printing
+or recording it. The recorded [smoke results](evaluation/smoke-results.json) contain only synthetic
+requests/results and public health/error statuses. Keep `.env` unchanged; rebuild/recreate only AI:
+
+```sh
+docker compose --env-file infra/compose/.env -f infra/compose/docker-compose.yml run --rm ollama-init
+docker compose --env-file infra/compose/.env -f infra/compose/docker-compose.yml up -d --no-deps --build ai-service
+```
+
+To opt back into the previous translator, set `OLLAMA_TRANSLATION_MODEL=qwen3:4b-instruct-2507-q4_K_M`
+and `AI_TRANSLATION_FORMAT=JSON` together, provision and recreate AI. Do not just change a model tag.

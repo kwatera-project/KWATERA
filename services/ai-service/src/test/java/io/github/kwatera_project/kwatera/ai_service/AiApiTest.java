@@ -42,7 +42,9 @@ import tools.jackson.databind.ObjectMapper;
       "kwatera.ai.max-reviews=3",
       "kwatera.ai.max-review-characters=80",
       "kwatera.ai.max-total-review-characters=100",
-      "kwatera.ai.max-translation-characters=100"
+      "kwatera.ai.max-translation-characters=100",
+      "kwatera.ai.translation-model=test-translator:tag",
+      "kwatera.ai.translation-format=JSON"
     })
 @AutoConfigureMockMvc
 class AiApiTest {
@@ -76,10 +78,13 @@ class AiApiTest {
     call("summarize", Map.of("reviews", reviews, "language", "ja"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.summary").value("清潔ですが Wi-Fi は不安定です。"))
-        .andExpect(jsonPath("$.model").value(properties.model()));
+        .andExpect(jsonPath("$.model").value(properties.summaryModel()));
     var captor = ArgumentCaptor.forClass(Prompt.class);
     verify(model).call(captor.capture());
     var prompt = captor.getValue();
+    assertThat(
+            ((org.springframework.ai.ollama.api.OllamaChatOptions) prompt.getOptions()).getModel())
+        .isEqualTo(properties.summaryModel());
     assertThat(prompt.getInstructions().getFirst().getText())
         .contains("in ja", "untrusted JSON", "Do not invent")
         .doesNotContain("HACKED");
@@ -125,9 +130,13 @@ class AiApiTest {
         .andExpect(jsonPath("$.translatedText").value(text))
         .andExpect(jsonPath("$.sourceLanguage").value("pl"))
         .andExpect(jsonPath("$.targetLanguage").value(target))
-        .andExpect(jsonPath("$.model").value(properties.model()));
+        .andExpect(jsonPath("$.model").value(properties.translationModel()));
     var captor = ArgumentCaptor.forClass(Prompt.class);
     verify(model).call(captor.capture());
+    assertThat(
+            ((org.springframework.ai.ollama.api.OllamaChatOptions) captor.getValue().getOptions())
+                .getModel())
+        .isEqualTo(properties.translationModel());
     assertThat(captor.getValue().getInstructions().getFirst().getText())
         .contains("to " + target, "URLs", "untrusted JSON");
     assertThat(
@@ -293,7 +302,31 @@ class AiApiTest {
             new OllamaApi.ListModelResponse(
                 List.of(
                     new OllamaApi.Model(
-                        properties.model(), properties.model(), null, 1L, "digest", null))));
+                        properties.summaryModel(),
+                        properties.summaryModel(),
+                        null,
+                        1L,
+                        "digest",
+                        null))));
+    mvc.perform(get("/actuator/health/readiness")).andExpect(status().isServiceUnavailable());
+    when(readiness.listModels())
+        .thenReturn(
+            new OllamaApi.ListModelResponse(
+                List.of(
+                    new OllamaApi.Model(
+                        properties.summaryModel(),
+                        properties.summaryModel(),
+                        null,
+                        1L,
+                        "digest",
+                        null),
+                    new OllamaApi.Model(
+                        properties.translationModel(),
+                        properties.translationModel(),
+                        null,
+                        1L,
+                        "digest",
+                        null))));
     mvc.perform(get("/actuator/health/readiness"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("UP"));

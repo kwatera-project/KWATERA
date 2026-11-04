@@ -22,9 +22,10 @@ public class OllamaHealthIndicator implements HealthIndicator {
   @Override
   public Health health() {
     try {
+      var available = api.listModels().models().stream().map(OllamaApi.Model::name).toList();
       boolean present =
-          api.listModels().models().stream()
-              .anyMatch(model -> properties.model().equals(model.name()));
+          available.contains(properties.summaryModel())
+              && available.contains(properties.translationModel());
       return present ? Health.up().build() : Health.down().build();
     } catch (RuntimeException exception) {
       // Never attach backend exception messages or model responses to public diagnostics.

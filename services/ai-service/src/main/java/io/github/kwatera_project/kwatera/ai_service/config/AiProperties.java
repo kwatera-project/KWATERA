@@ -10,7 +10,9 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties("kwatera.ai")
 public record AiProperties(
     @NotBlank String baseUrl,
-    @NotBlank String model,
+    @NotBlank String summaryModel,
+    @NotBlank String translationModel,
+    @NotNull TranslationFormat translationFormat,
     @NotNull @DurationMin(millis = 1) Duration connectTimeout,
     @NotNull @DurationMin(millis = 1) Duration requestTimeout,
     @NotNull @DurationMin(millis = 1) Duration readinessTimeout,
@@ -21,4 +23,9 @@ public record AiProperties(
     @Positive int maxReviewCharacters,
     @Positive int maxTotalReviewCharacters,
     @Positive int maxTranslationCharacters,
-    @Positive int maxResponseCharacters) {}
+    @Positive int maxResponseCharacters) {
+  public enum TranslationFormat {
+    JSON,
+    TRANSLATE_GEMMA
+  }
+}

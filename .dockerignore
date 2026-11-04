@@ -20,6 +20,8 @@
 **/__pycache__
 **/*.pyc
 **/*.log
+**/.env
+services/ai-service/evaluation
 backend-storage
 config-repo
 docs

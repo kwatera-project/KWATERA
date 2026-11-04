@@ -24,6 +24,6 @@ class AiServiceApplicationTest {
     assertThat(model).isNotNull();
     assertThat(properties.baseUrl()).isEqualTo("http://127.0.0.1:1");
     assertThat(properties.requestTimeout()).isEqualTo(java.time.Duration.ofSeconds(120));
-    assertThat(model.getDefaultOptions().getModel()).isEqualTo(properties.model());
+    assertThat(model.getDefaultOptions().getModel()).isEqualTo(properties.summaryModel());
   }
 }

@@ -38,6 +38,10 @@ public class AiInference {
   }
 
   public String generate(String instruction, Object data, String field) {
+    return generate(instruction, data, field, properties.summaryModel());
+  }
+
+  public String generate(String instruction, Object data, String field, String modelName) {
     var schema =
         Map.of(
             "type",
@@ -59,12 +63,47 @@ public class AiInference {
                         + "'."),
                 new UserMessage(mapper.writeValueAsString(data))),
             OllamaChatOptions.builder()
-                .model(properties.model())
+                .model(modelName)
                 .temperature(properties.temperature())
+                .seed(246)
+                .topK(40)
+                .topP(0.9)
                 .numPredict(properties.maxOutputTokens())
                 .numCtx(properties.contextTokens())
                 .format(schema)
                 .build());
+    try {
+      String text = call(prompt);
+      var json = mapper.readTree(text);
+      if (!json.isObject()
+          || json.size() != 1
+          || !json.has(field)
+          || !json.get(field).isString()
+          || json.get(field).asString().isBlank()) {
+        throw AiException.invalidResponse();
+      }
+      return json.get(field).asString();
+    } catch (JacksonException exception) {
+      throw AiException.invalidResponse();
+    }
+  }
+
+  public String translateText(String userMessage) {
+    return call(
+        new Prompt(
+            List.of(new UserMessage(userMessage)),
+            OllamaChatOptions.builder()
+                .model(properties.translationModel())
+                .temperature(properties.temperature())
+                .seed(246)
+                .topK(40)
+                .topP(0.9)
+                .numPredict(properties.maxOutputTokens())
+                .numCtx(properties.contextTokens())
+                .build()));
+  }
+
+  private String call(Prompt prompt) {
     try {
       var response = model.call(prompt);
       if (response == null
@@ -77,19 +116,13 @@ public class AiInference {
       if (text == null || text.isBlank() || text.length() > properties.maxResponseCharacters()) {
         throw AiException.invalidResponse();
       }
-      var json = mapper.readTree(text);
-      if (!json.isObject()
-          || json.size() != 1
-          || !json.has(field)
-          || !json.get(field).isString()
-          || json.get(field).asString().isBlank()) {
+      if (text.codePoints()
+          .anyMatch(c -> Character.isISOControl(c) && c != '\n' && c != '\r' && c != '\t')) {
         throw AiException.invalidResponse();
       }
-      return json.get(field).asString();
+      return text;
     } catch (AiException exception) {
       throw exception;
-    } catch (JacksonException exception) {
-      throw AiException.invalidResponse();
     } catch (RuntimeException exception) {
       throw classify(exception);
     }

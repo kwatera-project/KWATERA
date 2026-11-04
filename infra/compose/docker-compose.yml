@@ -265,7 +265,8 @@ services:
     container_name: kwatera-ollama-init
     environment:
       OLLAMA_HOST: http://ollama:11434
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b-instruct-2507-q4_K_M}
+      OLLAMA_SUMMARY_MODEL: ${OLLAMA_SUMMARY_MODEL:-${OLLAMA_MODEL:-qwen3:4b-instruct-2507-q4_K_M}}
+      OLLAMA_TRANSLATION_MODEL: ${OLLAMA_TRANSLATION_MODEL:-translategemma:4b}
     volumes:
       - ./ollama-init.sh:/init.sh:ro
     entrypoint: ["/bin/sh", "/init.sh"]
@@ -286,7 +287,9 @@ services:
       CONFIG_SERVER_URL: http://config-server:8888
       EUREKA_DEFAULT_ZONE: http://service-registry:8761/eureka/
       OLLAMA_BASE_URL: http://ollama:11434
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b-instruct-2507-q4_K_M}
+      OLLAMA_SUMMARY_MODEL: ${OLLAMA_SUMMARY_MODEL:-${OLLAMA_MODEL:-qwen3:4b-instruct-2507-q4_K_M}}
+      OLLAMA_TRANSLATION_MODEL: ${OLLAMA_TRANSLATION_MODEL:-translategemma:4b}
+      AI_TRANSLATION_FORMAT: ${AI_TRANSLATION_FORMAT:-TRANSLATE_GEMMA}
       KWATERA_INTERNAL_TOKEN: ${KWATERA_INTERNAL_TOKEN:-}
       AI_REQUEST_TIMEOUT: ${AI_REQUEST_TIMEOUT:-120s}
       AI_TEMPERATURE: ${AI_TEMPERATURE:-0.1}

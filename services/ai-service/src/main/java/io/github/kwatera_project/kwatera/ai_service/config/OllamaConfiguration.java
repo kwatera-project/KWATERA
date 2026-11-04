@@ -39,8 +39,11 @@ public class OllamaConfiguration {
         .ollamaApi(api)
         .options(
             OllamaChatOptions.builder()
-                .model(properties.model())
+                .model(properties.summaryModel())
                 .temperature(properties.temperature())
+                .seed(246)
+                .topK(40)
+                .topP(0.9)
                 .numPredict(properties.maxOutputTokens())
                 .numCtx(properties.contextTokens())
                 .build())

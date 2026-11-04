@@ -24,6 +24,8 @@ class OllamaConfigurationTest {
     return new AiProperties(
         "http://127.0.0.1:1",
         "test-model:tag",
+        "test-translation:tag",
+        AiProperties.TranslationFormat.JSON,
         Duration.ofMillis(50),
         Duration.ofMillis(100),
         Duration.ofMillis(50),
@@ -55,7 +57,7 @@ class OllamaConfigurationTest {
     verify(api, times(1)).chat(any());
     var request = org.mockito.ArgumentCaptor.forClass(OllamaApi.ChatRequest.class);
     verify(api).chat(request.capture());
-    assertThat(request.getValue().model()).isEqualTo(properties().model());
+    assertThat(request.getValue().model()).isEqualTo(properties().summaryModel());
     assertThat(request.getValue().format()).isInstanceOf(java.util.Map.class);
     verifyNoMoreInteractions(api);
   }
@@ -81,7 +83,9 @@ class OllamaConfigurationTest {
             .withUserConfiguration(PropertiesConfiguration.class)
             .withPropertyValues(
                 "kwatera.ai.base-url=http://127.0.0.1:1",
-                "kwatera.ai.model=test",
+                "kwatera.ai.summary-model=test",
+                "kwatera.ai.translation-model=test",
+                "kwatera.ai.translation-format=JSON",
                 "kwatera.ai.connect-timeout=1s",
                 "kwatera.ai.request-timeout=1s",
                 "kwatera.ai.readiness-timeout=1s",

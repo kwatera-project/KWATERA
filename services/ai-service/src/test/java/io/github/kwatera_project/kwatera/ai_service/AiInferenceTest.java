@@ -57,6 +57,32 @@ class AiInferenceTest {
   }
 
   @Test
+  void rejectsTruncatedAndOversizedPlainTranslationAndPreservesValidMultilineText() {
+    when(model.call(any(Prompt.class)))
+        .thenReturn(
+            new ChatResponse(
+                List.of(
+                    new Generation(
+                        new AssistantMessage("unfinished"),
+                        ChatGenerationMetadata.builder().finishReason("length").build()))));
+    assertThatThrownBy(() -> inference.translateText("translate"))
+        .isInstanceOfSatisfying(
+            AiException.class,
+            exception -> assertThat(exception.code()).isEqualTo("AI_INVALID_RESPONSE"));
+    when(model.call(any(Prompt.class)))
+        .thenReturn(
+            new ChatResponse(List.of(new Generation(new AssistantMessage("x".repeat(16001))))));
+    assertThatThrownBy(() -> inference.translateText("translate"))
+        .isInstanceOfSatisfying(
+            AiException.class,
+            exception -> assertThat(exception.code()).isEqualTo("AI_INVALID_RESPONSE"));
+    when(model.call(any(Prompt.class)))
+        .thenReturn(
+            new ChatResponse(List.of(new Generation(new AssistantMessage("Cześć\n\nŁ-0042")))));
+    assertThat(inference.translateText("translate")).isEqualTo("Cześć\n\nŁ-0042");
+  }
+
+  @Test
   void classifiesBackendStatusAndTransportErrorsWithoutRetrying() {
     when(model.call(any(Prompt.class)))
         .thenThrow(new HttpClientErrorException(HttpStatus.TOO_MANY_REQUESTS));
