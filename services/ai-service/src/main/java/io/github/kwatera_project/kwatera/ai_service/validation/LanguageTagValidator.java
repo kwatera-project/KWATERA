@@ -17,7 +17,7 @@ public class LanguageTagValidator implements ConstraintValidator<LanguageTag, St
   public boolean isValid(String value, ConstraintValidatorContext context) {
     if (value == null) return true; // @NotBlank handles required fields.
     if ("auto".equalsIgnoreCase(value)) return allowAuto;
-    if (value.length() > 63 || !value.matches("[a-zA-Z]{2,8}(-[a-zA-Z0-9]{1,8})*")) return false;
+    if (value.length() > 63 || !value.matches("[a-zA-Z]{2,8}(-[a-zA-Z0-9]{1,8})*+")) return false;
     try {
       String language = new Locale.Builder().setLanguageTag(value).build().getLanguage();
       return !language.isEmpty() && !"und".equals(language);
