@@ -4,6 +4,11 @@ server:
     include-message: never
     include-stacktrace: never
 
+springdoc:
+  paths-to-match: /internal/ai/**
+  swagger-ui:
+    disable-swagger-default-url: true
+
 spring:
   application:
     name: ai-service

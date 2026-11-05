@@ -73,7 +73,8 @@ docker compose --env-file infra/compose/.env -f infra/compose/docker-compose.yml
 `/actuator/health/liveness` reflects only application liveness. Readiness includes the Ollama
 model inventory and returns 503 if the backend/model is missing; it does not warm up the model or
 guarantee inference quality/free memory. Probes disclose only status and require no token.
-Other paths, including aggregate health and info, require `X-Internal-Token`.
+Other paths, including aggregate health and info, require `X-Internal-Token`, except GET requests
+for the OpenAPI/Swagger documentation resources described below.
 Compose checks liveness so a temporarily missing model does not cause restart loops.
 
 ## Configuration
@@ -119,6 +120,29 @@ For standalone development set `SPRING_CLOUD_CONFIG_ENABLED=false` and `EUREKA_C
 if those infrastructure services are unavailable.
 
 ## Internal REST contracts
+
+### OpenAPI and Swagger UI
+
+The service uses the same `springdoc-openapi-starter-webmvc-ui` dependency and parent-managed
+version as `review-service`. With standalone AI listening on port 8088:
+
+- Swagger UI: [http://localhost:8088/swagger-ui.html](http://localhost:8088/swagger-ui.html)
+- OpenAPI JSON: [http://localhost:8088/v3/api-docs](http://localhost:8088/v3/api-docs)
+- OpenAPI YAML: [http://localhost:8088/v3/api-docs.yaml](http://localhost:8088/v3/api-docs.yaml)
+
+The specification includes both internal operations, request/response DTOs, language and detection
+semantics, configurable limits, model selection, and the shared error body/statuses. The `internalToken`
+API-key security scheme requires the `X-Internal-Token` header for **both POST operations**. Use
+Swagger UI's **Authorize** button only in a trusted local/backend diagnostic environment; never
+embed the token in frontend code or examples. Documentation GETs and UI assets load without a token;
+other authorization rules are unchanged. Do not put tokens in URLs or share an authorized browser.
+
+Compose keeps AI on the internal network, with no host port or public gateway route. Inspect its
+specification from the existing AI container without exposing a port:
+
+```sh
+docker compose --env-file infra/compose/.env -f infra/compose/docker-compose.yml exec ai-service sh -c 'curl -fsS "http://localhost:$AI_SERVICE_PORT/v3/api-docs"'
+```
 
 All requests use `Content-Type: application/json` and `X-Internal-Token`. No gateway route exposes
 these endpoints. The token follows existing KWATERA internal-call conventions but has no insecure

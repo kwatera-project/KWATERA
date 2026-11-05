@@ -32,7 +32,12 @@ public class InternalTokenFilter extends OncePerRequestFilter {
     String path = request.getRequestURI().substring(request.getContextPath().length());
     if ("GET".equals(request.getMethod())
         && (path.equals("/actuator/health/liveness")
-            || path.equals("/actuator/health/readiness"))) {
+            || path.equals("/actuator/health/readiness")
+            || path.equals("/v3/api-docs")
+            || path.equals("/v3/api-docs.yaml")
+            || path.startsWith("/v3/api-docs/")
+            || path.equals("/swagger-ui.html")
+            || path.startsWith("/swagger-ui/"))) {
       chain.doFilter(request, response);
       return;
     }

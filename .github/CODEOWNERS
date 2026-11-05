@@ -40,7 +40,7 @@
 /services/ai-pricing-service/ @sinadzeya @lukaszjecek
 
 # Shared local AI service, including opt-in translation evaluation.
-/services/ai-service/ @sinadzeya @lukaszjecek
+/services/ai-service/ @sinadzeya @alicjaswiers @lukaszjecek
 
 # Review service.
 /services/review-service/ @sinadzeya @ZuzannaAdamczyk @lukaszjecek
