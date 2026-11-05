@@ -1,0 +1,26 @@
+# Service-specific central configuration. Local defaults also permit standalone diagnostics.
+server:
+  port: ${AI_SERVICE_PORT:8088}
+
+kwatera:
+  security:
+    internal-token: ${KWATERA_INTERNAL_TOKEN:}
+  ai:
+    base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+    summary-model: ${OLLAMA_SUMMARY_MODEL:${OLLAMA_MODEL:qwen3:4b-instruct-2507-q4_K_M}}
+    translation-model: ${OLLAMA_TRANSLATION_MODEL:translategemma:4b}
+    translation-format: ${AI_TRANSLATION_FORMAT:TRANSLATE_GEMMA}
+    request-timeout: ${AI_REQUEST_TIMEOUT:120s}
+    temperature: ${AI_TEMPERATURE:0.1}
+    max-output-tokens: ${AI_MAX_OUTPUT_TOKENS:1024}
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka/}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

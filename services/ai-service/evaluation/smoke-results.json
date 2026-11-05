@@ -1,0 +1,143 @@
+[
+  {
+    "case": "translate-explicit",
+    "status": 200,
+    "body": {
+      "translatedText": "Dzień dobry, o której godzinie mogę się zameldować?",
+      "sourceLanguage": "en",
+      "targetLanguage": "pl",
+      "model": "translategemma:4b"
+    },
+    "seconds": 7.501
+  },
+  {
+    "case": "summary-independent",
+    "status": 200,
+    "body": {
+      "summary": "The room was clean and the host was friendly, but the Wi-Fi connection was unstable.",
+      "model": "qwen3:4b-instruct-2507-q4_K_M"
+    },
+    "seconds": 7.767
+  },
+  {
+    "case": "auto-en",
+    "status": 200,
+    "body": {
+      "translatedText": "Dzień dobry, o której godzinie mogę się zameldować?",
+      "sourceLanguage": "auto",
+      "targetLanguage": "pl",
+      "model": "translategemma:4b"
+    },
+    "seconds": 2.778
+  },
+  {
+    "case": "auto-pl",
+    "status": 200,
+    "body": {
+      "translatedText": "Is it possible for me to check out at 11:30?",
+      "sourceLanguage": "auto",
+      "targetLanguage": "en",
+      "model": "translategemma:4b"
+    },
+    "seconds": 2.915
+  },
+  {
+    "case": "auto-fr",
+    "status": 200,
+    "body": {
+      "translatedText": "Will the deposit be refunded after we leave?",
+      "sourceLanguage": "auto",
+      "targetLanguage": "en",
+      "model": "translategemma:4b"
+    },
+    "seconds": 2.22
+  },
+  {
+    "case": "same-language",
+    "status": 200,
+    "body": {
+      "translatedText": "Hello\n\nŁ-0042",
+      "sourceLanguage": "en-US",
+      "targetLanguage": "en-US",
+      "model": "translategemma:4b"
+    },
+    "seconds": 0.199
+  },
+  {
+    "case": "missing-token",
+    "status": 403,
+    "body": {
+      "code": "ACCESS_DENIED",
+      "message": "A valid internal service token is required.",
+      "status": 403,
+      "timestamp": "2026-11-04T23:12:40.932979528Z"
+    },
+    "seconds": 0.204
+  },
+  {
+    "case": "outage-translate",
+    "status": 504,
+    "body": {
+      "code": "AI_TIMEOUT",
+      "message": "The AI backend did not respond within the configured timeout.",
+      "status": 504,
+      "timestamp": "2026-11-04T23:12:43.947990484Z"
+    },
+    "seconds": 2.205
+  },
+  {
+    "case": "outage-summary",
+    "status": 504,
+    "body": {
+      "code": "AI_TIMEOUT",
+      "message": "The AI backend did not respond within the configured timeout.",
+      "status": 504,
+      "timestamp": "2026-11-04T23:12:46.143319641Z"
+    },
+    "seconds": 2.194
+  },
+  {
+    "case": "outage-liveness",
+    "status": 200,
+    "body": {
+      "status": "UP"
+    },
+    "seconds": 0.215
+  },
+  {
+    "case": "outage-readiness",
+    "status": 503,
+    "body": {
+      "status": "DOWN"
+    },
+    "seconds": 2.202
+  },
+  {
+    "case": "recovered-readiness",
+    "status": 200,
+    "body": {
+      "status": "UP"
+    },
+    "seconds": 0.208
+  },
+  {
+    "case": "recovered-translate",
+    "status": 200,
+    "body": {
+      "translatedText": "Dzień dobry, o której godzinie mogę się zameldować?",
+      "sourceLanguage": "en",
+      "targetLanguage": "pl",
+      "model": "translategemma:4b"
+    },
+    "seconds": 6.963
+  },
+  {
+    "case": "recovered-summary",
+    "status": 200,
+    "body": {
+      "summary": "The room was clean and the host was friendly, but the Wi-Fi connection was unstable.",
+      "model": "qwen3:4b-instruct-2507-q4_K_M"
+    },
+    "seconds": 8.279
+  }
+]

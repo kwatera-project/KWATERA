@@ -60,3 +60,6 @@ runs/
 *.jpg
 
 frontend/.env
+
+# Opt-in AI evaluation output (reviewed baseline reports are tracked separately).
+services/ai-service/evaluation/local-*.json

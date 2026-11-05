@@ -41,6 +41,7 @@
         <module>services/billing-service</module>
         <module>services/ai-pricing-service</module>
         <module>services/review-service</module>
+        <module>services/ai-service</module>
     </modules>
 
     <dependencyManagement>

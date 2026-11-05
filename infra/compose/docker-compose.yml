@@ -246,6 +246,70 @@ services:
         condition: service_healthy
     restart: on-failure
 
+  ollama:
+    # Pinned stable runtime; CPU execution requires no NVIDIA runtime or GPU reservation.
+    image: ollama/ollama:0.40.14
+    container_name: kwatera-ollama
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    restart: on-failure
+
+  ollama-init:
+    image: ollama/ollama:0.40.14
+    container_name: kwatera-ollama-init
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_SUMMARY_MODEL: ${OLLAMA_SUMMARY_MODEL:-${OLLAMA_MODEL:-qwen3:4b-instruct-2507-q4_K_M}}
+      OLLAMA_TRANSLATION_MODEL: ${OLLAMA_TRANSLATION_MODEL:-translategemma:4b}
+    volumes:
+      - ./ollama-init.sh:/init.sh:ro
+    entrypoint: ["/bin/sh", "/init.sh"]
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
+
+  ai-service:
+    build:
+      context: ../..
+      dockerfile: services/ai-service/Dockerfile
+    container_name: kwatera-ai-service
+    expose:
+      - "${AI_SERVICE_PORT:-8088}"
+    environment:
+      AI_SERVICE_PORT: ${AI_SERVICE_PORT:-8088}
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_DEFAULT_ZONE: http://service-registry:8761/eureka/
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_SUMMARY_MODEL: ${OLLAMA_SUMMARY_MODEL:-${OLLAMA_MODEL:-qwen3:4b-instruct-2507-q4_K_M}}
+      OLLAMA_TRANSLATION_MODEL: ${OLLAMA_TRANSLATION_MODEL:-translategemma:4b}
+      AI_TRANSLATION_FORMAT: ${AI_TRANSLATION_FORMAT:-TRANSLATE_GEMMA}
+      KWATERA_INTERNAL_TOKEN: ${KWATERA_INTERNAL_TOKEN:-}
+      AI_REQUEST_TIMEOUT: ${AI_REQUEST_TIMEOUT:-120s}
+      AI_TEMPERATURE: ${AI_TEMPERATURE:-0.1}
+      AI_MAX_OUTPUT_TOKENS: ${AI_MAX_OUTPUT_TOKENS:-1024}
+    depends_on:
+      config-server:
+        condition: service_healthy
+      service-registry:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    # Liveness remains UP when model provisioning fails or Ollama is stopped.
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:$${AI_SERVICE_PORT}/actuator/health/liveness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 40s
+    restart: on-failure
+
   frontend:
     build:
       context: ../..
@@ -294,3 +358,6 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
 
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+volumes:
+  ollama-models:

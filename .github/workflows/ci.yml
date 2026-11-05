@@ -120,6 +120,9 @@ jobs:
           - service: review-service
             sonar_enabled: true
             sonar_project_key: kwatera-project_KWATERA_review-service
+          - service: ai-service
+            sonar_enabled: true
+            sonar_project_key: kwatera-project_KWATERA_ai-service
 
 
     defaults:
