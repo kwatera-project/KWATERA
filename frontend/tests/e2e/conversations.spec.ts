@@ -51,6 +51,59 @@ async function screenshot(page: Page, name: string, project: string) {
     }
 }
 
+for (const language of ["en", "pl"]) {
+    test(`message translation and original toggle (${language})`, async ({ page }) => {
+        await setup(page, ["ROLE_GUEST"], language);
+        await page.route(/\/api\/v1\/conversations\/[^/]+\/messages(?:\?.*)?$/, route => respond(route, {
+            items: [{ id: "message-1", conversationId: conversation.id, senderUserId: "owner", content: "Bonjour !", createdAt: "2026-10-01T10:00:00Z" }],
+            hasMore: false, nextCursor: null,
+        }));
+        let calls = 0;
+        await page.route("**/messages/message-1/translation", async route => {
+            calls++;
+            expect(route.request().method()).toBe("POST");
+            expect(route.request().postDataJSON()).toEqual({ targetLanguage: language });
+            expect(route.request().headers().authorization).toContain("Bearer ");
+            await respond(route, { translatedText: language === "pl" ? "Dzień dobry!" : "Hello!", sourceLanguage: "auto", targetLanguage: language });
+        });
+        await page.goto(`/conversations/${conversation.id}`);
+        const translate = page.getByRole("button", { name: language === "pl" ? "Przetłumacz na polski" : "Translate to English", exact: true });
+        await expect(page.getByText("Bonjour !", { exact: true })).toBeVisible();
+        await translate.click();
+        await expect(page.getByText(language === "pl" ? "Dzień dobry!" : "Hello!", { exact: true })).toBeVisible();
+        await page.getByRole("button", { name: language === "pl" ? "Pokaż oryginał" : "Show original", exact: true }).click();
+        await expect(page.getByText("Bonjour !", { exact: true })).toBeVisible();
+        await translate.click();
+        expect(calls).toBe(1);
+    });
+}
+
+test("AI outage keeps original and composer usable and translation can retry", async ({ page }) => {
+    await setup(page);
+    await page.route(/\/api\/v1\/conversations\/[^/]+\/messages(?:\?.*)?$/, route => respond(route, {
+        items: [{ id: "message-1", conversationId: conversation.id, senderUserId: "owner", content: "Bonjour !", createdAt: "2026-10-01T10:00:00Z" }],
+        hasMore: false, nextCursor: null,
+    }));
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    let failed = false;
+    await page.route("**/messages/message-1/translation", async route => {
+        if (!failed) { await gate; failed = true; await respond(route, {}, 503); }
+        else await respond(route, { translatedText: "Hello!", sourceLanguage: "auto", targetLanguage: "en" });
+    });
+    await page.goto(`/conversations/${conversation.id}`);
+    await page.getByRole("button", { name: "Translate to English", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Translating…", exact: true })).toBeDisabled();
+    await page.locator("#chat-message").fill("My draft survives");
+    await expect(page.getByRole("button", { name: "Send", exact: true })).toBeEnabled();
+    release();
+    await expect(page.getByRole("alert")).toContainText("Translation unavailable");
+    await expect(page.getByText("Bonjour !", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Translate to English", exact: true }).click();
+    await expect(page.getByText("Hello!", { exact: true })).toBeVisible();
+    await expect(page.locator("#chat-message")).toHaveValue("My draft survives");
+});
+
 for (const [label, roles, visible] of [
     ["guest", ["ROLE_GUEST"], true], ["owner", ["ROLE_OWNER"], true],
     ["administrator", ["ROLE_ADMIN"], true], ["signed out", [], false],

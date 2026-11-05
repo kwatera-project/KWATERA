@@ -41,6 +41,10 @@ management:
         include: health,info
 
 kwatera:
+  ai:
+    internal-token: ${KWATERA_AI_INTERNAL_TOKEN:${KWATERA_INTERNAL_TOKEN:}}
+    connect-timeout: ${KWATERA_AI_CONNECT_TIMEOUT:2s}
+    read-timeout: ${KWATERA_AI_READ_TIMEOUT:250s}
   messaging:
     allowed-origins: ${KWATERA_MESSAGING_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174}
   business-zone: ${KWATERA_BUSINESS_ZONE:Europe/Warsaw}

@@ -1,5 +1,6 @@
 package io.github.kwatera_project.kwatera.reservation_service.conversation.controller;
 
+import io.github.kwatera_project.kwatera.reservation_service.conversation.client.MessageTranslationClient;
 import io.github.kwatera_project.kwatera.reservation_service.conversation.dto.*;
 import io.github.kwatera_project.kwatera.reservation_service.conversation.service.ConversationAuthenticationService;
 import io.github.kwatera_project.kwatera.reservation_service.conversation.service.MessageService;
@@ -39,6 +40,28 @@ import org.springframework.web.bind.annotation.*;
 public class MessageController {
   private final MessageService messages;
   private final ConversationAuthenticationService authenticationService;
+  private final MessageTranslationClient translations;
+
+  @PostMapping("/{messageId}/translation")
+  @Operation(
+      summary = "Translate one message without changing its stored content",
+      description =
+          "Participant and lifecycle access is checked before reading the message. Source language is detected by AI; sourceLanguage=auto denotes detection mode. No translation is persisted or broadcast.")
+  @ApiResponses({
+    @ApiResponse(responseCode = "502", description = "Invalid AI response"),
+    @ApiResponse(responseCode = "503", description = "Translation unavailable"),
+    @ApiResponse(responseCode = "504", description = "Translation timed out")
+  })
+  public MessageTranslationResponse translate(
+      @PathVariable("conversationId") UUID conversationId,
+      @PathVariable("messageId") UUID messageId,
+      @Valid @RequestBody TranslateMessageRequest request,
+      Authentication authentication) {
+    String content =
+        messages.contentForTranslation(
+            conversationId, messageId, authenticationService.requireUserId(authentication));
+    return translations.translate(content, request.targetLanguage());
+  }
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
