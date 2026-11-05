@@ -50,6 +50,15 @@ public class MessageService {
   }
 
   @Transactional(readOnly = true)
+  public String contentForTranslation(UUID conversationId, UUID messageId, UUID currentUserId) {
+    requireAccess(conversationId, currentUserId, false);
+    return messages
+        .findByIdAndConversation_Id(messageId, conversationId)
+        .orElseThrow(this::notFound)
+        .getContent();
+  }
+
+  @Transactional(readOnly = true)
   public MessageHistoryResponse history(
       UUID conversationId, UUID currentUserId, String limit, String cursor) {
     requireAccess(conversationId, currentUserId, false);

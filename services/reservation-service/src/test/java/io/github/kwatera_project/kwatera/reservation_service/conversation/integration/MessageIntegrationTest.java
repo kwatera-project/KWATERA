@@ -10,8 +10,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventService;
 import io.github.kwatera_project.kwatera.reservation_service.client.NbpExchangeRateClient;
+import io.github.kwatera_project.kwatera.reservation_service.conversation.client.MessageTranslationClient;
 import io.github.kwatera_project.kwatera.reservation_service.conversation.client.PropertyOwnershipClient;
 import io.github.kwatera_project.kwatera.reservation_service.conversation.dto.MessageResponse;
+import io.github.kwatera_project.kwatera.reservation_service.conversation.dto.MessageTranslationResponse;
 import io.github.kwatera_project.kwatera.reservation_service.conversation.repository.ConversationRepository;
 import io.github.kwatera_project.kwatera.reservation_service.conversation.repository.MessageRepository;
 import io.github.kwatera_project.kwatera.reservation_service.conversation.service.ConversationService;
@@ -72,6 +74,103 @@ import org.springframework.web.server.ResponseStatusException;
     })
 @AutoConfigureMockMvc
 class MessageIntegrationTest {
+  @MockitoBean private MessageTranslationClient translations;
+
+  @ParameterizedTest
+  @ValueSource(strings = {"guest", "owner"})
+  void participantsTranslateWithoutChangingOriginal(String participant) throws Exception {
+    UUID id = conversationId();
+    var message = messages.send(id, GUEST_ID, "Hello");
+    when(translations.translate("Hello", "pl"))
+        .thenReturn(new MessageTranslationResponse("Cześć", "auto", "pl"));
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.post(path(id) + "/" + message.id() + "/translation")
+                .with(
+                    authentication(
+                        buildAuthentication(
+                            participant.equals("guest") ? GUEST_ID : OWNER_ID, "ROLE_GUEST")))
+                .contentType("application/json")
+                .content("{\"targetLanguage\":\"pl\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.translatedText").value("Cześć"));
+    assertThat(messageRepository.findById(message.id()).orElseThrow().getContent())
+        .isEqualTo("Hello");
+    assertThat(messages.history(id, OWNER_ID, null, null).items()).containsExactly(message);
+  }
+
+  @Test
+  void translationDeniesOutsidersAnonymousAndCrossConversationMessages() throws Exception {
+    UUID id = conversationId();
+    var message = messages.send(id, GUEST_ID, "Private message");
+    String endpoint = path(id) + "/" + message.id() + "/translation";
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.post(endpoint)
+                .contentType("application/json")
+                .content("{\"targetLanguage\":\"pl\"}"))
+        .andExpect(status().isUnauthorized());
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.post(endpoint)
+                .with(authentication(buildAuthentication(UUID.randomUUID(), "ROLE_ADMIN")))
+                .contentType("application/json")
+                .content("{\"targetLanguage\":\"pl\"}"))
+        .andExpect(status().isNotFound());
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.post(
+                    path(otherConversation()) + "/" + message.id() + "/translation")
+                .with(authentication(buildAuthentication(GUEST_ID, "ROLE_GUEST")))
+                .contentType("application/json")
+                .content("{\"targetLanguage\":\"pl\"}"))
+        .andExpect(status().isNotFound());
+    org.mockito.Mockito.verifyNoInteractions(translations);
+  }
+
+  @Test
+  void aiFailureLeavesNormalChatAvailable() throws Exception {
+    UUID id = conversationId();
+    var message = messages.send(id, GUEST_ID, "Hello");
+    when(translations.translate("Hello", "pl"))
+        .thenThrow(
+            new ResponseStatusException(
+                org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE,
+                "Translation unavailable"));
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.post(path(id) + "/" + message.id() + "/translation")
+                .with(authentication(buildAuthentication(GUEST_ID, "ROLE_GUEST")))
+                .contentType("application/json")
+                .content("{\"targetLanguage\":\"pl\"}"))
+        .andExpect(status().isServiceUnavailable());
+    assertThat(messages.send(id, OWNER_ID, "Still works").content()).isEqualTo("Still works");
+    assertThat(messages.history(id, GUEST_ID, null, null).items()).hasSize(2);
+  }
+
+  @Test
+  void translationRespectsLifecycleAndRequestValidation() throws Exception {
+    UUID id = conversationId();
+    var message = messages.send(id, GUEST_ID, "Hello");
+    String endpoint = path(id) + "/" + message.id() + "/translation";
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.post(endpoint)
+                .with(authentication(buildAuthentication(GUEST_ID, "ROLE_GUEST")))
+                .contentType("application/json")
+                .content("{\"targetLanguage\":\"\"}"))
+        .andExpect(status().isBadRequest());
+    reservation.setStatus(ReservationStatus.BLOCKED);
+    reservationRepository.saveAndFlush(reservation);
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.post(endpoint)
+                .with(authentication(buildAuthentication(GUEST_ID, "ROLE_GUEST")))
+                .contentType("application/json")
+                .content("{\"targetLanguage\":\"pl\"}"))
+        .andExpect(status().isConflict());
+    org.mockito.Mockito.verifyNoInteractions(translations);
+  }
 
   private static final UUID GUEST_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
   private static final UUID OWNER_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");

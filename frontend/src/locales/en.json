@@ -23,6 +23,13 @@
     }
   },
   "chat": {
+    "translation": {
+      "translate": "Translate to English",
+      "loading": "Translating…",
+      "original": "Show original",
+      "notice": "AI translation — check the original for accuracy.",
+      "error": "Translation unavailable. Your original message is unchanged. Try again."
+    },
     "title": "Reservation conversation",
     "subtitle": "Messages between the guest and the accommodation owner.",
     "connection": {

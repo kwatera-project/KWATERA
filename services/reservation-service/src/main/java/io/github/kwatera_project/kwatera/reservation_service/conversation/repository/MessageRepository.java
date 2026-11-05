@@ -3,6 +3,7 @@ package io.github.kwatera_project.kwatera.reservation_service.conversation.repos
 import io.github.kwatera_project.kwatera.reservation_service.conversation.model.Message;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,6 +11,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface MessageRepository extends JpaRepository<Message, UUID> {
+  Optional<Message> findByIdAndConversation_Id(UUID id, UUID conversationId);
+
   @Query(
       "SELECT m FROM Message m WHERE m.conversation.id = :conversationId "
           + "ORDER BY m.createdAt DESC, m.id DESC")
