@@ -6,8 +6,6 @@ import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -25,10 +23,6 @@ public class ReviewSummary {
 
   @Column(name = "ai_summary", nullable = false, columnDefinition = "TEXT")
   private String aiSummary;
-
-  @JdbcTypeCode(SqlTypes.ARRAY)
-  @Column(name = "review_ids", nullable = false)
-  private UUID[] reviewIds;
 
   @Column(name = "input_fingerprint", nullable = false)
   private String inputFingerprint;
