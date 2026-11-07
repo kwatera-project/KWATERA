@@ -1,5 +1,6 @@
 package io.github.kwatera_project.kwatera.review_service.service;
 
+import io.github.kwatera_project.kwatera.review_service.client.ReviewAiClient;
 import io.github.kwatera_project.kwatera.review_service.dto.ReviewSummaryInput;
 import io.github.kwatera_project.kwatera.review_service.repository.ReviewRepository;
 import java.util.HashMap;
@@ -12,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
 
 @Component
 public class ReviewSummaryScheduler {
@@ -19,10 +21,12 @@ public class ReviewSummaryScheduler {
   private static final Logger log = LoggerFactory.getLogger(ReviewSummaryScheduler.class);
 
   private final ReviewRepository reviewRepository;
+  private final ReviewAiClient reviewAiClient;
   private Map<UUID, List<ReviewSummaryInput>> previousInputs;
 
-  public ReviewSummaryScheduler(ReviewRepository reviewRepository) {
+  public ReviewSummaryScheduler(ReviewRepository reviewRepository, ReviewAiClient reviewAiClient) {
     this.reviewRepository = reviewRepository;
+    this.reviewAiClient = reviewAiClient;
   }
 
   @Scheduled(cron = "${kwatera.review-summary.cron:-}", zone = "Europe/Warsaw")
@@ -48,21 +52,38 @@ public class ReviewSummaryScheduler {
     unitIds.addAll(currentInputs.keySet());
 
     int changedUnits = 0;
+
     for (UUID unitId : unitIds) {
       List<ReviewSummaryInput> before = previousInputs.getOrDefault(unitId, List.of());
       List<ReviewSummaryInput> after = currentInputs.getOrDefault(unitId, List.of());
 
-      if (!before.equals(after)) {
-        changedUnits++;
+      if (before.equals(after)) {
+        continue;
+      }
+
+      changedUnits++;
+
+      if (after.isEmpty()) {
+        previousInputs.remove(unitId);
+        log.info("No review comments left for unit {}", unitId);
+        continue;
+      }
+
+      List<String> comments = after.stream().map(ReviewSummaryInput::comment).toList();
+
+      try {
+        String summary = reviewAiClient.summarize(comments, "pl");
+        previousInputs.put(unitId, after);
         log.info(
-            "Review summary inputs changed for unit {}: {} comments before, {} now",
+            "AI summary generated for unit {} from {} comments ({} characters)",
             unitId,
-            before.size(),
-            after.size());
+            comments.size(),
+            summary.length());
+      } catch (RestClientException | IllegalStateException exception) {
+        log.warn("Could not generate AI summary for unit {}: {}", unitId, exception.getMessage());
       }
     }
 
-    previousInputs = currentInputs;
     log.info("Review summary scan finished: {} changed units", changedUnits);
   }
 }
