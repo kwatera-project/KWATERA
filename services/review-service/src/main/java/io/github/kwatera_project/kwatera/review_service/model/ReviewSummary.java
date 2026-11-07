@@ -19,28 +19,28 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
 public class ReviewSummary {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
+  private UUID id;
 
-    @Column(name = "ai_summary", nullable = false, columnDefinition = "TEXT")
-    private String aiSummary;
+  @Column(name = "ai_summary", nullable = false, columnDefinition = "TEXT")
+  private String aiSummary;
 
-    @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(name = "review_ids", nullable = false)
-    private UUID[] reviewIds;
+  @JdbcTypeCode(SqlTypes.ARRAY)
+  @Column(name = "review_ids", nullable = false)
+  private UUID[] reviewIds;
 
-    @Column(name = "input_fingerprint", nullable = false)
-    private String inputFingerprint;
+  @Column(name = "input_fingerprint", nullable = false)
+  private String inputFingerprint;
 
-    @Column(name = "generation_timestamp", nullable = false)
-    private Instant generationTimestamp;
+  @Column(name = "generation_timestamp", nullable = false)
+  private Instant generationTimestamp;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    @CreatedDate
-    private Instant createdAt;
+  @Column(name = "created_at", nullable = false, updatable = false)
+  @CreatedDate
+  private Instant createdAt;
 
-    @Column(name = "updated_at")
-    @LastModifiedDate
-    private Instant updatedAt;
+  @Column(name = "updated_at")
+  @LastModifiedDate
+  private Instant updatedAt;
 }
