@@ -25,7 +25,8 @@ public class ReviewSummaryScheduler {
     this.reviewRepository = reviewRepository;
   }
 
-    @Scheduled(cron = "${kwatera.review-summary.cron:-}", zone = "Europe/Warsaw")  public void checkForChanges() {
+  @Scheduled(cron = "${kwatera.review-summary.cron:-}", zone = "Europe/Warsaw")
+  public void checkForChanges() {
     Map<UUID, List<ReviewSummaryInput>> currentInputs = new HashMap<>();
 
     for (UUID unitId : reviewRepository.findUnitIdsWithReviews()) {

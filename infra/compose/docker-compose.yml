@@ -238,6 +238,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       REVIEW_SUMMARY_CRON: "${REVIEW_SUMMARY_CRON:--}"
+      REVIEW_AI_INTERNAL_TOKEN: "${KWATERA_INTERNAL_TOKEN:-}"
+      REVIEW_AI_READ_TIMEOUT: "${REVIEW_AI_READ_TIMEOUT:-130s}"
     depends_on:
       postgres:
         condition: service_started
