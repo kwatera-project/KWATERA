@@ -31,4 +31,5 @@ management:
 kwatera:
   security:
     internal-token: ${KWATERA_INTERNAL_TOKEN:kwatera-internal-secret-token}
-
+  review-summary:
+    cron: "${REVIEW_SUMMARY_CRON:-}"

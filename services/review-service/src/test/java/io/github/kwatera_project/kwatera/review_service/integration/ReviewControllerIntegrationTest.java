@@ -10,6 +10,7 @@ import io.github.kwatera_project.kwatera.review_service.client.PropertyClient;
 import io.github.kwatera_project.kwatera.review_service.client.ReservationClient;
 import io.github.kwatera_project.kwatera.review_service.dto.CreateReviewRequest;
 import io.github.kwatera_project.kwatera.review_service.dto.ReservationDetailsDto;
+import io.github.kwatera_project.kwatera.review_service.dto.ReviewSummaryInput;
 import io.github.kwatera_project.kwatera.review_service.model.Review;
 import io.github.kwatera_project.kwatera.review_service.repository.ReviewRepository;
 import io.github.kwatera_project.kwatera.review_service.service.JwtService;
@@ -178,6 +179,25 @@ class ReviewControllerIntegrationTest {
         .andExpect(jsonPath("$.averageRating").value(3.0));
   }
 
+  @Test
+  void shouldLoadSummaryInputsOnlyForSelectedUnitsWithComments() {
+    UUID secondUnitId = UUID.randomUUID();
+    UUID unrelatedUnitId = UUID.randomUUID();
+
+    Review first = saveReview(unitId, 5, "Wygodne łóżko.");
+    Review second = saveReview(secondUnitId, 3, "Wieczorem było głośno.");
+    saveReview(unitId, 4, null);
+    saveReview(secondUnitId, 4, "   ");
+    saveReview(unrelatedUnitId, 5, "Opinia o innym obiekcie.");
+
+    List<ReviewSummaryInput> result =
+        reviewRepository.findSummaryInputsByUnitIds(List.of(unitId, secondUnitId));
+
+    assertEquals(2, result.size());
+    assertTrue(result.contains(new ReviewSummaryInput(first.getId(), "Wygodne łóżko.")));
+    assertTrue(result.contains(new ReviewSummaryInput(second.getId(), "Wieczorem było głośno.")));
+  }
+
   private void authenticateGuest() {
     when(jwtService.isValid(TOKEN)).thenReturn(true);
     when(jwtService.extractUsername(TOKEN)).thenReturn("test-guest");
@@ -207,13 +227,17 @@ class ReviewControllerIntegrationTest {
   }
 
   private void saveReview(UUID reviewUnitId, int rating) {
+    saveReview(reviewUnitId, rating, "Test review");
+  }
+
+  private Review saveReview(UUID reviewUnitId, int rating, String comment) {
     Review review = new Review();
     review.setReservationId(UUID.randomUUID());
     review.setAuthorId(guestId);
     review.setUnitId(reviewUnitId);
     review.setRating(rating);
-    review.setComment("Test review");
+    review.setComment(comment);
 
-    reviewRepository.saveAndFlush(review);
+    return reviewRepository.saveAndFlush(review);
   }
 }
