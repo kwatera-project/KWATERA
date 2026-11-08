@@ -50,6 +50,24 @@ class PropertyClientTest {
     verify(restOperations).getForObject(UNIT_URL, UnitReference.class, unitId);
   }
 
+  @Test
+  void shouldReturnPropertyIdForUnit() {
+    when(restOperations.getForObject(UNIT_URL, UnitReference.class, unitId))
+        .thenReturn(new UnitReference(unitId, propertyId));
+
+    assertEquals(propertyId, client.getPropertyIdForUnit(unitId));
+  }
+
+  @Test
+  void shouldRejectUnitWithoutPropertyId() {
+    when(restOperations.getForObject(UNIT_URL, UnitReference.class, unitId))
+        .thenReturn(new UnitReference(unitId, null));
+
+    var error =
+        assertThrows(ResponseStatusException.class, () -> client.getPropertyIdForUnit(unitId));
+    assertEquals(HttpStatus.BAD_GATEWAY, error.getStatusCode());
+  }
+
   @ParameterizedTest
   @ValueSource(strings = {"body", "id"})
   void shouldRejectInvalidUnit(String field) {
