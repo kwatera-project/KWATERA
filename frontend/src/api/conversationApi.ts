@@ -64,6 +64,14 @@ export async function getConversations(): Promise<ConversationResponse[]> {
     return request("/api/v1/conversations", "Failed to fetch conversations");
 }
 
+export async function translateMessage(conversationId: string, messageId: string, targetLanguage: string, signal?: AbortSignal): Promise<{ translatedText: string; sourceLanguage: string; targetLanguage: string }> {
+    return request(
+        `/api/v1/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}/translation`,
+        "Failed to translate message",
+        { method: "POST", signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ targetLanguage }) },
+    );
+}
+
 export async function getConversation(conversationId: string, signal?: AbortSignal): Promise<ConversationResponse> {
     return request(
         `/api/v1/conversations/${encodeURIComponent(conversationId)}`,

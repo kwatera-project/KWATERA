@@ -100,7 +100,7 @@ Environment variables override defaults in `application.yaml` and `config-repo/a
 | `AI_MAX_REVIEWS` | `20` | Reviews per request |
 | `AI_MAX_REVIEW_CHARACTERS` | `2000` | Per-review length |
 | `AI_MAX_TOTAL_REVIEW_CHARACTERS` | `6000` | Sum of review lengths |
-| `AI_MAX_TRANSLATION_CHARACTERS` | `2000` | Message length |
+| `AI_MAX_TRANSLATION_CHARACTERS` | `4000` | Message length, matching the reservation chat limit |
 | `AI_MAX_RESPONSE_CHARACTERS` | `16000` | Maximum accepted model output length |
 
 Both operations use seed 246, top_k 40 and top_p 0.9, matching the evaluation; temperature is

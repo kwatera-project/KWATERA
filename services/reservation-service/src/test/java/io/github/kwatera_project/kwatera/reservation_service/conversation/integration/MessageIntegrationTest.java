@@ -4,14 +4,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.github.kwatera_project.kwatera.reservation_service.audit.SystemEventService;
 import io.github.kwatera_project.kwatera.reservation_service.client.NbpExchangeRateClient;
+import io.github.kwatera_project.kwatera.reservation_service.conversation.client.MessageTranslationClient;
 import io.github.kwatera_project.kwatera.reservation_service.conversation.client.PropertyOwnershipClient;
 import io.github.kwatera_project.kwatera.reservation_service.conversation.dto.MessageResponse;
+import io.github.kwatera_project.kwatera.reservation_service.conversation.dto.MessageTranslationResponse;
 import io.github.kwatera_project.kwatera.reservation_service.conversation.repository.ConversationRepository;
 import io.github.kwatera_project.kwatera.reservation_service.conversation.repository.MessageRepository;
 import io.github.kwatera_project.kwatera.reservation_service.conversation.service.ConversationService;
@@ -38,6 +42,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -49,8 +54,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestOperations;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -72,6 +79,126 @@ import org.springframework.web.server.ResponseStatusException;
     })
 @AutoConfigureMockMvc
 class MessageIntegrationTest {
+  @MockitoBean private MessageTranslationClient translations;
+  @Autowired private ObjectProvider<RestClient.Builder> defaultRestClientBuilder;
+
+  @Test
+  void defaultHttpClientCanReachRegistryWithoutServiceDiscovery() {
+    String registryUrl = "http://service-registry:8761/eureka/apps";
+    var builder = defaultRestClientBuilder.getIfAvailable(RestClient::builder);
+    var registry = MockRestServiceServer.bindTo(builder).build();
+    registry.expect(requestTo(registryUrl)).andRespond(withSuccess());
+
+    builder.build().get().uri(registryUrl).retrieve().toBodilessEntity();
+
+    registry.verify();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"guest", "owner"})
+  void participantsTranslateReceivedMessagesWithoutChangingOriginal(String participant)
+      throws Exception {
+    UUID id = conversationId();
+    boolean recipientIsGuest = participant.equals("guest");
+    var message = messages.send(id, recipientIsGuest ? OWNER_ID : GUEST_ID, "Hello");
+    when(translations.translate("Hello", "pl"))
+        .thenReturn(new MessageTranslationResponse("Cześć", "auto", "pl"));
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.post(path(id) + "/" + message.id() + "/translation")
+                .with(
+                    authentication(
+                        buildAuthentication(
+                            recipientIsGuest ? GUEST_ID : OWNER_ID,
+                            recipientIsGuest ? "ROLE_GUEST" : "ROLE_OWNER")))
+                .contentType("application/json")
+                .content("{\"targetLanguage\":\"pl\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.translatedText").value("Cześć"));
+    assertThat(messageRepository.findById(message.id()).orElseThrow().getContent())
+        .isEqualTo("Hello");
+    assertThat(messages.history(id, OWNER_ID, null, null).items()).containsExactly(message);
+  }
+
+  @Test
+  void translationDeniesSendersOutsidersAnonymousAndCrossConversationMessages() throws Exception {
+    UUID id = conversationId();
+    var message = messages.send(id, GUEST_ID, "Private message");
+    String endpoint = path(id) + "/" + message.id() + "/translation";
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.post(endpoint)
+                .contentType("application/json")
+                .content("{\"targetLanguage\":\"pl\"}"))
+        .andExpect(status().isUnauthorized());
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.post(endpoint)
+                .with(authentication(buildAuthentication(GUEST_ID, "ROLE_GUEST")))
+                .contentType("application/json")
+                .content("{\"targetLanguage\":\"pl\"}"))
+        .andExpect(status().isForbidden());
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.post(endpoint)
+                .with(authentication(buildAuthentication(UUID.randomUUID(), "ROLE_ADMIN")))
+                .contentType("application/json")
+                .content("{\"targetLanguage\":\"pl\"}"))
+        .andExpect(status().isNotFound());
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.post(
+                    path(otherConversation()) + "/" + message.id() + "/translation")
+                .with(authentication(buildAuthentication(GUEST_ID, "ROLE_GUEST")))
+                .contentType("application/json")
+                .content("{\"targetLanguage\":\"pl\"}"))
+        .andExpect(status().isNotFound());
+    org.mockito.Mockito.verifyNoInteractions(translations);
+  }
+
+  @Test
+  void aiFailureLeavesNormalChatAvailable() throws Exception {
+    UUID id = conversationId();
+    var message = messages.send(id, OWNER_ID, "Hello");
+    when(translations.translate("Hello", "pl"))
+        .thenThrow(
+            new ResponseStatusException(
+                org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE,
+                "Translation unavailable"));
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.post(path(id) + "/" + message.id() + "/translation")
+                .with(authentication(buildAuthentication(GUEST_ID, "ROLE_GUEST")))
+                .contentType("application/json")
+                .content("{\"targetLanguage\":\"pl\"}"))
+        .andExpect(status().isServiceUnavailable());
+    assertThat(messages.send(id, GUEST_ID, "Still works").content()).isEqualTo("Still works");
+    assertThat(messages.history(id, GUEST_ID, null, null).items()).hasSize(2);
+  }
+
+  @Test
+  void translationRespectsLifecycleAndRequestValidation() throws Exception {
+    UUID id = conversationId();
+    var message = messages.send(id, OWNER_ID, "Hello");
+    String endpoint = path(id) + "/" + message.id() + "/translation";
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.post(endpoint)
+                .with(authentication(buildAuthentication(GUEST_ID, "ROLE_GUEST")))
+                .contentType("application/json")
+                .content("{\"targetLanguage\":\"\"}"))
+        .andExpect(status().isBadRequest());
+    reservation.setStatus(ReservationStatus.BLOCKED);
+    reservationRepository.saveAndFlush(reservation);
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.post(endpoint)
+                .with(authentication(buildAuthentication(GUEST_ID, "ROLE_GUEST")))
+                .contentType("application/json")
+                .content("{\"targetLanguage\":\"pl\"}"))
+        .andExpect(status().isConflict());
+    org.mockito.Mockito.verifyNoInteractions(translations);
+  }
 
   private static final UUID GUEST_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
   private static final UUID OWNER_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
@@ -410,6 +537,8 @@ class MessageIntegrationTest {
 
   @Test
   void openApiIncludesMessagingSchemasSecurityAndResponses() throws Exception {
+    String translationOperation =
+        "$.paths['/api/v1/conversations/{conversationId}/messages/{messageId}/translation'].post";
     mockMvc
         .perform(get("/v3/api-docs"))
         .andExpect(status().isOk())
@@ -433,7 +562,15 @@ class MessageIntegrationTest {
             jsonPath("$.components.schemas.SendMessageRequest.properties.content.maxLength")
                 .value(4000))
         .andExpect(
-            jsonPath("$.components.schemas.MessageHistoryResponse.properties.items").exists());
+            jsonPath("$.components.schemas.MessageHistoryResponse.properties.items").exists())
+        .andExpect(jsonPath(translationOperation + ".security[0].bearerAuth").exists())
+        .andExpect(
+            jsonPath(
+                    translationOperation
+                        + ".responses['200'].content['application/json'].schema['$ref']")
+                .value("#/components/schemas/MessageTranslationResponse"))
+        .andExpect(jsonPath(translationOperation + ".responses['403']").exists())
+        .andExpect(jsonPath(translationOperation + ".responses['503']").exists());
   }
 
   private CompletableFuture<MessageResponse> sendAfter(

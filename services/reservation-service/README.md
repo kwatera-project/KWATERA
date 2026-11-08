@@ -36,7 +36,34 @@ All conversation endpoints require a JWT. The user id is taken from the authenti
 
 Migration `V35` reconstructs missing legacy cancellation timestamps only from explicit cancellation history or audit events. If no reliable cancellation evidence exists, `cancelled_at` remains `NULL` and conversation access is denied with `409 Conflict`; `updated_at` is intentionally not used as a substitute. Such a record may be repaired only when an externally verified cancellation timestamp is available.
 
-### Persistent messages
+### Message translation
+
+`POST /api/v1/conversations/{conversationId}/messages/{messageId}/translation` accepts
+`{"targetLanguage":"pl"}` and returns `{"translatedText":"Cześć","sourceLanguage":"auto","targetLanguage":"pl"}`.
+The target is a BCP 47 language tag. Participants can translate received messages. A request to
+translate a message the participant sent returns 403. Normal lifecycle and retention rules apply,
+and message IDs are scoped to the specified conversation. Missing messages and access both return
+404. Translation reads the stored text, detects its language
+through the shared AI service, and never updates or broadcasts a message. `sourceLanguage=auto`
+denotes detection mode, following the shared service contract, rather than a detected-language claim.
+
+The conversation UI translates individual messages to its selected language (English or Polish),
+allows returning to the original and shows an inline retryable error if AI fails. Translation
+state is local to the current conversation, account and language; normal history and sending
+continue during inference or an AI outage.
+
+Start and provision [ai-service and Ollama](../ai-service/README.md) for real inference. Set the
+same private `KWATERA_INTERNAL_TOKEN` for ai-service and `KWATERA_AI_INTERNAL_TOKEN` for
+reservation-service; Compose maps both from `KWATERA_INTERNAL_TOKEN` in `.env`. Standalone
+reservation-service also accepts `KWATERA_INTERNAL_TOKEN` as an AI token fallback. This AI
+credential has its own configuration, independent of legacy internal integrations.
+No browser credential is forwarded to AI. AI is optional at startup and is not
+a Compose dependency of reservation-service. Connection timeout defaults to 2 seconds
+(`KWATERA_AI_CONNECT_TIMEOUT`); read timeout defaults to 250 seconds (`KWATERA_AI_READ_TIMEOUT`),
+allowing source detection and translation (two bounded model calls). These are independent
+of ordinary property-service timeouts. AI failures return sanitized 502/503/504 responses.
+
+### Sending and history
 
 `POST /api/v1/conversations/{conversationId}/messages` accepts `{"content":"Hello, what time can we check in?"}` and returns `201` with `id`, `conversationId`, `senderUserId`, `content`, and an ISO-8601 `createdAt` instant. The sender comes from the authenticated JWT; the server generates the UUID and timestamp. Content is normalized with Java `String.strip()` and must contain 1–4,000 Java characters after normalization. Internal whitespace and line breaks are preserved. Missing, null, blank, or overlong content returns `400`; sending never creates a conversation.
 

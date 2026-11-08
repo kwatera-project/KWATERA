@@ -43,7 +43,7 @@ kwatera:
     max-reviews: ${AI_MAX_REVIEWS:20}
     max-review-characters: ${AI_MAX_REVIEW_CHARACTERS:2000}
     max-total-review-characters: ${AI_MAX_TOTAL_REVIEW_CHARACTERS:6000}
-    max-translation-characters: ${AI_MAX_TRANSLATION_CHARACTERS:2000}
+    max-translation-characters: ${AI_MAX_TRANSLATION_CHARACTERS:4000}
     max-response-characters: ${AI_MAX_RESPONSE_CHARACTERS:16000}
 
 management:

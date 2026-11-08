@@ -42,7 +42,6 @@ import tools.jackson.databind.ObjectMapper;
       "kwatera.ai.max-reviews=3",
       "kwatera.ai.max-review-characters=80",
       "kwatera.ai.max-total-review-characters=100",
-      "kwatera.ai.max-translation-characters=100",
       "kwatera.ai.translation-model=test-translator:tag",
       "kwatera.ai.translation-format=JSON"
     })
@@ -224,6 +223,16 @@ class AiApiTest {
   }
 
   @Test
+  void acceptsMaximumLengthReservationMessage() throws Exception {
+    when(model.call(any(Prompt.class)))
+        .thenReturn(answer("{\"translatedText\":\"Translated message\"}"));
+    call("translate", Map.of("text", "a".repeat(4000), "targetLanguage", "pl"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.translatedText").value("Translated message"));
+    verify(model).call(any(Prompt.class));
+  }
+
+  @Test
   void rejectsInvalidSourcesAndMissingBlankOrOversizedMessages() throws Exception {
     call("translate", Map.of("text", "hello", "sourceLanguage", "en_US", "targetLanguage", "pl"))
         .andExpect(status().isBadRequest())
@@ -236,7 +245,7 @@ class AiApiTest {
             Map.of("text", "hello"))) {
       call("translate", body).andExpect(status().isBadRequest());
     }
-    call("translate", Map.of("text", "a".repeat(101), "targetLanguage", "pl"))
+    call("translate", Map.of("text", "a".repeat(4001), "targetLanguage", "pl"))
         .andExpect(status().isPayloadTooLarge())
         .andExpect(jsonPath("$.code").value("INPUT_TOO_LARGE"));
     verifyNoInteractions(model);
