@@ -97,7 +97,7 @@ public class AiInference {
   }
 
   public ReviewPoints generateReviewPoints(List<String> reviews, String language) {
-    var pointsSchema = Map.of("type", "array", "items", Map.of("type", "string", "minLength", 1));
+    var pointsSchema = Map.of("type", "array", "maxItems", 5, "items", Map.of("type", "string", "minLength", 1));
 
     Map<String, Object> schema =
         Map.of(
@@ -113,10 +113,9 @@ public class AiInference {
     String instruction =
         "Extract the main pros and cons mentioned in the guest reviews."
             + " Rewrite each observation as a short, natural noun phrase for a booking page in "
-            + language
-            + "."
-            + " Polish style example: 'wieczorem było głośno' becomes 'Wieczorny hałas'."
-            + " Use the example only for style. Base every point on the supplied reviews."
+            + java.util.Locale.forLanguageTag(language).getDisplayLanguage(java.util.Locale.ENGLISH)
+            + ". Translate every point into that language even when the reviews use another language."
+            + " Select up to five distinct, well-supported points per side, putting the most important first. Use fewer when the evidence is limited."
             + " Keep relevant details such as time or place. Do not infer causes."
             + " Combine repeated observations."
             + " Return a JSON object with two arrays of strings: pros and cons."

@@ -28,7 +28,8 @@ public class AiService {
                 + " (language tag: "
                 + language
                 + ")."
-                + " Paraphrase the reviews in your own words as a brief, natural paragraph."
+                + " Write one paragraph of at most 45 words and no more than three short sentences."
+                + " Summarize the main themes in your own words. Use fewer words for sparse reviews. Omit lists and headings."
                 + " Preserve important positive and negative observations."
                 + " Do not invent facts, resolve disagreements by guessing, or add unrelated commentary.",
             Map.of("reviews", request.reviews()),

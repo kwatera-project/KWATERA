@@ -1,54 +1,113 @@
 package io.github.kwatera_project.kwatera.review_service.service;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import io.github.kwatera_project.kwatera.review_service.client.PropertyClient;
 import io.github.kwatera_project.kwatera.review_service.client.ReviewAiClient;
-import io.github.kwatera_project.kwatera.review_service.dto.ReviewSummaryInput;
+import io.github.kwatera_project.kwatera.review_service.model.Review;
 import io.github.kwatera_project.kwatera.review_service.repository.ReviewRepository;
-import java.time.Instant;
+import io.github.kwatera_project.kwatera.review_service.repository.ReviewSummaryRepository;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.client.RestClientException;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import tools.jackson.databind.ObjectMapper;
 
+@SpringBootTest(properties = "spring.datasource.driver-class-name=org.postgresql.Driver")
+@Testcontainers(disabledWithoutDocker = true)
 class ReviewSummarySchedulerTest {
 
+  @Container
+  static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+
+  @DynamicPropertySource
+  static void datasource(DynamicPropertyRegistry registry) {
+    registry.add("spring.datasource.url", postgres::getJdbcUrl);
+    registry.add("spring.datasource.username", postgres::getUsername);
+    registry.add("spring.datasource.password", postgres::getPassword);
+  }
+
+  @Autowired ReviewSummaryScheduler scheduler;
+  @Autowired ReviewRepository reviews;
+  @Autowired ReviewSummaryRepository summaries;
+  @Autowired ObjectMapper mapper;
+  @MockitoBean ReviewAiClient ai;
+  @MockitoBean PropertyClient properties;
+
   @Test
-  void retriesOnlyThePropertyAndIncludesCommentsFromUnchangedUnits() {
-    ReviewRepository reviews = mock(ReviewRepository.class);
-    ReviewAiClient ai = mock(ReviewAiClient.class);
-    PropertyClient properties = mock(PropertyClient.class);
-    ReviewSummaryScheduler scheduler = new ReviewSummaryScheduler(reviews, ai, properties);
-    UUID property = UUID.randomUUID();
+  void generatesMissingSummariesThenReusesRefreshesRetriesAndRemovesThem() {
     UUID first = UUID.randomUUID();
     UUID second = UUID.randomUUID();
-    List<UUID> rooms = List.of(first, second);
-    ReviewSummaryInput old = new ReviewSummaryInput(UUID.randomUUID(), "Before", Instant.EPOCH);
-    ReviewSummaryInput edited = new ReviewSummaryInput(old.id(), "After", Instant.EPOCH);
-    ReviewSummaryInput other = new ReviewSummaryInput(UUID.randomUUID(), "Quiet", Instant.EPOCH);
+    UUID property = UUID.randomUUID();
+    var rooms = List.of(first, second);
+    when(properties.getPropertyIdForUnit(any())).thenReturn(property);
+    when(properties.getUnitIdsForProperty(property)).thenReturn(rooms);
+    var old = review(first, "Clean");
+    var other = review(second, "Quiet");
+    var result = new ReviewAiClient.SummaryResponse("Summary", List.of("Clean"), List.of(), "model");
+    when(ai.summarize(anyList(), eq("en"))).thenReturn(result);
 
-    when(reviews.findUnitIdsWithReviews()).thenReturn(rooms);
-    when(reviews.findSummaryInputsByUnitIds(List.of(first))).thenReturn(List.of(old));
-    when(reviews.findSummaryInputsByUnitIds(List.of(second))).thenReturn(List.of(other));
     scheduler.checkForChanges();
+
+    var original = summaries.findByPropertyId(property).orElseThrow();
+    assertEquals(Set.of(old.getId(), other.getId()), Set.copyOf(original.getReviewIds()));
+    assertEquals(result, mapper.readValue(original.getAiSummary(), ReviewAiClient.SummaryResponse.class));
+    assertEquals(3, summaries.count());
+    verify(ai, times(3)).summarize(anyList(), eq("en"));
+
+    clearInvocations(ai);
+    var restarted = new ReviewSummaryScheduler(reviews, ai, properties, summaries, mapper);
+    restarted.checkForChanges();
     verifyNoInteractions(ai);
 
-    when(reviews.findSummaryInputsByUnitIds(List.of(first))).thenReturn(List.of(edited));
-    when(properties.getPropertyIdForUnit(first)).thenReturn(property);
-    when(properties.getUnitIdsForProperty(property)).thenReturn(rooms);
-    when(reviews.findSummaryInputsByUnitIds(rooms)).thenReturn(List.of(edited, other));
-    when(ai.summarize(List.of("After"), "pl")).thenReturn(new ReviewAiClient.SummaryResponse("Room summary", List.of(), List.of(), "qwen"));
-    when(ai.summarize(List.of("After", "Quiet"), "pl"))
-        .thenThrow(new RestClientException("Unavailable"))
-        .thenReturn(new ReviewAiClient.SummaryResponse("Property summary", List.of(), List.of(), "qwen"));
+    original.setInputFingerprint(ReviewSummaryFingerprint.calculate(reviews.findSummaryInputsByUnitIds(rooms)));
+    summaries.saveAndFlush(original);
+    restarted.checkForChanges();
+    verify(ai, times(1)).summarize(anyList(), eq("en"));
+    original = summaries.findByPropertyId(property).orElseThrow();
+    clearInvocations(ai);
 
-    scheduler.checkForChanges();
-    scheduler.checkForChanges();
-    scheduler.checkForChanges();
+    old.setComment("Edited");
+    reviews.saveAndFlush(old);
+    var editedInputs = reviews.findSummaryInputsByUnitIds(rooms);
+    var comments = editedInputs.stream().map(input -> input.comment()).toList();
+    when(ai.summarize(comments, "en"))
+        .thenThrow(new RestClientException("Unavailable")).thenReturn(result);
+    restarted.checkForChanges();
+    assertEquals(original.getInputFingerprint(),
+        summaries.findByPropertyId(property).orElseThrow().getInputFingerprint());
+    restarted.checkForChanges();
+    verify(ai).summarize(List.of("Edited"), "en");
+    verify(ai, times(2)).summarize(comments, "en");
+    var updated = summaries.findByPropertyId(property).orElseThrow();
+    assertEquals(original.getId(), updated.getId());
+    assertEquals("en:v5:" + ReviewSummaryFingerprint.calculate(editedInputs), updated.getInputFingerprint());
+    assertNotEquals(original.getInputFingerprint(), updated.getInputFingerprint());
 
-    verify(ai).summarize(List.of("After"), "pl");
-    verify(ai, times(2)).summarize(List.of("After", "Quiet"), "pl");
-    verifyNoMoreInteractions(ai);
+    clearInvocations(ai);
+    reviews.deleteAll();
+    restarted.checkForChanges();
+    assertEquals(0, summaries.count());
+    verifyNoInteractions(ai);
+  }
+
+  private Review review(UUID unit, String comment) {
+    var review = new Review();
+    review.setUnitId(unit);
+    review.setReservationId(UUID.randomUUID());
+    review.setAuthorId(UUID.randomUUID());
+    review.setRating(4);
+    review.setComment(comment);
+    return reviews.saveAndFlush(review);
   }
 }

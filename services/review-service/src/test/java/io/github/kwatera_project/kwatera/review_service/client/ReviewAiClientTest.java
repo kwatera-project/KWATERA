@@ -24,7 +24,7 @@ class ReviewAiClientTest {
 
   private final RestTemplate restTemplate = new RestTemplate();
   private final MockRestServiceServer server = MockRestServiceServer.bindTo(restTemplate).build();
-  private final ReviewAiClient client = new ReviewAiClient(restTemplate, "test-token");
+  private final ReviewAiClient client = new ReviewAiClient(restTemplate, "test-token", 20, 2000, 6000);
 
   @Test
   void shouldSendCommentsAndLanguageAndReturnSummary() {
@@ -53,6 +53,53 @@ class ReviewAiClientTest {
     assertEquals(List.of("Hałas"), result.cons());
     assertEquals("qwen", result.model());
     server.verify();
+  }
+
+  @Test
+  void summarizesEveryBatchAndCombinesTheirPositiveAndNegativePoints() {
+    var limited = new ReviewAiClient(restTemplate, "test-token", 2, 80, 120);
+    expectBatch("[\"first\",\"second\"]", "part one");
+    expectBatch("[\"last\"]", "part two");
+    expectBatch("[\"part one\\nPros: clean\\nCons: noise\","
+        + "\"part two\\nPros: clean\\nCons: noise\"]", "combined");
+
+    assertEquals("combined", limited.summarize(List.of("first", "second", "last"), "pl").summary());
+    server.verify();
+  }
+
+  @Test
+  void respectsTotalAndIndividualLimitsWithoutSplittingEmojiOrDiscardingTheLastBatch() {
+    var limited = new ReviewAiClient(restTemplate, "test-token", 10, 5, 6);
+    expectBatch("[\"abcd\",\"😀\"]", "one");
+    expectBatch("[\"12345\"]", "two");
+    expectBatch("[\"one\",\"two\"]", "combined");
+    var result = limited.summarize(List.of("abcd😀", "12345"), "pl");
+    assertEquals("combined", result.summary());
+    assertEquals(List.of("noise"), result.cons());
+    server.verify();
+  }
+
+  @Test
+  void mergesAnOddFinalBatchEvenWhenNotesExceedTheRequestLimit() {
+    var limited = new ReviewAiClient(restTemplate, "test-token", 2, 20, 24);
+    expectBatch("[\"first\",\"second\"]", "Clean rooms.");
+    expectBatch("[\"third\",\"fourth\"]", "Good beds.");
+    expectBatch("[\"last\"]", "No hot water");
+    expectBatch("[\"Clean rooms.\",\"Good beds.\"]", "Comfy rooms.");
+    expectBatch("[\"Comfy rooms.\",\"No hot water\"]", "Comfortable but no hot water.");
+
+    var result = limited.summarize(List.of("first", "second", "third", "fourth", "last"), "pl");
+
+    assertEquals("Comfortable but no hot water.", result.summary());
+    server.verify();
+  }
+
+  private void expectBatch(String reviewsJson, String summary) {
+    server.expect(requestTo(URL))
+        .andExpect(content().json("{\"language\":\"pl\",\"reviews\":" + reviewsJson + "}"))
+        .andRespond(withSuccess("""
+            {"summary":"%s","pros":["clean"],"cons":["noise"],"model":"qwen"}
+            """.formatted(summary), MediaType.APPLICATION_JSON));
   }
 
   @Test

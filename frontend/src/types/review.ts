@@ -36,3 +36,10 @@ export interface ReviewPageDto {
     reviewCount: number;
     averageRating: number | null;
 }
+
+export interface ReviewAiSummary {
+    summary: string;
+    pros: string[];
+    cons: string[];
+    model: string;
+}

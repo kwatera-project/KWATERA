@@ -14,6 +14,9 @@ import io.github.kwatera_project.kwatera.review_service.dto.ReviewSummaryInput;
 import io.github.kwatera_project.kwatera.review_service.model.Review;
 import io.github.kwatera_project.kwatera.review_service.repository.ReviewRepository;
 import io.github.kwatera_project.kwatera.review_service.service.JwtService;
+import io.github.kwatera_project.kwatera.review_service.model.ReviewSummary;
+import io.github.kwatera_project.kwatera.review_service.repository.ReviewSummaryRepository;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
@@ -41,6 +44,7 @@ class ReviewControllerIntegrationTest {
 
   private static final String TOKEN = "test-token";
 
+  @Autowired private ReviewSummaryRepository summaries;
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
   @Autowired private ReviewRepository reviewRepository;
@@ -65,6 +69,41 @@ class ReviewControllerIntegrationTest {
   @AfterEach
   void cleanUp() {
     reviewRepository.deleteAll();
+  }
+
+  @Test
+  void publicSummaryReadsOnlyTheRequestedCachedScope() throws Exception {
+    UUID id = UUID.randomUUID();
+    String unitUrl = "/api/reviews/units/" + id + "/summary";
+    String propertyUrl = "/api/reviews/properties/" + id + "/summary";
+    mockMvc.perform(get(unitUrl)).andExpect(status().isNoContent());
+    mockMvc.perform(get(propertyUrl)).andExpect(status().isNoContent());
+
+    ReviewSummary unit = cachedSummary("Room");
+    unit.setUnitId(id);
+    ReviewSummary property = cachedSummary("Property");
+    property.setPropertyId(id);
+    summaries.saveAllAndFlush(List.of(unit, property));
+    try {
+      mockMvc.perform(get(unitUrl)).andExpect(status().isOk())
+          .andExpect(jsonPath("$.summary").value("Room"))
+          .andExpect(jsonPath("$.pros[0]").value("Quiet"))
+          .andExpect(jsonPath("$.cons").isEmpty());
+      mockMvc.perform(get(propertyUrl)).andExpect(status().isOk())
+          .andExpect(jsonPath("$.summary").value("Property"));
+    } finally {
+      summaries.deleteAll(List.of(unit, property));
+    }
+  }
+
+  private ReviewSummary cachedSummary(String text) {
+    ReviewSummary summary = new ReviewSummary();
+    summary.setAiSummary("""
+        {"summary":"%s","pros":["Quiet"],"cons":[],"model":"test"}
+        """.formatted(text));
+    summary.setGenerationTimestamp(Instant.now());
+    summary.setInputFingerprint("fingerprint");
+    return summary;
   }
 
   @Test
