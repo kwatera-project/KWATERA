@@ -1,10 +1,8 @@
 CREATE TABLE review_summaries
 (
       id                   UUID PRIMARY KEY,
-      property_id          UUID REFERENCES properties (id) ON DELETE CASCADE,
-      unit_id              UUID REFERENCES units (id) ON DELETE CASCADE,
       ai_summary           TEXT                                NOT NULL,
-      input_fingerprint    VARCHAR(255)                        NOT NULL, -- Hash used to detect changes in reviews
+      input_fingerprint    VARCHAR(255)                        NOT NULL, -- Hash of review_ids used to detect changes
       generation_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
       created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
       updated_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP
