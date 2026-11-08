@@ -1,7 +1,19 @@
 import {GATEWAY_BASE_URL} from "./apiConfig.ts";
-import type {CreateReviewRequest, ReviewPageDto, ReviewResponseDto, UpdateReviewRequest} from "../types/review.ts";
+import type {CreateReviewRequest, ReviewAiSummary, ReviewPageDto, ReviewResponseDto, UpdateReviewRequest} from "../types/review.ts";
 
 const API_URL = `${GATEWAY_BASE_URL}/api/reviews`;
+
+export async function getReviewSummary(
+    kind: "property" | "unit",
+    id: string,
+    signal: AbortSignal
+): Promise<ReviewAiSummary | null> {
+    const scope = kind === "property" ? "properties" : "units";
+    const res = await fetch(`${API_URL}/${scope}/${id}/summary`, { signal });
+    if (res.status === 204) return null;
+    if (!res.ok) throw new Error("Failed to fetch review summary");
+    return res.json();
+}
 
 export async function getReviewsForUnit(
     unitId: string,

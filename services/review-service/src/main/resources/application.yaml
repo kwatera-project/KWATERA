@@ -31,4 +31,8 @@ management:
 kwatera:
   security:
     internal-token: ${KWATERA_INTERNAL_TOKEN:kwatera-internal-secret-token}
-
+  review-summary:
+    cron: "${REVIEW_SUMMARY_CRON:-}"
+  ai:
+    internal-token: ${REVIEW_AI_INTERNAL_TOKEN:}
+    read-timeout: ${REVIEW_AI_READ_TIMEOUT:130s}

@@ -1249,6 +1249,9 @@
     "ELECTRICITY": "electricity"
   },
   "reviews": {
+    "aiTitle": "AI review summary",
+    "pros": "Pros",
+    "cons": "Cons",
     "propertyTitle": "Property reviews",
     "unitTitle": "Room reviews",
     "noAverage": "No ratings yet",

@@ -10,9 +10,13 @@ import io.github.kwatera_project.kwatera.review_service.client.PropertyClient;
 import io.github.kwatera_project.kwatera.review_service.client.ReservationClient;
 import io.github.kwatera_project.kwatera.review_service.dto.CreateReviewRequest;
 import io.github.kwatera_project.kwatera.review_service.dto.ReservationDetailsDto;
+import io.github.kwatera_project.kwatera.review_service.dto.ReviewSummaryInput;
 import io.github.kwatera_project.kwatera.review_service.model.Review;
+import io.github.kwatera_project.kwatera.review_service.model.ReviewSummary;
 import io.github.kwatera_project.kwatera.review_service.repository.ReviewRepository;
+import io.github.kwatera_project.kwatera.review_service.repository.ReviewSummaryRepository;
 import io.github.kwatera_project.kwatera.review_service.service.JwtService;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
@@ -40,6 +44,7 @@ class ReviewControllerIntegrationTest {
 
   private static final String TOKEN = "test-token";
 
+  @Autowired private ReviewSummaryRepository summaries;
   @Autowired private MockMvc mockMvc;
   @Autowired private ObjectMapper objectMapper;
   @Autowired private ReviewRepository reviewRepository;
@@ -64,6 +69,47 @@ class ReviewControllerIntegrationTest {
   @AfterEach
   void cleanUp() {
     reviewRepository.deleteAll();
+  }
+
+  @Test
+  void publicSummaryReadsOnlyTheRequestedCachedScope() throws Exception {
+    UUID id = UUID.randomUUID();
+    String unitUrl = "/api/reviews/units/" + id + "/summary";
+    String propertyUrl = "/api/reviews/properties/" + id + "/summary";
+    mockMvc.perform(get(unitUrl)).andExpect(status().isNoContent());
+    mockMvc.perform(get(propertyUrl)).andExpect(status().isNoContent());
+
+    ReviewSummary unit = cachedSummary("Room");
+    unit.setUnitId(id);
+    ReviewSummary property = cachedSummary("Property");
+    property.setPropertyId(id);
+    summaries.saveAllAndFlush(List.of(unit, property));
+    try {
+      mockMvc
+          .perform(get(unitUrl))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.summary").value("Room"))
+          .andExpect(jsonPath("$.pros[0]").value("Quiet"))
+          .andExpect(jsonPath("$.cons").isEmpty());
+      mockMvc
+          .perform(get(propertyUrl))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.summary").value("Property"));
+    } finally {
+      summaries.deleteAll(List.of(unit, property));
+    }
+  }
+
+  private ReviewSummary cachedSummary(String text) {
+    ReviewSummary summary = new ReviewSummary();
+    summary.setAiSummary(
+        """
+        {"summary":"%s","pros":["Quiet"],"cons":[],"model":"test"}
+        """
+            .formatted(text));
+    summary.setGenerationTimestamp(Instant.now());
+    summary.setInputFingerprint("fingerprint");
+    return summary;
   }
 
   @Test
@@ -178,6 +224,35 @@ class ReviewControllerIntegrationTest {
         .andExpect(jsonPath("$.averageRating").value(3.0));
   }
 
+  @Test
+  void shouldLoadSummaryInputsOnlyForSelectedUnitsWithComments() {
+    UUID secondUnitId = UUID.randomUUID();
+    UUID unrelatedUnitId = UUID.randomUUID();
+
+    Review first = saveReview(unitId, 5, "Wygodne łóżko.");
+    Review second = saveReview(secondUnitId, 3, "Wieczorem było głośno.");
+    saveReview(unitId, 4, null);
+    saveReview(secondUnitId, 4, "   ");
+    saveReview(unrelatedUnitId, 5, "Opinia o innym obiekcie.");
+
+    List<ReviewSummaryInput> result =
+        reviewRepository.findSummaryInputsByUnitIds(List.of(unitId, secondUnitId));
+
+    assertEquals(2, result.size());
+    assertTrue(
+        result.stream()
+            .anyMatch(
+                input ->
+                    input.id().equals(first.getId()) && input.comment().equals("Wygodne łóżko.")));
+    assertTrue(
+        result.stream()
+            .anyMatch(
+                input ->
+                    input.id().equals(second.getId())
+                        && input.comment().equals("Wieczorem było głośno.")));
+    assertTrue(result.stream().allMatch(input -> input.updatedAt() != null));
+  }
+
   private void authenticateGuest() {
     when(jwtService.isValid(TOKEN)).thenReturn(true);
     when(jwtService.extractUsername(TOKEN)).thenReturn("test-guest");
@@ -207,13 +282,17 @@ class ReviewControllerIntegrationTest {
   }
 
   private void saveReview(UUID reviewUnitId, int rating) {
+    saveReview(reviewUnitId, rating, "Test review");
+  }
+
+  private Review saveReview(UUID reviewUnitId, int rating, String comment) {
     Review review = new Review();
     review.setReservationId(UUID.randomUUID());
     review.setAuthorId(guestId);
     review.setUnitId(reviewUnitId);
     review.setRating(rating);
-    review.setComment("Test review");
+    review.setComment(comment);
 
-    reviewRepository.saveAndFlush(review);
+    return reviewRepository.saveAndFlush(review);
   }
 }
