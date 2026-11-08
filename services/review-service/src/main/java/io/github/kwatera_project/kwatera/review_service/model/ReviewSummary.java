@@ -21,6 +21,12 @@ public class ReviewSummary {
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
+  @Column(name = "property_id")
+  private UUID propertyId;
+
+  @Column(name = "unit_id")
+  private UUID unitId;
+
   @Column(name = "ai_summary", nullable = false, columnDefinition = "TEXT")
   private String aiSummary;
 
