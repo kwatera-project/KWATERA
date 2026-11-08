@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectWriter;
 
 @Component
 public class ReviewSummaryScheduler {
@@ -31,7 +32,7 @@ public class ReviewSummaryScheduler {
   private final ReviewAiClient reviewAiClient;
   private final PropertyClient propertyClient;
   private final ReviewSummaryRepository summaries;
-  private final ObjectMapper mapper;
+  private final ObjectWriter summaryWriter;
 
   public ReviewSummaryScheduler(
       ReviewRepository reviewRepository,
@@ -43,7 +44,7 @@ public class ReviewSummaryScheduler {
     this.reviewAiClient = reviewAiClient;
     this.propertyClient = propertyClient;
     this.summaries = summaries;
-    this.mapper = mapper;
+    this.summaryWriter = mapper.writer();
   }
 
   @Scheduled(cron = "${kwatera.review-summary.cron:-}", zone = "Europe/Warsaw")
@@ -111,7 +112,7 @@ public class ReviewSummaryScheduler {
 
     var comments = inputs.stream().map(ReviewSummaryInput::comment).toList();
     var result = reviewAiClient.summarize(comments, SUMMARY_LANGUAGE);
-    summary.setAiSummary(mapper.writeValueAsString(result));
+    summary.setAiSummary(summaryWriter.writeValueAsString(result));
     summary.setReviewIds(inputs.stream().map(ReviewSummaryInput::id).toList());
     summary.setInputFingerprint(fingerprint);
     summary.setGenerationTimestamp(Instant.now());

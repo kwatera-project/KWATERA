@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectReader;
 
 @RestController
 @RequestMapping("/api/reviews")
@@ -21,11 +22,11 @@ import tools.jackson.databind.ObjectMapper;
 public class ReviewSummaryController {
 
   private final ReviewSummaryRepository summaries;
-  private final ObjectMapper mapper;
+  private final ObjectReader summaryReader;
 
   public ReviewSummaryController(ReviewSummaryRepository summaries, ObjectMapper mapper) {
     this.summaries = summaries;
-    this.mapper = mapper;
+    this.summaryReader = mapper.readerFor(SummaryResponse.class);
   }
 
   @GetMapping("/units/{unitId}/summary")
@@ -44,6 +45,6 @@ public class ReviewSummaryController {
     if (cached.isEmpty()) {
       return ResponseEntity.noContent().build();
     }
-    return ResponseEntity.ok(mapper.readValue(cached.get().getAiSummary(), SummaryResponse.class));
+    return ResponseEntity.ok(summaryReader.readValue(cached.get().getAiSummary()));
   }
 }

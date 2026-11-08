@@ -14,7 +14,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestOperations;
 
 @Component
-public class ReviewAiClient {
+public final class ReviewAiClient {
 
   private static final String SUMMARY_URL = "http://ai-service/internal/ai/summarize";
 
@@ -164,8 +164,10 @@ public class ReviewAiClient {
 
     public SummaryResponse {
       summary = limitSummaryWords(summary);
-      pros = copyPoints(pros);
-      cons = copyPoints(cons);
+      validatePoints(pros);
+      pros = List.copyOf(pros);
+      validatePoints(cons);
+      cons = List.copyOf(cons);
     }
 
     private static String limitSummaryWords(String summary) {
@@ -222,11 +224,10 @@ public class ReviewAiClient {
           "\n", summary, "Pros: " + String.join("; ", pros), "Cons: " + String.join("; ", cons));
     }
 
-    private static List<String> copyPoints(List<String> points) {
+    private static void validatePoints(List<String> points) {
       if (points == null || points.stream().anyMatch(point -> point == null || point.isBlank())) {
         throw new IllegalArgumentException("Expected a list of nonblank review points");
       }
-      return List.copyOf(points);
     }
   }
 }
