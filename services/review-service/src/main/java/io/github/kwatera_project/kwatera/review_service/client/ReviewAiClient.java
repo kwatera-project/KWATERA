@@ -101,14 +101,9 @@ public final class ReviewAiClient {
     List<String> batch = new ArrayList<>();
     int characters = 0;
     for (String text : texts) {
-      for (int start = 0; start < text.length(); ) {
-        int end = start + Math.min(maxCharacters, text.length() - start);
-        if (end < text.length() && Character.isHighSurrogate(text.charAt(end - 1))) {
-          end--;
-        }
-        if (end == start) {
-          throw new IllegalArgumentException("AI character limit cannot fit a Unicode character");
-        }
+      int start = 0;
+      while (start < text.length()) {
+        int end = fragmentEnd(text, start);
         String part = text.substring(start, end);
         start = end;
         if (part.isBlank()) {
@@ -128,6 +123,17 @@ public final class ReviewAiClient {
     }
     batches.add(batch);
     return batches;
+  }
+
+  private int fragmentEnd(String text, int start) {
+    int end = start + Math.min(maxCharacters, text.length() - start);
+    if (end < text.length() && Character.isHighSurrogate(text.charAt(end - 1))) {
+      end--;
+    }
+    if (end == start) {
+      throw new IllegalArgumentException("AI character limit cannot fit a Unicode character");
+    }
+    return end;
   }
 
   private SummaryResponse requestSummary(List<String> comments, String language) {

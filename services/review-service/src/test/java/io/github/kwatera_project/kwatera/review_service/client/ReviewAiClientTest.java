@@ -96,6 +96,34 @@ class ReviewAiClientTest {
     server.verify();
   }
 
+  @Test
+  void rejectsLimitTooSmallForEmojiBeforeSendingRequest() {
+    var limited = new ReviewAiClient(restTemplate, "test-token", 2, 1, 10);
+    var comments = List.of("A😀B");
+
+    assertThrows(IllegalArgumentException.class, () -> limited.summarize(comments, "en"));
+    server.verify();
+  }
+
+  @Test
+  void keepsLastCompleteSentenceWithinWordLimit() {
+    String sentence = "Excellent location.";
+    String longSummary = sentence + " " + "word ".repeat(44) + "end.";
+    expectBatch("[\"location\"]", longSummary);
+
+    assertEquals(sentence, client.summarize(List.of("location"), "pl").summary());
+    server.verify();
+  }
+
+  @Test
+  void limitsLongFirstSentenceToFortyFiveWords() {
+    String firstWords = "word ".repeat(45).stripTrailing();
+    expectBatch("[\"location\"]", firstWords + " end.");
+
+    assertEquals(firstWords + "…", client.summarize(List.of("location"), "pl").summary());
+    server.verify();
+  }
+
   private void expectBatch(String reviewsJson, String summary) {
     server
         .expect(requestTo(URL))
