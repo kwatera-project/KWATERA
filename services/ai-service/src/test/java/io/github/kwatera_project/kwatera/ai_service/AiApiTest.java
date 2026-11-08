@@ -95,6 +95,39 @@ class AiApiTest {
   }
 
   @Test
+  void returnsTrimmedProsAndCons() throws Exception {
+    when(model.call(any(Prompt.class)))
+        .thenReturn(
+            answer("{\"summary\":\"Clean but noisy.\"}"),
+            answer("{\"pros\":[\" Clean room \"],\"cons\":[\" Street noise \"]}"));
+
+    call("summarize", Map.of("reviews", List.of("Clean but noisy."), "language", "en"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.pros[0]").value("Clean room"))
+        .andExpect(jsonPath("$.cons[0]").value("Street noise"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "{",
+        "[]",
+        "{}",
+        "{\"pros\":[],\"other\":[]}",
+        "{\"pros\":[],\"cons\":null}",
+        "{\"pros\":[5],\"cons\":[]}",
+        "{\"pros\":[],\"cons\":[\"   \"]}"
+      })
+  void rejectsInvalidPointsAfterAValidSummary(String points) throws Exception {
+    when(model.call(any(Prompt.class)))
+        .thenReturn(answer("{\"summary\":\"Clean room.\"}"), answer(points));
+
+    call("summarize", Map.of("reviews", List.of("Clean room."), "language", "en"))
+        .andExpect(status().isBadGateway())
+        .andExpect(jsonPath("$.code").value("AI_INVALID_RESPONSE"));
+  }
+
+  @Test
   void rejectsEmptyNullAndBlankReviewsBeforeCallingModel() throws Exception {
     for (Object reviews :
         List.of(List.of(), List.of(""), List.of("  "), Arrays.asList("fine", null))) {

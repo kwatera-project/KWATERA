@@ -148,7 +148,7 @@ public class AiInference {
       }
 
       return new ReviewPoints(readPoints(json.get("pros")), readPoints(json.get("cons")));
-    } catch (JacksonException exception) {
+    } catch (JacksonException _) {
       throw AiException.invalidResponse();
     }
   }
