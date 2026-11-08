@@ -97,7 +97,8 @@ public class AiInference {
   }
 
   public ReviewPoints generateReviewPoints(List<String> reviews, String language) {
-    var pointsSchema = Map.of("type", "array", "maxItems", 5, "items", Map.of("type", "string", "minLength", 1));
+    var pointsSchema =
+        Map.of("type", "array", "maxItems", 5, "items", Map.of("type", "string", "minLength", 1));
 
     Map<String, Object> schema =
         Map.of(

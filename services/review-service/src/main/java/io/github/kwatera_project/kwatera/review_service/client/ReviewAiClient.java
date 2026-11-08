@@ -83,10 +83,12 @@ public class ReviewAiClient {
         }
 
         var right = summaries.get(i + 1);
-        int budget = maxReviews == 1 ? (maxCharacters - 1) / 2 : Math.min(maxCharacters, maxTotal / 2);
+        int budget =
+            maxReviews == 1 ? (maxCharacters - 1) / 2 : Math.min(maxCharacters, maxTotal / 2);
         String first = left.mergeNote(budget);
         String second = right.mergeNote(budget);
-        List<String> pair = maxReviews == 1 ? List.of(first + "\n" + second) : List.of(first, second);
+        List<String> pair =
+            maxReviews == 1 ? List.of(first + "\n" + second) : List.of(first, second);
         merged.add(requestSummary(pair, language));
       }
       summaries = merged;
@@ -156,7 +158,8 @@ public class ReviewAiClient {
     }
   }
 
-  public record SummaryResponse(String summary, List<String> pros, List<String> cons, String model) {
+  public record SummaryResponse(
+      String summary, List<String> pros, List<String> cons, String model) {
     private static final int MAX_SUMMARY_WORDS = 45;
 
     public SummaryResponse {
@@ -208,14 +211,15 @@ public class ReviewAiClient {
 
     private static void appendPointIfItFits(
         StringBuilder note, List<String> points, int index, String prefix, int budget) {
-      if (index < points.size() && points.get(index).length() <= budget - note.length() - prefix.length()) {
+      if (index < points.size()
+          && points.get(index).length() <= budget - note.length() - prefix.length()) {
         note.append(prefix).append(points.get(index));
       }
     }
 
     private String asNotes() {
-      return String.join("\n", summary, "Pros: " + String.join("; ", pros),
-          "Cons: " + String.join("; ", cons));
+      return String.join(
+          "\n", summary, "Pros: " + String.join("; ", pros), "Cons: " + String.join("; ", cons));
     }
 
     private static List<String> copyPoints(List<String> points) {

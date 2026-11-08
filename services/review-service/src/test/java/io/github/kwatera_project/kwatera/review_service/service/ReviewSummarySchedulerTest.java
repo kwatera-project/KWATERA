@@ -54,14 +54,16 @@ class ReviewSummarySchedulerTest {
     when(properties.getUnitIdsForProperty(property)).thenReturn(rooms);
     var old = review(first, "Clean");
     var other = review(second, "Quiet");
-    var result = new ReviewAiClient.SummaryResponse("Summary", List.of("Clean"), List.of(), "model");
+    var result =
+        new ReviewAiClient.SummaryResponse("Summary", List.of("Clean"), List.of(), "model");
     when(ai.summarize(anyList(), eq("en"))).thenReturn(result);
 
     scheduler.checkForChanges();
 
     var original = summaries.findByPropertyId(property).orElseThrow();
     assertEquals(Set.of(old.getId(), other.getId()), Set.copyOf(original.getReviewIds()));
-    assertEquals(result, mapper.readValue(original.getAiSummary(), ReviewAiClient.SummaryResponse.class));
+    assertEquals(
+        result, mapper.readValue(original.getAiSummary(), ReviewAiClient.SummaryResponse.class));
     assertEquals(3, summaries.count());
     verify(ai, times(3)).summarize(anyList(), eq("en"));
 
@@ -70,7 +72,8 @@ class ReviewSummarySchedulerTest {
     restarted.checkForChanges();
     verifyNoInteractions(ai);
 
-    original.setInputFingerprint(ReviewSummaryFingerprint.calculate(reviews.findSummaryInputsByUnitIds(rooms)));
+    original.setInputFingerprint(
+        ReviewSummaryFingerprint.calculate(reviews.findSummaryInputsByUnitIds(rooms)));
     summaries.saveAndFlush(original);
     restarted.checkForChanges();
     verify(ai, times(1)).summarize(anyList(), eq("en"));
@@ -82,16 +85,19 @@ class ReviewSummarySchedulerTest {
     var editedInputs = reviews.findSummaryInputsByUnitIds(rooms);
     var comments = editedInputs.stream().map(input -> input.comment()).toList();
     when(ai.summarize(comments, "en"))
-        .thenThrow(new RestClientException("Unavailable")).thenReturn(result);
+        .thenThrow(new RestClientException("Unavailable"))
+        .thenReturn(result);
     restarted.checkForChanges();
-    assertEquals(original.getInputFingerprint(),
+    assertEquals(
+        original.getInputFingerprint(),
         summaries.findByPropertyId(property).orElseThrow().getInputFingerprint());
     restarted.checkForChanges();
     verify(ai).summarize(List.of("Edited"), "en");
     verify(ai, times(2)).summarize(comments, "en");
     var updated = summaries.findByPropertyId(property).orElseThrow();
     assertEquals(original.getId(), updated.getId());
-    assertEquals("en:v5:" + ReviewSummaryFingerprint.calculate(editedInputs), updated.getInputFingerprint());
+    assertEquals(
+        "en:v5:" + ReviewSummaryFingerprint.calculate(editedInputs), updated.getInputFingerprint());
     assertNotEquals(original.getInputFingerprint(), updated.getInputFingerprint());
 
     clearInvocations(ai);

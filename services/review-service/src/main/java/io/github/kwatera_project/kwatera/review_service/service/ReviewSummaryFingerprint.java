@@ -10,24 +10,24 @@ import java.util.List;
 
 public final class ReviewSummaryFingerprint {
 
-    private ReviewSummaryFingerprint() {}
+  private ReviewSummaryFingerprint() {}
 
-    public static String calculate(List<ReviewSummaryInput> inputs) {
-        MessageDigest digest;
-        try {
-            digest = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("SHA-256 is unavailable", exception);
-        }
-
-        List<ReviewSummaryInput> sortedInputs =
-                inputs.stream().sorted(Comparator.comparing(ReviewSummaryInput::id)).toList();
-
-        for (ReviewSummaryInput input : sortedInputs) {
-            String entry = input.id() + "|" + input.updatedAt() + "\n";
-            digest.update(entry.getBytes(StandardCharsets.UTF_8));
-        }
-
-        return HexFormat.of().formatHex(digest.digest());
+  public static String calculate(List<ReviewSummaryInput> inputs) {
+    MessageDigest digest;
+    try {
+      digest = MessageDigest.getInstance("SHA-256");
+    } catch (NoSuchAlgorithmException exception) {
+      throw new IllegalStateException("SHA-256 is unavailable", exception);
     }
+
+    List<ReviewSummaryInput> sortedInputs =
+        inputs.stream().sorted(Comparator.comparing(ReviewSummaryInput::id)).toList();
+
+    for (ReviewSummaryInput input : sortedInputs) {
+      String entry = input.id() + "|" + input.updatedAt() + "\n";
+      digest.update(entry.getBytes(StandardCharsets.UTF_8));
+    }
+
+    return HexFormat.of().formatHex(digest.digest());
+  }
 }

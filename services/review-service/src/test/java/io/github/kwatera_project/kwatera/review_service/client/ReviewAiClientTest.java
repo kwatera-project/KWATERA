@@ -24,7 +24,8 @@ class ReviewAiClientTest {
 
   private final RestTemplate restTemplate = new RestTemplate();
   private final MockRestServiceServer server = MockRestServiceServer.bindTo(restTemplate).build();
-  private final ReviewAiClient client = new ReviewAiClient(restTemplate, "test-token", 20, 2000, 6000);
+  private final ReviewAiClient client =
+      new ReviewAiClient(restTemplate, "test-token", 20, 2000, 6000);
 
   @Test
   void shouldSendCommentsAndLanguageAndReturnSummary() {
@@ -60,8 +61,9 @@ class ReviewAiClientTest {
     var limited = new ReviewAiClient(restTemplate, "test-token", 2, 80, 120);
     expectBatch("[\"first\",\"second\"]", "part one");
     expectBatch("[\"last\"]", "part two");
-    expectBatch("[\"part one\\nPros: clean\\nCons: noise\","
-        + "\"part two\\nPros: clean\\nCons: noise\"]", "combined");
+    expectBatch(
+        "[\"part one\\nPros: clean\\nCons: noise\"," + "\"part two\\nPros: clean\\nCons: noise\"]",
+        "combined");
 
     assertEquals("combined", limited.summarize(List.of("first", "second", "last"), "pl").summary());
     server.verify();
@@ -95,11 +97,16 @@ class ReviewAiClientTest {
   }
 
   private void expectBatch(String reviewsJson, String summary) {
-    server.expect(requestTo(URL))
+    server
+        .expect(requestTo(URL))
         .andExpect(content().json("{\"language\":\"pl\",\"reviews\":" + reviewsJson + "}"))
-        .andRespond(withSuccess("""
+        .andRespond(
+            withSuccess(
+                """
             {"summary":"%s","pros":["clean"],"cons":["noise"],"model":"qwen"}
-            """.formatted(summary), MediaType.APPLICATION_JSON));
+            """
+                    .formatted(summary),
+                MediaType.APPLICATION_JSON));
   }
 
   @Test
@@ -121,10 +128,14 @@ class ReviewAiClientTest {
 
   @Test
   void shouldAcceptEmptyPoints() {
-    server.expect(requestTo(URL)).andRespond(withSuccess(
-        """
+    server
+        .expect(requestTo(URL))
+        .andRespond(
+            withSuccess(
+                """
         {"summary":"Opis pobytu","pros":[],"cons":[],"model":"qwen"}
-        """, MediaType.APPLICATION_JSON));
+        """,
+                MediaType.APPLICATION_JSON));
 
     var result = client.summarize(List.of("Opis pobytu"), "pl");
 
@@ -133,11 +144,8 @@ class ReviewAiClientTest {
   }
 
   @org.junit.jupiter.params.ParameterizedTest
-  @org.junit.jupiter.params.provider.ValueSource(strings = {
-      "{\"pros\":[]}",
-      "{\"pros\":null,\"cons\":[]}",
-      "{\"pros\":[],\"cons\":[\" \"]}"
-  })
+  @org.junit.jupiter.params.provider.ValueSource(
+      strings = {"{\"pros\":[]}", "{\"pros\":null,\"cons\":[]}", "{\"pros\":[],\"cons\":[\" \"]}"})
   void shouldRejectInvalidPoints(String fields) {
     String json = "{\"summary\":\"Opis\",\"model\":\"qwen\"," + fields.substring(1);
     server.expect(requestTo(URL)).andRespond(withSuccess(json, MediaType.APPLICATION_JSON));

@@ -19,10 +19,11 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-@SpringBootTest(properties = {
-    "spring.jpa.hibernate.ddl-auto=none",
-    "spring.datasource.driver-class-name=org.postgresql.Driver"
-})
+@SpringBootTest(
+    properties = {
+      "spring.jpa.hibernate.ddl-auto=none",
+      "spring.datasource.driver-class-name=org.postgresql.Driver"
+    })
 @Testcontainers(disabledWithoutDocker = true)
 @Transactional
 class ReviewSummaryRepositoryTest {
@@ -42,11 +43,16 @@ class ReviewSummaryRepositoryTest {
   @Autowired private EntityManager entityManager;
 
   @Test
-  @Sql(statements = {"CREATE TABLE properties (id UUID PRIMARY KEY)", "CREATE TABLE units (id UUID PRIMARY KEY)"})
-  @Sql(scripts = {
-    "file:../db-migrations/src/main/resources/db/migration/V40__create_review_summaries.sql",
-    "file:../db-migrations/src/main/resources/db/migration/V41__add_review_ids_to_review_summaries.sql"
-  })
+  @Sql(
+      statements = {
+        "CREATE TABLE properties (id UUID PRIMARY KEY)",
+        "CREATE TABLE units (id UUID PRIMARY KEY)"
+      })
+  @Sql(
+      scripts = {
+        "file:../db-migrations/src/main/resources/db/migration/V40__create_review_summaries.sql",
+        "file:../db-migrations/src/main/resources/db/migration/V41__add_review_ids_to_review_summaries.sql"
+      })
   void storesAndReadsReviewIdsForUnitAndProperty() {
     UUID target = UUID.randomUUID();
     jdbc.update("INSERT INTO units (id) VALUES (?)", target);
@@ -62,7 +68,8 @@ class ReviewSummaryRepositoryTest {
     entityManager.clear();
 
     assertEquals(List.of(firstReview), summaries.findByUnitId(target).orElseThrow().getReviewIds());
-    assertEquals(List.of(firstReview, secondReview),
+    assertEquals(
+        List.of(firstReview, secondReview),
         summaries.findByPropertyId(target).orElseThrow().getReviewIds());
   }
 

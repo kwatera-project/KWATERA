@@ -12,10 +12,10 @@ import io.github.kwatera_project.kwatera.review_service.dto.CreateReviewRequest;
 import io.github.kwatera_project.kwatera.review_service.dto.ReservationDetailsDto;
 import io.github.kwatera_project.kwatera.review_service.dto.ReviewSummaryInput;
 import io.github.kwatera_project.kwatera.review_service.model.Review;
-import io.github.kwatera_project.kwatera.review_service.repository.ReviewRepository;
-import io.github.kwatera_project.kwatera.review_service.service.JwtService;
 import io.github.kwatera_project.kwatera.review_service.model.ReviewSummary;
+import io.github.kwatera_project.kwatera.review_service.repository.ReviewRepository;
 import io.github.kwatera_project.kwatera.review_service.repository.ReviewSummaryRepository;
+import io.github.kwatera_project.kwatera.review_service.service.JwtService;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -85,11 +85,15 @@ class ReviewControllerIntegrationTest {
     property.setPropertyId(id);
     summaries.saveAllAndFlush(List.of(unit, property));
     try {
-      mockMvc.perform(get(unitUrl)).andExpect(status().isOk())
+      mockMvc
+          .perform(get(unitUrl))
+          .andExpect(status().isOk())
           .andExpect(jsonPath("$.summary").value("Room"))
           .andExpect(jsonPath("$.pros[0]").value("Quiet"))
           .andExpect(jsonPath("$.cons").isEmpty());
-      mockMvc.perform(get(propertyUrl)).andExpect(status().isOk())
+      mockMvc
+          .perform(get(propertyUrl))
+          .andExpect(status().isOk())
           .andExpect(jsonPath("$.summary").value("Property"));
     } finally {
       summaries.deleteAll(List.of(unit, property));
@@ -98,9 +102,11 @@ class ReviewControllerIntegrationTest {
 
   private ReviewSummary cachedSummary(String text) {
     ReviewSummary summary = new ReviewSummary();
-    summary.setAiSummary("""
+    summary.setAiSummary(
+        """
         {"summary":"%s","pros":["Quiet"],"cons":[],"model":"test"}
-        """.formatted(text));
+        """
+            .formatted(text));
     summary.setGenerationTimestamp(Instant.now());
     summary.setInputFingerprint("fingerprint");
     return summary;
