@@ -55,7 +55,10 @@ for (const language of ["en", "pl"]) {
     test(`message translation and original toggle (${language})`, async ({ page }) => {
         await setup(page, ["ROLE_GUEST"], language);
         await page.route(/\/api\/v1\/conversations\/[^/]+\/messages(?:\?.*)?$/, route => respond(route, {
-            items: [{ id: "message-1", conversationId: conversation.id, senderUserId: "owner", content: "Bonjour !", createdAt: "2026-10-01T10:00:00Z" }],
+            items: [
+                { id: "message-1", conversationId: conversation.id, senderUserId: "owner", content: "Bonjour !", createdAt: "2026-10-01T10:00:00Z" },
+                { id: "message-2", conversationId: conversation.id, senderUserId: "guest", content: "My message", createdAt: "2026-10-01T10:01:00Z" },
+            ],
             hasMore: false, nextCursor: null,
         }));
         let calls = 0;
@@ -69,8 +72,12 @@ for (const language of ["en", "pl"]) {
         await page.goto(`/conversations/${conversation.id}`);
         const translate = page.getByRole("button", { name: language === "pl" ? "Przetłumacz na polski" : "Translate to English", exact: true });
         await expect(page.getByText("Bonjour !", { exact: true })).toBeVisible();
+        const ownMessage = page.getByRole("article").filter({ hasText: "My message" });
+        await expect(ownMessage).toBeVisible();
+        await expect(ownMessage.getByRole("button")).toHaveCount(0);
         await translate.click();
         await expect(page.getByText(language === "pl" ? "Dzień dobry!" : "Hello!", { exact: true })).toBeVisible();
+        await expect(page.getByText(/check the original for accuracy|sprawdź poprawność z oryginałem/i)).toHaveCount(0);
         await page.getByRole("button", { name: language === "pl" ? "Pokaż oryginał" : "Show original", exact: true }).click();
         await expect(page.getByText("Bonjour !", { exact: true })).toBeVisible();
         await translate.click();

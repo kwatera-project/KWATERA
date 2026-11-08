@@ -96,9 +96,11 @@ class MessageIntegrationTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"guest", "owner"})
-  void participantsTranslateWithoutChangingOriginal(String participant) throws Exception {
+  void participantsTranslateReceivedMessagesWithoutChangingOriginal(String participant)
+      throws Exception {
     UUID id = conversationId();
-    var message = messages.send(id, GUEST_ID, "Hello");
+    boolean recipientIsGuest = participant.equals("guest");
+    var message = messages.send(id, recipientIsGuest ? OWNER_ID : GUEST_ID, "Hello");
     when(translations.translate("Hello", "pl"))
         .thenReturn(new MessageTranslationResponse("Cześć", "auto", "pl"));
     mockMvc
@@ -107,7 +109,8 @@ class MessageIntegrationTest {
                 .with(
                     authentication(
                         buildAuthentication(
-                            participant.equals("guest") ? GUEST_ID : OWNER_ID, "ROLE_GUEST")))
+                            recipientIsGuest ? GUEST_ID : OWNER_ID,
+                            recipientIsGuest ? "ROLE_GUEST" : "ROLE_OWNER")))
                 .contentType("application/json")
                 .content("{\"targetLanguage\":\"pl\"}"))
         .andExpect(status().isOk())
@@ -118,7 +121,7 @@ class MessageIntegrationTest {
   }
 
   @Test
-  void translationDeniesOutsidersAnonymousAndCrossConversationMessages() throws Exception {
+  void translationDeniesSendersOutsidersAnonymousAndCrossConversationMessages() throws Exception {
     UUID id = conversationId();
     var message = messages.send(id, GUEST_ID, "Private message");
     String endpoint = path(id) + "/" + message.id() + "/translation";
@@ -128,6 +131,13 @@ class MessageIntegrationTest {
                 .contentType("application/json")
                 .content("{\"targetLanguage\":\"pl\"}"))
         .andExpect(status().isUnauthorized());
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.post(endpoint)
+                .with(authentication(buildAuthentication(GUEST_ID, "ROLE_GUEST")))
+                .contentType("application/json")
+                .content("{\"targetLanguage\":\"pl\"}"))
+        .andExpect(status().isForbidden());
     mockMvc
         .perform(
             MockMvcRequestBuilders.post(endpoint)
@@ -149,7 +159,7 @@ class MessageIntegrationTest {
   @Test
   void aiFailureLeavesNormalChatAvailable() throws Exception {
     UUID id = conversationId();
-    var message = messages.send(id, GUEST_ID, "Hello");
+    var message = messages.send(id, OWNER_ID, "Hello");
     when(translations.translate("Hello", "pl"))
         .thenThrow(
             new ResponseStatusException(
@@ -162,14 +172,14 @@ class MessageIntegrationTest {
                 .contentType("application/json")
                 .content("{\"targetLanguage\":\"pl\"}"))
         .andExpect(status().isServiceUnavailable());
-    assertThat(messages.send(id, OWNER_ID, "Still works").content()).isEqualTo("Still works");
+    assertThat(messages.send(id, GUEST_ID, "Still works").content()).isEqualTo("Still works");
     assertThat(messages.history(id, GUEST_ID, null, null).items()).hasSize(2);
   }
 
   @Test
   void translationRespectsLifecycleAndRequestValidation() throws Exception {
     UUID id = conversationId();
-    var message = messages.send(id, GUEST_ID, "Hello");
+    var message = messages.send(id, OWNER_ID, "Hello");
     String endpoint = path(id) + "/" + message.id() + "/translation";
     mockMvc
         .perform(
@@ -559,6 +569,7 @@ class MessageIntegrationTest {
                     translationOperation
                         + ".responses['200'].content['application/json'].schema['$ref']")
                 .value("#/components/schemas/MessageTranslationResponse"))
+        .andExpect(jsonPath(translationOperation + ".responses['403']").exists())
         .andExpect(jsonPath(translationOperation + ".responses['503']").exists());
   }
 

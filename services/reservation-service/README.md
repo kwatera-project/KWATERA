@@ -40,9 +40,10 @@ Migration `V35` reconstructs missing legacy cancellation timestamps only from ex
 
 `POST /api/v1/conversations/{conversationId}/messages/{messageId}/translation` accepts
 `{"targetLanguage":"pl"}` and returns `{"translatedText":"Cześć","sourceLanguage":"auto","targetLanguage":"pl"}`.
-The target is a BCP 47 language tag. Only the two participants can translate; normal lifecycle
-and retention rules apply, and message IDs are scoped to the specified conversation. Missing
-messages and access both return 404. Translation reads the stored text, detects its language
+The target is a BCP 47 language tag. Participants can translate received messages. A request to
+translate a message the participant sent returns 403. Normal lifecycle and retention rules apply,
+and message IDs are scoped to the specified conversation. Missing messages and access both return
+404. Translation reads the stored text, detects its language
 through the shared AI service, and never updates or broadcasts a message. `sourceLanguage=auto`
 denotes detection mode, following the shared service contract, rather than a detected-language claim.
 

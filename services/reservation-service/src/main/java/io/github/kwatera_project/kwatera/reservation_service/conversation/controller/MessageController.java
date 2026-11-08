@@ -46,7 +46,7 @@ public class MessageController {
   @Operation(
       summary = "Translate one message without changing its stored content",
       description =
-          "Participant and lifecycle access is checked before reading the message. Source language is detected by AI; sourceLanguage=auto denotes detection mode. No translation is persisted or broadcast.")
+          "The authenticated participant can translate a received message. Participant and lifecycle access is checked before reading the message. Source language is detected by AI; sourceLanguage=auto denotes detection mode. No translation is persisted or broadcast.")
   @ApiResponses({
     @ApiResponse(
         responseCode = "200",
@@ -55,6 +55,9 @@ public class MessageController {
             @Content(
                 mediaType = "application/json",
                 schema = @Schema(implementation = MessageTranslationResponse.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "The authenticated participant sent the message"),
     @ApiResponse(responseCode = "502", description = "Invalid AI response"),
     @ApiResponse(responseCode = "503", description = "Translation unavailable"),
     @ApiResponse(responseCode = "504", description = "Translation timed out")

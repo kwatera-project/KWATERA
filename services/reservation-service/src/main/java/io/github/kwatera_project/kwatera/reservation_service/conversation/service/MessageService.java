@@ -52,10 +52,14 @@ public class MessageService {
   @Transactional(readOnly = true)
   public String contentForTranslation(UUID conversationId, UUID messageId, UUID currentUserId) {
     requireAccess(conversationId, currentUserId, false);
-    return messages
-        .findByIdAndConversation_Id(messageId, conversationId)
-        .orElseThrow(this::notFound)
-        .getContent();
+    Message message =
+        messages.findByIdAndConversation_Id(messageId, conversationId).orElseThrow(this::notFound);
+    if (currentUserId.equals(message.getSenderUserId())) {
+      throw new ResponseStatusException(
+          HttpStatus.FORBIDDEN,
+          "Only messages received from another participant can be translated");
+    }
+    return message.getContent();
   }
 
   @Transactional(readOnly = true)

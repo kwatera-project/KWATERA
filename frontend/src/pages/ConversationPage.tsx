@@ -197,7 +197,11 @@ function ConversationScreen({ conversationId, userId, token, onRetry }: {
                                 return <li key={message.id} className={`flex ${own ? "justify-end" : "justify-start"}`}>
                                     <article className={`min-w-0 max-w-[90%] sm:max-w-[75%] rounded-xl border px-4 py-3 shadow-sm ${own ? "bg-brand-primary border-brand-primary text-white" : "bg-white border-brand-accent text-brand-main"}`}>
                                         <p className={`text-xs font-bold mb-1.5 ${own ? "text-white/80" : "text-brand-primary"}`}>{own ? t("chat.you") : otherLabel}</p>
-                                        <MessageTranslation key={i18n.resolvedLanguage ?? "en"} conversationId={conversationId} messageId={message.id} content={message.content} language={i18n.resolvedLanguage ?? "en"} />
+                                        {own ? (
+                                            <p className="text-sm leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">{message.content}</p>
+                                        ) : (
+                                            <MessageTranslation key={i18n.resolvedLanguage ?? "en"} conversationId={conversationId} messageId={message.id} content={message.content} language={i18n.resolvedLanguage ?? "en"} />
+                                        )}
                                         <time dateTime={message.createdAt} className={`block text-xs mt-2 ${own ? "text-white/80" : "text-brand-muted"}`}>
                                             {new Date(message.createdAt).toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" })}
                                         </time>

@@ -37,7 +37,6 @@ export default function MessageTranslation({ conversationId, messageId, content,
     return <>
         <p lang={showOriginal ? undefined : language} className="text-sm leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">{showOriginal ? content : translated}</p>
         <div className="mt-2 text-xs space-y-1">
-            {!showOriginal && <p>{t("chat.translation.notice")}</p>}
             <button type="button" disabled={loading} className="underline font-bold rounded focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60"
                 onClick={() => showOriginal ? void translate() : setShowOriginal(true)}>
                 {t(loading ? "chat.translation.loading" : showOriginal ? "chat.translation.translate" : "chat.translation.original")}
