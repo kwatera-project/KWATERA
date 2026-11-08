@@ -2,10 +2,14 @@ package io.github.kwatera_project.kwatera.review_service.model;
 
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -29,6 +33,18 @@ public class ReviewSummary {
 
   @Column(name = "ai_summary", nullable = false, columnDefinition = "TEXT")
   private String aiSummary;
+
+  @JdbcTypeCode(SqlTypes.ARRAY)
+  @Column(name = "review_ids", nullable = false)
+  private List<UUID> reviewIds = new ArrayList<>();
+
+  public List<UUID> getReviewIds() {
+    return List.copyOf(reviewIds);
+  }
+
+  public void setReviewIds(List<UUID> reviewIds) {
+    this.reviewIds = new ArrayList<>(List.copyOf(reviewIds));
+  }
 
   @Column(name = "input_fingerprint", nullable = false)
   private String inputFingerprint;

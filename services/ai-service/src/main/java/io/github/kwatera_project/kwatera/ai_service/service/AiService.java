@@ -19,15 +19,25 @@ public class AiService {
 
   public SummarizeResponse summarize(SummarizeRequest request) {
     String language = LanguageTagValidator.canonical(request.language());
+    String languageName =
+        java.util.Locale.forLanguageTag(language).getDisplayLanguage(java.util.Locale.ENGLISH);
     String result =
         inference.generate(
-            "Summarize the customer reviews concisely in "
+            "Write the entire summary in "
+                + languageName
+                + " (language tag: "
                 + language
-                + ". Preserve important positive and negative observations and their intended meaning."
+                + ")."
+                + " Write one paragraph of at most 45 words and no more than three short sentences."
+                + " Summarize the main themes in your own words. Use fewer words for sparse reviews. Omit lists and headings."
+                + " Preserve important positive and negative observations."
                 + " Do not invent facts, resolve disagreements by guessing, or add unrelated commentary.",
             Map.of("reviews", request.reviews()),
             "summary");
-    return new SummarizeResponse(result, properties.summaryModel());
+
+    AiInference.ReviewPoints points = inference.generateReviewPoints(request.reviews(), language);
+
+    return new SummarizeResponse(result, points.pros(), points.cons(), properties.summaryModel());
   }
 
   public TranslateResponse translate(TranslateRequest request) {

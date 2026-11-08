@@ -1256,6 +1256,9 @@
     "ELECTRICITY": "energii elektrycznej"
   },
   "reviews": {
+    "aiTitle": "Podsumowanie opinii przez AI",
+    "pros": "Zalety",
+    "cons": "Wady",
     "propertyTitle": "Opinie o obiekcie",
     "unitTitle": "Opinie o pokoju",
     "noAverage": "Brak ocen",

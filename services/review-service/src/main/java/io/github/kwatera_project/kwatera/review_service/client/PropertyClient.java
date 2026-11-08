@@ -26,12 +26,25 @@ public class PropertyClient {
   }
 
   public void requireUnit(UUID unitId) {
+    getUnit(unitId);
+  }
+
+  public UUID getPropertyIdForUnit(UUID unitId) {
+    UUID propertyId = getUnit(unitId).propertyId();
+    if (propertyId == null) {
+      throw invalidResponse();
+    }
+    return propertyId;
+  }
+
+  private UnitReference getUnit(UUID unitId) {
     UnitReference unit =
         get("http://property-service/api/properties/units/{id}", UnitReference.class, unitId);
 
     if (unit == null || !unitId.equals(unit.id())) {
       throw invalidResponse();
     }
+    return unit;
   }
 
   public List<UUID> getUnitIdsForProperty(UUID propertyId) {

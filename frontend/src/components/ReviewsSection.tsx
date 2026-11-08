@@ -2,8 +2,8 @@
 import { useEffect, useId, useState } from "react";
 import { Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { getReviewsForProperty, getReviewsForUnit } from "../api/reviewApi";
-import type { ReviewPageDto } from "../types/review";
+import { getReviewSummary, getReviewsForProperty, getReviewsForUnit } from "../api/reviewApi";
+import type { ReviewAiSummary, ReviewPageDto } from "../types/review";
 import { getLocaleCode } from "../utils/locale";
 
 interface ReviewsSectionProps {
@@ -29,6 +29,20 @@ function ReviewsContent({ kind, accommodationId }: ReviewsSectionProps) {
     const [result, setResult] = useState<ReviewPageDto | null>(null);
     const [loading, setLoading] = useState(true);
     const [failed, setFailed] = useState(false);
+
+    const [summary, setSummary] = useState<ReviewAiSummary | null>(null);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        getReviewSummary(kind, accommodationId, controller.signal)
+            .then(data => {
+                if (!controller.signal.aborted) setSummary(data);
+            })
+            .catch(() => {
+                if (!controller.signal.aborted) setSummary(null);
+            });
+        return () => controller.abort();
+    }, [kind, accommodationId]);
 
     const locale = getLocaleCode(i18n.language);
 
@@ -142,6 +156,25 @@ function ReviewsContent({ kind, accommodationId }: ReviewsSectionProps) {
             </div>
 
             <div className="my-4 border-t border-brand-accent" />
+
+            {summary && (
+                <section lang="en" className="mb-5 space-y-3 rounded-lg bg-brand-bg p-4">
+                    <h3 className="font-semibold text-brand-main">{t("reviews.aiTitle", { lng: "en" })}</h3>
+                    <p className="break-words text-sm leading-relaxed">{summary.summary}</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        {(["pros", "cons"] as const).map(group => summary[group].length > 0 && (
+                            <div key={group}>
+                                <h4 className="text-sm font-semibold">{t(`reviews.${group}`, { lng: "en" })}</h4>
+                                <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
+                                    {summary[group].map((point, index) => (
+                                        <li key={index} className="break-words">{point}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             <div aria-busy={loading} className="space-y-4">
                 {loading ? (
