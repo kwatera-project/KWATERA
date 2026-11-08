@@ -7,7 +7,7 @@ CREATE TABLE review_summaries
       input_fingerprint    VARCHAR(255)                        NOT NULL, -- Hash of review_ids updated_at and used to detect changes
       generation_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
       created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-      updated_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      updated_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
       CONSTRAINT chk_review_target CHECK (
           (property_id IS NOT NULL AND unit_id IS NULL) OR
