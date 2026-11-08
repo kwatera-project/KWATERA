@@ -194,8 +194,18 @@ class ReviewControllerIntegrationTest {
         reviewRepository.findSummaryInputsByUnitIds(List.of(unitId, secondUnitId));
 
     assertEquals(2, result.size());
-    assertTrue(result.contains(new ReviewSummaryInput(first.getId(), "Wygodne łóżko.")));
-    assertTrue(result.contains(new ReviewSummaryInput(second.getId(), "Wieczorem było głośno.")));
+    assertTrue(
+        result.stream()
+            .anyMatch(
+                input ->
+                    input.id().equals(first.getId()) && input.comment().equals("Wygodne łóżko.")));
+    assertTrue(
+        result.stream()
+            .anyMatch(
+                input ->
+                    input.id().equals(second.getId())
+                        && input.comment().equals("Wieczorem było głośno.")));
+    assertTrue(result.stream().allMatch(input -> input.updatedAt() != null));
   }
 
   private void authenticateGuest() {

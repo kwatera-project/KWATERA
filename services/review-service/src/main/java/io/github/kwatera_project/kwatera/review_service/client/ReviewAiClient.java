@@ -29,7 +29,7 @@ public class ReviewAiClient {
     this.internalToken = internalToken;
   }
 
-  public String summarize(List<String> comments, String language) {
+  public SummaryResponse summarize(List<String> comments, String language) {
     if (comments.isEmpty()) {
       throw new IllegalArgumentException("At least one review comment is required");
     }
@@ -56,7 +56,7 @@ public class ReviewAiClient {
       throw new RestClientException("AI service returned an invalid review summary");
     }
 
-    return response.summary();
+    return response;
   }
 
   private record SummaryRequest(List<String> reviews, String language) {
@@ -65,5 +65,17 @@ public class ReviewAiClient {
     }
   }
 
-  private record SummaryResponse(String summary, String model) {}
+  public record SummaryResponse(String summary, List<String> pros, List<String> cons, String model) {
+    public SummaryResponse {
+      pros = copyPoints(pros);
+      cons = copyPoints(cons);
+    }
+
+    private static List<String> copyPoints(List<String> points) {
+      if (points == null || points.stream().anyMatch(point -> point == null || point.isBlank())) {
+        throw new IllegalArgumentException("Expected a list of nonblank review points");
+      }
+      return List.copyOf(points);
+    }
+  }
 }

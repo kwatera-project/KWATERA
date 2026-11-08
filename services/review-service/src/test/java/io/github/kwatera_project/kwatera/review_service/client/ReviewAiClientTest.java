@@ -42,13 +42,16 @@ class ReviewAiClientTest {
         .andRespond(
             withSuccess(
                 """
-            {"summary":"Czysty pokój, ale wieczorem było głośno.","model":"qwen"}
+            {"summary":"Czysty pokój, ale wieczorem było głośno.","pros":["Czystość"],"cons":["Hałas"],"model":"qwen"}
             """,
                 MediaType.APPLICATION_JSON));
 
-    String result = client.summarize(List.of("Czysty pokój.", "Wieczorem było głośno."), "pl");
+    var result = client.summarize(List.of("Czysty pokój.", "Wieczorem było głośno."), "pl");
 
-    assertEquals("Czysty pokój, ale wieczorem było głośno.", result);
+    assertEquals("Czysty pokój, ale wieczorem było głośno.", result.summary());
+    assertEquals(List.of("Czystość"), result.pros());
+    assertEquals(List.of("Hałas"), result.cons());
+    assertEquals("qwen", result.model());
     server.verify();
   }
 
@@ -59,7 +62,7 @@ class ReviewAiClientTest {
         .andRespond(
             withSuccess(
                 """
-            {"summary":" ","model":"qwen"}
+            {"summary":" ","pros":[],"cons":[],"model":"qwen"}
             """,
                 MediaType.APPLICATION_JSON));
 
@@ -67,6 +70,32 @@ class ReviewAiClientTest {
 
     assertThrows(RestClientException.class, () -> client.summarize(comments, "pl"));
     server.verify();
+  }
+
+  @Test
+  void shouldAcceptEmptyPoints() {
+    server.expect(requestTo(URL)).andRespond(withSuccess(
+        """
+        {"summary":"Opis pobytu","pros":[],"cons":[],"model":"qwen"}
+        """, MediaType.APPLICATION_JSON));
+
+    var result = client.summarize(List.of("Opis pobytu"), "pl");
+
+    assertEquals(List.of(), result.pros());
+    assertEquals(List.of(), result.cons());
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(strings = {
+      "{\"pros\":[]}",
+      "{\"pros\":null,\"cons\":[]}",
+      "{\"pros\":[],\"cons\":[\" \"]}"
+  })
+  void shouldRejectInvalidPoints(String fields) {
+    String json = "{\"summary\":\"Opis\",\"model\":\"qwen\"," + fields.substring(1);
+    server.expect(requestTo(URL)).andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
+    List<String> comments = List.of("Opis pobytu");
+    assertThrows(RestClientException.class, () -> client.summarize(comments, "pl"));
   }
 
   @Test

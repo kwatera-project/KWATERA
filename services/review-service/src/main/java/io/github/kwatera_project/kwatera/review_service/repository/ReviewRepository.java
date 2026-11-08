@@ -27,7 +27,7 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
   @Query(
       """
             SELECT new io.github.kwatera_project.kwatera.review_service.dto.ReviewSummaryInput(
-                review.id, review.comment)
+                review.id, review.comment, COALESCE(review.updatedAt, review.createdAt))
             FROM Review review
             WHERE review.unitId IN :unitIds
               AND review.comment IS NOT NULL
