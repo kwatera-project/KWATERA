@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -40,6 +42,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -51,8 +54,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestOperations;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -75,6 +80,19 @@ import org.springframework.web.server.ResponseStatusException;
 @AutoConfigureMockMvc
 class MessageIntegrationTest {
   @MockitoBean private MessageTranslationClient translations;
+  @Autowired private ObjectProvider<RestClient.Builder> defaultRestClientBuilder;
+
+  @Test
+  void defaultHttpClientCanReachRegistryWithoutServiceDiscovery() {
+    String registryUrl = "http://service-registry:8761/eureka/apps";
+    var builder = defaultRestClientBuilder.getIfAvailable(RestClient::builder);
+    var registry = MockRestServiceServer.bindTo(builder).build();
+    registry.expect(requestTo(registryUrl)).andRespond(withSuccess());
+
+    builder.build().get().uri(registryUrl).retrieve().toBodilessEntity();
+
+    registry.verify();
+  }
 
   @ParameterizedTest
   @ValueSource(strings = {"guest", "owner"})
@@ -509,6 +527,8 @@ class MessageIntegrationTest {
 
   @Test
   void openApiIncludesMessagingSchemasSecurityAndResponses() throws Exception {
+    String translationOperation =
+        "$.paths['/api/v1/conversations/{conversationId}/messages/{messageId}/translation'].post";
     mockMvc
         .perform(get("/v3/api-docs"))
         .andExpect(status().isOk())
@@ -532,7 +552,14 @@ class MessageIntegrationTest {
             jsonPath("$.components.schemas.SendMessageRequest.properties.content.maxLength")
                 .value(4000))
         .andExpect(
-            jsonPath("$.components.schemas.MessageHistoryResponse.properties.items").exists());
+            jsonPath("$.components.schemas.MessageHistoryResponse.properties.items").exists())
+        .andExpect(jsonPath(translationOperation + ".security[0].bearerAuth").exists())
+        .andExpect(
+            jsonPath(
+                    translationOperation
+                        + ".responses['200'].content['application/json'].schema['$ref']")
+                .value("#/components/schemas/MessageTranslationResponse"))
+        .andExpect(jsonPath(translationOperation + ".responses['503']").exists());
   }
 
   private CompletableFuture<MessageResponse> sendAfter(

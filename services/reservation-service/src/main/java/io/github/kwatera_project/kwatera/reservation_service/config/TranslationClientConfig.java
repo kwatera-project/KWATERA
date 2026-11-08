@@ -12,7 +12,8 @@ import org.springframework.web.client.RestClient;
 
 @Configuration
 public class TranslationClientConfig {
-  @Bean
+  // Eureka must use the default builder to reach its registry directly.
+  @Bean(defaultCandidate = false)
   @LoadBalanced
   @SuppressWarnings("removal")
   public RestClient.Builder translationRestClientBuilder(
