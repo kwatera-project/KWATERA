@@ -7,11 +7,14 @@ import io.github.kwatera_project.kwatera.review_service.dto.ReviewResponseDto;
 import io.github.kwatera_project.kwatera.review_service.dto.UpdateReviewRequest;
 import io.github.kwatera_project.kwatera.review_service.model.Review;
 import io.github.kwatera_project.kwatera.review_service.repository.ReviewRepository;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import jakarta.persistence.criteria.Predicate;
+import java.time.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -151,5 +154,45 @@ public class ReviewService {
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, REVIEW_NOT_FOUND));
 
     reviewRepository.deleteById(reviewId);
+  }
+
+  public List<ReviewResponseDto> getReviewsForAdmin(
+      LocalDate startDate, LocalDate endDate, String dateType) {
+
+    Specification<Review> spec =
+        (root, query, criteriaBuilder) -> {
+          List<Predicate> predicates = new ArrayList<>();
+
+          String targetField = "updatedAt".equals(dateType) ? "updatedAt" : "createdAt";
+
+          if (startDate != null) {
+            Instant startInstant = startDate.atStartOfDay(ZoneOffset.UTC).toInstant();
+            predicates.add(
+                criteriaBuilder.greaterThanOrEqualTo(root.get(targetField), startInstant));
+          }
+
+          if (endDate != null) {
+            Instant endInstant = endDate.atTime(LocalTime.MAX).atZone(ZoneOffset.UTC).toInstant();
+            predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get(targetField), endInstant));
+          }
+
+          query.orderBy(criteriaBuilder.desc(root.get("createdAt")));
+
+          return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+
+    return reviewRepository.findAll(spec).stream().map(this::mapToDto).collect(Collectors.toList());
+  }
+
+  private ReviewResponseDto mapToDto(Review review) {
+    return new ReviewResponseDto(
+        review.getId(),
+        review.getReservationId(),
+        review.getUnitId(),
+        review.getAuthorId(),
+        review.getRating(),
+        review.getComment(),
+        review.getCreatedAt(),
+        review.getUpdatedAt());
   }
 }

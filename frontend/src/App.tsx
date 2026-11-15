@@ -44,6 +44,7 @@ const EditUnitImages = lazy(() => import("./pages/EditUnitImages.tsx"));
 const CreateReview = lazy(() => import("./pages/CreateReviewPage.tsx"));
 const SingleReviewPage = lazy(() => import("./pages/SingleReviewPage.tsx"));
 const MyReviewsPage = lazy(() => import("./pages/MyReviewsPage.tsx"));
+const AdminReviewsPage = lazy(() => import("./pages/AdminReviewsPage.tsx"));
 
 function LoadingFallback() {
     return (
@@ -129,6 +130,14 @@ function App() {
                                 }
                             />
                             <Route
+                                path="/admin/reviews"
+                                element={
+                                    <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
+                                        <AdminReviewsPage/>
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
                                 path="/my-reservations"
                                 element={
                                     <ProtectedRoute allowedRoles={['ROLE_GUEST']}>
@@ -155,7 +164,7 @@ function App() {
                             <Route
                                 path="/reviews/:reviewId"
                                 element={
-                                    <ProtectedRoute allowedRoles={['ROLE_GUEST']}>
+                                    <ProtectedRoute allowedRoles={['ROLE_GUEST', 'ROLE_ADMIN']}>
                                         <SingleReviewPage/>
                                     </ProtectedRoute>
                                 }

@@ -92,7 +92,8 @@
     "systemUsers": "Użytkownicy systemu",
     "demoLogin": "LOGOWANIE DEMO",
     "language": "Język",
-    "currency": "Waluta"
+    "currency": "Waluta",
+    "reviews": "Opinie"
   },
 
   "login": {
@@ -173,7 +174,9 @@
     "confirmed": "Potwierdzona",
     "cancelled": "Anulowana",
     "completed": "Zakończona",
-    "notAvailable": "Brak"
+    "notAvailable": "Brak",
+    "networkError": "Wystąpił błąd",
+    "delete": "Usuń"
   },
 
   "statuses": {
@@ -348,7 +351,9 @@
     "guests": "Goście",
     "addGuests": "Dodaj gości",
     "searchProperties": "Szukaj noclegów",
-    "cityPlaceholder": "Dokąd jedziesz?"
+    "cityPlaceholder": "Dokąd jedziesz?",
+    "startDate": "Od",
+    "endDate": "Do"
   },
 
   "report": {
@@ -1267,7 +1272,7 @@
     "count_few": "{{count}} opinie",
     "count_many": "{{count}} opinii",
     "count_other": "{{count}} opinii",
-    "loading": "Ładowanie opinii…",
+    "loading": "Ładowanie opinii...",
     "error": "Nie udało się pobrać opinii. Spróbuj ponownie.",
     "retry": "Spróbuj ponownie",
     "emptyProperty": "Ten obiekt nie ma jeszcze opinii.",
@@ -1278,5 +1283,27 @@
     "previous": "Poprzednia",
     "next": "Następna",
     "page": "Strona {{page}} z {{total}}"
+  },
+  "adminReviews": {
+    "loadError": "Nie udało się załadować opinii",
+    "confirmDelete": "Czy na pewno chcesz usunąć tę opinię?",
+    "deletedSuccess": "Opinia została pomyślnie usunięta",
+    "title": "Zarządzaj opiniami",
+    "subtitle": "Przeglądaj i zarządzaj opiniami klientów, filtruj według daty utworzenia lub aktualizacji.",
+    "showing": "Wyświetlanie",
+    "dateType": "Typ daty",
+    "createdAt": "Data utworzenia",
+    "updatedAt": "Data aktualizacji",
+    "dateRange": "Zakres dat",
+    "reviewCount": "opinii",
+    "reviewId": "ID",
+    "rating": "Ocena",
+    "datesFull": "Daty (Dodano / Zaktualizowano)",
+    "comment": "Komentarz",
+    "actions": "Akcje",
+    "dates": "Daty",
+    "viewReview": "Zobacz szczegóły opinii",
+    "viewReservation": "Zobacz szczegóły rezerwacji",
+    "noReviews": "Nie znaleziono opinii spełniających wybrane kryteria."
   }
 }

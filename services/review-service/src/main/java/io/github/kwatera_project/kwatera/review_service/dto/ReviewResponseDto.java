@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 public class ReviewResponseDto {
   private UUID id;
   private UUID reservationId;
+  private UUID unitId;
   private UUID authorId;
   private Integer rating;
   private String comment;
