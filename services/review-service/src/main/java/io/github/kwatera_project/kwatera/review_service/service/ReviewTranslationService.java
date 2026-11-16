@@ -16,8 +16,7 @@ public class ReviewTranslationService {
   private final ReviewTranslationClient translationClient;
 
   public ReviewTranslationService(
-      ReviewRepository reviewRepository,
-      ReviewTranslationClient translationClient) {
+      ReviewRepository reviewRepository, ReviewTranslationClient translationClient) {
     this.reviewRepository = reviewRepository;
     this.translationClient = translationClient;
   }
@@ -45,9 +44,7 @@ public class ReviewTranslationService {
           translation.alreadyInTargetLanguage());
     } catch (RestClientException exception) {
       throw new ResponseStatusException(
-          HttpStatus.BAD_GATEWAY,
-          "Review translation is temporarily unavailable",
-          exception);
+          HttpStatus.BAD_GATEWAY, "Review translation is temporarily unavailable", exception);
     }
   }
 }

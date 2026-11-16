@@ -41,8 +41,7 @@ class ReviewTranslationServiceTest {
   void translatesCommentWithoutSavingChangesToReview() {
     when(reviewRepository.findById(reviewId)).thenReturn(Optional.of(review));
     when(translationClient.translate("Great room.", "pl"))
-        .thenReturn(
-            new ReviewTranslationClient.TranslationResult("Świetny pokój.", "EN", false));
+        .thenReturn(new ReviewTranslationClient.TranslationResult("Świetny pokój.", "EN", false));
 
     var result = translationService.translate(reviewId, "pl");
 
@@ -60,8 +59,7 @@ class ReviewTranslationServiceTest {
 
     var exception =
         assertThrows(
-            ResponseStatusException.class,
-            () -> translationService.translate(reviewId, "pl"));
+            ResponseStatusException.class, () -> translationService.translate(reviewId, "pl"));
 
     assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
     verifyNoInteractions(translationClient);
@@ -74,8 +72,7 @@ class ReviewTranslationServiceTest {
 
     var exception =
         assertThrows(
-            ResponseStatusException.class,
-            () -> translationService.translate(reviewId, "pl"));
+            ResponseStatusException.class, () -> translationService.translate(reviewId, "pl"));
 
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
     verifyNoInteractions(translationClient);
@@ -89,8 +86,7 @@ class ReviewTranslationServiceTest {
 
     var exception =
         assertThrows(
-            ResponseStatusException.class,
-            () -> translationService.translate(reviewId, "pl"));
+            ResponseStatusException.class, () -> translationService.translate(reviewId, "pl"));
 
     assertEquals(HttpStatus.BAD_GATEWAY, exception.getStatusCode());
   }

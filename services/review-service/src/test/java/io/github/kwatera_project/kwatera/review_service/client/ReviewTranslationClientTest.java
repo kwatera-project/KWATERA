@@ -100,8 +100,7 @@ class ReviewTranslationClientTest {
     when(deepLClient.translateText("Hello.", null, "PL")).thenReturn(null);
 
     assertThrows(
-        RestClientException.class,
-        () -> clientWithMockDeepL("test-key").translate("Hello.", "pl"));
+        RestClientException.class, () -> clientWithMockDeepL("test-key").translate("Hello.", "pl"));
   }
 
   @Test
@@ -110,8 +109,7 @@ class ReviewTranslationClientTest {
     when(textResult.getText()).thenReturn("  ");
 
     assertThrows(
-        RestClientException.class,
-        () -> clientWithMockDeepL("test-key").translate("Hello.", "pl"));
+        RestClientException.class, () -> clientWithMockDeepL("test-key").translate("Hello.", "pl"));
   }
 
   @Test
@@ -120,8 +118,7 @@ class ReviewTranslationClientTest {
         .thenThrow(new DeepLException("DeepL unavailable"));
 
     assertThrows(
-        RestClientException.class,
-        () -> clientWithMockDeepL("test-key").translate("Hello.", "pl"));
+        RestClientException.class, () -> clientWithMockDeepL("test-key").translate("Hello.", "pl"));
   }
 
   @Test
@@ -154,9 +151,7 @@ class ReviewTranslationClientTest {
   void rejectsMissingApiKeyBeforeCallingDeepL() {
     var client = new ReviewTranslationClient("", Duration.ofSeconds(15));
 
-    assertThrows(
-        RestClientException.class,
-        () -> client.translate("Great room.", "pl"));
+    assertThrows(RestClientException.class, () -> client.translate("Great room.", "pl"));
   }
 
   private ReviewTranslationClient clientWithMockDeepL(String apiKey) {

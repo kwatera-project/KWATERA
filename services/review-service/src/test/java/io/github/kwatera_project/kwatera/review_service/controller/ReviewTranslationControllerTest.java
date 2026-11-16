@@ -41,8 +41,7 @@ class ReviewTranslationControllerTest {
         .perform(
             post("/api/reviews/{reviewId}/translation", reviewId)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(
-                    java.util.Map.of("targetLanguage", "pl"))))
+                .content(objectMapper.writeValueAsString(java.util.Map.of("targetLanguage", "pl"))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.translatedText").value("Świetny pokój."))
         .andExpect(jsonPath("$.targetLanguage").value("pl"))
@@ -60,8 +59,7 @@ class ReviewTranslationControllerTest {
         .perform(
             post("/api/reviews/{reviewId}/translation", reviewId)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(
-                    java.util.Map.of("targetLanguage", "de"))))
+                .content(objectMapper.writeValueAsString(java.util.Map.of("targetLanguage", "de"))))
         .andExpect(status().isBadRequest());
 
     verifyNoInteractions(translationService);
