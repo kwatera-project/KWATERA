@@ -13,6 +13,7 @@ export interface ReviewResponseDto {
     id: string;
     reservationId: string;
     authorId: string;
+    unitId: string;
     rating: number;
     comment?: string | null;
     createdAt: string | null;

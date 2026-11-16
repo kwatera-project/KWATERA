@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import {useParams, Link, useNavigate} from "react-router-dom";
 import { getReservationDetails } from "../api/reservationApi";
 import { getUnit, getUnitSettlementItems } from "../api/propertyApi";
 import WaterRateTooltip from "../components/WaterRateTooltip";
@@ -24,6 +24,7 @@ import type {ReviewResponseDto} from "../types/review.ts";
 
 export default function ReservationDetailsPage() {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [reservation, setReservation] = useState<ReservationDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -106,8 +107,6 @@ export default function ReservationDetailsPage() {
     const roles = getUserRoles(token);
     const isAdminOrOwner = roles.includes("ROLE_ADMIN") || roles.includes("ROLE_OWNER");
     const displayCurrency = reservation.currencyInfo?.displayCurrency || 'PLN';
-    const returnPath = isAdminOrOwner ? "/admin/reservations" : "/my-reservations";
-    const returnLabel = isAdminOrOwner ? t('adminMeterReadings.backToReservations') : t('meterReadings.backToReservations');
     const currentWaterContext = waterContext.unitId === reservation.unitId ? waterContext : { items: [], capacity: undefined, loaded: false };
     const waterTariff = findWaterUsageTariff(currentWaterContext.items);
     const waterUsageRange = currentWaterContext.capacity
@@ -150,12 +149,12 @@ export default function ReservationDetailsPage() {
     return (
         <div className="max-w-7xl mx-auto p-4 md:p-8 min-h-screen text-[#1A1A1A] space-y-6 flex flex-col">
             {/* Top Navigation */}
-            <Link
-                to={returnPath}
-                className="px-4 py-2 text-xs font-bold text-[#42211D] bg-[#F7F7F7] border border-[#DACDCA] hover:bg-gray-100 rounded-lg transition-colors shadow-sm inline-flex items-center gap-1.5 w-fit self-start"
+            <button
+                onClick={() => navigate(-1)}
+                className="inline-flex items-center text-sm font-semibold text-[#7A7A7A] hover:text-[#1A1A1A] transition-colors mb-2"
             >
-                &larr; {returnLabel}
-            </Link>
+                &larr; {t('singleReview.back')}
+            </button>
 
             {/* Dashboard Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#DACDCA] pb-6">

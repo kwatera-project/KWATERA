@@ -4,11 +4,16 @@ import { getReviewDetails, updateReview } from "../api/reviewApi.ts";
 import ReviewForm, { type ReviewFormData } from "../contexts/ReviewForm";
 import type { ReviewResponseDto } from "../types/review";
 import { useTranslation } from "react-i18next";
+import {getUserRoles} from "../utils/jwtUtils.ts";
 
 export default function SingleReviewPage() {
     const { reviewId } = useParams<{ reviewId: string }>();
     const navigate = useNavigate();
     const { t } = useTranslation();
+
+    const token = localStorage.getItem("token");
+    const roles = getUserRoles(token);
+    const isAdmin = roles?.includes("ROLE_ADMIN") ?? false;
 
     const [review, setReview] = useState<ReviewResponseDto | null>(null);
     const [loading, setLoading] = useState(true);
@@ -27,7 +32,7 @@ export default function SingleReviewPage() {
     }, [reviewId, t]);
 
     const handleUpdate = async (data: ReviewFormData) => {
-        if (!reviewId) return;
+        if (!reviewId || isAdmin) return;
 
         try {
             await updateReview(reviewId, data.rating, data.comment);
@@ -61,11 +66,15 @@ export default function SingleReviewPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#DACDCA] pb-4 mb-6">
                 <div>
                     <h1 className="text-3xl font-black text-[#1A1A1A] tracking-tight">
-                        {t('singleReview.title')}
+                        {isAdmin
+                            ? `${t('myReviews.reviewName')} #${reviewId}`
+                            : t('singleReview.title')}
                     </h1>
-                    <p className="text-sm font-semibold text-[#7A7A7A] mt-1">
-                        {t('singleReview.subtitle')}
-                    </p>
+                    {!isAdmin && (
+                        <p className="text-sm font-semibold text-[#7A7A7A] mt-1">
+                            {t('singleReview.subtitle')}
+                        </p>
+                    )}
                 </div>
             </div>
 
@@ -77,6 +86,7 @@ export default function SingleReviewPage() {
                     }}
                     submitLabel={t('singleReview.submit')}
                     onSubmit={handleUpdate}
+                    readOnly={isAdmin}
                 />
             </div>
         </div>

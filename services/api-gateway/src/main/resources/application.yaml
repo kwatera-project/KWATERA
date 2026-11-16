@@ -76,7 +76,7 @@ spring:
             - id: review-service
               uri: lb://review-service
               predicates:
-                - Path=/api/reviews,/api/reviews/**
+                - Path=/api/reviews,/api/reviews/**,/api/admin/reviews/**
 
 
 eureka:

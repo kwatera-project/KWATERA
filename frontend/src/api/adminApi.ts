@@ -2,6 +2,7 @@ import { GATEWAY_BASE_URL, IS_DEMO_MODE } from "./apiConfig";
 import { demoOccupancy, demoAdminReservations } from "../demo/demoReservations";
 import { demoBillingMetrics, demoReservationMetrics } from "../demo/demoReports";
 import { demoSystemEvents } from "../demo/demoSystemEvents";
+import type {ReviewResponseDto} from "../types/review.ts";
 
 export type SystemEventType =
     | "RESERVATION_CREATED"
@@ -307,5 +308,23 @@ export async function getAdminUsers(page: number, size: number, role?: string, s
         }
     });
     if (!res.ok) throw new Error("Failed to fetch admin users");
+    return res.json();
+}
+
+export async function getAdminReviews(startDate?: string, endDate?: string, dateType?: string): Promise<ReviewResponseDto[]> {
+    const token = localStorage.getItem("token");
+
+    const params = new URLSearchParams();
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+    if (dateType) params.append("dateType", dateType);
+
+    const res = await fetch(`${GATEWAY_BASE_URL}/api/admin/reviews?${params.toString()}`, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch admin reviews");
     return res.json();
 }
