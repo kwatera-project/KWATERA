@@ -315,6 +315,13 @@ export default function Navbar({isSubpage}: NavbarProps = {}) {
                                             <Calendar size={16}/>
                                             {t('navbar.reservations')}
                                         </Link>
+                                        {userRoles.includes("ROLE_ADMIN") && (
+                                            <Link to="/admin/reviews"
+                                                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
+                                                <Star size={16}/>
+                                                {t('navbar.reviews')}
+                                            </Link>
+                                        )}
                                         <Link to="/admin/dashboard"
                                               className="flex items-center gap-3 px-4 py-2.5 text-sm text-[rgb(var(--color-burgundy))] hover:bg-gray-50 transition-colors font-semibold">
                                             <LayoutDashboard size={16}/>
