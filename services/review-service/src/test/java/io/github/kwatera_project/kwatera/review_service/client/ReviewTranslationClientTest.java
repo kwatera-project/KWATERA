@@ -98,38 +98,37 @@ class ReviewTranslationClientTest {
   @Test
   void rejectsNullDeepLResponse() throws Exception {
     when(deepLClient.translateText("Hello.", null, "PL")).thenReturn(null);
+    var client = clientWithMockDeepL("test-key");
 
-    assertThrows(
-        RestClientException.class, () -> clientWithMockDeepL("test-key").translate("Hello.", "pl"));
+    assertThrows(RestClientException.class, () -> client.translate("Hello.", "pl"));
   }
 
   @Test
   void rejectsBlankDeepLTranslation() throws Exception {
     when(deepLClient.translateText("Hello.", null, "PL")).thenReturn(textResult);
     when(textResult.getText()).thenReturn("  ");
+    var client = clientWithMockDeepL("test-key");
 
-    assertThrows(
-        RestClientException.class, () -> clientWithMockDeepL("test-key").translate("Hello.", "pl"));
+    assertThrows(RestClientException.class, () -> client.translate("Hello.", "pl"));
   }
 
   @Test
   void wrapsDeepLFailures() throws Exception {
     when(deepLClient.translateText("Hello.", null, "PL"))
         .thenThrow(new DeepLException("DeepL unavailable"));
+    var client = clientWithMockDeepL("test-key");
 
-    assertThrows(
-        RestClientException.class, () -> clientWithMockDeepL("test-key").translate("Hello.", "pl"));
+    assertThrows(RestClientException.class, () -> client.translate("Hello.", "pl"));
   }
 
   @Test
   void restoresInterruptFlagWhenDeepLCallIsInterrupted() throws Exception {
     when(deepLClient.translateText("Hello.", null, "PL"))
         .thenThrow(new InterruptedException("interrupted"));
+    var client = clientWithMockDeepL("test-key");
 
     try {
-      assertThrows(
-          RestClientException.class,
-          () -> clientWithMockDeepL("test-key").translate("Hello.", "pl"));
+      assertThrows(RestClientException.class, () -> client.translate("Hello.", "pl"));
       assertTrue(Thread.currentThread().isInterrupted());
     } finally {
       Thread.interrupted();

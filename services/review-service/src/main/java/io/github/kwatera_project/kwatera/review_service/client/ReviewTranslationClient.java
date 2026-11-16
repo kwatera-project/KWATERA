@@ -16,7 +16,7 @@ public final class ReviewTranslationClient {
 
   private final String apiKey;
   private final Duration timeout;
-  private volatile DeepLClient deepLClient;
+  private DeepLClient deepLClient;
 
   @Autowired
   public ReviewTranslationClient(
@@ -46,10 +46,10 @@ public final class ReviewTranslationClient {
           alreadyInTargetLanguage ? text : result.getText(),
           detectedLanguage,
           alreadyInTargetLanguage);
-    } catch (DeepLException | InterruptedException exception) {
-      if (exception instanceof InterruptedException) {
-        Thread.currentThread().interrupt();
-      }
+    } catch (InterruptedException exception) {
+      Thread.currentThread().interrupt();
+      throw new RestClientException("DeepL translation request failed", exception);
+    } catch (DeepLException exception) {
       throw new RestClientException("DeepL translation request failed", exception);
     }
   }
@@ -67,14 +67,10 @@ public final class ReviewTranslationClient {
     return base.toLowerCase(Locale.ROOT);
   }
 
-  private DeepLClient getDeepLClient() {
+  private synchronized DeepLClient getDeepLClient() {
     if (deepLClient == null) {
-      synchronized (this) {
-        if (deepLClient == null) {
-          var options = new DeepLClientOptions().setMaxRetries(0).setTimeout(timeout);
-          deepLClient = new DeepLClient(apiKey, options);
-        }
-      }
+      var options = new DeepLClientOptions().setMaxRetries(0).setTimeout(timeout);
+      deepLClient = new DeepLClient(apiKey, options);
     }
     return deepLClient;
   }
