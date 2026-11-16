@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Calendar, Home, Loader2, MessageSquare, RefreshCw, Send } from "lucide-react";
+import { ArrowLeft, Calendar, Home, Loader2, MessageSquare, Send } from "lucide-react";
 import { useConversation } from "../hooks/useConversation";
 import { decodeJwt } from "../utils/jwtUtils";
 import { getLocaleCode } from "../utils/locale";
@@ -120,8 +120,8 @@ function ConversationScreen({ conversationId, userId, token, onRetry }: {
                     <Calendar size={16} aria-hidden="true" />{t("chat.backToReservation")}
                 </Link>
             </div>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-accent pb-6">
-                <div className="min-w-0 space-y-1.5">
+            <div className="border-b border-brand-accent pb-6">
+                <div className="space-y-1.5">
                     <h1 className="text-3xl font-black tracking-tight">{t("chat.title")}</h1>
                     <p className="text-sm text-brand-muted">{t("chat.subtitle")}</p>
                     <p role="status" aria-live="polite" data-testid="connection-status"
@@ -131,10 +131,6 @@ function ConversationScreen({ conversationId, userId, token, onRetry }: {
                         {chat.connectionStatus === "subscriptionError" && <button type="button" onClick={onRetry} className="underline font-bold shrink-0">{t("chat.retry")}</button>}
                     </p>
                 </div>
-                <button type="button" onClick={() => void loadHistory("refresh")} disabled={busy} className={`${secondaryButton} shrink-0`}>
-                    <RefreshCw size={16} aria-hidden="true" className={chat.operation === "refresh" ? "animate-spin motion-reduce:animate-none" : ""} />
-                    {t(chat.operation === "refresh" ? "chat.refreshing" : "chat.refresh")}
-                </button>
             </div>
 
             <section aria-labelledby="chat-reservation" className="bg-white border border-brand-accent rounded-xl shadow-sm p-5 md:p-6 space-y-4">
@@ -234,7 +230,7 @@ function ConversationScreen({ conversationId, userId, token, onRetry }: {
                             {t(chat.operation === "send" ? "chat.sending" : "chat.send")}
                         </button>
                     </div>
-                    <p role="status" className="text-sm text-brand-primary min-h-5">{chat.operation === "refresh" ? t("chat.refreshing") : announcement}</p>
+                    <p role="status" className="text-sm text-brand-primary min-h-5">{chat.operation === "refresh" ? t("chat.synchronizing") : announcement}</p>
                 </form>
             </section>
         </div>
