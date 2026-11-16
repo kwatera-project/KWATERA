@@ -1,12 +1,12 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from "react-router-dom";
 import { deleteReview } from "../api/reviewApi";
-import {getAdminReviews} from "../api/adminApi";
+import { getAdminReviews } from "../api/adminApi";
 import { Star, Info, ChevronDown, Trash2 } from 'lucide-react';
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import SharedDatePicker from "../components/SharedDatePicker.tsx";
-import type {ReviewResponseDto} from "../types/review.ts";
+import type { ReviewResponseDto } from "../types/review.ts";
 
 const parseDateString = (str: string): Date | null => {
     if (!str) return null;
@@ -27,26 +27,52 @@ export default function AdminReviewsPage() {
     const [endDate, setEndDate] = useState<string>("");
     const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
 
-    const fetchReviews = useCallback(() => {
-        setLoading(true);
+    useEffect(() => {
+        let isMounted = true;
+
         getAdminReviews(startDate || undefined, endDate || undefined, dateType || undefined)
             .then((data) => {
-                setReviews(data);
-                setLoading(false);
+                if (isMounted) {
+                    setReviews(data);
+                    setLoading(false);
+                }
             })
             .catch((err) => {
-                console.error(err);
-                setMessage({
-                    text: err instanceof Error ? err.message : t('adminReviews.loadError'),
-                    type: 'error'
-                });
-                setLoading(false);
+                if (isMounted) {
+                    console.error(err);
+                    setMessage({
+                        text: err instanceof Error ? err.message : t('adminReviews.loadError'),
+                        type: 'error'
+                    });
+                    setLoading(false);
+                }
             });
+
+        return () => {
+            isMounted = false;
+        };
     }, [startDate, endDate, dateType, t]);
 
-    useEffect(() => {
-        fetchReviews();
-    }, [fetchReviews]);
+    const handleDateTypeChange = (newType: string) => {
+        setLoading(true);
+        setDateType(newType);
+    };
+
+    const handleStartDateChange = (date: Date | null) => {
+        setLoading(true);
+        setStartDate(date ? format(date, "yyyy-MM-dd") : "");
+    };
+
+    const handleEndDateChange = (date: Date | null) => {
+        setLoading(true);
+        setEndDate(date ? format(date, "yyyy-MM-dd") : "");
+    };
+
+    const handleClearDates = () => {
+        setLoading(true);
+        setStartDate("");
+        setEndDate("");
+    };
 
     const handleDeleteReview = async (id: string) => {
         if (!window.confirm(t('adminReviews.confirmDelete'))) {
@@ -95,7 +121,7 @@ export default function AdminReviewsPage() {
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#F7F7F7] border border-[#DACDCA] rounded-xl p-4 shadow-sm">
                 <div className="text-sm font-medium text-[#7A7A7A]">
-                    {t('adminReviews.showing')} <span className="font-bold text-[#1A1A1A]">{reviews.length}</span> {t('adminReviews.reviewCount', { count: reviews.length})}
+                    {t('adminReviews.showing')} <span className="font-bold text-[#1A1A1A]">{reviews.length}</span> {t('adminReviews.reviewCount', { count: reviews.length })}
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full md:w-auto">
@@ -107,7 +133,7 @@ export default function AdminReviewsPage() {
                             <select
                                 className="appearance-none block w-full bg-solid-white border border-[#DACDCA] rounded-lg py-2 pl-3 pr-10 text-sm text-[#1A1A1A] font-semibold focus:outline-none focus:ring-2 focus:ring-[#42211D]/20 focus:border-[#42211D] transition-all shadow-sm cursor-pointer"
                                 value={dateType}
-                                onChange={(e) => setDateType(e.target.value)}
+                                onChange={(e) => handleDateTypeChange(e.target.value)}
                             >
                                 <option value="createdAt">{t('adminReviews.createdAt')}</option>
                                 <option value="updatedAt">{t('adminReviews.updatedAt')}</option>
@@ -125,10 +151,7 @@ export default function AdminReviewsPage() {
                             </span>
                             {(startDate || endDate) && (
                                 <button
-                                    onClick={() => {
-                                        setStartDate("");
-                                        setEndDate("");
-                                    }}
+                                    onClick={handleClearDates}
                                     className="text-sm font-medium text-gray-500 hover:text-[#42211D] transition-colors shrink-0 cursor-pointer sm:hidden"
                                 >
                                     {t('common.clear')}
@@ -139,7 +162,7 @@ export default function AdminReviewsPage() {
                         <div className="flex items-center justify-center gap-2 bg-solid-white border border-[#DACDCA] rounded-lg p-1.5 shadow-sm w-full sm:w-auto">
                             <SharedDatePicker
                                 selected={parseDateString(startDate)}
-                                onChange={(date) => setStartDate(date ? format(date, "yyyy-MM-dd") : "")}
+                                onChange={handleStartDateChange}
                                 selectsStart
                                 startDate={parseDateString(startDate)}
                                 endDate={parseDateString(endDate)}
@@ -151,7 +174,7 @@ export default function AdminReviewsPage() {
                             <span className="text-gray-400 font-medium text-xs">→</span>
                             <SharedDatePicker
                                 selected={parseDateString(endDate)}
-                                onChange={(date) => setEndDate(date ? format(date, "yyyy-MM-dd") : "")}
+                                onChange={handleEndDateChange}
                                 selectsEnd
                                 startDate={parseDateString(startDate)}
                                 endDate={parseDateString(endDate)}
@@ -165,10 +188,7 @@ export default function AdminReviewsPage() {
 
                         {(startDate || endDate) && (
                             <button
-                                onClick={() => {
-                                    setStartDate("");
-                                    setEndDate("");
-                                }}
+                                onClick={handleClearDates}
                                 className="text-sm font-medium text-gray-500 hover:text-[#42211D] transition-colors shrink-0 cursor-pointer hidden sm:block"
                             >
                                 {t('common.clear')}
