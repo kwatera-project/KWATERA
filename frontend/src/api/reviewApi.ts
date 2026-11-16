@@ -1,5 +1,12 @@
 import {GATEWAY_BASE_URL} from "./apiConfig.ts";
-import type {CreateReviewRequest, ReviewAiSummary, ReviewPageDto, ReviewResponseDto, UpdateReviewRequest} from "../types/review.ts";
+import type {
+    CreateReviewRequest,
+    ReviewAiSummary,
+    ReviewPageDto,
+    ReviewResponseDto,
+    ReviewTranslationResponse,
+    UpdateReviewRequest,
+} from "../types/review.ts";
 
 const API_URL = `${GATEWAY_BASE_URL}/api/reviews`;
 
@@ -174,4 +181,21 @@ export async function deleteReview(reviewId: string): Promise<void> {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to delete review");
     }
+}
+
+export async function translateReview(
+    reviewId: string,
+    targetLanguage: "en" | "pl"
+): Promise<ReviewTranslationResponse> {
+    const res = await fetch(`${API_URL}/${reviewId}/translation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetLanguage }),
+    });
+
+    if (!res.ok) {
+        throw new Error("Failed to translate review");
+    }
+
+    return res.json();
 }

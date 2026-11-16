@@ -2,9 +2,16 @@
 import { useEffect, useId, useState } from "react";
 import { Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { getReviewSummary, getReviewsForProperty, getReviewsForUnit } from "../api/reviewApi";
+import {
+    getReviewSummary,
+    getReviewsForProperty,
+    getReviewsForUnit,
+    translateReview,
+} from "../api/reviewApi";
 import type { ReviewAiSummary, ReviewPageDto } from "../types/review";
 import { getLocaleCode } from "../utils/locale";
+
+type TranslationLanguage = "en" | "pl";
 
 interface ReviewsSectionProps {
     kind: "property" | "unit";
@@ -31,6 +38,17 @@ function ReviewsContent({ kind, accommodationId }: ReviewsSectionProps) {
     const [failed, setFailed] = useState(false);
 
     const [summary, setSummary] = useState<ReviewAiSummary | null>(null);
+    const [translations, setTranslations] = useState<
+        Record<string, Partial<Record<TranslationLanguage, string>>>
+    >({});
+    const [visibleTranslations, setVisibleTranslations] =
+        useState<Record<string, boolean>>({});
+    const [translationLoading, setTranslationLoading] =
+        useState<Record<string, boolean>>({});
+    const [translationErrors, setTranslationErrors] =
+        useState<Record<string, boolean>>({});
+    const [sameLanguageReviews, setSameLanguageReviews] =
+        useState<Record<string, boolean>>({});
 
     useEffect(() => {
         const controller = new AbortController();
@@ -45,6 +63,9 @@ function ReviewsContent({ kind, accommodationId }: ReviewsSectionProps) {
     }, [kind, accommodationId]);
 
     const locale = getLocaleCode(i18n.language);
+    const selectedLanguage = i18n.resolvedLanguage ?? i18n.language;
+    const targetLanguage: TranslationLanguage =
+        selectedLanguage.toLowerCase().startsWith("pl") ? "pl" : "en";
 
     useEffect(() => {
         let active = true;
@@ -91,6 +112,62 @@ function ReviewsContent({ kind, accommodationId }: ReviewsSectionProps) {
         setLoading(true);
         setFailed(false);
         setAttempt(value => value + 1);
+    };
+
+    const requestReviewTranslation = async (reviewId: string) => {
+        const translationKey = `${reviewId}:${targetLanguage}`;
+        const cachedTranslation = translations[reviewId]?.[targetLanguage];
+
+        if (cachedTranslation) {
+            setVisibleTranslations(previous => ({
+                ...previous,
+                [translationKey]: true,
+            }));
+            return;
+        }
+
+        setTranslationLoading(previous => ({
+            ...previous,
+            [translationKey]: true,
+        }));
+        setTranslationErrors(previous => ({
+            ...previous,
+            [translationKey]: false,
+        }));
+
+        try {
+            const result = await translateReview(reviewId, targetLanguage);
+
+            if (result.alreadyInTargetLanguage) {
+                setSameLanguageReviews(previous => ({
+                    ...previous,
+                    [translationKey]: true,
+                }));
+                return;
+            }
+
+            setTranslations(previous => ({
+                ...previous,
+                [reviewId]: {
+                    ...previous[reviewId],
+                    [targetLanguage]: result.translatedText,
+                },
+            }));
+            setVisibleTranslations(previous => ({
+                ...previous,
+                [translationKey]: true,
+            }));
+        } catch {
+            setTranslationErrors(previous => ({
+                ...previous,
+                [translationKey]: true,
+            }));
+        } finally {
+            setTranslationLoading(previous => ({
+                ...previous,
+                [translationKey]: false,
+            }));
+        }
     };
 
     const buttonClasses =
@@ -215,6 +292,17 @@ function ReviewsContent({ kind, accommodationId }: ReviewsSectionProps) {
                                         const date = review.createdAt
                                             ? new Date(review.createdAt)
                                             : null;
+                                        const translationKey =
+                                            `${review.id}:${targetLanguage}`;
+                                        const translatedComment =
+                                            translations[review.id]?.[targetLanguage];
+                                        const isShowingTranslation =
+                                            Boolean(translatedComment) &&
+                                            visibleTranslations[translationKey] === true;
+                                        const isTranslating =
+                                            translationLoading[translationKey] === true;
+                                        const alreadyInTargetLanguage =
+                                            sameLanguageReviews[translationKey] === true;
 
                                         return (
                                             <li
@@ -269,9 +357,55 @@ function ReviewsContent({ kind, accommodationId }: ReviewsSectionProps) {
                                                 </div>
 
                                                 {review.comment?.trim() && (
-                                                    <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-brand-main">
-                                                        {review.comment}
-                                                    </p>
+                                                    <div className="space-y-2">
+                                                        <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-brand-main">
+                                                            {isShowingTranslation
+                                                                ? translatedComment
+                                                                : review.comment}
+                                                        </p>
+
+                                                        {alreadyInTargetLanguage ? (
+                                                            <p
+                                                                role="status"
+                                                                className="text-sm text-brand-muted"
+                                                            >
+                                                                {t("reviews.alreadyInTargetLanguage")}
+                                                            </p>
+                                                        ) : (
+                                                            <button
+                                                                type="button"
+                                                                className={buttonClasses}
+                                                                disabled={isTranslating}
+                                                                onClick={() => {
+                                                                    if (isShowingTranslation) {
+                                                                        setVisibleTranslations(previous => ({
+                                                                            ...previous,
+                                                                            [translationKey]: false,
+                                                                        }));
+                                                                    } else {
+                                                                        void requestReviewTranslation(review.id);
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {isTranslating
+                                                                    ? t("reviews.translating")
+                                                                    : isShowingTranslation
+                                                                      ? t("reviews.showOriginal")
+                                                                      : translatedComment
+                                                                        ? t("reviews.showTranslation")
+                                                                        : t("reviews.translate")}
+                                                            </button>
+                                                        )}
+
+                                                                {translationErrors[translationKey] && (
+                                                                    <p
+                                                                        role="alert"
+                                                                        className="text-sm text-red-700"
+                                                                    >
+                                                                {t("reviews.translationError")}
+                                                            </p>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </li>
                                         );
