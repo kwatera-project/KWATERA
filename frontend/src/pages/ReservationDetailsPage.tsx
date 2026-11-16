@@ -24,6 +24,7 @@ import type {ReviewResponseDto} from "../types/review.ts";
 
 export default function ReservationDetailsPage() {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [reservation, setReservation] = useState<ReservationDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -106,7 +107,6 @@ export default function ReservationDetailsPage() {
     const roles = getUserRoles(token);
     const isAdminOrOwner = roles.includes("ROLE_ADMIN") || roles.includes("ROLE_OWNER");
     const displayCurrency = reservation.currencyInfo?.displayCurrency || 'PLN';
-    const navigate = useNavigate();
     const currentWaterContext = waterContext.unitId === reservation.unitId ? waterContext : { items: [], capacity: undefined, loaded: false };
     const waterTariff = findWaterUsageTariff(currentWaterContext.items);
     const waterUsageRange = currentWaterContext.capacity
