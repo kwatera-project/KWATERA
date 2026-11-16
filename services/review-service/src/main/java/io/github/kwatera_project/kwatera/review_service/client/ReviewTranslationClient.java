@@ -1,67 +1,90 @@
 package io.github.kwatera_project.kwatera.review_service.client;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.springframework.beans.factory.annotation.Qualifier;
+import com.deepl.api.DeepLClient;
+import com.deepl.api.DeepLClientOptions;
+import com.deepl.api.DeepLException;
+import com.deepl.api.TextResult;
+import java.time.Duration;
+import java.util.Locale;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestOperations;
 
 @Component
 public final class ReviewTranslationClient {
 
-    private static final String TRANSLATION_URL =
-            "http://ai-service/internal/ai/translate";
+    private final String apiKey;
+    private final Duration timeout;
+    private volatile DeepLClient deepLClient;
 
-    private final RestOperations restOperations;
-    private final String internalToken;
-
-  @SuppressFBWarnings(
-      value = "EI_EXPOSE_REP2",
-      justification = "RestOperations is a shared Spring-managed dependency")
+    @Autowired
     public ReviewTranslationClient(
-            @Qualifier("reviewAiRestTemplate") RestOperations restOperations,
-            @Value("${kwatera.ai.internal-token:}") String internalToken) {
-        this.restOperations = restOperations;
-        this.internalToken = internalToken;
+            @Value("${kwatera.deepl.api-key:}") String apiKey,
+            @Value("${kwatera.deepl.timeout:15s}") Duration timeout) {
+        this.apiKey = apiKey;
+        this.timeout = timeout;
     }
 
-    public String translate(String text, String targetLanguage) {
-        if (internalToken.isBlank()) {
-            throw new RestClientException("Review AI internal token is missing");
+    public TranslationResult translate(String text, String targetLanguage) {
+        if (apiKey.isBlank()) {
+            throw new RestClientException("DeepL API key is missing");
         }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-Internal-Token", internalToken);
+        try {
+            String deepLTargetLanguage = toDeepLTargetLanguage(targetLanguage);
+            TextResult result =
+                    getDeepLClient()
+                            .translateText(
+                                    text, null, deepLTargetLanguage);
+            if (result == null || result.getText() == null || result.getText().isBlank()) {
+                throw new RestClientException("DeepL returned an empty translation");
+            }
 
-        var body = new AiTranslationRequest(text, "auto", targetLanguage);
-        var request = new HttpEntity<>(body, headers);
-
-        AiTranslationResponse response =
-                restOperations.postForObject(
-                        TRANSLATION_URL, request, AiTranslationResponse.class);
-
-        if (response == null
-                || response.translatedText() == null
-                || response.translatedText().isBlank()) {
-            throw new RestClientException("AI service returned an empty translation");
+            String detectedLanguage = result.getDetectedSourceLanguage();
+            boolean alreadyInTargetLanguage =
+                    detectedLanguage != null
+                            && baseLanguage(detectedLanguage).equals(baseLanguage(targetLanguage));
+            return new TranslationResult(
+                    alreadyInTargetLanguage ? text : result.getText(),
+                    detectedLanguage,
+                    alreadyInTargetLanguage);
+        } catch (DeepLException | InterruptedException exception) {
+            if (exception instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            throw new RestClientException("DeepL translation request failed", exception);
         }
-
-        return response.translatedText();
     }
 
-    private record AiTranslationRequest(
-            String text,
-            String sourceLanguage,
-            String targetLanguage) {}
+    private String toDeepLTargetLanguage(String targetLanguage) {
+        if ("en".equalsIgnoreCase(targetLanguage)) {
+            return "en-US";
+        }
+        return targetLanguage.toUpperCase(Locale.ROOT);
+    }
 
-  public record AiTranslationResponse(
-            String translatedText,
-            String sourceLanguage,
-            String targetLanguage,
-            String model) {}
+    private String baseLanguage(String language) {
+        int separator = language.indexOf('-');
+        String base = separator >= 0 ? language.substring(0, separator) : language;
+        return base.toLowerCase(Locale.ROOT);
+    }
+
+    private DeepLClient getDeepLClient() {
+        if (deepLClient == null) {
+            synchronized (this) {
+                if (deepLClient == null) {
+                    var options =
+                            new DeepLClientOptions()
+                                    .setMaxRetries(0)
+                                    .setTimeout(timeout);
+                    deepLClient = new DeepLClient(apiKey, options);
+                }
+            }
+        }
+        return deepLClient;
+    }
+
+    public record TranslationResult(
+            String translatedText, String sourceLanguage, boolean alreadyInTargetLanguage) {}
 }

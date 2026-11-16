@@ -41,12 +41,15 @@ class ReviewTranslationServiceTest {
   void translatesCommentWithoutSavingChangesToReview() {
     when(reviewRepository.findById(reviewId)).thenReturn(Optional.of(review));
     when(translationClient.translate("Great room.", "pl"))
-        .thenReturn("Świetny pokój.");
+        .thenReturn(
+            new ReviewTranslationClient.TranslationResult("Świetny pokój.", "EN", false));
 
     var result = translationService.translate(reviewId, "pl");
 
     assertEquals("Świetny pokój.", result.translatedText());
     assertEquals("pl", result.targetLanguage());
+    assertEquals("EN", result.sourceLanguage());
+    assertEquals(false, result.alreadyInTargetLanguage());
     assertEquals("Great room.", review.getComment());
     verify(reviewRepository, never()).save(any(Review.class));
   }
@@ -79,7 +82,7 @@ class ReviewTranslationServiceTest {
   }
 
   @Test
-  void mapsAiFailureToBadGateway() {
+  void mapsTranslationProviderFailureToBadGateway() {
     when(reviewRepository.findById(reviewId)).thenReturn(Optional.of(review));
     when(translationClient.translate("Great room.", "pl"))
         .thenThrow(new RestClientException("AI is unavailable"));

@@ -36,3 +36,6 @@ kwatera:
   ai:
     internal-token: ${REVIEW_AI_INTERNAL_TOKEN:}
     read-timeout: ${REVIEW_AI_READ_TIMEOUT:130s}
+  deepl:
+    api-key: ${DEEPL_API_KEY:}
+    timeout: ${DEEPL_TIMEOUT:15s}

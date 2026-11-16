@@ -47,6 +47,8 @@ function ReviewsContent({ kind, accommodationId }: ReviewsSectionProps) {
         useState<Record<string, boolean>>({});
     const [translationErrors, setTranslationErrors] =
         useState<Record<string, boolean>>({});
+    const [sameLanguageReviews, setSameLanguageReviews] =
+        useState<Record<string, boolean>>({});
 
     useEffect(() => {
         const controller = new AbortController();
@@ -135,6 +137,14 @@ function ReviewsContent({ kind, accommodationId }: ReviewsSectionProps) {
 
         try {
             const result = await translateReview(reviewId, targetLanguage);
+
+            if (result.alreadyInTargetLanguage) {
+                setSameLanguageReviews(previous => ({
+                    ...previous,
+                    [translationKey]: true,
+                }));
+                return;
+            }
 
             setTranslations(previous => ({
                 ...previous,
@@ -291,6 +301,8 @@ function ReviewsContent({ kind, accommodationId }: ReviewsSectionProps) {
                                             visibleTranslations[translationKey] === true;
                                         const isTranslating =
                                             translationLoading[translationKey] === true;
+                                        const alreadyInTargetLanguage =
+                                            sameLanguageReviews[translationKey] === true;
 
                                         return (
                                             <li
@@ -352,29 +364,38 @@ function ReviewsContent({ kind, accommodationId }: ReviewsSectionProps) {
                                                                 : review.comment}
                                                         </p>
 
-                                                        <button
-                                                            type="button"
-                                                            className={buttonClasses}
-                                                            disabled={isTranslating}
-                                                            onClick={() => {
-                                                                if (isShowingTranslation) {
-                                                                    setVisibleTranslations(previous => ({
-                                                                        ...previous,
-                                                                        [translationKey]: false,
-                                                                    }));
-                                                                } else {
-                                                                    void requestReviewTranslation(review.id);
-                                                                }
-                                                            }}
-                                                        >
-                                                            {isTranslating
-                                                                ? t("reviews.translating")
-                                                                : isShowingTranslation
-                                                                  ? t("reviews.showOriginal")
-                                                                  : translatedComment
-                                                                    ? t("reviews.showTranslation")
-                                                                    : t("reviews.translate")}
-                                                        </button>
+                                                        {alreadyInTargetLanguage ? (
+                                                            <p
+                                                                role="status"
+                                                                className="text-sm text-brand-muted"
+                                                            >
+                                                                {t("reviews.alreadyInTargetLanguage")}
+                                                            </p>
+                                                        ) : (
+                                                            <button
+                                                                type="button"
+                                                                className={buttonClasses}
+                                                                disabled={isTranslating}
+                                                                onClick={() => {
+                                                                    if (isShowingTranslation) {
+                                                                        setVisibleTranslations(previous => ({
+                                                                            ...previous,
+                                                                            [translationKey]: false,
+                                                                        }));
+                                                                    } else {
+                                                                        void requestReviewTranslation(review.id);
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {isTranslating
+                                                                    ? t("reviews.translating")
+                                                                    : isShowingTranslation
+                                                                      ? t("reviews.showOriginal")
+                                                                      : translatedComment
+                                                                        ? t("reviews.showTranslation")
+                                                                        : t("reviews.translate")}
+                                                            </button>
+                                                        )}
 
                                                                 {translationErrors[translationKey] && (
                                                                     <p

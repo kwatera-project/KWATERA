@@ -1268,6 +1268,7 @@
     "showOriginal": "Show original",
     "showTranslation": "Show translation",
     "translating": "Translating…",
+    "alreadyInTargetLanguage": "This review is already in English.",
     "translationError": "Could not translate this review. Try again.",
     "pagination": "Review pages",
     "previous": "Previous",

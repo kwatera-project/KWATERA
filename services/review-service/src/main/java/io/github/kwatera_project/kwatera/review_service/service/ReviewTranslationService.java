@@ -37,9 +37,12 @@ public class ReviewTranslationService {
     }
 
     try {
-      String translatedText = translationClient.translate(comment, targetLanguage);
-
-      return new ReviewTranslationResponse(translatedText, targetLanguage);
+      var translation = translationClient.translate(comment, targetLanguage);
+      return new ReviewTranslationResponse(
+          translation.translatedText(),
+          targetLanguage,
+          translation.sourceLanguage(),
+          translation.alreadyInTargetLanguage());
     } catch (RestClientException exception) {
       throw new ResponseStatusException(
           HttpStatus.BAD_GATEWAY,

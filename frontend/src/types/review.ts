@@ -47,4 +47,6 @@ export interface ReviewAiSummary {
 export interface ReviewTranslationResponse {
     translatedText: string;
     targetLanguage: "en" | "pl";
+    sourceLanguage: string | null;
+    alreadyInTargetLanguage: boolean;
 }

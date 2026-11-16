@@ -1278,6 +1278,7 @@
     "showOriginal": "Pokaż oryginał",
     "showTranslation": "Pokaż tłumaczenie",
     "translating": "Trwa tłumaczenie…",
+    "alreadyInTargetLanguage": "Ta opinia jest już po polsku.",
     "translationError": "Nie udało się przetłumaczyć opinii. Spróbuj ponownie.",
     "pagination": "Strony opinii",
     "previous": "Poprzednia",

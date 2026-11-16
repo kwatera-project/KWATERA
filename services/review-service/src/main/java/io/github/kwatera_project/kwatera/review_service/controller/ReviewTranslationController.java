@@ -23,7 +23,7 @@ public class ReviewTranslationController {
 
   @PostMapping("/{reviewId}/translation")
   public ReviewTranslationResponse translate(
-      @PathVariable UUID reviewId,
+      @PathVariable("reviewId") UUID reviewId,
       @Valid @RequestBody ReviewTranslationRequest request) {
 
     return translationService.translate(reviewId, request.targetLanguage());

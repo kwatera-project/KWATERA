@@ -35,7 +35,7 @@ class ReviewTranslationControllerTest {
   void translatesReviewForRequestedLanguage() throws Exception {
     UUID reviewId = UUID.randomUUID();
     when(translationService.translate(reviewId, "pl"))
-        .thenReturn(new ReviewTranslationResponse("Świetny pokój.", "pl"));
+        .thenReturn(new ReviewTranslationResponse("Świetny pokój.", "pl", "EN", false));
 
     mockMvc
         .perform(
@@ -45,7 +45,9 @@ class ReviewTranslationControllerTest {
                     java.util.Map.of("targetLanguage", "pl"))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.translatedText").value("Świetny pokój."))
-        .andExpect(jsonPath("$.targetLanguage").value("pl"));
+        .andExpect(jsonPath("$.targetLanguage").value("pl"))
+        .andExpect(jsonPath("$.sourceLanguage").value("EN"))
+        .andExpect(jsonPath("$.alreadyInTargetLanguage").value(false));
 
     verify(translationService).translate(reviewId, "pl");
   }
