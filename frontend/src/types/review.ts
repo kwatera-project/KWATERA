@@ -43,3 +43,8 @@ export interface ReviewAiSummary {
     cons: string[];
     model: string;
 }
+
+export interface ReviewTranslationResponse {
+    translatedText: string;
+    targetLanguage: "en" | "pl";
+}
