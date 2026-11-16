@@ -17,19 +17,22 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import jakarta.persistence.criteria.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 
 @ExtendWith(MockitoExtension.class)
 class ReviewServiceTest {
@@ -39,6 +42,14 @@ class ReviewServiceTest {
 
   @Mock private ReviewRepository reviewRepository;
   @Mock private ReservationClient reservationClient;
+
+    @Mock private Root<Review> criteriaRoot;
+    @Mock private CriteriaQuery<?> criteriaQuery;
+    @Mock private CriteriaBuilder criteriaBuilder;
+    @Mock private Path<Instant> createdAtPath;
+    @Mock private Path<Instant> updatedAtPath;
+    @Mock private Predicate predicate;
+    @Mock private Order order;
 
   @InjectMocks private ReviewService reviewService;
 
@@ -344,7 +355,255 @@ class ReviewServiceTest {
     verify(reviewRepository).findAll(any(Specification.class));
   }
 
-  private CreateReviewRequest validRequest() {
+
+    @Test
+    void getReviewsForAdmin_ShouldBuildSpecificationWithStartAndEndDate() {
+        LocalDate startDate = LocalDate.of(2026, 10, 1);
+        LocalDate endDate = LocalDate.of(2026, 10, 31);
+
+        Specification<Review> spec =
+                captureSpecification(startDate, endDate, "createdAt");
+
+        doReturn(createdAtPath).when(criteriaRoot).get("createdAt");
+        when(criteriaBuilder.greaterThanOrEqualTo(
+                createdAtPath,
+                startDate.atStartOfDay(ZoneOffset.UTC).toInstant()))
+                .thenReturn(predicate);
+
+        when(criteriaBuilder.lessThanOrEqualTo(
+                createdAtPath,
+                endDate.atTime(LocalTime.MAX)
+                        .atZone(ZoneOffset.UTC)
+                        .toInstant()))
+                .thenReturn(predicate);
+
+        when(criteriaBuilder.desc(createdAtPath)).thenReturn(order);
+        when(criteriaBuilder.and(any(Predicate[].class))).thenReturn(predicate);
+
+        Predicate result =
+                spec.toPredicate(criteriaRoot, criteriaQuery, criteriaBuilder);
+
+        assertEquals(predicate, result);
+
+        verify(criteriaRoot, times(3)).get("createdAt");
+
+        verify(criteriaBuilder).greaterThanOrEqualTo(
+                createdAtPath,
+                startDate.atStartOfDay(ZoneOffset.UTC).toInstant());
+
+        verify(criteriaBuilder).lessThanOrEqualTo(
+                createdAtPath,
+                endDate.atTime(LocalTime.MAX)
+                        .atZone(ZoneOffset.UTC)
+                        .toInstant());
+
+        verify(criteriaBuilder).desc(createdAtPath);
+        verify(criteriaQuery).orderBy(order);
+        verify(criteriaBuilder).and(any(Predicate[].class));
+    }
+
+    @Test
+    void getReviewsForAdmin_ShouldUseUpdatedAt_WhenDateTypeIsUpdatedAt() {
+        LocalDate startDate = LocalDate.of(2026, 10, 1);
+        LocalDate endDate = LocalDate.of(2026, 10, 31);
+
+        Specification<Review> spec =
+                captureSpecification(startDate, endDate, "updatedAt");
+
+        doReturn(createdAtPath).when(criteriaRoot).get("createdAt");
+        doReturn(updatedAtPath).when(criteriaRoot).get("updatedAt");
+
+        when(criteriaBuilder.greaterThanOrEqualTo(
+                updatedAtPath,
+                startDate.atStartOfDay(ZoneOffset.UTC).toInstant()))
+                .thenReturn(predicate);
+
+        when(criteriaBuilder.lessThanOrEqualTo(
+                updatedAtPath,
+                endDate.atTime(LocalTime.MAX)
+                        .atZone(ZoneOffset.UTC)
+                        .toInstant()))
+                .thenReturn(predicate);
+
+        when(criteriaBuilder.desc(createdAtPath)).thenReturn(order);
+        when(criteriaBuilder.and(any(Predicate[].class))).thenReturn(predicate);
+
+        Predicate result =
+                spec.toPredicate(criteriaRoot, criteriaQuery, criteriaBuilder);
+
+        assertEquals(predicate, result);
+
+        verify(criteriaRoot, times(2)).get("updatedAt");
+        verify(criteriaRoot).get("createdAt");
+
+        verify(criteriaBuilder).greaterThanOrEqualTo(
+                updatedAtPath,
+                startDate.atStartOfDay(ZoneOffset.UTC).toInstant());
+
+        verify(criteriaBuilder).lessThanOrEqualTo(
+                updatedAtPath,
+                endDate.atTime(LocalTime.MAX)
+                        .atZone(ZoneOffset.UTC)
+                        .toInstant());
+
+        // Sortowanie zawsze po createdAt, nawet gdy filtrujemy updatedAt.
+        verify(criteriaBuilder).desc(createdAtPath);
+        verify(criteriaQuery).orderBy(order);
+    }
+
+    @Test
+    void getReviewsForAdmin_ShouldAddOnlyStartDatePredicate_WhenEndDateIsNull() {
+        LocalDate startDate = LocalDate.of(2026, 10, 1);
+
+        Specification<Review> spec =
+                captureSpecification(startDate, null, "createdAt");
+
+        doReturn(createdAtPath).when(criteriaRoot).get("createdAt");
+
+        when(criteriaBuilder.greaterThanOrEqualTo(
+                createdAtPath,
+                startDate.atStartOfDay(ZoneOffset.UTC).toInstant()))
+                .thenReturn(predicate);
+
+        when(criteriaBuilder.desc(createdAtPath)).thenReturn(order);
+        when(criteriaBuilder.and(any(Predicate[].class))).thenReturn(predicate);
+
+        spec.toPredicate(criteriaRoot, criteriaQuery, criteriaBuilder);
+
+        verify(criteriaBuilder).greaterThanOrEqualTo(
+                createdAtPath,
+                startDate.atStartOfDay(ZoneOffset.UTC).toInstant());
+
+        verify(criteriaBuilder, never())
+                .lessThanOrEqualTo(
+                        ArgumentMatchers.<Expression<Instant>>any(),
+                        ArgumentMatchers.<Instant>any());
+
+        ArgumentCaptor<Predicate[]> captor =
+                ArgumentCaptor.forClass(Predicate[].class);
+
+        verify(criteriaBuilder).and(captor.capture());
+
+        assertEquals(1, captor.getValue().length);
+        verify(criteriaQuery).orderBy(order);
+    }
+
+    @Test
+    void getReviewsForAdmin_ShouldAddOnlyEndDatePredicate_WhenStartDateIsNull() {
+        LocalDate endDate = LocalDate.of(2026, 10, 31);
+
+        Specification<Review> spec =
+                captureSpecification(null, endDate, "createdAt");
+
+        doReturn(createdAtPath).when(criteriaRoot).get("createdAt");
+
+        when(criteriaBuilder.lessThanOrEqualTo(
+                createdAtPath,
+                endDate.atTime(LocalTime.MAX)
+                        .atZone(ZoneOffset.UTC)
+                        .toInstant()))
+                .thenReturn(predicate);
+
+        when(criteriaBuilder.desc(createdAtPath)).thenReturn(order);
+        when(criteriaBuilder.and(any(Predicate[].class))).thenReturn(predicate);
+
+        spec.toPredicate(criteriaRoot, criteriaQuery, criteriaBuilder);
+
+        verify(criteriaBuilder, never())
+                .greaterThanOrEqualTo(
+                        ArgumentMatchers.<Expression<Instant>>any(),
+                        ArgumentMatchers.<Instant>any());
+
+        verify(criteriaBuilder).lessThanOrEqualTo(
+                createdAtPath,
+                endDate.atTime(LocalTime.MAX)
+                        .atZone(ZoneOffset.UTC)
+                        .toInstant());
+
+        ArgumentCaptor<Predicate[]> captor =
+                ArgumentCaptor.forClass(Predicate[].class);
+
+        verify(criteriaBuilder).and(captor.capture());
+
+        assertEquals(1, captor.getValue().length);
+        verify(criteriaQuery).orderBy(order);
+    }
+
+    @Test
+    void getReviewsForAdmin_ShouldReturnEmptyPredicates_WhenBothDatesAreNull() {
+        Specification<Review> spec =
+                captureSpecification(null, null, null);
+
+        doReturn(createdAtPath).when(criteriaRoot).get("createdAt");
+        when(criteriaBuilder.desc(createdAtPath)).thenReturn(order);
+        when(criteriaBuilder.and(any(Predicate[].class))).thenReturn(predicate);
+
+        spec.toPredicate(criteriaRoot, criteriaQuery, criteriaBuilder);
+
+        verify(criteriaBuilder, never())
+                .lessThanOrEqualTo(
+                        ArgumentMatchers.<Expression<Instant>>any(),
+                        ArgumentMatchers.<Instant>any());
+
+        ArgumentCaptor<Predicate[]> captor =
+                ArgumentCaptor.forClass(Predicate[].class);
+
+        verify(criteriaBuilder).and(captor.capture());
+
+        assertEquals(0, captor.getValue().length);
+
+        verify(criteriaBuilder).desc(createdAtPath);
+        verify(criteriaQuery).orderBy(order);
+    }
+
+    @Test
+    void getReviewsForAdmin_ShouldUseCreatedAt_WhenDateTypeIsUnknown() {
+        LocalDate startDate = LocalDate.of(2026, 10, 1);
+
+        Specification<Review> spec =
+                captureSpecification(startDate, null, "unknown");
+
+        doReturn(createdAtPath).when(criteriaRoot).get("createdAt");
+
+        when(criteriaBuilder.greaterThanOrEqualTo(
+                createdAtPath,
+                startDate.atStartOfDay(ZoneOffset.UTC).toInstant()))
+                .thenReturn(predicate);
+
+        when(criteriaBuilder.desc(createdAtPath)).thenReturn(order);
+        when(criteriaBuilder.and(any(Predicate[].class))).thenReturn(predicate);
+
+        spec.toPredicate(criteriaRoot, criteriaQuery, criteriaBuilder);
+
+        verify(criteriaRoot, times(2)).get("createdAt");
+        verify(criteriaRoot, never()).get("updatedAt");
+
+        verify(criteriaBuilder).greaterThanOrEqualTo(
+                createdAtPath,
+                startDate.atStartOfDay(ZoneOffset.UTC).toInstant());
+    }
+
+
+    private Specification<Review> captureSpecification(
+            LocalDate startDate,
+            LocalDate endDate,
+            String dateType) {
+
+        when(reviewRepository.findAll(any(Specification.class)))
+                .thenReturn(List.of(review));
+
+        reviewService.getReviewsForAdmin(startDate, endDate, dateType);
+
+        ArgumentCaptor<Specification<Review>> captor =
+                ArgumentCaptor.forClass(Specification.class);
+
+        verify(reviewRepository).findAll(captor.capture());
+
+        return captor.getValue();
+    }
+
+
+    private CreateReviewRequest validRequest() {
     CreateReviewRequest request = new CreateReviewRequest();
     request.setReservationId(reservationId);
     request.setRating(5);
