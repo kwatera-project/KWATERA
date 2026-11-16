@@ -310,39 +310,39 @@ class ReviewServiceTest {
     verify(reviewRepository, never()).deleteById(any(UUID.class));
   }
 
-    @Test
-    void getReviewsForAdmin_ShouldReturnAllReviews_WhenNoFiltersProvided() {
-        when(reviewRepository.findAll(any(Specification.class))).thenReturn(List.of(review));
+  @Test
+  void getReviewsForAdmin_ShouldReturnAllReviews_WhenNoFiltersProvided() {
+    when(reviewRepository.findAll(any(Specification.class))).thenReturn(List.of(review));
 
-        List<ReviewResponseDto> result = reviewService.getReviewsForAdmin(null, null, null);
+    List<ReviewResponseDto> result = reviewService.getReviewsForAdmin(null, null, null);
 
-        assertEquals(1, result.size());
-        ReviewResponseDto dto = result.getFirst();
-        assertEquals(reviewId, dto.getId());
-        verify(reviewRepository).findAll(any(Specification.class));
-    }
+    assertEquals(1, result.size());
+    ReviewResponseDto dto = result.getFirst();
+    assertEquals(reviewId, dto.getId());
+    verify(reviewRepository).findAll(any(Specification.class));
+  }
 
-    @Test
-    void getReviewsForAdmin_ShouldFilterByStartDateAndCreatedAt() {
-        LocalDate startDate = LocalDate.of(2026, 10, 1);
-        when(reviewRepository.findAll(any(Specification.class))).thenReturn(List.of(review));
+  @Test
+  void getReviewsForAdmin_ShouldFilterByStartDateAndCreatedAt() {
+    LocalDate startDate = LocalDate.of(2026, 10, 1);
+    when(reviewRepository.findAll(any(Specification.class))).thenReturn(List.of(review));
 
-        List<ReviewResponseDto> result = reviewService.getReviewsForAdmin(startDate, null, "createdAt");
+    List<ReviewResponseDto> result = reviewService.getReviewsForAdmin(startDate, null, "createdAt");
 
-        assertEquals(1, result.size());
-        verify(reviewRepository).findAll(any(Specification.class));
-    }
+    assertEquals(1, result.size());
+    verify(reviewRepository).findAll(any(Specification.class));
+  }
 
-    @Test
-    void getReviewsForAdmin_ShouldFilterByEndDateAndUpdatedAt() {
-        LocalDate endDate = LocalDate.of(2026, 10, 31);
-        when(reviewRepository.findAll(any(Specification.class))).thenReturn(List.of(review));
+  @Test
+  void getReviewsForAdmin_ShouldFilterByEndDateAndUpdatedAt() {
+    LocalDate endDate = LocalDate.of(2026, 10, 31);
+    when(reviewRepository.findAll(any(Specification.class))).thenReturn(List.of(review));
 
-        List<ReviewResponseDto> result = reviewService.getReviewsForAdmin(null, endDate, "updatedAt");
+    List<ReviewResponseDto> result = reviewService.getReviewsForAdmin(null, endDate, "updatedAt");
 
-        assertEquals(1, result.size());
-        verify(reviewRepository).findAll(any(Specification.class));
-    }
+    assertEquals(1, result.size());
+    verify(reviewRepository).findAll(any(Specification.class));
+  }
 
   private CreateReviewRequest validRequest() {
     CreateReviewRequest request = new CreateReviewRequest();
