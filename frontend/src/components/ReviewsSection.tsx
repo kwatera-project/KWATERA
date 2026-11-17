@@ -30,6 +30,11 @@ export default function ReviewsSection(props: ReviewsSectionProps) {
 function ReviewsContent({ kind, accommodationId }: ReviewsSectionProps) {
     const { t, i18n } = useTranslation();
     const headingId = useId();
+    const locale = getLocaleCode(i18n.language);
+    const selectedLanguage = i18n.resolvedLanguage ?? i18n.language;
+    const targetLanguage: TranslationLanguage =
+        selectedLanguage.toLowerCase().startsWith("pl") ? "pl" : "en";
+    const summaryKey = `${kind}:${accommodationId}:${targetLanguage}`;
 
     const [page, setPage] = useState(0);
     const [attempt, setAttempt] = useState(0);
@@ -37,7 +42,11 @@ function ReviewsContent({ kind, accommodationId }: ReviewsSectionProps) {
     const [loading, setLoading] = useState(true);
     const [failed, setFailed] = useState(false);
 
-    const [summary, setSummary] = useState<ReviewAiSummary | null>(null);
+    const [loadedSummary, setLoadedSummary] = useState<{
+        key: string;
+        value: ReviewAiSummary | null;
+    }>({ key: "", value: null });
+    const summary = loadedSummary.key === summaryKey ? loadedSummary.value : null;
     const [translations, setTranslations] = useState<
         Record<string, Partial<Record<TranslationLanguage, string>>>
     >({});
@@ -52,20 +61,20 @@ function ReviewsContent({ kind, accommodationId }: ReviewsSectionProps) {
 
     useEffect(() => {
         const controller = new AbortController();
-        getReviewSummary(kind, accommodationId, controller.signal)
+
+        getReviewSummary(kind, accommodationId, targetLanguage, controller.signal)
             .then(data => {
-                if (!controller.signal.aborted) setSummary(data);
+                if (!controller.signal.aborted) {
+                    setLoadedSummary({ key: summaryKey, value: data });
+                }
             })
             .catch(() => {
-                if (!controller.signal.aborted) setSummary(null);
+                if (!controller.signal.aborted) {
+                    setLoadedSummary({ key: summaryKey, value: null });
+                }
             });
         return () => controller.abort();
-    }, [kind, accommodationId]);
-
-    const locale = getLocaleCode(i18n.language);
-    const selectedLanguage = i18n.resolvedLanguage ?? i18n.language;
-    const targetLanguage: TranslationLanguage =
-        selectedLanguage.toLowerCase().startsWith("pl") ? "pl" : "en";
+    }, [kind, accommodationId, targetLanguage, summaryKey]);
 
     useEffect(() => {
         let active = true;
@@ -235,13 +244,13 @@ function ReviewsContent({ kind, accommodationId }: ReviewsSectionProps) {
             <div className="my-4 border-t border-brand-accent" />
 
             {summary && (
-                <section lang="en" className="mb-5 space-y-3 rounded-lg bg-brand-bg p-4">
-                    <h3 className="font-semibold text-brand-main">{t("reviews.aiTitle", { lng: "en" })}</h3>
+                <section lang={targetLanguage} className="mb-5 space-y-3 rounded-lg bg-brand-bg p-4">
+                    <h3 className="font-semibold text-brand-main">{t("reviews.aiTitle")}</h3>
                     <p className="break-words text-sm leading-relaxed">{summary.summary}</p>
                     <div className="grid gap-3 sm:grid-cols-2">
                         {(["pros", "cons"] as const).map(group => summary[group].length > 0 && (
                             <div key={group}>
-                                <h4 className="text-sm font-semibold">{t(`reviews.${group}`, { lng: "en" })}</h4>
+                                <h4 className="text-sm font-semibold">{t(`reviews.${group}`)}</h4>
                                 <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
                                     {summary[group].map((point, index) => (
                                         <li key={index} className="break-words">{point}</li>
