@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface ReviewSummaryRepository extends JpaRepository<ReviewSummary, UUID> {
 
@@ -19,7 +20,9 @@ public interface ReviewSummaryRepository extends JpaRepository<ReviewSummary, UU
 
   Optional<ReviewSummary> findByPropertyIdAndLanguage(UUID propertyId, String language);
 
+  @Transactional
   void deleteAllByUnitId(UUID unitId);
 
+  @Transactional
   void deleteAllByPropertyId(UUID propertyId);
 }

@@ -37,7 +37,12 @@ function ReviewsContent({ kind, accommodationId }: ReviewsSectionProps) {
     const [loading, setLoading] = useState(true);
     const [failed, setFailed] = useState(false);
 
-    const [summary, setSummary] = useState<ReviewAiSummary | null>(null);
+    const summaryKey = `${kind}:${accommodationId}:${targetLanguage}`;
+    const [loadedSummary, setLoadedSummary] = useState<{
+        key: string;
+        value: ReviewAiSummary | null;
+    }>({ key: "", value: null });
+    const summary = loadedSummary.key === summaryKey ? loadedSummary.value : null;
     const [translations, setTranslations] = useState<
         Record<string, Partial<Record<TranslationLanguage, string>>>
     >({});
@@ -57,17 +62,20 @@ function ReviewsContent({ kind, accommodationId }: ReviewsSectionProps) {
 
     useEffect(() => {
         const controller = new AbortController();
-        setSummary(null);
 
         getReviewSummary(kind, accommodationId, targetLanguage, controller.signal)
             .then(data => {
-                if (!controller.signal.aborted) setSummary(data);
+                if (!controller.signal.aborted) {
+                    setLoadedSummary({ key: summaryKey, value: data });
+                }
             })
             .catch(() => {
-                if (!controller.signal.aborted) setSummary(null);
+                if (!controller.signal.aborted) {
+                    setLoadedSummary({ key: summaryKey, value: null });
+                }
             });
         return () => controller.abort();
-    }, [kind, accommodationId, targetLanguage]);
+    }, [kind, accommodationId, targetLanguage, summaryKey]);
 
     useEffect(() => {
         let active = true;
