@@ -74,6 +74,8 @@
     "retry": "Try again",
     "login": "Log in",
     "contextError": "Reservation details could not be loaded. You can still use this conversation.",
+    "retryReservationDetails": "Retry loading reservation details",
+    "loadingReservationDetails": "Loading reservation details…",
     "errors": {
       "load": "The conversation could not be loaded. Please try again.",
       "unauthenticated": "Your session is unavailable or has expired. Log in to access this conversation.",

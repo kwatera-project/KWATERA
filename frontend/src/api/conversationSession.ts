@@ -10,6 +10,7 @@ export interface ConversationState {
     conversation: ConversationResponse | null;
     reservation: ReservationDetails | null;
     contextLoading: boolean;
+    contextError: boolean;
     messages: MessageResponse[];
     nextCursor: string | null;
     loading: boolean;
@@ -20,7 +21,7 @@ export interface ConversationState {
 }
 
 export const emptyConversation: ConversationState = {
-    conversation: null, reservation: null, contextLoading: false, messages: [], nextCursor: null,
+    conversation: null, reservation: null, contextLoading: false, contextError: false, messages: [], nextCursor: null,
     loading: true, fatalError: null, operation: null, operationError: null, connectionStatus: "connecting",
 };
 
@@ -95,7 +96,7 @@ export function createConversationSession(options: SessionOptions) {
     function deny(error: AccessError) {
         // Do not call current()/update() here: current() itself enforces expiration.
         if (!active || !options.isCurrent()) return;
-        state = { ...state, conversation: null, reservation: null, messages: [], nextCursor: null,
+        state = { ...state, conversation: null, reservation: null, contextLoading: false, contextError: false, messages: [], nextCursor: null,
             fatalError: error, loading: false, operation: null,
             connectionStatus: error === "unauthenticated" ? "authenticationError" : "subscriptionError" };
         options.onChange(state);
@@ -218,9 +219,7 @@ export function createConversationSession(options: SessionOptions) {
                 deny("inaccessible"); return;
             }
             update({ conversation });
-            void options.getReservation(conversation.reservationId, requests.signal).then(reservation => {
-                update({ reservation });
-            }).catch(() => { /* Optional context must not prevent messaging. */ });
+            void retryContext();
             reconnect();
         } catch (error) {
             if (!current()) return;
@@ -290,9 +289,12 @@ export function createConversationSession(options: SessionOptions) {
     async function retryContext() {
         if (!current() || !state.conversation || state.contextLoading) return;
         update({ contextLoading: true });
-        try { update({ reservation: await options.getReservation(state.conversation.reservationId, requests.signal) }); }
-        catch { update({ reservation: null }); }
-        finally { update({ contextLoading: false }); }
+        try {
+            const reservation = await options.getReservation(state.conversation.reservationId, requests.signal);
+            update({ reservation, contextLoading: false, contextError: false });
+        } catch {
+            update({ contextLoading: false, contextError: true });
+        }
     }
 
     return { start, stop, reconnect, loadHistory, send, retryContext };

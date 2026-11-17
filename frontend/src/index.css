@@ -7,6 +7,7 @@
   --color-brand-muted: #7A7A7A;
   --color-brand-accent: #DACDCA;
   --color-brand-bg: #F7F7F7;
+  --color-brand-surface: #FFFFFF;
 }
 
 body {
@@ -62,12 +63,11 @@ body {
 
 @layer components {
   .chat-secondary {
-    background-color: rgb(var(--color-white));
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-brand-accent px-3 py-1.5 text-sm font-bold text-brand-primary transition-colors hover:bg-brand-bg disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-brand-accent bg-brand-surface px-3 py-1.5 text-sm font-bold text-brand-primary transition-colors hover:bg-brand-bg disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .chat-inline-action {
-    @apply inline-flex min-h-11 items-center rounded text-sm font-bold text-brand-primary underline disabled:opacity-50;
+    @apply inline-flex min-h-11 items-center rounded text-sm font-bold text-brand-primary underline disabled:opacity-50 aria-disabled:opacity-50;
   }
 
   .chat-secondary:focus-visible,

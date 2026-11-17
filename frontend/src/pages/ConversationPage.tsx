@@ -153,6 +153,13 @@ function ConversationScreen({ conversationId, userId, token, onRetry }: {
                     {t("chat.reservationDetails")}
                 </Link>}
             </header>
+            {chat.contextError && !chat.fatalError && <div className="chat-feedback-warning flex shrink-0 flex-wrap items-center justify-between gap-x-3 border-b border-brand-accent px-3 py-1 sm:px-4">
+                <p role="status" className="text-sm">{t("chat.contextError")}</p>
+                <button type="button" className="chat-inline-action" aria-disabled={chat.contextLoading}
+                    onClick={() => void chat.retryContext()}>
+                    {t(chat.contextLoading ? "chat.loadingReservationDetails" : "chat.retryReservationDetails")}
+                </button>
+            </div>}
             {chat.loading ? <p className="p-4 flex items-center gap-2 text-brand-muted" role="status">
                 <Loader2 size={18} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />{t("chat.loading")}
             </p> : chat.fatalError || !conversation ? <div className="space-y-2 p-4">

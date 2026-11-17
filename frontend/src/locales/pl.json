@@ -74,6 +74,8 @@
     "retry": "Spróbuj ponownie",
     "login": "Zaloguj się",
     "contextError": "Nie udało się wczytać szczegółów rezerwacji. Nadal możesz korzystać z rozmowy.",
+    "retryReservationDetails": "Ponów pobieranie szczegółów rezerwacji",
+    "loadingReservationDetails": "Wczytywanie szczegółów rezerwacji…",
     "errors": {
       "load": "Nie udało się wczytać rozmowy. Spróbuj ponownie.",
       "unauthenticated": "Twoja sesja jest niedostępna lub wygasła. Zaloguj się, aby otworzyć rozmowę.",

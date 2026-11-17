@@ -51,6 +51,28 @@ async function screenshot(page: Page, name: string, project: string) {
     }
 }
 
+test("reservation details can be retried without losing a chat draft", async ({ page }) => {
+    await setup(page);
+    let detailsAvailable = false;
+    await page.route(`**/api/v1/reservations/${reservation.id}`, route =>
+        detailsAvailable ? respond(route, reservation) : respond(route, {}, 503));
+
+    await page.goto(`/conversations/${conversation.id}`);
+    const chat = page.locator('section[aria-labelledby="chat-title"]');
+    const draft = chat.getByRole("textbox");
+    const retry = chat.getByRole("button", { name: "Retry loading reservation details" });
+    await expect(chat.getByText(/Reservation details could not be loaded/)).toBeVisible();
+    await expect(chat.getByRole("link", { name: "Reservation details" })).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await draft.fill("Keep this draft");
+
+    detailsAvailable = true;
+    await retry.click();
+    await expect(chat.getByRole("heading", { name: reservation.unitName })).toBeVisible();
+    await expect(chat.locator(`header time[datetime="${reservation.startDate}"]`)).toBeVisible();
+    await expect(retry).toHaveCount(0);
+    await expect(draft).toHaveValue("Keep this draft");
+});
+
 for (const language of ["en", "pl"]) {
     test(`message translation and original toggle (${language})`, async ({ page }) => {
         await setup(page, ["ROLE_GUEST"], language);
