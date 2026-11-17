@@ -13,10 +13,15 @@ const API_URL = `${GATEWAY_BASE_URL}/api/reviews`;
 export async function getReviewSummary(
     kind: "property" | "unit",
     id: string,
+    language: "en" | "pl",
     signal: AbortSignal
 ): Promise<ReviewAiSummary | null> {
     const scope = kind === "property" ? "properties" : "units";
-    const res = await fetch(`${API_URL}/${scope}/${id}/summary`, { signal });
+    const res = await fetch(
+        `${API_URL}/${scope}/${id}/summary?language=${language}`,
+        { signal }
+    );
+
     if (res.status === 204) return null;
     if (!res.ok) throw new Error("Failed to fetch review summary");
     return res.json();

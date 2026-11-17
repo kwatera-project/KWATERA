@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface ReviewSummaryRepository extends JpaRepository<ReviewSummary, UUID> {
 
@@ -15,7 +16,13 @@ public interface ReviewSummaryRepository extends JpaRepository<ReviewSummary, UU
   @Query("select s.propertyId from ReviewSummary s where s.propertyId is not null")
   List<UUID> findCachedPropertyIds();
 
-  Optional<ReviewSummary> findByUnitId(UUID unitId);
+  Optional<ReviewSummary> findByUnitIdAndLanguage(UUID unitId, String language);
 
-  Optional<ReviewSummary> findByPropertyId(UUID propertyId);
+  Optional<ReviewSummary> findByPropertyIdAndLanguage(UUID propertyId, String language);
+
+  @Transactional
+  void deleteAllByUnitId(UUID unitId);
+
+  @Transactional
+  void deleteAllByPropertyId(UUID propertyId);
 }
