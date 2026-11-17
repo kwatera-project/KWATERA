@@ -30,6 +30,11 @@ export default function ReviewsSection(props: ReviewsSectionProps) {
 function ReviewsContent({ kind, accommodationId }: ReviewsSectionProps) {
     const { t, i18n } = useTranslation();
     const headingId = useId();
+    const locale = getLocaleCode(i18n.language);
+    const selectedLanguage = i18n.resolvedLanguage ?? i18n.language;
+    const targetLanguage: TranslationLanguage =
+        selectedLanguage.toLowerCase().startsWith("pl") ? "pl" : "en";
+    const summaryKey = `${kind}:${accommodationId}:${targetLanguage}`;
 
     const [page, setPage] = useState(0);
     const [attempt, setAttempt] = useState(0);
@@ -37,7 +42,6 @@ function ReviewsContent({ kind, accommodationId }: ReviewsSectionProps) {
     const [loading, setLoading] = useState(true);
     const [failed, setFailed] = useState(false);
 
-    const summaryKey = `${kind}:${accommodationId}:${targetLanguage}`;
     const [loadedSummary, setLoadedSummary] = useState<{
         key: string;
         value: ReviewAiSummary | null;
@@ -54,11 +58,6 @@ function ReviewsContent({ kind, accommodationId }: ReviewsSectionProps) {
         useState<Record<string, boolean>>({});
     const [sameLanguageReviews, setSameLanguageReviews] =
         useState<Record<string, boolean>>({});
-
-    const locale = getLocaleCode(i18n.language);
-    const selectedLanguage = i18n.resolvedLanguage ?? i18n.language;
-    const targetLanguage: TranslationLanguage =
-        selectedLanguage.toLowerCase().startsWith("pl") ? "pl" : "en";
 
     useEffect(() => {
         const controller = new AbortController();

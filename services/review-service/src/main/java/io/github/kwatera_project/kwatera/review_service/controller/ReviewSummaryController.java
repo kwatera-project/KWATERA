@@ -1,5 +1,6 @@
 package io.github.kwatera_project.kwatera.review_service.controller;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.kwatera_project.kwatera.review_service.client.ReviewAiClient.SummaryResponse;
 import io.github.kwatera_project.kwatera.review_service.model.ReviewSummary;
 import io.github.kwatera_project.kwatera.review_service.repository.ReviewSummaryRepository;
@@ -28,6 +29,9 @@ public class ReviewSummaryController {
   private final ReviewSummaryRepository summaries;
   private final ObjectReader summaryReader;
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification = "Spring-managed repository dependency")
   public ReviewSummaryController(ReviewSummaryRepository summaries, ObjectMapper mapper) {
     this.summaries = summaries;
     this.summaryReader = mapper.readerFor(SummaryResponse.class);

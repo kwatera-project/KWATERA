@@ -1,5 +1,6 @@
 package io.github.kwatera_project.kwatera.review_service.service;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.kwatera_project.kwatera.review_service.client.PropertyClient;
 import io.github.kwatera_project.kwatera.review_service.client.ReviewAiClient;
 import io.github.kwatera_project.kwatera.review_service.dto.ReviewSummaryInput;
@@ -33,6 +34,9 @@ public class ReviewSummaryScheduler {
   private final ReviewSummaryRepository summaries;
   private final ObjectWriter summaryWriter;
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification = "Spring-managed repository dependency")
   public ReviewSummaryScheduler(
       ReviewRepository reviewRepository,
       ReviewAiClient reviewAiClient,
