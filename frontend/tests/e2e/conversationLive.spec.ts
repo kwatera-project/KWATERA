@@ -94,6 +94,7 @@ test("matching receipt starts history; initial live overlap and REST echoes rend
     const list = page.getByRole("list", { name: "Messages", exact: true });
     await expect(list.getByRole("listitem")).toHaveCount(3);
     await expect(list.locator("article > p:nth-child(2)")).toHaveText(["Message 1", "Message 2", "Message 3"]);
+    await expect(page.getByRole("button", { name: "Refresh", exact: true })).toHaveCount(0);
     await page.getByRole("textbox", { name: "Your message" }).fill("REST and echo");
     await page.getByRole("button", { name: "Send", exact: true }).click();
     await expect(list.getByRole("listitem")).toHaveCount(4);
@@ -210,7 +211,7 @@ test("network restoration and browser resume recover through the existing client
     expect(broker.sockets).toHaveLength(4);
 });
 
-test("REST sending and manual refresh work throughout a transport outage", async ({ page }) => {
+test("initial REST history and sending work throughout a transport outage", async ({ page }) => {
     const broker = await setup(page, { rejectTransport: true }); let posts = 0;
     await page.route("**/api/v1/conversations/*/messages*", async route => {
         if (route.request().method() === "POST") { posts++; return route.fulfill({ json: message(2, "Offline live transport") }); }
@@ -221,8 +222,7 @@ test("REST sending and manual refresh work throughout a transport outage", async
     await page.getByRole("textbox").fill("Offline live transport");
     await page.getByRole("button", { name: "Send", exact: true }).click();
     await expect(page.getByText("Offline live transport", { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Refresh", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Refresh", exact: true })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Refresh", exact: true })).toHaveCount(0);
     expect(posts).toBe(1); expect(broker.commands.some(c => c.command === "SEND")).toBe(false);
 });
 
@@ -267,19 +267,25 @@ test("switching conversations unsubscribes; account changes discard pending hist
     await expect(page.getByRole("textbox")).toBeVisible();
     let release: () => void = () => {};
     const gate = new Promise<void>(resolve => { release = resolve; });
-    let pending = false;
-    await page.route("**/api/v1/conversations/*/messages*", async route => {
+    let pending = false, settled = false;
+    await page.route(`**/api/v1/conversations/${secondId}/messages*`, async route => {
         pending = true; await gate;
-        await route.fulfill({ json: historyPage([message(9, "Previous account secret")]) }).catch(() => {});
+        await route.fulfill({
+            json: historyPage([{ ...message(9, "Previous account secret"), conversationId: secondId }]),
+        }).catch(() => {});
+        settled = true;
     });
-    await page.getByRole("button", { name: "Refresh", exact: true }).click(); await expect.poll(() => pending).toBe(true);
+    broker.sockets[1].ws.close({ code: 1011, reason: "Temporary transport failure" });
+    await broker.subscribed(3);
+    await expect.poll(() => pending).toBe(true);
     await page.route("**/api/v1/conversations/*", route => route.fulfill({ status: 404, json: {} }));
     await page.evaluate(jwt => { localStorage.setItem("token", jwt); window.dispatchEvent(new Event("kwatera-auth")); }, token("other"));
     await expect(page.getByRole("alert")).toContainText("do not have access");
     release();
+    await expect.poll(() => settled).toBe(true);
     await expect(page.getByText("Previous account secret")).toHaveCount(0);
     await expect(page.getByText("Live test stay")).toHaveCount(0);
-    await expect.poll(() => broker.sockets[1].closed).toBe(true);
+    await expect.poll(() => broker.sockets[2].closed).toBe(true);
     await page.evaluate(() => { localStorage.removeItem("token"); window.dispatchEvent(new Event("kwatera-auth")); });
     await expect(page).toHaveURL("/login");
 });
@@ -291,6 +297,7 @@ test("live updates follow the bottom, preserve reading position and older-histor
         : historyPage(Array.from({ length: 30 }, (_, i) => message(39 - i)), "older") }));
     await page.goto(`/conversations/${conversationId}`); await broker.subscribed();
     await expect(page.getByTestId("connection-status")).toHaveText("Odbiór wiadomości na żywo połączony.");
+    await expect(page.getByRole("button", { name: "Odśwież", exact: true })).toHaveCount(0);
     const region = page.locator('div[role="region"][aria-label="Wiadomości"]');
     broker.deliver(message(40));
     await expect(page.getByText("Message 40", { exact: true })).toBeVisible();

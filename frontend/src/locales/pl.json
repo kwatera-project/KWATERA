@@ -32,11 +32,11 @@
     "connection": {
       "connecting": "Łączenie odbioru na żywo. Historia i wysyłanie są nadal dostępne.",
       "connected": "Odbiór wiadomości na żywo połączony.",
-      "disconnected": "Odbiór na żywo rozłączony. Połączenie zostanie automatycznie wznowione; możesz odświeżać historię i wysyłać wiadomości.",
-      "reconnecting": "Wznawianie odbioru na żywo. Możesz odświeżać historię i wysyłać wiadomości.",
+      "disconnected": "Odbiór na żywo rozłączony. Wiadomości zsynchronizują się po wznowieniu połączenia. Nadal możesz wysyłać wiadomości.",
+      "reconnecting": "Wznawianie odbioru na żywo. Wiadomości zsynchronizują się po wznowieniu połączenia.",
       "authenticationError": "Sesja wygasła. Zaloguj się ponownie, aby uzyskać dostęp do wiadomości.",
       "subscriptionError": "Subskrypcja na żywo została odrzucona. Sprawdź dostęp i spróbuj ponownie; historia i wysyłanie są nadal dostępne przy odpowiednich uprawnieniach.",
-      "transportError": "Błąd połączenia na żywo. Trwa automatyczne ponawianie; możesz odświeżać historię i wysyłać wiadomości."
+      "transportError": "Błąd połączenia na żywo. Trwa automatyczne ponawianie połączenia. Nadal możesz wysyłać wiadomości."
     },
     "title": "Rozmowa o rezerwacji",
     "subtitle": "Wiadomości między gościem a właścicielem obiektu.",
@@ -47,8 +47,7 @@
     "emptyHint": "Wyślij pierwszą wiadomość dotyczącą tej rezerwacji.",
     "loadOlder": "Wczytaj starsze wiadomości",
     "loadingOlder": "Wczytywanie starszych wiadomości…",
-    "refresh": "Odśwież",
-    "refreshing": "Odświeżanie wiadomości…",
+    "synchronizing": "Synchronizowanie wiadomości…",
     "message": "Twoja wiadomość",
     "placeholder": "Napisz wiadomość dotyczącą pobytu…",
     "keyboardHint": "Komputer: Enter wysyła, Shift+Enter dodaje nowy wiersz. Na telefonie użyj przycisku Wyślij.",
@@ -69,9 +68,9 @@
       "unauthenticated": "Twoja sesja jest niedostępna lub wygasła. Zaloguj się, aby otworzyć rozmowę.",
       "inaccessible": "Nie znaleziono tej rozmowy lub nie masz do niej dostępu.",
       "unavailable": "Rozmowa jest niedostępna ze względu na status rezerwacji lub okres przechowywania wiadomości.",
-      "refresh": "Nie udało się odświeżyć wiadomości. Wczytana historia została zachowana. Spróbuj ponownie.",
+      "refresh": "Nie udało się zsynchronizować wiadomości. Wczytana historia została zachowana. Spróbuj ponownie.",
       "older": "Nie udało się wczytać starszych wiadomości. Spróbuj ponownie.",
-      "send": "Nie udało się potwierdzić wysłania. Treść została zachowana. Przed ponowną próbą odśwież historię i sprawdź, czy wiadomość dotarła.",
+      "send": "Nie udało się potwierdzić wysłania. Treść została zachowana. Przed ponownym wysłaniem sprawdź, czy wiadomość jest widoczna po synchronizacji rozmowy.",
       "invalidMessage": "Wiadomość została odrzucona. Wpisz od 1 do 4000 znaków i spróbuj ponownie. Treść została zachowana."
     }
   },

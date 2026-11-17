@@ -34,11 +34,11 @@
     "connection": {
       "connecting": "Connecting live delivery. History and sending remain available.",
       "connected": "Live delivery connected.",
-      "disconnected": "Live delivery disconnected. Reconnecting automatically; you can still refresh history and send messages.",
-      "reconnecting": "Reconnecting live delivery. You can still refresh history and send messages.",
+      "disconnected": "Live delivery disconnected. Messages sync when the connection returns. You can still send messages.",
+      "reconnecting": "Reconnecting live delivery. Messages sync when the connection returns.",
       "authenticationError": "Your session has expired. Log in again to access messages.",
       "subscriptionError": "Live subscription was rejected. Check your access and try again; history and sending remain available if authorized.",
-      "transportError": "Live connection failed. Reconnecting automatically; you can still refresh history and send messages."
+      "transportError": "Live connection failed. Retrying automatically. You can still send messages."
     },
     "backToReservation": "Back to reservation",
     "history": "Messages",
@@ -47,8 +47,7 @@
     "emptyHint": "Send your first message about this reservation.",
     "loadOlder": "Load older messages",
     "loadingOlder": "Loading older messages…",
-    "refresh": "Refresh",
-    "refreshing": "Refreshing messages…",
+    "synchronizing": "Synchronizing messages…",
     "message": "Your message",
     "placeholder": "Write a message about your stay…",
     "keyboardHint": "Desktop: Enter to send, Shift+Enter for a new line. On mobile, use Send.",
@@ -69,9 +68,9 @@
       "unauthenticated": "Your session is unavailable or has expired. Log in to access this conversation.",
       "inaccessible": "This conversation could not be found or you do not have access to it.",
       "unavailable": "This conversation is unavailable because of the reservation status or the message retention period.",
-      "refresh": "Messages could not be refreshed. Your loaded history has been kept. Please try again.",
+      "refresh": "Messages could not be synchronized. Your loaded history has been kept. Please try again.",
       "older": "Older messages could not be loaded. Please try again.",
-      "send": "Sending could not be confirmed. Your draft has been kept. Refresh the history before retrying to check whether the message arrived.",
+      "send": "Sending could not be confirmed. Your draft has been kept. Check the synchronized conversation for your message before sending again.",
       "invalidMessage": "The message was rejected. Enter between 1 and 4000 characters and try again. Your draft has been kept."
     }
   },

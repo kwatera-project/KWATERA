@@ -70,7 +70,7 @@ available during an outage; failed or uncertain POSTs are never automatically re
 
 The localized status shows connection, reconnection and actionable failures.
 STOMP owns exponential transport retries (1 second initially, capped at 30 seconds).
-After subscription readiness, recovery traverses REST cursor pages to the last
+After reconnection and subscription readiness, recovery automatically traverses REST cursor pages to the last
 completed REST snapshot or the end, retaining overlapping live messages. Authentication
 and permanent subscription failures stop automatic retries; JWT expiry clears
 protected conversation data and requires login. Session changes and navigation abort
@@ -78,18 +78,18 @@ conversation requests and dispose subscriptions, socket and timers. Static demo
 mode does not create a live connection. This follows [the backend contract](../docs/messaging.md);
 delivery is best effort and REST history remains the recovery source.
 
-**Refresh** retrieves newer messages (including intervening pages);
 **Load older messages** follows the backend cursor. Desktop Enter sends and Shift+Enter inserts a
 line break; touch devices use the Send button. Messages accept 1–4000 UTF-16 code
 units after the same edge-whitespace normalization as the backend. Failed sends
-retain the draft; after an ambiguous network failure, refresh before retrying to
-check whether the server persisted the message.
+retain the draft. After an ambiguous send failure, check the synchronized conversation
+for the message before sending again. If live delivery is disconnected, wait for
+reconnection and automatic history recovery before checking.
 
 For manual verification with a running gateway, open the same authorized conversation
 as each participant and send multiline text. Both sessions should receive the same
-persisted message once without refreshing. Disconnect one session, send enough messages
+persisted message once through live delivery. Disconnect one session, send enough messages
 to span multiple history pages, and reconnect; verify complete, ordered recovery and
-manual refresh/older-history pagination. Use an explicitly allowed frontend origin:
+older-history pagination. Use an explicitly allowed frontend origin:
 the backend defaults to `http://localhost:5173` and `http://localhost:5174`; align
 `KWATERA_MESSAGING_ALLOWED_ORIGINS` and HTTP CORS for other origins, without disabling
 origin validation. Check blank/overlong validation, failed-send draft retention, request retries,
