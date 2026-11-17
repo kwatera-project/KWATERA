@@ -59,4 +59,7 @@ public class ReviewSummary {
   @Column(name = "updated_at")
   @LastModifiedDate
   private Instant updatedAt;
+
+  @Column(name = "language", nullable = false, length = 5)
+  private String language;
 }

@@ -26,8 +26,7 @@ public class ReviewSummaryScheduler {
 
   private static final Logger log = LoggerFactory.getLogger(ReviewSummaryScheduler.class);
 
-  private static final String SUMMARY_LANGUAGE = "en";
-
+  private static final List<String> SUMMARY_LANGUAGES = List.of("en", "pl");
   private final ReviewRepository reviewRepository;
   private final ReviewAiClient reviewAiClient;
   private final PropertyClient propertyClient;
@@ -71,11 +70,25 @@ public class ReviewSummaryScheduler {
   private void refreshUnit(UUID unitId) {
     try {
       var inputs = reviewRepository.findSummaryInputsByUnitIds(List.of(unitId));
-      var summary = summaries.findByUnitId(unitId).orElseGet(ReviewSummary::new);
-      summary.setUnitId(unitId);
-      refresh(summary, inputs);
+
+      if (inputs.isEmpty()) {
+        summaries.deleteAllByUnitId(unitId);
+        return;
+      }
+
+      for (String language : SUMMARY_LANGUAGES) {
+        try {
+          var summary =
+              summaries.findByUnitIdAndLanguage(unitId, language).orElseGet(ReviewSummary::new);
+          summary.setUnitId(unitId);
+          summary.setLanguage(language);
+          refresh(summary, inputs, language);
+        } catch (RestClientException | IllegalStateException | DataAccessException exception) {
+          log.warn("Could not refresh AI summary for unit {} in {}", unitId, language, exception);
+        }
+      }
     } catch (RestClientException | IllegalStateException | DataAccessException exception) {
-      log.warn("Could not refresh AI summary for unit {}", unitId, exception);
+      log.warn("Could not refresh AI summaries for unit {}", unitId, exception);
     }
   }
 
@@ -86,41 +99,56 @@ public class ReviewSummaryScheduler {
           unitIdsForProperty.isEmpty()
               ? List.of()
               : reviewRepository.findSummaryInputsByUnitIds(unitIdsForProperty);
-      var summary = summaries.findByPropertyId(propertyId).orElseGet(ReviewSummary::new);
-      summary.setPropertyId(propertyId);
-      refresh(summary, inputs);
+
+      if (inputs.isEmpty()) {
+        summaries.deleteAllByPropertyId(propertyId);
+        return;
+      }
+
+      for (String language : SUMMARY_LANGUAGES) {
+        try {
+          var summary =
+              summaries
+                  .findByPropertyIdAndLanguage(propertyId, language)
+                  .orElseGet(ReviewSummary::new);
+          summary.setPropertyId(propertyId);
+          summary.setLanguage(language);
+          refresh(summary, inputs, language);
+        } catch (RestClientException | IllegalStateException | DataAccessException exception) {
+          log.warn(
+              "Could not refresh AI summary for property {} in {}",
+              propertyId,
+              language,
+              exception);
+        }
+      }
     } catch (ResponseStatusException
         | RestClientException
         | IllegalStateException
         | DataAccessException exception) {
-      log.warn("Could not refresh AI summary for property {}", propertyId, exception);
+      log.warn("Could not refresh AI summaries for property {}", propertyId, exception);
     }
   }
 
-  private void refresh(ReviewSummary summary, List<ReviewSummaryInput> inputs) {
-    if (inputs.isEmpty()) {
-      if (summary.getId() != null) {
-        summaries.delete(summary);
-      }
-      return;
-    }
-
-    String fingerprint = SUMMARY_LANGUAGE + ":v5:" + ReviewSummaryFingerprint.calculate(inputs);
+  private void refresh(ReviewSummary summary, List<ReviewSummaryInput> inputs, String language) {
+    String fingerprint = language + ":v5:" + ReviewSummaryFingerprint.calculate(inputs);
     if (fingerprint.equals(summary.getInputFingerprint())) {
       return;
     }
 
     var comments = inputs.stream().map(ReviewSummaryInput::comment).toList();
-    var result = reviewAiClient.summarize(comments, SUMMARY_LANGUAGE);
+    var result = reviewAiClient.summarize(comments, language);
     summary.setAiSummary(summaryWriter.writeValueAsString(result));
     summary.setReviewIds(inputs.stream().map(ReviewSummaryInput::id).toList());
     summary.setInputFingerprint(fingerprint);
     summary.setGenerationTimestamp(Instant.now());
     summaries.save(summary);
+
     log.info(
-        "AI summary saved for {} {} from {} comments",
+        "AI summary saved for {} {} in {} from {} comments",
         summary.getUnitId() == null ? "property" : "unit",
         summary.getUnitId() == null ? summary.getPropertyId() : summary.getUnitId(),
+        language,
         inputs.size());
   }
 }

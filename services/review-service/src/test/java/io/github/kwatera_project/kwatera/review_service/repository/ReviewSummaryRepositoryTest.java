@@ -51,9 +51,10 @@ class ReviewSummaryRepositoryTest {
   @Sql(
       scripts = {
         "file:../db-migrations/src/main/resources/db/migration/V40__create_review_summaries.sql",
-        "file:../db-migrations/src/main/resources/db/migration/V41__add_review_ids_to_review_summaries.sql"
+        "file:../db-migrations/src/main/resources/db/migration/V41__add_review_ids_to_review_summaries.sql",
+        "file:../db-migrations/src/main/resources/db/migration/V42__add_language_to_review_summaries.sql"
       })
-  void storesAndReadsReviewIdsForUnitAndProperty() {
+  void storesAndReadsReviewIdsAndLanguagesForUnitAndProperty() {
     UUID target = UUID.randomUUID();
     jdbc.update("INSERT INTO units (id) VALUES (?)", target);
     jdbc.update("INSERT INTO properties (id) VALUES (?)", target);
@@ -62,19 +63,36 @@ class ReviewSummaryRepositoryTest {
     UUID secondReview = UUID.randomUUID();
     ReviewSummary unit = summary(List.of(firstReview));
     unit.setUnitId(target);
+    unit.setLanguage("en");
+    ReviewSummary polishUnit = summary(List.of(firstReview));
+    polishUnit.setUnitId(target);
+    polishUnit.setLanguage("pl");
     ReviewSummary property = summary(List.of(firstReview, secondReview));
     property.setPropertyId(target);
-    summaries.saveAllAndFlush(List.of(unit, property));
+    property.setLanguage("en");
+    ReviewSummary polishProperty = summary(List.of(firstReview, secondReview));
+    polishProperty.setPropertyId(target);
+    polishProperty.setLanguage("pl");
+    summaries.saveAllAndFlush(List.of(unit, polishUnit, property, polishProperty));
     entityManager.clear();
 
-    assertEquals(List.of(firstReview), summaries.findByUnitId(target).orElseThrow().getReviewIds());
+    assertEquals(
+        List.of(firstReview),
+        summaries.findByUnitIdAndLanguage(target, "en").orElseThrow().getReviewIds());
+    assertEquals(
+        List.of(firstReview),
+        summaries.findByUnitIdAndLanguage(target, "pl").orElseThrow().getReviewIds());
     assertEquals(
         List.of(firstReview, secondReview),
-        summaries.findByPropertyId(target).orElseThrow().getReviewIds());
+        summaries.findByPropertyIdAndLanguage(target, "en").orElseThrow().getReviewIds());
+    assertEquals(
+        List.of(firstReview, secondReview),
+        summaries.findByPropertyIdAndLanguage(target, "pl").orElseThrow().getReviewIds());
   }
 
   private ReviewSummary summary(List<UUID> ids) {
     ReviewSummary summary = new ReviewSummary();
+    summary.setLanguage("en");
     summary.setReviewIds(ids);
     summary.setAiSummary("Czysty pokój");
     summary.setInputFingerprint("fingerprint");

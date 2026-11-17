@@ -81,22 +81,30 @@ class ReviewControllerIntegrationTest {
 
     ReviewSummary unit = cachedSummary("Room");
     unit.setUnitId(id);
+    ReviewSummary polishUnit = cachedSummary("Pokój");
+    polishUnit.setUnitId(id);
+    polishUnit.setLanguage("pl");
     ReviewSummary property = cachedSummary("Property");
     property.setPropertyId(id);
-    summaries.saveAllAndFlush(List.of(unit, property));
+    summaries.saveAllAndFlush(List.of(unit, polishUnit, property));
     try {
       mockMvc
-          .perform(get(unitUrl))
+          .perform(get(unitUrl).param("language", "en"))
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.summary").value("Room"))
           .andExpect(jsonPath("$.pros[0]").value("Quiet"))
           .andExpect(jsonPath("$.cons").isEmpty());
       mockMvc
-          .perform(get(propertyUrl))
+          .perform(get(unitUrl).param("language", "pl"))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.summary").value("Pokój"));
+      mockMvc
+          .perform(get(propertyUrl).param("language", "en"))
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.summary").value("Property"));
+      mockMvc.perform(get(unitUrl).param("language", "de")).andExpect(status().isBadRequest());
     } finally {
-      summaries.deleteAll(List.of(unit, property));
+      summaries.deleteAll(List.of(unit, polishUnit, property));
     }
   }
 
@@ -109,6 +117,7 @@ class ReviewControllerIntegrationTest {
             .formatted(text));
     summary.setGenerationTimestamp(Instant.now());
     summary.setInputFingerprint("fingerprint");
+    summary.setLanguage("en");
     return summary;
   }
 

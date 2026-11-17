@@ -15,7 +15,11 @@ public interface ReviewSummaryRepository extends JpaRepository<ReviewSummary, UU
   @Query("select s.propertyId from ReviewSummary s where s.propertyId is not null")
   List<UUID> findCachedPropertyIds();
 
-  Optional<ReviewSummary> findByUnitId(UUID unitId);
+  Optional<ReviewSummary> findByUnitIdAndLanguage(UUID unitId, String language);
 
-  Optional<ReviewSummary> findByPropertyId(UUID propertyId);
+  Optional<ReviewSummary> findByPropertyIdAndLanguage(UUID propertyId, String language);
+
+  void deleteAllByUnitId(UUID unitId);
+
+  void deleteAllByPropertyId(UUID propertyId);
 }
