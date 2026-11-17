@@ -51,6 +51,28 @@ async function screenshot(page: Page, name: string, project: string) {
     }
 }
 
+test("reservation details can be retried without losing a chat draft", async ({ page }) => {
+    await setup(page);
+    let detailsAvailable = false;
+    await page.route(`**/api/v1/reservations/${reservation.id}`, route =>
+        detailsAvailable ? respond(route, reservation) : respond(route, {}, 503));
+
+    await page.goto(`/conversations/${conversation.id}`);
+    const chat = page.locator('section[aria-labelledby="chat-title"]');
+    const draft = chat.getByRole("textbox");
+    const retry = chat.getByRole("button", { name: "Retry loading reservation details" });
+    await expect(chat.getByText(/Reservation details could not be loaded/)).toBeVisible();
+    await expect(chat.getByRole("link", { name: "Reservation details" })).toHaveCSS("background-color", "rgb(255, 255, 255)");
+    await draft.fill("Keep this draft");
+
+    detailsAvailable = true;
+    await retry.click();
+    await expect(chat.getByRole("heading", { name: reservation.unitName })).toBeVisible();
+    await expect(chat.locator(`header time[datetime="${reservation.startDate}"]`)).toBeVisible();
+    await expect(retry).toHaveCount(0);
+    await expect(draft).toHaveValue("Keep this draft");
+});
+
 for (const language of ["en", "pl"]) {
     test(`message translation and original toggle (${language})`, async ({ page }) => {
         await setup(page, ["ROLE_GUEST"], language);
@@ -150,8 +172,8 @@ test("inbox sorts participant conversations and links chat, reservation and inbo
     await screenshot(page, "inbox", info.project.name);
     await list.getByRole("link").first().click();
     await expect(page).toHaveURL("/conversations/conversation-1");
-    await expect(page.getByRole("heading", { name: "Reservation conversation" })).toBeVisible();
-    await page.getByRole("link", { name: "Back to reservation", exact: true }).click();
+    await expect(page.getByRole("region", { name: reservation.unitName })).toBeVisible();
+    await page.getByRole("link", { name: "Reservation details", exact: true }).click();
     await expect(page).toHaveURL(`/reservations/${reservation.id}`);
     await page.getByRole("button", { name: "Open conversation", exact: true }).click();
     await expect(page).toHaveURL("/conversations/conversation-1");
@@ -169,7 +191,7 @@ test("empty and loading states", async ({ page }) => {
     await expect(page.getByRole("status")).toHaveText("Loading conversations…");
     release();
     await expect(page.getByRole("heading", { name: "No conversations yet" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Open conversation" })).toHaveCount(0);
+    await expect(page.getByRole("list", { name: "Messages", exact: true }).getByRole("link")).toHaveCount(0);
 });
 
 test("failed loading can be retried without stale data", async ({ page }) => {
@@ -180,7 +202,7 @@ test("failed loading can be retried without stale data", async ({ page }) => {
     await expect(page.getByRole("alert")).toHaveText("Conversations could not be loaded. Please try again.");
     failing = false;
     await page.getByRole("button", { name: "Try again" }).click();
-    await expect(page.getByRole("link", { name: "Open conversation" })).toBeVisible();
+    await expect(page.getByRole("list", { name: "Messages", exact: true }).getByRole("link")).toBeVisible();
 });
 
 for (const status of [401, 403, 404, 409, 410]) {
@@ -188,9 +210,9 @@ for (const status of [401, 403, 404, 409, 410]) {
         await setup(page);
         await page.route("**/api/v1/conversations", route => respond(route, { message: "private backend detail" }, status));
         await page.goto("/conversations");
-        await expect(page.getByRole("alert")).toContainText(status === 401 ? "session" : status < 409 ? "access" : "retention");
+        await expect(page.getByRole("alert")).toContainText(status === 401 ? "session" : status < 409 ? "access" : "currently unavailable");
         await expect(page.getByText("private backend detail")).toHaveCount(0);
-        await expect(page.getByRole("link", { name: "Open conversation" })).toHaveCount(0);
+        await expect(page.getByRole("list", { name: "Messages", exact: true }).getByRole("link")).toHaveCount(0);
         if (status === 401) await expect(page.getByRole("main").getByRole("link", { name: "Log in", exact: true })).toHaveAttribute("href", "/login");
     });
 }
@@ -224,17 +246,25 @@ for (const [route, role] of [["/my-reservations", "ROLE_GUEST"], ["/admin/reserv
 }
 
 for (const status of [401, 404, 409, 500]) {
-    test(`reservation entry handles HTTP ${status} and allows retry`, async ({ page }) => {
+    test(`reservation entry handles HTTP ${status}`, async ({ page }) => {
         await setup(page);
         let failing = true;
         await page.route("**/api/v1/reservations/*/conversation", route => respond(route, failing ? {} : conversation, failing ? status : 200));
         await page.goto(`/reservations/${reservation.id}`);
         await page.getByRole("button", { name: "Open conversation" }).click();
-        await expect(page.getByRole("alert")).toContainText(status === 401 ? "session" : status === 404 ? "access" : status === 409 ? "retention" : "could not be opened");
         await expect(page).toHaveURL(`/reservations/${reservation.id}`);
-        failing = false;
-        await page.getByRole("button", { name: "Open conversation" }).click();
-        await expect(page).toHaveURL("/conversations/conversation-1");
+        if (status === 401) {
+            await expect(page.getByRole("alert")).toContainText("session");
+            await expect(page.getByRole("main").getByRole("link", { name: "Log in" })).toBeVisible();
+        } else if (status === 500) {
+            await expect(page.getByRole("alert")).toContainText("could not be opened");
+            failing = false;
+            await page.getByRole("button", { name: "Retry opening chat" }).click();
+            await expect(page).toHaveURL("/conversations/conversation-1");
+        } else {
+            await expect(page.getByText("Chat unavailable", { exact: true })).toBeVisible();
+            await expect(page.getByText(/retention/i)).toHaveCount(0);
+        }
     });
 }
 
@@ -271,8 +301,9 @@ test("blocked reservation cannot request a conversation", async ({ page }) => {
     await setup(page);
     await page.route("**/api/v1/reservations/reservation-12345678", route => respond(route, { ...reservation, status: "BLOCKED" }));
     await page.goto(`/reservations/${reservation.id}`);
-    await expect(page.getByRole("button", { name: "Open conversation" })).toBeDisabled();
-    await expect(page.getByRole("status")).toContainText("retention");
+    await expect(page.getByRole("button", { name: "Open conversation" })).toHaveCount(0);
+    await expect(page.getByText("Chat unavailable", { exact: true })).toBeVisible();
+    await expect(page.getByText("Chat is unavailable for a blocked reservation.")).toBeVisible();
 });
 
 test("context enrichment stays on the visible page with at most three concurrent requests", async ({ page }) => {
@@ -303,13 +334,12 @@ test("context enrichment stays on the visible page with at most three concurrent
     expect(peak).toBeLessThanOrEqual(3);
 });
 
-test("Polish inbox and date fallback", async ({ page }, info) => {
+test("Polish inbox omits missing activity", async ({ page }, info) => {
     await setup(page, ["ROLE_OWNER"], "pl");
     await page.route("**/api/v1/conversations", route => respond(route, [{ ...conversation, lastMessageAt: null, createdAt: null }]));
     await page.goto("/conversations");
     await expect(page.getByRole("heading", { name: "Wiadomości", exact: true })).toBeVisible();
-    await expect(page.getByText("Ostatnia aktywność: Data niedostępna")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Otwórz rozmowę" })).toBeVisible();
+    await expect(page.getByRole("list", { name: "Wiadomości", exact: true }).locator("time")).toHaveCount(0);
     await expect(page.getByRole("heading", { name: reservation.unitName })).toBeVisible();
     await screenshot(page, "inbox-pl", info.project.name);
 });
@@ -318,7 +348,7 @@ test("expired direct conversation hides context and returns to inbox", async ({ 
     await setup(page);
     await page.route("**/api/v1/conversations/conversation-1", route => respond(route, {}, 409));
     await page.goto("/conversations/conversation-1");
-    await expect(page.getByRole("alert")).toContainText("retention");
+    await expect(page.getByRole("alert")).toContainText("currently unavailable");
     await expect(page.getByText(reservation.unitName)).toHaveCount(0);
     await expect(page.getByRole("textbox")).toHaveCount(0);
     await page.getByRole("link", { name: "Back to messages" }).click();
@@ -329,8 +359,8 @@ test.describe("review regressions", () => {
     test("administrator participants can use the inbox, direct links and their own reservation action", async ({ page }) => {
         await setup(page, ["ROLE_ADMIN"], "en", "guest");
         await page.goto("/conversations");
-        await page.getByRole("link", { name: "Open conversation" }).click();
-        await expect(page.getByRole("heading", { name: "Reservation conversation" })).toBeVisible();
+        await page.getByRole("list", { name: "Messages", exact: true }).getByRole("link").click();
+        await expect(page.getByRole("region", { name: reservation.unitName })).toBeVisible();
         await page.goto("/conversations/conversation-1");
         await expect(page.getByRole("textbox")).toBeVisible();
         for (const path of ["/admin/reservations", `/reservations/${reservation.id}`]) {
@@ -343,7 +373,7 @@ test.describe("review regressions", () => {
     test("administrator owner snapshots retain conversation access without assuming current ownership", async ({ page }) => {
         await setup(page, ["ROLE_ADMIN"], "en", "owner");
         await page.goto("/conversations");
-        await page.getByRole("link", { name: "Open conversation" }).click();
+        await page.getByRole("list", { name: "Messages", exact: true }).getByRole("link").click();
         await expect(page.getByRole("textbox")).toBeVisible();
     });
 
@@ -386,7 +416,7 @@ test.describe("review regressions", () => {
         releaseNew();
         await expect(page.getByRole("heading", { name: "No conversations yet" })).toBeVisible();
         await expect(page.getByText("Private old account context")).toHaveCount(0);
-        await expect(page.getByRole("link", { name: "Open conversation" })).toHaveCount(0);
+        await expect(page.getByRole("list", { name: "Messages", exact: true }).getByRole("link")).toHaveCount(0);
         await otherTab.close();
     });
 
@@ -477,3 +507,118 @@ test.describe("review regressions", () => {
         });
     }
 });
+
+test("split view and 320px return restore the selected row, scroll and focus", async ({ page }, info) => {
+    await setup(page);
+    await page.setViewportSize({ width: info.project.name === "mobile" ? 320 : 1280, height: 620 });
+    await page.route("**/api/v1/conversations", route => respond(route, Array.from({ length: 10 }, (_, index) => ({
+        ...conversation, id: `conversation-${index}`, reservationId: `reservation-0000000${index}`,
+    }))));
+    await page.goto("/conversations");
+    const list = page.getByRole("list", { name: "Messages", exact: true });
+    const row = list.getByRole("link").last();
+    await page.route("**/api/v1/conversations/conversation-9", route => respond(route, { ...conversation, id: "conversation-9" }));
+    await row.scrollIntoViewIfNeeded();
+    const scroller = list.locator("..");
+    const scroll = await scroller.evaluate(element => element.scrollTop);
+    expect(scroll).toBeGreaterThan(0);
+    await row.click();
+    await expect(page.getByRole("textbox")).toBeVisible();
+    if (info.project.name === "mobile") {
+        await expect(list).toBeHidden();
+        const composer = page.getByRole("textbox");
+        await composer.focus();
+        await page.evaluate(() => {
+            const viewport = window.visualViewport!;
+            Object.defineProperty(viewport, "height", { configurable: true, value: 330 });
+            viewport.dispatchEvent(new Event("resize"));
+        });
+        const send = page.getByRole("button", { name: "Send", exact: true });
+        for (const control of [composer, send]) {
+            const bounds = (await control.boundingBox())!;
+            expect(bounds.y).toBeGreaterThanOrEqual(0);
+            expect(bounds.y + bounds.height).toBeLessThanOrEqual(330);
+        }
+        await page.evaluate(() => {
+            const viewport = window.visualViewport!;
+            Reflect.deleteProperty(viewport, "height");
+            viewport.dispatchEvent(new Event("resize"));
+        });
+    } else {
+        await expect(row).toHaveAttribute("aria-current", "page");
+        await expect(list).toBeVisible();
+        const collapse = page.getByRole("button", { name: "Collapse inbox" });
+        const composer = page.getByRole("textbox");
+        const before = (await composer.boundingBox())!.width;
+        await collapse.click();
+        const expand = page.getByRole("button", { name: "Show conversations" });
+        await expect(expand).toHaveAttribute("aria-expanded", "false");
+        await expect(expand).toBeFocused();
+        await expect(list).toBeHidden();
+        expect((await composer.boundingBox())!.width).toBeGreaterThan(before);
+        await expand.click();
+        await expect(collapse).toHaveAttribute("aria-expanded", "true");
+        await expect(collapse).toBeFocused();
+        await expect(row).toHaveAttribute("aria-current", "page");
+    }
+    await page.getByRole("link", { name: "Back to messages" }).click();
+    await expect(page).toHaveURL("/conversations");
+    await expect(row).toBeFocused();
+    expect(await scroller.evaluate(element => element.scrollTop)).toBe(scroll);
+    await row.click();
+    await page.goBack();
+    await expect(row).toBeFocused();
+});
+
+for (const committed of [false, true]) {
+    test(`failed send preserves draft and retry leaves one message (persisted: ${committed})`, async ({ page }) => {
+        await setup(page);
+        const content = "https://example.com/" + "a".repeat(320);
+        const stored = [{
+            id: "earlier", conversationId: conversation.id, senderUserId: "owner", content: "Earlier message", createdAt: "2026-10-01T10:00:00Z",
+        }];
+        let posts = 0;
+        await page.route("**/api/v1/conversations/*/messages*", async route => {
+            if (route.request().method() === "GET") return respond(route, { items: [...stored].reverse(), hasMore: false });
+            const message = { id: "new", conversationId: conversation.id, senderUserId: "guest", content, createdAt: "2026-10-02T10:00:00Z" };
+            if (++posts === 1) {
+                if (committed) stored.push(message);
+                return respond(route, {}, 503);
+            }
+            stored.push(message);
+            return respond(route, message);
+        });
+        await page.setViewportSize({ width: 320, height: 620 });
+        await page.goto(`/conversations/${conversation.id}`);
+        const composer = page.getByRole("textbox");
+        await composer.fill(content);
+        await page.getByRole("button", { name: "Send", exact: true }).click();
+        await expect(page.locator("form").getByRole("alert")).toContainText("Sending could not be confirmed");
+        await expect(composer).toHaveValue(content);
+        await page.getByRole("button", { name: "Retry send" }).click();
+        await expect(composer).toHaveValue("");
+        await expect(page.getByText(content, { exact: true })).toHaveCount(1);
+        expect(posts).toBe(committed ? 1 : 2);
+        expect(stored).toHaveLength(2);
+        const bubble = page.getByRole("article").filter({ hasText: content });
+        expect(await bubble.evaluate(element => element.scrollWidth)).toBeLessThanOrEqual(await bubble.evaluate(element => element.clientWidth));
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    });
+}
+
+for (const available of [true, false]) {
+    test(`completed reservation defers availability to the API (${available})`, async ({ page }) => {
+        await setup(page);
+        await page.route("**/api/v1/reservations/reservation-12345678", route => respond(route, { ...reservation, status: "COMPLETED" }));
+        await page.route("**/api/v1/reservations/*/conversation", route => available
+            ? respond(route, { ...conversation, reservationStatus: "COMPLETED" })
+            : respond(route, { detail: "Conversation retention period has expired" }, 409));
+        await page.goto(`/reservations/${reservation.id}`);
+        await page.getByRole("button", { name: "Open conversation" }).click();
+        if (available) await expect(page.getByRole("textbox")).toBeVisible();
+        else {
+            await expect(page.getByText("Chat unavailable", { exact: true })).toBeVisible();
+            await expect(page.getByText("The message retention period has ended.")).toBeVisible();
+        }
+    });
+}

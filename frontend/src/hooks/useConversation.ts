@@ -41,6 +41,7 @@ export function useConversation(conversationId: string, userId: string | undefin
         ...state,
         loadHistory: (action: "refresh" | "older") => sessionRef.current?.loadHistory(action),
         send: (content: string) => sessionRef.current?.send(content) ?? Promise.resolve(false),
+        reconnect: () => sessionRef.current?.reconnect(),
         retryContext: () => sessionRef.current?.retryContext(),
     };
 }

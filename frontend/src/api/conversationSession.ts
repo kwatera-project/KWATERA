@@ -3,13 +3,14 @@ import type { ReservationDetails } from "../types/reservation";
 import type { ConnectionStatus } from "./conversationSocket";
 import { mergeMessages } from "../utils/conversationMessages.ts";
 
-type AccessError = "unauthenticated" | "inaccessible" | "unavailable";
+export type AccessError = "unauthenticated" | "inaccessible" | "unavailable";
 type Operation = "refresh" | "older" | "send";
 
 export interface ConversationState {
     conversation: ConversationResponse | null;
     reservation: ReservationDetails | null;
     contextLoading: boolean;
+    contextError: boolean;
     messages: MessageResponse[];
     nextCursor: string | null;
     loading: boolean;
@@ -20,7 +21,7 @@ export interface ConversationState {
 }
 
 export const emptyConversation: ConversationState = {
-    conversation: null, reservation: null, contextLoading: false, messages: [], nextCursor: null,
+    conversation: null, reservation: null, contextLoading: false, contextError: false, messages: [], nextCursor: null,
     loading: true, fatalError: null, operation: null, operationError: null, connectionStatus: "connecting",
 };
 
@@ -71,10 +72,11 @@ export function createConversationSession(options: SessionOptions) {
     const history = (params: MessageHistoryParams = {}) => options.getHistory(options.conversationId, { limit: 50, ...params }, requests.signal);
     let anchor: string | null = null;
     let initialized = false;
-    let syncPromise: Promise<void> | null = null;
+    let syncPromise: Promise<boolean> | null = null;
     let syncAgain = false;
     let buffered: MessageResponse[] = [];
     let busy = false;
+    const uncertainSends = new Map<string, string | null>();
 
     function update(patch: Partial<ConversationState>) {
         if (!current()) return;
@@ -94,7 +96,7 @@ export function createConversationSession(options: SessionOptions) {
     function deny(error: AccessError) {
         // Do not call current()/update() here: current() itself enforces expiration.
         if (!active || !options.isCurrent()) return;
-        state = { ...state, conversation: null, reservation: null, messages: [], nextCursor: null,
+        state = { ...state, conversation: null, reservation: null, contextLoading: false, contextError: false, messages: [], nextCursor: null,
             fatalError: error, loading: false, operation: null,
             connectionStatus: error === "unauthenticated" ? "authenticationError" : "subscriptionError" };
         options.onChange(state);
@@ -118,15 +120,17 @@ export function createConversationSession(options: SessionOptions) {
         return mergeMessages(state.messages, incoming.filter(message => message.conversationId === options.conversationId));
     }
 
-    function synchronize(): Promise<void> {
-        if (!current()) return Promise.resolve();
+    function synchronize(): Promise<boolean> {
+        if (!current()) return Promise.resolve(false);
         if (syncPromise) { syncAgain = true; return syncPromise; }
         syncPromise = (async () => {
+            let synchronized: boolean;
             do {
+                synchronized = false;
                 syncAgain = false;
                 try {
                     let page = await history();
-                    if (!current()) return;
+                    if (!current()) return false;
                     const newestId = page.items[0]?.id ?? null;
                     const incoming = [...page.items];
                     const cursors = new Set<string>();
@@ -136,10 +140,10 @@ export function createConversationSession(options: SessionOptions) {
                         if (cursors.has(page.nextCursor)) throw new Error("Repeated history cursor");
                         cursors.add(page.nextCursor);
                         page = await history({ cursor: page.nextCursor });
-                        if (!current()) return;
+                        if (!current()) return false;
                         incoming.push(...page.items);
                     }
-                    if (!current()) return;
+                    if (!current()) return false;
                     const nextCursor = !initialized ? (page.hasMore ? page.nextCursor : null)
                         : !page.hasMore ? null : state.nextCursor;
                     anchor = newestId;
@@ -147,19 +151,60 @@ export function createConversationSession(options: SessionOptions) {
                     update({ messages: merge([...incoming, ...buffered]), nextCursor, loading: false, fatalError: null,
                         operationError: state.operationError === "refresh" ? null : state.operationError });
                     buffered = [];
+                    synchronized = true;
                 } catch (error) {
-                    if (!current()) return;
+                    if (!current()) return false;
                     if (!initialized) {
                         const fatal = accessError(error);
-                        if (fatal) { deny(fatal); return; }
+                        if (fatal) { deny(fatal); return false; }
                         update({ fatalError: "load", loading: false });
                     } else failure(error, "refresh");
                     update({ messages: merge(buffered) });
                     buffered = [];
                 }
             } while (syncAgain && current());
+            return synchronized;
         })().finally(() => { syncPromise = null; });
         return syncPromise;
+    }
+
+    function reconnect() {
+        if (!current() || !state.conversation) return;
+        clearTimeout(fallbackTimer);
+        stopSocket();
+        stopSocket = options.connect({
+            isCurrent: current,
+            onStatus: connectionStatus => {
+                update({ connectionStatus });
+                if (connectionStatus === "transportError" || connectionStatus === "disconnected") {
+                    clearTimeout(fallbackTimer);
+                    if (!initialized) void synchronize();
+                }
+            },
+            onReady: () => {
+                clearTimeout(fallbackTimer);
+                void synchronize();
+            },
+            onMessage: message => {
+                if (!current() || message.conversationId !== options.conversationId) return;
+                if (syncPromise || !initialized) buffered.push(message);
+                else update({ messages: merge([message]) });
+            },
+            onError: code => {
+                if (code === "UNAUTHENTICATED") deny("unauthenticated");
+                else if (code === "CONVERSATION_NOT_FOUND") deny("inaccessible");
+                else if (code === "CONVERSATION_UNAVAILABLE") deny("unavailable");
+                else if (code === "INVALID_MESSAGE") update({ operationError: "invalidMessage" });
+                else {
+                    update({ connectionStatus: "subscriptionError" });
+                    clearTimeout(fallbackTimer);
+                    if (!initialized) void synchronize();
+                }
+            },
+        });
+        // Creating the socket can synchronously reject access.
+        if (!current()) { stopSocket(); return; }
+        fallbackTimer = setTimeout(() => { if (!initialized) void synchronize(); }, 2000);
     }
 
     async function start() {
@@ -174,42 +219,8 @@ export function createConversationSession(options: SessionOptions) {
                 deny("inaccessible"); return;
             }
             update({ conversation });
-            void options.getReservation(conversation.reservationId, requests.signal).then(reservation => {
-                update({ reservation });
-            }).catch(() => { /* Optional context must not prevent messaging. */ });
-            stopSocket = options.connect({
-                isCurrent: current,
-                onStatus: connectionStatus => {
-                    update({ connectionStatus });
-                    if (connectionStatus === "transportError" || connectionStatus === "disconnected") {
-                        clearTimeout(fallbackTimer);
-                        if (!initialized) void synchronize();
-                    }
-                },
-                onReady: () => {
-                    clearTimeout(fallbackTimer);
-                    void synchronize();
-                },
-                onMessage: message => {
-                    if (!current() || message.conversationId !== options.conversationId) return;
-                    if (syncPromise || !initialized) buffered.push(message);
-                    else update({ messages: merge([message]) });
-                },
-                onError: code => {
-                    if (code === "UNAUTHENTICATED") deny("unauthenticated");
-                    else if (code === "CONVERSATION_NOT_FOUND") deny("inaccessible");
-                    else if (code === "CONVERSATION_UNAVAILABLE") deny("unavailable");
-                    else if (code === "INVALID_MESSAGE") update({ operationError: "invalidMessage" });
-                    else {
-                        update({ connectionStatus: "subscriptionError" });
-                        clearTimeout(fallbackTimer);
-                        if (!initialized) void synchronize();
-                    }
-                },
-            });
-            // Creating the socket can synchronously reject access.
-            if (!current()) { stopSocket(); return; }
-            fallbackTimer = setTimeout(() => { if (!initialized) void synchronize(); }, 2000);
+            void retryContext();
+            reconnect();
         } catch (error) {
             if (!current()) return;
             const fatal = accessError(error);
@@ -239,22 +250,52 @@ export function createConversationSession(options: SessionOptions) {
         if (!current() || busy || !state.conversation) return false;
         busy = true;
         update({ operation: "send", operationError: null });
+        let lastKnownId = state.messages.at(-1)?.id ?? null;
         try {
+            if (uncertainSends.has(content)) {
+                // A POST response may be lost after persistence. Check authoritative
+                // history before allowing the same draft to be submitted again.
+                if (!await synchronize() || !current()) {
+                    update({ operationError: "send" });
+                    return false;
+                }
+                const previousId = uncertainSends.get(content);
+                const afterPrevious = state.messages.findIndex(message => message.id === previousId) + 1;
+                if (state.messages.slice(afterPrevious).some(message =>
+                    message.senderUserId === options.userId && message.content === content)) {
+                    uncertainSends.delete(content);
+                    return true;
+                }
+                lastKnownId = state.messages.at(-1)?.id ?? null;
+            }
             const message = await options.sendMessage(options.conversationId, { content }, requests.signal);
-            if (!current() || message.conversationId !== options.conversationId) return false;
+            if (!current()) return false;
+            if (message.conversationId !== options.conversationId) throw new Error("Unexpected conversation");
+            uncertainSends.delete(content);
             update({ messages: merge([message]) });
             return true;
-        } catch (error) { if (current()) failure(error, "send"); return false; }
+        } catch (error) {
+            if (current()) {
+                const status = (error as { status?: number })?.status;
+                if (!status || status >= 500) uncertainSends.set(content, lastKnownId);
+                else uncertainSends.delete(content);
+                failure(error, "send");
+            }
+            return false;
+        }
         finally { busy = false; update({ operation: null }); }
     }
 
     async function retryContext() {
         if (!current() || !state.conversation || state.contextLoading) return;
         update({ contextLoading: true });
-        try { update({ reservation: await options.getReservation(state.conversation.reservationId, requests.signal) }); }
-        catch { update({ reservation: null }); }
-        finally { update({ contextLoading: false }); }
+        try {
+            const reservation = await options.getReservation(state.conversation.reservationId, requests.signal);
+            update({ reservation, contextLoading: false, contextError: false });
+        } catch {
+            update({ contextLoading: false, contextError: true });
+        }
     }
 
-    return { start, stop, loadHistory, send, retryContext };
+    return { start, stop, reconnect, loadHistory, send, retryContext };
 }

@@ -127,7 +127,7 @@ export default function MyReservationsPage() {
                                             {t(`statuses.${res.status}`)}
                                         </span>
 
-                                        <div className="min-w-0 flex flex-wrap items-center gap-2.5 w-full sm:w-auto sm:flex-1 justify-start sm:justify-end">
+                                        <div className="min-w-0 flex flex-wrap items-start gap-2.5 w-full sm:w-auto sm:flex-1 justify-start sm:justify-end">
                                             <Link
                                                 to={`/reservations/${res.id}`}
                                                 className="px-4 py-2 text-xs font-bold text-white bg-[#42211D] hover:bg-[#321815] rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1.5 shrink-0"

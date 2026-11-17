@@ -1,5 +1,14 @@
 {
   "inbox": {
+    "collapse": "Collapse inbox",
+    "expand": "Show conversations",
+    "select": "Select a conversation to see its messages.",
+    "unavailable": "Chat unavailable",
+    "retryOpen": "Retry opening chat",
+    "reasons": {
+      "blocked": "Chat is unavailable for a blocked reservation.",
+      "retention": "The message retention period has ended."
+    },
     "title": "Messages",
     "subtitle": "Your available reservation conversations, with the most recent activity first.",
     "back": "Back to messages",
@@ -16,13 +25,15 @@
     "page": "Page {{page}} of {{total}}",
     "errors": {
       "load": "Conversations could not be loaded. Please try again.",
-      "open": "The conversation could not be opened. Please try again.",
+      "open": "The conversation could not be opened.",
       "unauthenticated": "Your session is unavailable or has expired. Log in to access messages.",
       "inaccessible": "The conversation could not be found or you do not have access to it.",
-      "unavailable": "Messaging is unavailable because of the reservation status or the message retention period."
+      "unavailable": "This conversation is currently unavailable."
     }
   },
   "chat": {
+    "reservationDetails": "Reservation details",
+    "retrySend": "Retry send",
     "translation": {
       "translate": "Translate to English",
       "loading": "Translating…",
@@ -41,7 +52,7 @@
       "transportError": "Live connection failed. Retrying automatically. You can still send messages."
     },
     "backToReservation": "Back to reservation",
-    "history": "Messages",
+    "history": "Message history",
     "loading": "Loading conversation…",
     "empty": "No messages yet",
     "emptyHint": "Send your first message about this reservation.",
@@ -63,14 +74,16 @@
     "retry": "Try again",
     "login": "Log in",
     "contextError": "Reservation details could not be loaded. You can still use this conversation.",
+    "retryReservationDetails": "Retry loading reservation details",
+    "loadingReservationDetails": "Loading reservation details…",
     "errors": {
       "load": "The conversation could not be loaded. Please try again.",
       "unauthenticated": "Your session is unavailable or has expired. Log in to access this conversation.",
       "inaccessible": "This conversation could not be found or you do not have access to it.",
-      "unavailable": "This conversation is unavailable because of the reservation status or the message retention period.",
+      "unavailable": "This conversation is currently unavailable.",
       "refresh": "Messages could not be synchronized. Your loaded history has been kept. Please try again.",
       "older": "Older messages could not be loaded. Please try again.",
-      "send": "Sending could not be confirmed. Your draft has been kept. Check the synchronized conversation for your message before sending again.",
+      "send": "Sending could not be confirmed. Your draft is saved here. Retry to check the conversation before sending again.",
       "invalidMessage": "The message was rejected. Enter between 1 and 4000 characters and try again. Your draft has been kept."
     }
   },

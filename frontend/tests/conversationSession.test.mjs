@@ -268,3 +268,31 @@ test("recovery detects repeated cursors and keeps already loaded messages", asyn
     assert.equal(h.state.operationError, "refresh");
     assert.deepEqual(h.state.messages.map(m => m.id), ["01"]);
 });
+
+test("retry waits for history and does not repeat a committed POST with a lost response", async t => {
+    let sends = 0;
+    let committed = false;
+    let historyUnavailable = false;
+    const h = harness(t, {
+        getHistory: async () => {
+            if (historyUnavailable) throw new Error("offline");
+            return page(committed ? [message("02", { content: "hello" }), message("01")] : [message("01")]);
+        },
+        sendMessage: async () => {
+            sends++;
+            committed = true;
+            throw new Error("lost response");
+        },
+    });
+    await h.session.start();
+    h.socket.onReady();
+    await flush();
+    assert.equal(await h.session.send("hello"), false);
+    historyUnavailable = true;
+    assert.equal(await h.session.send("hello"), false);
+    assert.equal(h.state.operationError, "send");
+    historyUnavailable = false;
+    assert.equal(await h.session.send("hello"), true);
+    assert.equal(sends, 1);
+    assert.deepEqual(h.state.messages.map(value => value.id), ["01", "02"]);
+});

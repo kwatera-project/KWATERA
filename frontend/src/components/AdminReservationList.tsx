@@ -275,7 +275,7 @@ export default function AdminReservationList() {
                                         </div>
                                     </td>
                                     <td className="block md:table-cell px-0 md:px-6 py-3 md:py-4 text-sm text-center">
-                                        <div className="flex flex-col sm:flex-row sm:flex-wrap md:justify-center items-stretch sm:items-center gap-2">
+                                        <div className="flex flex-col sm:flex-row sm:flex-wrap md:justify-center items-stretch sm:items-start gap-2">
                                             <Link
                                                 to={`/reservations/${res.id}`}
                                                 className="px-4 md:px-3 py-2.5 md:py-1.5 text-sm md:text-xs font-bold md:font-semibold text-white bg-[#42211D] hover:bg-[#321815] rounded-lg transition-all shadow-sm active:scale-95 inline-flex items-center justify-center gap-1 shrink-0 cursor-pointer text-center"
