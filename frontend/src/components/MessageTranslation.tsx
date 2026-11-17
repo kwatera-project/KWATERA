@@ -35,9 +35,9 @@ export default function MessageTranslation({ conversationId, messageId, content,
     }
 
     return <>
-        <p lang={showOriginal ? undefined : language} className="text-sm leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">{showOriginal ? content : translated}</p>
-        <div className="mt-2 text-xs space-y-1">
-            <button type="button" disabled={loading} className="min-h-11 underline font-bold rounded focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60"
+        <p lang={showOriginal ? undefined : language} className="text-base leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">{showOriginal ? content : translated}</p>
+        <div className="space-y-1">
+            <button type="button" disabled={loading} className="chat-inline-action"
                 onClick={() => showOriginal ? void translate() : setShowOriginal(true)}>
                 {t(loading ? "chat.translation.loading" : showOriginal ? "chat.translation.translate" : "chat.translation.original")}
             </button>

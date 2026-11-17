@@ -1,5 +1,7 @@
 {
   "inbox": {
+    "collapse": "Collapse inbox",
+    "expand": "Show conversations",
     "select": "Select a conversation to see its messages.",
     "unavailable": "Chat unavailable",
     "retryOpen": "Retry opening chat",

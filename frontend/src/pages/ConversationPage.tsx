@@ -1,13 +1,14 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Loader2, MessageSquare, Send } from "lucide-react";
+import { ArrowLeft, Loader2, MessageSquare, PanelLeftOpen, Send } from "lucide-react";
 import { useConversation } from "../hooks/useConversation";
 import { decodeJwt } from "../utils/jwtUtils";
 import { getLocaleCode } from "../utils/locale";
 import { MESSAGE_LIMIT, normalizeMessage } from "../utils/conversationMessages";
 import { useAuthToken } from "../hooks/useAuthToken";
-import type { ReportConversationAccess } from "./ConversationsPage";
+import type { ConversationsOutletContext } from "./ConversationsPage";
+import ConversationThumbnail from "../components/ConversationThumbnail";
 import MessageTranslation from "../components/MessageTranslation";
 
 const secondaryButton = "chat-secondary";
@@ -37,7 +38,7 @@ function ConversationScreen({ conversationId, userId, token, onRetry }: {
     onRetry: () => void;
 }) {
     const { t, i18n } = useTranslation();
-    const reportAccess = useOutletContext<ReportConversationAccess>();
+    const { reportAccess, inboxCollapsed, toggleInbox } = useOutletContext<ConversationsOutletContext>();
     const chat = useConversation(conversationId, userId, token);
     const backRef = useRef<HTMLAnchorElement>(null);
     const headingRef = useRef<HTMLHeadingElement>(null);
@@ -103,14 +104,15 @@ function ConversationScreen({ conversationId, userId, token, onRetry }: {
     const conversation = chat.conversation;
     const title = chat.reservation?.unitName || t("chat.title");
     const back = (
-        <Link ref={backRef} to="/conversations" replace className={`${secondaryButton} mb-1 md:mb-0 md:w-11 md:px-0`}
+        <Link ref={backRef} to="/conversations" replace className={`${secondaryButton} md:hidden`}
+            aria-label={t("inbox.back")} title={t("inbox.back")}
             onClick={event => {
                 if (fromInbox && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
                     event.preventDefault();
                     navigate(-1);
                 }
             }}>
-            <ArrowLeft size={16} aria-hidden="true" /><span className="md:sr-only">{t("inbox.back")}</span>
+            <ArrowLeft size={18} aria-hidden="true" /><span aria-hidden="true" className="md:hidden">{t("inbox.title")}</span>
         </Link>
     );
     const otherLabel = userId === conversation?.guestUserId ? t("chat.owner") : t("chat.guest");
@@ -118,14 +120,24 @@ function ConversationScreen({ conversationId, userId, token, onRetry }: {
 
     const composerError = chat.operationError === "send" || chat.operationError === "invalidMessage" ? chat.operationError : null;
     const historyError = chat.operationError === "older" || chat.operationError === "refresh" ? chat.operationError : null;
+    const connectionWarning = chat.connectionStatus !== "connected" && chat.connectionStatus !== "connecting";
     return (
         <section aria-labelledby="chat-title" className="min-h-0 flex-1 flex flex-col overflow-y-auto overscroll-contain">
-            <header className="shrink-0 border-b border-brand-accent px-3 py-2 sm:px-4 md:grid md:grid-cols-[auto_minmax(0,1fr)] md:items-center md:gap-2">
-                {back}
-                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5">
+            <header className={`grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-brand-accent px-3 py-2 sm:px-4 md:gap-3 ${inboxCollapsed ? "md:grid-cols-[auto_minmax(0,1fr)_auto]" : ""}`}>
+                <div className={`col-start-1 row-start-1 ${inboxCollapsed ? "" : "md:hidden"}`}>
+                    {back}
+                    {inboxCollapsed && <button type="button" className={`${secondaryButton} hidden w-11 px-0 md:inline-flex`}
+                        aria-label={t("inbox.expand")} title={t("inbox.expand")}
+                        data-inbox-toggle aria-controls="conversation-inbox" aria-expanded={false} onClick={toggleInbox}>
+                        <PanelLeftOpen size={18} aria-hidden="true" />
+                    </button>}
+                </div>
+                <div className={`col-span-2 col-start-1 row-start-2 flex min-w-0 items-center gap-3 md:col-span-1 md:row-start-1 ${inboxCollapsed ? "md:col-start-2" : ""}`}>
+                    {!chat.fatalError && conversation && chat.reservation?.unitId &&
+                        <ConversationThumbnail key={chat.reservation.unitId} unitId={chat.reservation.unitId} />}
                     <div className="min-w-0 flex-1">
-                        <h2 id="chat-title" ref={headingRef} tabIndex={-1} title={title} className="line-clamp-2 text-lg font-black [overflow-wrap:anywhere] focus-visible:outline-2 focus-visible:outline-brand-primary">{title}</h2>
-                        {conversation && !chat.fatalError && <p className="text-xs text-brand-muted">
+                        <h2 id="chat-title" ref={headingRef} tabIndex={-1} title={title} className="line-clamp-2 w-fit max-w-full rounded-sm text-xl font-extrabold tracking-tight [overflow-wrap:anywhere] focus-visible:outline-2 focus-visible:outline-brand-primary md:text-2xl">{title}</h2>
+                        {conversation && !chat.fatalError && <p className="text-sm text-brand-muted">
                             <span title={conversation.reservationId} className="font-mono font-bold">#RES-{conversation.reservationId.slice(-8)}</span>
                             {chat.reservation?.startDate && chat.reservation.endDate && <>
                                 <span className="block sm:inline">
@@ -136,10 +148,10 @@ function ConversationScreen({ conversationId, userId, token, onRetry }: {
                             </>}
                         </p>}
                     </div>
-                    {conversation && !chat.fatalError && <Link to={`/reservations/${conversation.reservationId}`} className={secondaryButton}>
-                        {t("chat.reservationDetails")}
-                    </Link>}
                 </div>
+                {conversation && !chat.fatalError && <Link to={`/reservations/${conversation.reservationId}`} className={`${secondaryButton} col-start-2 row-start-1 ${inboxCollapsed ? "md:col-start-3" : ""}`}>
+                    {t("chat.reservationDetails")}
+                </Link>}
             </header>
             {chat.loading ? <p className="p-4 flex items-center gap-2 text-brand-muted" role="status">
                 <Loader2 size={18} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />{t("chat.loading")}
@@ -148,13 +160,13 @@ function ConversationScreen({ conversationId, userId, token, onRetry }: {
                 {chat.fatalError === "unauthenticated" ? <Link to="/login" className={secondaryButton}>{t("chat.login")}</Link>
                     : chat.fatalError === "load" && <button type="button" onClick={onRetry} className={secondaryButton}>{t("chat.retry")}</button>}
             </div> : <>
-                <div className={`shrink-0 flex flex-wrap items-center justify-between gap-x-2 border-b border-brand-accent px-3 sm:px-4 ${["connected", "connecting"].includes(chat.connectionStatus) ? "text-brand-muted" : "chat-feedback-warning"}`}>
-                    <p role="status" data-testid="connection-status" className="flex items-center gap-2 py-1.5 text-xs">
-                        <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${chat.connectionStatus === "connected" ? "bg-green-700" : "bg-amber-700"}`} />
+                {connectionWarning && <div className="chat-feedback-warning shrink-0 flex flex-wrap items-center justify-between gap-x-2 border-b border-brand-accent px-3 sm:px-4">
+                    <p role="status" data-testid="connection-status" className="flex items-center gap-2 py-1.5 text-sm">
+                        <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-amber-700" />
                         {t(`chat.connection.${chat.connectionStatus}`)}
                     </p>
                     {chat.connectionStatus === "subscriptionError" && <button type="button" onClick={chat.reconnect} className="chat-inline-action">{t("chat.retry")}</button>}
-                </div>
+                </div>}
                 {historyError && <div className="shrink-0 flex flex-wrap items-center justify-between gap-x-2 border-b border-brand-accent px-3">
                     <p role="alert" className="chat-feedback-error">{t(`chat.errors.${historyError}`)}</p>
                     <button type="button" className="chat-inline-action" disabled={busy}
@@ -188,18 +200,18 @@ function ConversationScreen({ conversationId, userId, token, onRetry }: {
                                 const previous = chat.messages[index - 1];
                                 const startsDay = !previous || date.toDateString() !== new Date(previous.createdAt).toDateString();
                                 return <li key={message.id}>
-                                    {startsDay && <div className="mb-3 flex items-center gap-3 text-xs font-bold text-brand-muted before:h-px before:flex-1 before:bg-brand-accent after:h-px after:flex-1 after:bg-brand-accent">
+                                    {startsDay && <div className="mb-3 flex items-center gap-3 text-sm font-bold text-brand-muted before:h-px before:flex-1 before:bg-brand-accent after:h-px after:flex-1 after:bg-brand-accent">
                                         {date.toLocaleDateString(locale, { dateStyle: "long" })}
                                     </div>}
                                     <div className={`flex ${own ? "justify-end" : "justify-start"}`}>
                                         <article data-message-id={message.id} className={`min-w-0 max-w-[90%] sm:max-w-[75%] rounded-xl border px-4 py-3 shadow-sm ${own ? "bg-brand-bg border-brand-primary/40 text-brand-main" : "bg-card border-brand-accent text-brand-main"}`}>
-                                            <p className="text-xs font-bold mb-1.5 text-brand-primary">{own ? t("chat.you") : otherLabel}</p>
+                                            <p className="mb-1 text-sm font-bold text-brand-primary">{own ? t("chat.you") : otherLabel}</p>
                                             {own ? (
-                                                <p className="text-sm leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">{message.content}</p>
+                                                <p className="text-base leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere]">{message.content}</p>
                                             ) : (
                                                 <MessageTranslation key={i18n.resolvedLanguage ?? "en"} conversationId={conversationId} messageId={message.id} content={message.content} language={i18n.resolvedLanguage ?? "en"} />
                                             )}
-                                            <time dateTime={message.createdAt} className="block text-xs mt-2 text-brand-muted">
+                                            <time dateTime={message.createdAt} className="mt-1 block text-sm text-brand-muted">
                                                 {date.toLocaleTimeString(locale, { timeStyle: "short" })}
                                             </time>
                                         </article>
@@ -213,7 +225,7 @@ function ConversationScreen({ conversationId, userId, token, onRetry }: {
                     <label htmlFor="chat-message" className="sr-only">{t("chat.message")}</label>
                     <textarea id="chat-message" ref={composerRef} rows={2} value={draft} readOnly={chat.operation === "send"} aria-busy={chat.operation === "send"}
                         placeholder={t("chat.placeholder")} aria-invalid={!!validationMessage || composerError === "invalidMessage"} aria-describedby={`chat-help chat-count${validationMessage ? " chat-validation" : ""}${composerError ? " chat-send-error" : ""}`}
-                        className="block w-full min-w-0 resize-none bg-card border border-brand-accent rounded-lg p-3 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary aria-invalid:border-red-800 disabled:opacity-60"
+                        className="block w-full min-w-0 resize-none bg-card border border-brand-accent rounded-lg p-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary aria-invalid:border-red-800 disabled:opacity-60"
                         onChange={event => { setDraft(event.target.value); setValidation(null); setAnnouncement(""); }}
                         onKeyDown={event => {
                             if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
@@ -225,10 +237,10 @@ function ConversationScreen({ conversationId, userId, token, onRetry }: {
                     {composerError && <p id="chat-send-error" role="alert" className="chat-feedback-error">{t(`chat.errors.${composerError}`)}</p>}
                     <div className="flex items-center justify-between gap-2">
                         <div className="text-xs text-brand-muted space-y-1">
-                            <p id="chat-help" className="sr-only sm:not-sr-only">{t("chat.keyboardHint")}</p>
+                            <p id="chat-help" className="sr-only md:not-sr-only">{t("chat.keyboardHint")}</p>
                             <p id="chat-count" className={tooLong ? "text-red-700 font-bold" : ""}>{t("chat.characterCount", { count: content.length, limit: MESSAGE_LIMIT })}</p>
                         </div>
-                        <button type="submit" disabled={busy || tooLong} className="inline-flex items-center justify-center gap-2 min-h-11 shrink-0 px-3 py-2 bg-brand-primary text-white hover:bg-brand-primary-hover text-sm font-bold rounded-lg border border-brand-accent shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary disabled:opacity-50 disabled:cursor-not-allowed">
+                        <button type="submit" disabled={busy || tooLong} className="chat-secondary shrink-0 bg-brand-primary px-4 text-white hover:bg-brand-primary-hover">
                             {chat.operation === "send" ? <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Send size={16} aria-hidden="true" />}
                             {t(chat.operation === "send" ? "chat.sending" : composerError === "send" ? "chat.retrySend" : "chat.send")}
                         </button>

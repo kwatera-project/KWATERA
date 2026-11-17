@@ -1,5 +1,7 @@
 {
   "inbox": {
+    "collapse": "Zwiń skrzynkę",
+    "expand": "Pokaż rozmowy",
     "select": "Wybierz rozmowę, aby zobaczyć wiadomości.",
     "unavailable": "Czat niedostępny",
     "retryOpen": "Ponów otwarcie czatu",

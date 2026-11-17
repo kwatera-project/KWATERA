@@ -99,7 +99,7 @@ test("matching receipt starts history; initial live overlap and REST echoes rend
     await page.getByRole("button", { name: "Send", exact: true }).click();
     await expect(list.getByRole("listitem")).toHaveCount(4);
     await expect(page.getByRole("textbox")).toHaveValue("");
-    await expect(page.getByTestId("connection-status")).toHaveText("Live delivery connected.");
+    await expect(page.getByTestId("connection-status")).toHaveCount(0);
     await expect(page.getByText("Forbidden cross-conversation")).toHaveCount(0);
     await expect(page).toHaveTitle(/Kwatera/i);
     await expect(page).toHaveURL(`/conversations/${conversationId}`);
@@ -182,7 +182,7 @@ test("negotiated heartbeats detect silent transport loss and recover missed hist
     await page.clock.runFor(30_001);
     await broker.subscribed(2);
     await expect(page.getByText("Missed during silent outage", { exact: true })).toHaveCount(1);
-    await expect(page.getByTestId("connection-status")).toHaveText("Live delivery connected.");
+    await expect(page.getByTestId("connection-status")).toHaveCount(0);
     expect(histories).toBe(2);
 });
 
@@ -197,7 +197,7 @@ test("network restoration and browser resume recover through the existing client
             else window.dispatchEvent(new Event(event));
         }, event);
         await broker.subscribed(index + 2);
-        await expect(page.getByTestId("connection-status")).toHaveText("Live delivery connected.");
+        await expect(page.getByTestId("connection-status")).toHaveCount(0);
     }
     await page.getByRole("link", { name: "Back to messages" }).click();
     await expect.poll(() => broker.sockets.at(-1)?.closed).toBe(true);
@@ -254,7 +254,7 @@ test("rejected subscription is actionable; private validation errors preserve th
     await expect(page.getByTestId("connection-status").locator("..").getByRole("button", { name: "Try again" })).toBeVisible();
     await page.getByRole("button", { name: "Try again" }).click();
     await broker.subscribed(2);
-    await expect(page.getByTestId("connection-status")).toHaveText("Live delivery connected.");
+    await expect(page.getByTestId("connection-status")).toHaveCount(0);
     await expect(page.getByRole("textbox")).toHaveValue("Kept draft");
 });
 
@@ -299,7 +299,7 @@ test("live updates follow the bottom, preserve reading position and older-histor
         ? historyPage(Array.from({ length: 10 }, (_, i) => message(i)))
         : historyPage(Array.from({ length: 30 }, (_, i) => message(39 - i)), "older") }));
     await page.goto(`/conversations/${conversationId}`); await broker.subscribed();
-    await expect(page.getByTestId("connection-status")).toHaveText("Odbiór wiadomości na żywo połączony.");
+    await expect(page.getByTestId("connection-status")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Odśwież", exact: true })).toHaveCount(0);
     const region = page.locator('div[role="region"][aria-label="Historia wiadomości"]');
     broker.deliver(message(40));

@@ -525,6 +525,19 @@ test("split view and 320px return restore the selected row, scroll and focus", a
     } else {
         await expect(row).toHaveAttribute("aria-current", "page");
         await expect(list).toBeVisible();
+        const collapse = page.getByRole("button", { name: "Collapse inbox" });
+        const composer = page.getByRole("textbox");
+        const before = (await composer.boundingBox())!.width;
+        await collapse.click();
+        const expand = page.getByRole("button", { name: "Show conversations" });
+        await expect(expand).toHaveAttribute("aria-expanded", "false");
+        await expect(expand).toBeFocused();
+        await expect(list).toBeHidden();
+        expect((await composer.boundingBox())!.width).toBeGreaterThan(before);
+        await expand.click();
+        await expect(collapse).toHaveAttribute("aria-expanded", "true");
+        await expect(collapse).toBeFocused();
+        await expect(row).toHaveAttribute("aria-current", "page");
     }
     await page.getByRole("link", { name: "Back to messages" }).click();
     await expect(page).toHaveURL("/conversations");
