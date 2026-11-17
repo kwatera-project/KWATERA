@@ -41,3 +41,54 @@ body {
   z-index: 10;
 }
 
+
+/* Reservation inbox and conversation */
+.chat-workspace {
+  height: var(--chat-height, calc(100dvh - 5rem));
+  min-height: 18rem;
+}
+
+.chat-workspace[data-keyboard] {
+  position: fixed;
+  z-index: 20001;
+  inset-inline: 0;
+  top: var(--chat-top);
+  min-height: 0;
+}
+
+.chat-workspace .text-brand-muted {
+  color: var(--color-stone-600);
+}
+
+@layer components {
+  .chat-secondary {
+    background-color: rgb(var(--color-white));
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-brand-accent px-3 py-1.5 text-sm font-bold text-brand-primary transition-colors hover:bg-brand-bg disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .chat-inline-action {
+    @apply inline-flex min-h-11 items-center rounded text-sm font-bold text-brand-primary underline disabled:opacity-50;
+  }
+
+  .chat-secondary:focus-visible,
+  .chat-inline-action:focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-primary;
+  }
+}
+
+.chat-feedback-error {
+  @apply text-sm text-red-800;
+}
+
+.chat-feedback-warning {
+  @apply bg-amber-50 text-amber-900;
+}
+
+.chat-composer {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+.chat-workspace[data-keyboard] .chat-composer {
+  position: sticky;
+  bottom: 0;
+}

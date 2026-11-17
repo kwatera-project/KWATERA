@@ -62,7 +62,7 @@ function LoadingFallback() {
 
 function App() {
     const location = useLocation();
-    const showFooter = !FULL_SCREEN_ROUTES.some((path) => location.pathname.includes(path));
+    const showFooter = !/^\/conversations(?:\/|$)/.test(location.pathname) && !FULL_SCREEN_ROUTES.some((path) => location.pathname.includes(path));
 
     return (
         <CurrencyProvider>
@@ -184,15 +184,9 @@ function App() {
                                         <ConversationsPage/>
                                     </ProtectedRoute>
                                 }
-                            />
-                            <Route
-                                path="/conversations/:conversationId"
-                                element={
-                                    <ProtectedRoute>
-                                        <ConversationPage/>
-                                    </ProtectedRoute>
-                                }
-                            />
+                            >
+                                <Route path=":conversationId" element={<ConversationPage/>}/>
+                            </Route>
                             <Route
                                 path="/profile"
                                 element={

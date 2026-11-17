@@ -91,7 +91,7 @@ test("matching receipt starts history; initial live overlap and REST echoes rend
     broker.deliver(message(3)); broker.deliver(message(2)); broker.deliver(message(1));
     broker.deliver({ ...message(9), conversationId: "other", content: "Forbidden cross-conversation" });
     release();
-    const list = page.getByRole("list", { name: "Messages", exact: true });
+    const list = page.getByRole("list", { name: "Message history", exact: true });
     await expect(list.getByRole("listitem")).toHaveCount(3);
     await expect(list.locator("article > p:nth-child(2)")).toHaveText(["Message 1", "Message 2", "Message 3"]);
     await expect(page.getByRole("button", { name: "Refresh", exact: true })).toHaveCount(0);
@@ -137,8 +137,8 @@ test("guest and owner each send through REST and both receive a single persisted
         }
         expect(stored).toHaveLength(2);
         expect(stored.map(m => m.senderUserId)).toEqual(["guest", "owner"]);
-        await expect(page.getByRole("list", { name: "Messages", exact: true }).getByRole("listitem")).toHaveCount(2);
-        await expect(ownerPage.getByRole("list", { name: "Messages", exact: true }).getByRole("listitem")).toHaveCount(2);
+        await expect(page.getByRole("list", { name: "Message history", exact: true }).getByRole("listitem")).toHaveCount(2);
+        await expect(ownerPage.getByRole("list", { name: "Message history", exact: true }).getByRole("listitem")).toHaveCount(2);
     } finally { await ownerPage.close(); }
 });
 
@@ -161,7 +161,7 @@ test("transport reconnect recovers multiple opaque-cursor pages and concurrent l
     await expect(page.getByTestId("connection-status")).toContainText(/disconnected|Reconnecting/);
     await broker.subscribed(2); await expect.poll(() => calls).toBe(2);
     broker.deliver(message(6)); broker.deliver(message(3)); release();
-    const list = page.getByRole("list", { name: "Messages", exact: true });
+    const list = page.getByRole("list", { name: "Message history", exact: true });
     await expect(list.getByRole("listitem")).toHaveCount(6);
     expect(cursors).toEqual([null, "opaque +/==", "last=="]);
     await expect(list.locator("article > p:nth-child(2)")).toHaveText(Array.from({ length: 6 }, (_, i) => `Message ${i + 1}`));
@@ -251,7 +251,10 @@ test("rejected subscription is actionable; private validation errors preserve th
     await expect(page.getByRole("textbox")).toHaveValue("Kept draft");
     broker.error("INVALID_DESTINATION");
     await expect(page.getByTestId("connection-status")).toContainText("Live subscription was rejected");
-    await expect(page.getByTestId("connection-status").getByRole("button", { name: "Try again" })).toBeVisible();
+    await expect(page.getByTestId("connection-status").locator("..").getByRole("button", { name: "Try again" })).toBeVisible();
+    await page.getByRole("button", { name: "Try again" }).click();
+    await broker.subscribed(2);
+    await expect(page.getByTestId("connection-status")).toHaveText("Live delivery connected.");
     await expect(page.getByRole("textbox")).toHaveValue("Kept draft");
 });
 
@@ -298,7 +301,7 @@ test("live updates follow the bottom, preserve reading position and older-histor
     await page.goto(`/conversations/${conversationId}`); await broker.subscribed();
     await expect(page.getByTestId("connection-status")).toHaveText("Odbiór wiadomości na żywo połączony.");
     await expect(page.getByRole("button", { name: "Odśwież", exact: true })).toHaveCount(0);
-    const region = page.locator('div[role="region"][aria-label="Wiadomości"]');
+    const region = page.locator('div[role="region"][aria-label="Historia wiadomości"]');
     broker.deliver(message(40));
     await expect(page.getByText("Message 40", { exact: true })).toBeVisible();
     await expect.poll(() => region.evaluate(el => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeLessThan(48);

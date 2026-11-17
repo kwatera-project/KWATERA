@@ -1,5 +1,12 @@
 {
   "inbox": {
+    "select": "Wybierz rozmowę, aby zobaczyć wiadomości.",
+    "unavailable": "Czat niedostępny",
+    "retryOpen": "Ponów otwarcie czatu",
+    "reasons": {
+      "blocked": "Czat jest niedostępny dla zablokowanej rezerwacji.",
+      "retention": "Upłynął okres przechowywania wiadomości."
+    },
     "title": "Wiadomości",
     "subtitle": "Dostępne rozmowy o Twoich rezerwacjach, od ostatniej aktywności.",
     "back": "Powrót do wiadomości",
@@ -16,13 +23,15 @@
     "page": "Strona {{page}} z {{total}}",
     "errors": {
       "load": "Nie udało się wczytać rozmów. Spróbuj ponownie.",
-      "open": "Nie udało się otworzyć rozmowy. Spróbuj ponownie.",
+      "open": "Nie udało się otworzyć rozmowy.",
       "unauthenticated": "Twoja sesja jest niedostępna lub wygasła. Zaloguj się, aby otworzyć wiadomości.",
       "inaccessible": "Nie znaleziono rozmowy lub nie masz do niej dostępu.",
-      "unavailable": "Wiadomości są niedostępne ze względu na status rezerwacji lub okres przechowywania wiadomości."
+      "unavailable": "Ta rozmowa jest obecnie niedostępna."
     }
   },
   "chat": {
+    "reservationDetails": "Szczegóły rezerwacji",
+    "retrySend": "Ponów wysyłkę",
     "translation": {
       "translate": "Przetłumacz na polski",
       "loading": "Tłumaczenie…",
@@ -41,7 +50,7 @@
     "title": "Rozmowa o rezerwacji",
     "subtitle": "Wiadomości między gościem a właścicielem obiektu.",
     "backToReservation": "Powrót do rezerwacji",
-    "history": "Wiadomości",
+    "history": "Historia wiadomości",
     "loading": "Wczytywanie rozmowy…",
     "empty": "Nie ma jeszcze wiadomości",
     "emptyHint": "Wyślij pierwszą wiadomość dotyczącą tej rezerwacji.",
@@ -67,10 +76,10 @@
       "load": "Nie udało się wczytać rozmowy. Spróbuj ponownie.",
       "unauthenticated": "Twoja sesja jest niedostępna lub wygasła. Zaloguj się, aby otworzyć rozmowę.",
       "inaccessible": "Nie znaleziono tej rozmowy lub nie masz do niej dostępu.",
-      "unavailable": "Rozmowa jest niedostępna ze względu na status rezerwacji lub okres przechowywania wiadomości.",
+      "unavailable": "Ta rozmowa jest obecnie niedostępna.",
       "refresh": "Nie udało się zsynchronizować wiadomości. Wczytana historia została zachowana. Spróbuj ponownie.",
       "older": "Nie udało się wczytać starszych wiadomości. Spróbuj ponownie.",
-      "send": "Nie udało się potwierdzić wysłania. Treść została zachowana. Przed ponownym wysłaniem sprawdź, czy wiadomość jest widoczna po synchronizacji rozmowy.",
+      "send": "Nie udało się potwierdzić wysyłki. Tekst pozostał w polu. Ponowienie najpierw sprawdzi historię rozmowy.",
       "invalidMessage": "Wiadomość została odrzucona. Wpisz od 1 do 4000 znaków i spróbuj ponownie. Treść została zachowana."
     }
   },
