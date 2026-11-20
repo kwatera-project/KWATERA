@@ -354,7 +354,9 @@ services:
       - "8025:8025"
 
   kafka:
-    image: apache/kafka:latest
+    build:
+      context: ../..
+      dockerfile: infra/kafka/Dockerfile
     container_name: kafka
     ports:
       - "9092:9092"
