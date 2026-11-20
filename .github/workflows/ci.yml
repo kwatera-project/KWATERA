@@ -135,12 +135,28 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Java 25
+      # setup-java's Microsoft manifest does not yet list the emergency release.
+      - name: Download patched Microsoft JDK
+        run: >
+          curl --fail --location --retry 3
+          --output "$RUNNER_TEMP/microsoft-jdk.tar.gz"
+          https://aka.ms/download-jdk/microsoft-jdk-25.0.5.1-linux-x64.tar.gz
+
+      - name: Setup patched Microsoft Java 25
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: jdkfile
           java-version: '25'
+          jdkFile: ${{ runner.temp }}/microsoft-jdk.tar.gz
           cache: maven
+
+      - name: Verify patched JDK
+        run: |
+          java -version
+          . "$JAVA_HOME/release"
+          test "$IMPLEMENTOR" = Microsoft
+          test "${JAVA_VERSION%%.*}" = 25
+          dpkg --compare-versions "$JAVA_VERSION" ge 25.0.5.1
 
       - name: Cache Sonar packages
         uses: actions/cache@v4
@@ -171,6 +187,7 @@ jobs:
           -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
           -Dsonar.projectKey=${{ matrix.sonar_project_key }}
           -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.scanner.skipJreProvisioning=true
           -Dsonar.qualitygate.wait=true
 
       - name: Skip SonarQube Cloud analysis
