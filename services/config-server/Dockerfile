@@ -1,5 +1,18 @@
 # syntax=docker/dockerfile:1.7
-FROM maven:3.9.11-eclipse-temurin-25 AS build
+FROM mcr.microsoft.com/openjdk/jdk:25-ubuntu AS jdk
+# Reject stale/unpatched tags before either Maven or the application can use Java.
+RUN java -version \
+    && . "$JAVA_HOME/release" \
+    && [ "$IMPLEMENTOR" = "Microsoft" ] \
+    && [ "${JAVA_VERSION%%.*}" = "25" ] \
+    && dpkg --compare-versions "$JAVA_VERSION" ge "25.0.5.1"
+
+# Copy Maven only; the donor image's Temurin JVM is never executed or included.
+FROM maven:3.9.11-eclipse-temurin-25 AS maven
+FROM jdk AS build
+COPY --from=maven /usr/share/maven /usr/share/maven
+ENV MAVEN_HOME=/usr/share/maven
+ENV PATH="${MAVEN_HOME}/bin:${PATH}"
 WORKDIR /app
 
 COPY pom.xml ./
@@ -19,7 +32,7 @@ RUN --mount=type=cache,target=/root/.m2,sharing=locked mvn -B -ntp -pl services/
 COPY . .
 RUN --mount=type=cache,target=/root/.m2,sharing=locked mvn -B -ntp package -pl services/config-server -am -DskipTests
 
-FROM eclipse-temurin:25-jdk
+FROM jdk AS runtime
 WORKDIR /app
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/services/config-server/target/*.jar app.jar

@@ -69,6 +69,37 @@ docker compose --env-file infra/compose/.env -f infra/compose/docker-compose.yml
 
 Then open [http://localhost:5173](http://localhost:5173).
 
+### Java container security (issue #264)
+
+Java services build and run on `mcr.microsoft.com/openjdk/jdk:25-ubuntu`.
+The shared JDK stage checks the Microsoft distribution and requires Java
+25.0.5.1 or newer within Java 25, the
+[vendor-confirmed fix for CVE-2026-114938](https://devblogs.microsoft.com/java/java-openjdk-november-2026-critical-patch-update/).
+Maven 3.9.11 is copied from the existing Maven image without its unpatched
+Temurin JDK; both Maven and the application use the checked Microsoft JDK.
+CI uses Microsoft OpenJDK 25.0.5.1 as well, including the Maven SonarScanner
+(JRE auto-provisioning is disabled). No mitigation flags are required.
+
+Kafka retains its existing Alpine-based 4.2.0 distribution and container
+settings. Its Java 21 runtime is replaced with pinned Temurin 21.0.13.1+2,
+[confirmed patched by Adoptium](https://adoptium.net/news/2026/11/temurin-november-2026-cspu-java4shell/).
+This preserves Alpine/musl compatibility; the Microsoft Ubuntu JDK uses glibc.
+
+Rebuild with fresh base images and recreate the affected containers (existing
+containers keep their old JVM until recreated). Run from the repository root:
+
+```bash
+docker compose --env-file infra/compose/.env -f infra/compose/docker-compose.yml config --quiet
+docker compose --env-file infra/compose/.env -f infra/compose/docker-compose.yml build --pull config-server service-registry api-gateway auth-service property-service reservation-service db-migrations billing-service ai-pricing-service review-service ai-service kafka
+docker compose --env-file infra/compose/.env -f infra/compose/docker-compose.yml up -d --no-build config-server service-registry api-gateway auth-service property-service reservation-service db-migrations billing-service ai-pricing-service review-service ai-service kafka
+docker compose --env-file infra/compose/.env -f infra/compose/docker-compose.yml exec config-server java -version
+docker compose --env-file infra/compose/.env -f infra/compose/docker-compose.yml exec kafka java -version
+```
+
+Repeat `exec <service> java -version` for each running Java service. For a
+stopped service, use `run --rm --no-deps --entrypoint java <service> -version`.
+Check actual version output: the `25-ubuntu` tag alone is not evidence of a fix.
+
 ## Demo accounts
 
 All seeded users use the password `pass`.
