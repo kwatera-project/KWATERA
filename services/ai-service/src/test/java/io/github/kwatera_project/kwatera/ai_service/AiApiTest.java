@@ -107,6 +107,29 @@ class AiApiTest {
   }
 
   @ParameterizedTest
+  @ValueSource(strings = {"en", "pl"})
+  void returnsProsAndConsInTheSelectedLanguage(String language) throws Exception {
+    String pro = language.equals("pl") ? "Czysty pokój" : "Clean room";
+    String con = language.equals("pl") ? "Hałas z ulicy" : "Street noise";
+    when(model.call(any(Prompt.class)))
+        .thenReturn(
+            answer("{\"summary\":\"A comfortable stay.\"}"),
+            answer(mapper.writeValueAsString(Map.of("pros", List.of(pro), "cons", List.of(con)))));
+
+    call("summarize", Map.of("reviews", List.of("Clean but noisy."), "language", language))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.pros[0]").value(pro))
+        .andExpect(jsonPath("$.cons[0]").value(con));
+
+    var captor = ArgumentCaptor.forClass(Prompt.class);
+    verify(model, times(2)).call(captor.capture());
+    String instruction = captor.getAllValues().get(1).getInstructions().getFirst().getText();
+    assertThat(instruction)
+        .contains(
+            language.equals("pl") ? "Polish" : "English", "at most 12 words", "multiple sentences");
+  }
+
+  @ParameterizedTest
   @ValueSource(
       strings = {
         "{",
@@ -115,11 +138,27 @@ class AiApiTest {
         "{\"pros\":[],\"other\":[]}",
         "{\"pros\":[],\"cons\":null}",
         "{\"pros\":[5],\"cons\":[]}",
-        "{\"pros\":[],\"cons\":[\"   \"]}"
+        "{\"pros\":[],\"cons\":[\"   \"]}",
+        "{\"pros\":[\"one two three four five six seven eight nine ten eleven twelve thirteen\"],\"cons\":[]}",
+        "{\"pros\":[\"The room was clean and bright. The host was friendly and quick to respond. The nearby beach was beautiful and quiet.\"],\"cons\":[]}"
       })
   void rejectsInvalidPointsAfterAValidSummary(String points) throws Exception {
     when(model.call(any(Prompt.class)))
         .thenReturn(answer("{\"summary\":\"Clean room.\"}"), answer(points));
+
+    call("summarize", Map.of("reviews", List.of("Clean room."), "language", "en"))
+        .andExpect(status().isBadGateway())
+        .andExpect(jsonPath("$.code").value("AI_INVALID_RESPONSE"));
+  }
+
+  @Test
+  void rejectsReviewPointsLongerThanCharacterLimit() throws Exception {
+    when(model.call(any(Prompt.class)))
+        .thenReturn(
+            answer("{\"summary\":\"Clean room.\"}"),
+            answer(
+                mapper.writeValueAsString(
+                    Map.of("pros", List.of("x".repeat(121)), "cons", List.of()))));
 
     call("summarize", Map.of("reviews", List.of("Clean room."), "language", "en"))
         .andExpect(status().isBadGateway())
