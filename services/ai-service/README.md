@@ -62,6 +62,49 @@ If provisioning fails, HTTP/liveness still start and inference returns a control
 No existing service gains a dependency on Ollama. Compose's default network supplies DNS names;
 neither Ollama nor ai-service publishes a host port.
 
+### Ollama device selection
+
+Use the launcher from the repository root with Node.js 18+ and Docker Compose v2.
+It works in Windows PowerShell as well as Bash on WSL2 or Linux. Arguments after
+the script name are Compose `up` arguments. The default is `--build`.
+
+```sh
+node infra/compose/start.mjs -d --build
+```
+
+Set `OLLAMA_DEVICE` in `infra/compose/.env` or the shell. The shell takes precedence.
+For example, use `$env:OLLAMA_DEVICE = "gpu"` in PowerShell or
+`export OLLAMA_DEVICE=gpu` in Bash before running the launcher.
+
+| Value | Startup behavior |
+| --- | --- |
+| `auto` (default) | Starts with the GPU override if `nvidia-smi -L` sees an NVIDIA GPU inside the pinned Ollama image. Falls back to CPU when Docker cannot expose a GPU. |
+| `cpu` | Starts with the base configuration and skips the GPU probe. No NVIDIA driver or toolkit is needed. |
+| `gpu` | Requires a visible NVIDIA GPU and exits with a diagnostic before starting Compose if GPU access is unavailable. |
+
+On Windows, use Docker Desktop's WSL2 backend with Linux containers, current WSL2,
+and a WSL-compatible NVIDIA driver. Enable Docker Desktop integration for the
+distro if running from WSL2. On Linux, install the NVIDIA driver and configure the
+NVIDIA Container Toolkit for Docker. See the [Docker Desktop GPU guide](https://docs.docker.com/desktop/features/gpu/)
+and [NVIDIA Container Toolkit installation guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html).
+AMD ROCm and Intel acceleration are outside the supported modes.
+
+Plain `docker compose ... up` starts in CPU mode. Automatic probing and fallback
+require the launcher because Compose has no conditional device selection. You can
+also pass `-f infra/compose/docker-compose.gpu.yml` after the base `-f` directly
+when you already know that the NVIDIA runtime is ready.
+
+After a translation, run this command while the model is resident and read the
+`PROCESSOR` column.
+
+```sh
+docker exec kwatera-ollama ollama ps
+```
+
+Ollama decides how much of each model to place on GPU and CPU. The launcher reports
+GPU availability, while `ollama ps` reports actual placement. Docker configuration,
+image download, and application startup errors are surfaced to the caller.
+
 Diagnostics and a request from inside the AI container:
 
 ```sh
@@ -90,13 +133,17 @@ Environment variables override defaults in `application.yaml` and `config-repo/a
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Compose supplies `http://ollama:11434` |
 | `OLLAMA_SUMMARY_MODEL` | `qwen3:4b-instruct-2507-q4_K_M` | Summary and source-detection model; falls back to legacy `OLLAMA_MODEL` |
 | `OLLAMA_TRANSLATION_MODEL` | `translategemma:4b` | Independent translation model |
+| `OLLAMA_DEVICE` | `auto` | Launcher only. Select `auto`, `cpu`, or `gpu`. |
+| `OLLAMA_KEEP_ALIVE` | `5m` | Ollama server idle model residency. Use `0` for immediate release or a finite duration such as `30s`. |
 | `AI_TRANSLATION_FORMAT` | `TRANSLATE_GEMMA` | `TRANSLATE_GEMMA` single-user text prompt, or `JSON` for instruction models |
+| `AI_LANGUAGE_DETECTION_ENABLED` | `true` | Enables local detection for auto-source TranslateGemma requests. `false` restores prior Qwen detection. |
 | `AI_CONNECT_TIMEOUT` | `2s` | HTTP connection timeout |
 | `AI_REQUEST_TIMEOUT` | `120s` | Synchronous inference HTTP timeout; increase for slower CPUs |
 | `AI_READINESS_TIMEOUT` | `2s` | Inventory probe HTTP timeout |
 | `AI_TEMPERATURE` | `0.1` | Generation temperature, range 0–2 |
 | `AI_MAX_OUTPUT_TOKENS` | `1024` | Ollama `num_predict`; truncated output is rejected |
-| `AI_CONTEXT_TOKENS` | `8192` | Ollama context window |
+| `AI_CONTEXT_TOKENS` | `8192` | Ollama context for review summaries and Qwen source detection |
+| `AI_TRANSLATION_CONTEXT_TOKENS` | inherits `AI_CONTEXT_TOKENS` | Preferred window for both translation formats. Longer prompts can use a larger window. |
 | `AI_MAX_REVIEWS` | `20` | Reviews per request |
 | `AI_MAX_REVIEW_CHARACTERS` | `2000` | Per-review length |
 | `AI_MAX_TOTAL_REVIEW_CHARACTERS` | `6000` | Sum of review lengths |
@@ -105,12 +152,22 @@ Environment variables override defaults in `application.yaml` and `config-repo/a
 
 Both operations use seed 246, top_k 40 and top_p 0.9, matching the evaluation; temperature is
 configurable. `AI_REQUEST_TIMEOUT` bounds each HTTP inference call. TranslateGemma auto mode
-makes two sequential calls (detection then translation), so allow up to twice that timeout in a
-caller, plus transport overhead; explicit source tags avoid detection. There are no automatic retries.
+can still make two sequential calls on fallback (detection then translation), so size caller
+timeouts for that path. Explicit source tags avoid detection. There are no automatic retries.
+
+`OLLAMA_KEEP_ALIVE` is set on the Ollama server. Spring AI 2.0.2 can send a per-call
+`keep_alive` override, which this application leaves unset. Ollama 0.40.14 defaults to five
+minutes and can evict a model sooner to fit another. For native Ollama,
+set the variable in the server's environment before starting it. Use finite durations for
+routine use. The [review and measurements](evaluation/CHAT-BENCHMARK.md) show how to compare
+residency and context sizes on your own machine. [Ollama residence defaults](https://github.com/ollama/ollama/blob/v0.40.14/envconfig/config.go)
 
 Lengths count Java UTF-16 code units. Choose limits appropriate to the model's tokenizer/context
-window and output budget, particularly for non-Latin text. The service does not chunk/truncate input
-on behalf of callers. Long translations can exceed the output budget and return 502.
+window and output budget, particularly for non-Latin text. When the configured translation context
+is too small for the prompt's conservative UTF-8 byte estimate, template allowance, and output
+budget, the service selects a larger window. The Ollama translation request sets the top-level
+`truncate: false` field and the service rejects output ending at the generation limit.
+Long translations can still exceed the output budget and return a controlled error.
 For variables not explicitly forwarded by Compose, add them to the `ai-service.environment` block
 or supply a Compose override. Config Server reads the `ai-service` configuration and shared
 `application.yml`; shared datasource settings do not create a database dependency because this
@@ -180,9 +237,11 @@ risk but cannot establish semantic correctness; consumers should preserve access
 `text` and `targetLanguage` are required. Languages use syntactically valid BCP 47 tags, for
 example `ja`, `ar`, `pt-BR` or `zh-Hant-TW`; there is no Polish/English allowlist. Undefined/private-only
 tags and `auto` targets are rejected. Omit `sourceLanguage`, use null, or set it to `auto` to request
-language detection. With `TRANSLATE_GEMMA`, the summary model first returns a strictly validated
-BCP 47 tag in JSON; an unusable/undetermined result is a controlled 502. That concrete tag is sent
-to the translator. Detection is probabilistic, especially on short/mixed-language messages. With
+language detection. With `TRANSLATE_GEMMA`, Lingua supplies a source tag for supported, confidently
+identified chat text up to 256 UTF-16 units. Very short, long, uncertain, mixed, and other inputs
+fall back to the existing summary model and BCP 47 validation. An unusable/undetermined fallback
+result is a controlled 502.
+The selected source tag is sent to TranslateGemma. With
 `JSON`, the instruction model detects and translates in one call. In both modes the response reports `sourceLanguage: "auto"`,
 describing the requested mode rather than claiming a reliable detected language. Tags are
 canonicalized. Exactly matching canonical source/target tags return the original text unchanged

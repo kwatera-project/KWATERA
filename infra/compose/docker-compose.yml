@@ -260,6 +260,9 @@ services:
     # Pinned stable runtime; CPU execution requires no NVIDIA runtime or GPU reservation.
     image: ollama/ollama:0.40.14
     container_name: kwatera-ollama
+    environment:
+      NVIDIA_VISIBLE_DEVICES: "void"
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-5m}
     volumes:
       - ollama-models:/root/.ollama
     healthcheck:
@@ -300,6 +303,9 @@ services:
       OLLAMA_SUMMARY_MODEL: ${OLLAMA_SUMMARY_MODEL:-${OLLAMA_MODEL:-qwen3:4b-instruct-2507-q4_K_M}}
       OLLAMA_TRANSLATION_MODEL: ${OLLAMA_TRANSLATION_MODEL:-translategemma:4b}
       AI_TRANSLATION_FORMAT: ${AI_TRANSLATION_FORMAT:-TRANSLATE_GEMMA}
+      AI_LANGUAGE_DETECTION_ENABLED: ${AI_LANGUAGE_DETECTION_ENABLED:-true}
+      AI_CONTEXT_TOKENS: ${AI_CONTEXT_TOKENS:-8192}
+      AI_TRANSLATION_CONTEXT_TOKENS: ${AI_TRANSLATION_CONTEXT_TOKENS:-${AI_CONTEXT_TOKENS:-8192}}
       KWATERA_INTERNAL_TOKEN: ${KWATERA_INTERNAL_TOKEN:-}
       AI_REQUEST_TIMEOUT: ${AI_REQUEST_TIMEOUT:-120s}
       AI_TEMPERATURE: ${AI_TEMPERATURE:-0.1}
