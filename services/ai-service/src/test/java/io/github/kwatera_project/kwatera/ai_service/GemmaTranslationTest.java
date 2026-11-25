@@ -6,6 +6,11 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import io.github.kwatera_project.kwatera.ai_service.config.AiProperties;
+import io.github.kwatera_project.kwatera.ai_service.dto.TranslateRequest;
+import io.github.kwatera_project.kwatera.ai_service.service.AiInference;
+import io.github.kwatera_project.kwatera.ai_service.service.AiService;
+import io.github.kwatera_project.kwatera.ai_service.service.LocalLanguageDetection;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -33,7 +38,8 @@ import tools.jackson.databind.ObjectMapper;
       "kwatera.security.internal-token=test-internal-token-with-at-least-32-characters",
       "kwatera.ai.summary-model=summary:tag",
       "kwatera.ai.translation-model=translategemma:4b",
-      "kwatera.ai.translation-format=TRANSLATE_GEMMA"
+      "kwatera.ai.translation-format=TRANSLATE_GEMMA",
+      "kwatera.ai.translation-context-tokens=2048"
     })
 @AutoConfigureMockMvc
 class GemmaTranslationTest {
@@ -80,13 +86,40 @@ class GemmaTranslationTest {
     assertThat(options.getSeed()).isEqualTo(246);
     assertThat(options.getTopK()).isEqualTo(40);
     assertThat(options.getTopP()).isEqualTo(0.9);
+    assertThat(options.getNumCtx()).isEqualTo(2048);
   }
 
   @Test
-  void autoActuallyDetectsUsingIndependentSummaryModelBeforeTranslation() throws Exception {
+  void confidentLocalDetectionCallsOnlyTheTranslatorAndPreservesTheOriginalPrompt()
+      throws Exception {
+    String text = "Czy przed budynkiem znajdziemy wolne miejsce parkingowe dla drugiego samochodu?";
+    when(model.call(any(Prompt.class))).thenReturn(answer("Can we park the second car here?"));
+    translate(Map.of("text", text, "sourceLanguage", "AUTO", "targetLanguage", "EN"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.translatedText").value("Can we park the second car here?"))
+        .andExpect(jsonPath("$.sourceLanguage").value("auto"))
+        .andExpect(jsonPath("$.targetLanguage").value("en"));
+    var captor = ArgumentCaptor.forClass(Prompt.class);
+    verify(model).call(captor.capture());
+    assertThat(captor.getValue().getInstructions().getFirst().getText())
+        .startsWith("You are a professional Polish (pl) to English (en) translator.")
+        .endsWith("\n\n\n" + text);
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "Hello",
+        "OK!",
+        "We will arrive after dinner and collect the keys. Czy możemy zostawić bagaż w apartamencie?",
+        "We can check in at noon, pero necesitamos dejar las maletas antes.",
+        "We are still at the railway station. Наш потяг затримується на дві години.",
+        "Góðan daginn, gætum við fengið að geyma farangurinn hér eftir útritun?"
+      })
+  void uncertainInputFallsBackToTheSummaryModelBeforeTranslation(String text) throws Exception {
     when(model.call(any(Prompt.class)))
         .thenReturn(answer("{\"language\":\"en\"}"), answer("Cześć"));
-    translate(Map.of("text", "Hello", "targetLanguage", "pl"))
+    translate(Map.of("text", text, "targetLanguage", "pl"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.translatedText").value("Cześć"))
         .andExpect(jsonPath("$.sourceLanguage").value("auto"));
@@ -95,10 +128,54 @@ class GemmaTranslationTest {
     var prompts = captor.getAllValues();
     assertThat(((OllamaChatOptions) prompts.getFirst().getOptions()).getModel())
         .isEqualTo("summary:tag");
+    assertThat(((OllamaChatOptions) prompts.getFirst().getOptions()).getNumCtx()).isEqualTo(8192);
     assertThat(prompts.getFirst().getInstructions().getFirst().getText())
         .contains("Identify the primary language");
     assertThat(prompts.getLast().getInstructions().getFirst().getText())
         .contains("English (en) to Polish (pl)");
+  }
+
+  @Test
+  void disabledLocalDetectionRunsThePriorFlowForAConfidentMessage() {
+    String text = "Could you tell us where to pick up the keys when we arrive tomorrow evening?";
+    var properties =
+        OllamaConfigurationTest.properties(
+            "http://127.0.0.1:1", false, AiProperties.TranslationFormat.TRANSLATE_GEMMA);
+    var inference = new AiInference(model, mapper, properties);
+    var service = new AiService(inference, properties, new LocalLanguageDetection(properties));
+    when(model.call(any(Prompt.class)))
+        .thenReturn(answer("{\"language\":\"en\"}"), answer("Gdzie odebrać klucze?"));
+
+    var response = service.translate(new TranslateRequest(text, null, "pl"));
+
+    assertThat(response.translatedText()).isEqualTo("Gdzie odebrać klucze?");
+    assertThat(response.sourceLanguage()).isEqualTo("auto");
+    verify(model, times(2)).call(any(Prompt.class));
+  }
+
+  @Test
+  void matchingLocalLanguageReturnsOriginalMultilineTextWithoutAnyModel() throws Exception {
+    String text = "Proszę zostawić klucze w skrytce.\n\nWrócimy jutro rano.";
+    translate(Map.of("text", text, "targetLanguage", "pl"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.translatedText").value(text))
+        .andExpect(jsonPath("$.sourceLanguage").value("auto"));
+    verifyNoInteractions(model);
+  }
+
+  @Test
+  void delegatesLongMessagesToQwenAndPreservesItsRegionalTag() throws Exception {
+    String text = "Proszę odebrać klucze przy bocznym wejściu i zamknąć za sobą bramę. ".repeat(6);
+    when(model.call(any(Prompt.class)))
+        .thenReturn(answer("{\"language\":\"pl-PL\"}"), answer("Please collect the keys."));
+    translate(Map.of("text", text, "targetLanguage", "en"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.translatedText").value("Please collect the keys."));
+    var captor = ArgumentCaptor.forClass(Prompt.class);
+    verify(model, times(2)).call(captor.capture());
+    assertThat(captor.getAllValues().getLast().getInstructions().getFirst().getText())
+        .startsWith("You are a professional Polish (pl-PL) to English (en) translator.")
+        .endsWith("\n\n\n" + text);
   }
 
   @ParameterizedTest

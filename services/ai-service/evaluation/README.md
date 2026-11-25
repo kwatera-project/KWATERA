@@ -1,5 +1,8 @@
 # Opt-in translation evaluation
 
+For the before/after latency comparison on the current reservation translation path,
+see the [chat benchmark](CHAT-BENCHMARK.md).
+
 This is separate from Maven and CI. Python 3 (standard library), Docker and the existing
 `kwatera-ai-service` (curl transport) and `kwatera-ollama` containers are required. No host
 ports are opened. All inputs are synthetic; results contain no tokens, customer data or logs.

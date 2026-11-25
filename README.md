@@ -67,6 +67,18 @@ Run from the repository root:
 docker compose --env-file infra/compose/.env -f infra/compose/docker-compose.yml up --build
 ```
 
+That command starts Ollama on CPU. The automatic NVIDIA launcher runs on Windows
+PowerShell, WSL2, and Linux with Node.js 18+.
+
+```sh
+node infra/compose/start.mjs --build
+```
+
+Set `OLLAMA_DEVICE=auto` (default), `cpu`, or `gpu` in `infra/compose/.env` or in your
+shell. The launcher checks GPU access inside Docker and prints the selected mode.
+Prerequisites, mode verification, and benchmark instructions are in the
+[AI service setup](services/ai-service/README.md#ollama-device-selection).
+
 Then open [http://localhost:5173](http://localhost:5173).
 
 ### Java container security (issue #264)

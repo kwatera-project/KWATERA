@@ -34,12 +34,14 @@ kwatera:
     summary-model: ${OLLAMA_SUMMARY_MODEL:${OLLAMA_MODEL:qwen3:4b-instruct-2507-q4_K_M}}
     translation-model: ${OLLAMA_TRANSLATION_MODEL:translategemma:4b}
     translation-format: ${AI_TRANSLATION_FORMAT:TRANSLATE_GEMMA}
+    language-detection-enabled: ${AI_LANGUAGE_DETECTION_ENABLED:true}
     connect-timeout: ${AI_CONNECT_TIMEOUT:2s}
     request-timeout: ${AI_REQUEST_TIMEOUT:120s}
     readiness-timeout: ${AI_READINESS_TIMEOUT:2s}
     temperature: ${AI_TEMPERATURE:0.1}
     max-output-tokens: ${AI_MAX_OUTPUT_TOKENS:1024}
     context-tokens: ${AI_CONTEXT_TOKENS:8192}
+    translation-context-tokens: ${AI_TRANSLATION_CONTEXT_TOKENS:${kwatera.ai.context-tokens}}
     max-reviews: ${AI_MAX_REVIEWS:20}
     max-review-characters: ${AI_MAX_REVIEW_CHARACTERS:2000}
     max-total-review-characters: ${AI_MAX_TOTAL_REVIEW_CHARACTERS:6000}
